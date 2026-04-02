@@ -1,47 +1,22 @@
-import {
-  createView,
-  defineFeedback,
-  defineField,
-  defineSchema,
-  expr,
-  useExerciseContext,
-} from '@learning/core'
+import { createView, defineFeedback, defineSchema, Math } from '@learning/core'
 import { createMemo, Show } from 'solid-js'
-import * as v from 'valibot'
-
-const Math = defineField({
-  base: v.pipe(
-    v.string(),
-    v.nonEmpty(),
-    v.check((v) => {
-      try {
-        expr(v)
-        return true
-      } catch (error) {
-        return false
-      }
-    }, 'Expression mathématique invalide'),
-  ),
-  feedback: v.pipe(v.string(), v.transform(expr)),
-})
 
 const schema = defineSchema({
   name: 'math/factor',
-  question: { expr: Math },
+  question: { expr: Math('Expression à factoriser') },
   transform: async (question) => {
     return { expr: await question.expr.expand().latex() }
   },
   steps: {
     start: {
-      previous: [],
       state: {
-        attempt: Math,
+        attempt: Math('Votre tentative'),
       },
     },
     root: {
       previous: ['start'],
       state: {
-        root: Math,
+        root: Math('Racine'),
       },
     },
   },
@@ -60,28 +35,20 @@ const feedback = defineFeedback<typeof schema>({
 })
 
 export const Factor = createView(schema, feedback, {
-  start: (props) => {
+  start: (props, Field) => {
     const question = createMemo(() => props.question.expr)
     const attempt = createMemo(() => props.state?.attempt)
     const answer = createMemo(() => attempt() && question().factor().latex())
     const equal = createMemo(() => attempt()?.isEqual(question()))
     const factored = createMemo(() => attempt()?.isFactored())
     const correct = () => equal() && factored()
-    const exercise = useExerciseContext()
     return (
       <>
-        <p>Factorisez l'expression suivante: {props.question.expr.rawInput}</p>
         <p>
-          Tentative:{' '}
-          <input
-            value={props.state?.attempt.rawInput ?? ''}
-            readonly={props.state !== undefined}
-            onInput={(e) => {
-              exercise?.setState((state) => {
-                state.attempt = e.target.value
-              })
-            }}
-          />
+          Factorisez l'expression suivante: <Field name="question.expr" />
+        </p>
+        <p>
+          Tentative: <Field name="state.attempt" />
         </p>
         <Show when={props.state}>
           <p>La réponse est {answer()}</p>
@@ -92,20 +59,14 @@ export const Factor = createView(schema, feedback, {
       </>
     )
   },
-  root: (props) => {
-    const exercise = useExerciseContext()
+  root: (props, Field) => {
     const correct = createMemo(() => props.state && props.question.expr.checkRoot(props.state.root))
     return (
       <>
-        <p>Trouvez une racine de {props.question.expr.rawInput}</p>
-        <input
-          value={props.state?.root.rawInput ?? ''}
-          onInput={(e) => {
-            exercise?.setState((state) => {
-              state.root = e.target.value
-            })
-          }}
-        />
+        <p>
+          Trouvez une racine de <Field name="question.expr" />
+        </p>
+        <Field name="state.root" />
         <Show when={correct() !== undefined}>
           <p>Correct: {correct() ? 'Oui' : 'Non'}</p>
         </Show>

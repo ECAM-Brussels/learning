@@ -1,5 +1,5 @@
 import { Dynamic } from '@solidjs/web'
-import { mapAsync, mapValues, sample } from 'es-toolkit'
+import { mapAsync, mapValues, partialRight, sample } from 'es-toolkit'
 import {
   createMemo,
   createStore,
@@ -8,10 +8,10 @@ import {
   refresh,
   Show,
   type Component,
-  type ComponentProps,
+  type JSX,
 } from 'solid-js'
 import * as v from 'valibot'
-import { ExerciseContext } from './context'
+import { ExerciseContext, type ContextType } from './context'
 
 type MaybeAsync<T> = T | Promise<T>
 
@@ -34,6 +34,8 @@ type MaybeAsync<T> = T | Promise<T>
 type Field<S = any, T = any, U = any> = {
   base: v.GenericSchema<S, T>
   feedback: v.GenericSchema<T, U>
+  label: string
+  Component: Component<{ name: string; label: string; value?: U; question?: boolean } & ContextType>
 }
 
 /**
@@ -93,8 +95,8 @@ export function defineSchema<
   const N extends string,
   Q extends RawShape,
   T extends (question: InferFromShape<Q, 'feedback'>) => Promise<InferFromShape<Q, 'base'>>,
-  const S extends Record<string, { previous: (keyof S)[]; state: RawShape }> & {
-    start: { previous: []; state: RawShape }
+  const S extends Record<string, { previous?: (keyof S)[]; state: RawShape }> & {
+    start: { previous?: []; state: RawShape }
   },
 >(schema: { name: N; question: Q; transform?: T; steps: S }) {
   return schema
@@ -104,8 +106,8 @@ type Schema<
   N extends string = any,
   Q extends RawShape = any,
   T extends (question: InferFromShape<Q, 'feedback'>) => Promise<InferFromShape<Q, 'base'>> = any,
-  S extends Record<string, { previous: (keyof S)[]; state: RawShape }> & {
-    start: { previous: []; state: RawShape }
+  S extends Record<string, { previous?: (keyof S)[]; state: RawShape }> & {
+    start: { previous?: []; state: RawShape }
   } = any,
 > = ReturnType<typeof defineSchema<N, Q, T, S>>
 
@@ -283,7 +285,14 @@ export function buildSchemas<T extends Schema>(
 type Student<T extends Schema> =
   | v.InferInput<ReturnType<typeof buildSchemas<T>>['Student']>
   | v.InferOutput<ReturnType<typeof buildSchemas<T>>['Student']>
-type View<T extends Schema> = { [K in keyof T['steps']]: Component<Props<T, K>> }
+type FieldProps<T extends Schema, K extends keyof T['steps']> = {
+  name:
+    | `question.${keyof T['question'] & string}`
+    | `state.${keyof T['steps'][K]['state'] & string}`
+}
+type View<T extends Schema> = {
+  [K in keyof T['steps']]: (props: Props<T, K>, Field: Component<FieldProps<T, K>>) => JSX.Element
+}
 type FinalViewProps<T extends Schema> = {
   fetch: () => MaybeAsync<Student<T>>
   save: (exercise: v.InferOutput<ReturnType<typeof buildSchemas<T>>['Student']>) => any
@@ -337,15 +346,42 @@ export function createView<T extends Schema>(
               await props.save(graded)
               refresh(() => exercise)
             }
+
+            function Field(props: FieldProps<T, K>) {
+              const name = () => props.name.split('.')[1]!
+              const isQuestion = createMemo(() => props.name.startsWith('question'))
+              const field = createMemo((): Field => {
+                if (isQuestion()) {
+                  return schema.question[name() as keyof T['question']]
+                }
+                return schema.steps[part().step].state[name()]
+              })
+              const value = () =>
+                isQuestion()
+                  ? exercise().question[name() as keyof T['question']]
+                  : part().state?.[name()]
+              return (
+                <Dynamic
+                  component={field().Component}
+                  name={name()}
+                  label={field().label}
+                  question={isQuestion()}
+                  value={value()}
+                  state={state}
+                  setState={setState}
+                  readOnly={!!part().state}
+                />
+              )
+            }
             return (
               <ExerciseContext value={{ readOnly: !!part().state, state, setState }}>
                 <Dynamic
-                  component={view[part().step]}
+                  component={partialRight(view[part().step], Field)}
                   {...({
                     question: parsedQuestion(),
                     state: part().state,
                     previous: exercise().attempt.slice(0, i()).toReversed() as any,
-                  } satisfies Props<T, K> as ComponentProps<View<T>[K]>)}
+                  } satisfies Props<T, K>)}
                 />
                 <Show when={!part().state && validated().success}>
                   <button onClick={submit}>Soumettre</button>
