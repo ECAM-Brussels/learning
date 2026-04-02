@@ -15,16 +15,49 @@ import { ExerciseContext } from './context'
 
 type MaybeAsync<T> = T | Promise<T>
 
-type Field<T = any, U = any> = {
-  base: v.GenericSchema<any, T>
+/**
+ * Shape of user input
+ *
+ * @remarks Multiple schemas need to be provided,
+ * because some transforms are very useful from a DX point of view
+ * (e.g. convert LaTeX strings into an object that allow symbolic manipulation)
+ * but their output might be serializable.
+ *
+ * For this very reason,
+ * transforms associated with the 'feedback' schema
+ * are delayed as long as possible.
+ *
+ * @typeParam S - type of user input
+ * @typeParam T - output type of user input
+ * @typeParam U - output type of input, after transforms
+ */
+type Field<S = any, T = any, U = any> = {
+  base: v.GenericSchema<S, T>
   feedback: v.GenericSchema<T, U>
 }
 
-export function defineField<T, U>(field: Field<T, U>) {
+/**
+ * Create a `Field`, which describe the shape of user input
+ *
+ * @param field - schemas associated with the fields
+ *
+ * @remarks This identity helper exists
+ * because preserving the exact types associated the input and their transforms is crucial.
+ */
+export function defineField<S, T, U>(field: Field<S, T, U>) {
   return field
 }
 
 type RawShape = Record<string, Field>
+
+/**
+ * Transform a record of fields (`shape`) into a Valibot schema,
+ * using either the 'base' or 'feedback' schema of each field depending on the `stage` parameter.
+ *
+ * @param shape
+ * @param stage
+ * @returns Valibot schema
+ */
 function RawShapeSchema<T extends RawShape, S extends 'base' | 'feedback'>(shape: T, stage: S) {
   return v.object(mapValues(shape, (field) => field[stage]) as { [K in keyof T]: T[K][S] })
 }
@@ -134,6 +167,11 @@ type Feedback<T extends Schema, K extends keyof T['steps']> = (
   props: Required<Props<T, K, false>>,
 ) => MaybeAsync<{ correct: boolean; score: [number, number]; next: keyof T['steps'] | null }>
 
+/**
+ * Describe how to grade a particular exercise and redirect the next step
+ *
+ * @param data - Record describing how to grade each step
+ */
 export function defineFeedback<T extends Schema>(data: {
   [K in keyof T['steps']]: Feedback<T, K>
 }) {
@@ -158,6 +196,23 @@ function Params<T extends boolean>(transform: T) {
   return v.record(v.string(), Param(transform))
 }
 
+/**
+ * Create the complete valibot schemas associated with an exercise
+ *
+ * These schemas handle generation, grading, and setting up the next step.
+ * Their outputs need to be fully serializable for DB storage.
+ *
+ * Multiple schemas are provided:
+ *
+ * - `Student`: generates an exercise if necessary, and grade supplied parts.
+ *   This is the schema that will be used when a student interacts with an exercise.
+ *
+ * - `Teacher`: leaves generator params raw, doesn't trigger the generator.
+ *   This is the schema that will be used when the teacher creates an assignment.
+ *
+ * @param schema - Basic, raw, exercise schema
+ * @param feedback - Record that describe how to grade an exercise
+ */
 export function buildSchemas<T extends Schema>(
   schema: T,
   feedback: ReturnType<typeof defineFeedback<T>>,
@@ -234,6 +289,14 @@ type FinalViewProps<T extends Schema> = {
   save: (exercise: v.InferOutput<ReturnType<typeof buildSchemas<T>>['Student']>) => any
 }
 
+/**
+ * Creates the component associated with the exercise
+ *
+ * @param schema - Raw schema of the exercise
+ * @param feedback - Record describing how to grade a schema
+ * @param view - Record describing the UI of each step
+ * @returns SolidJS component orchestrating generation, grading, validation, submission and revalidation.
+ */
 export function createView<T extends Schema>(
   schema: T,
   feedback: ReturnType<typeof defineFeedback<T>>,
