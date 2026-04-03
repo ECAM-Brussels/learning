@@ -1,3 +1,4 @@
+import { Latex } from '@learning/components'
 import { createMemo, Show } from 'solid-js'
 import * as v from 'valibot'
 import { defineField } from './exercise/base'
@@ -24,7 +25,16 @@ export function Math(label: string) {
       const valid = createMemo(() => v.safeParse(base, props.state[props.name]).success)
       return (
         <>
-          <Show when={!props.question} fallback={<span title={props.label}>{props.value}</span>}>
+          <Show
+            when={!props.question}
+            fallback={
+              <span title={props.label}>
+                <Show when={props.value}>
+                  <Latex value={props.value!} />
+                </Show>
+              </span>
+            }
+          >
             <input
               class={[
                 'rounded border p-2 outline-none',

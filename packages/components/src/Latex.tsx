@@ -1,19 +1,30 @@
+import { expr, Expression } from '@learning/core'
+import { Dynamic } from '@solidjs/web'
 import katex from 'katex'
 import 'katex/dist/katex.min.css'
-import { Dynamic } from 'solid-js/web'
+import { createMemo, Loading } from 'solid-js'
+import * as v from 'valibot'
 
-export default function Latex(props: { value: string; displayMode?: boolean }) {
-  const html = () =>
-    katex.renderToString(props.value, {
+export function Latex(props: { value: Expression; displayMode?: boolean }) {
+  const html = createMemo(async () => {
+    const latex =
+      typeof props.value === 'string'
+        ? props.value
+        : await expr(v.parse(Expression, props.value)).latex()
+    return katex.renderToString(latex, {
       displayMode: props.displayMode,
       strict: false,
       output: 'html',
       macros: {
         '\\placeholder': '',
-        '\\dd': '\\mathrm{d}',
         '\\exponentialE': 'e',
         '\\imaginaryI': 'i',
       },
     })
-  return <Dynamic component={props.displayMode ? 'div' : 'span'} innerHTML={html()} />
+  })
+  return (
+    <Loading>
+      <Dynamic component={props.displayMode ? 'div' : 'span'} innerHTML={html()} />
+    </Loading>
+  )
 }

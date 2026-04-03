@@ -1,3 +1,4 @@
+import { CheckMark, Latex } from '@learning/components'
 import { createView, defineFeedback, defineSchema, Math } from '@learning/core'
 import { createMemo, Show } from 'solid-js'
 
@@ -7,7 +8,6 @@ export const schema = defineSchema({
   transform: async (question) => ({ expr: await question.expr.expand().latex() }),
   steps: {
     start: {
-      previous: [],
       state: {
         attempt: Math('Tentative'),
       },
@@ -27,10 +27,10 @@ export default createView(schema, feedback, {
   start: (props, Field) => {
     const question = createMemo(() => props.question.expr)
     const attempt = createMemo(() => props.state?.attempt)
-    const answer = createMemo(() => attempt() && question().factor().latex())
+    const answer = createMemo(() => attempt() && question().factor())
     const equal = createMemo(() => attempt()?.isEqual(question()))
     const factored = createMemo(() => attempt()?.isFactored())
-    const correct = () => equal() && factored()
+    const correct = createMemo(() => equal() && factored())
     return (
       <>
         <p>
@@ -38,12 +38,12 @@ export default createView(schema, feedback, {
         </p>
         <p>
           Tentative: <Field name="state.attempt" />
+          <CheckMark value={correct()} />
         </p>
-        <Show when={attempt()}>
-          <p>La réponse est {answer()}</p>
-          <Show when={correct() !== undefined}>
-            <p>Correct: {correct() ? 'Oui' : 'Non'}</p>
-          </Show>
+        <Show when={answer()}>
+          <p>
+            La réponse est <Latex value={answer()!} />
+          </p>
         </Show>
       </>
     )

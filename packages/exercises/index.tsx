@@ -15,6 +15,6 @@ type Props = {
 }
 
 export default function Exercise(props: Props) {
-  const data = createMemo(() => props.fetch())
+  const data = createMemo(props.fetch)
   return <Dynamic component={components[data()['name']]} {...(props as any)} />
 }

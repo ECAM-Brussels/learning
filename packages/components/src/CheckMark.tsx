@@ -1,18 +1,17 @@
 import { Show } from 'solid-js'
-import Spinner from './Spinner'
 
 type Props = {
-  correct: () => boolean | undefined
+  value?: boolean
 }
-export default function CheckMark(props: Props) {
+export function CheckMark(props: Props) {
   return (
-    <Spinner>
-      <Show when={props.correct() === true}>
+    <span>
+      <Show when={props.value === true}>
         <span class="text-green-700">✓</span>
       </Show>
-      <Show when={props.correct() === false}>
+      <Show when={props.value === false}>
         <span class="text-red-900">❌</span>
       </Show>
-    </Spinner>
+    </span>
   )
 }
