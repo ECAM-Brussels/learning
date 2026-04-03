@@ -2,7 +2,7 @@ import { pyodideStatus, runPython } from '@learning/repl'
 import { createMemo, Loading } from 'solid-js'
 
 export function Python(props: { value: string }) {
-  const ready = createMemo(() => pyodideStatus())
+  const ready = createMemo(pyodideStatus)
   const output = createMemo(() => runPython(props.value))
   return (
     <pre>

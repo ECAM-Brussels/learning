@@ -4,14 +4,12 @@ import dedent from 'dedent'
 import { loadPyodide, version as pyodideVersion } from 'pyodide'
 import type { Input, Output } from '..'
 
-let loading = true
 let pyodidePromise: ReturnType<typeof loadPyodide> | null = null
 
 function initPyodide() {
   if (!pyodidePromise) {
     pyodidePromise = loadPyodide({
       indexURL: `https://cdn.jsdelivr.net/pyodide/v${pyodideVersion}/full/`,
-      packages: ['sympy'],
     })
   }
 }
@@ -20,7 +18,7 @@ self.onmessage = async (event: MessageEvent<Input>) => {
   initPyodide()
   const pyodide = await pyodidePromise!
   self.postMessage({ status: 'ready' })
-  loading = false
+  await pyodide.loadPackagesFromImports(event.data.code)
   let output: Output = { id: event.data.id }
   try {
     pyodide.runPython(dedent`
