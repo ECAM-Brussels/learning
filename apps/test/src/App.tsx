@@ -1,5 +1,6 @@
+import Exercise from '@learning/exercises'
 import { createSignal, type Component } from 'solid-js'
-import { Factor } from './Exercise'
+import './style.css'
 
 const App: Component = () => {
   const [data, setData] = createSignal({
@@ -13,7 +14,7 @@ const App: Component = () => {
   })
   return (
     <>
-      <Factor fetch={data} save={setData} />
+      <Exercise fetch={data} save={setData} />
     </>
   )
 }

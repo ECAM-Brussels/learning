@@ -1,0 +1,19 @@
+{
+  "name": "@learning/exercises",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@learning/core": "workspace:*",
+    "@solidjs/web": "2.0.0-beta.4",
+    "@valibot/to-json-schema": "^1.6.0",
+    "solid-js": "2.0.0-beta.4",
+    "valibot": "^1.3.1"
+  }
+}

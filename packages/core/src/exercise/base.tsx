@@ -383,8 +383,19 @@ export function createView<T extends Schema>(
                     previous: exercise().attempt.slice(0, i()).toReversed() as any,
                   } satisfies Props<T, K>)}
                 />
-                <Show when={!part().state && validated().success}>
-                  <button onClick={submit}>Soumettre</button>
+                <Show when={!part().state}>
+                  <button
+                    class={[
+                      'rounded-lg bg-green-800 px-3 py-2 text-green-100',
+                      {
+                        'cursor-not-allowed opacity-15': !validated().success,
+                      },
+                    ]}
+                    disabled={!validated().success}
+                    onClick={submit}
+                  >
+                    Soumettre
+                  </button>
                 </Show>
               </ExerciseContext>
             )

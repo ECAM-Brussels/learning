@@ -26,7 +26,14 @@ export function Math(label: string) {
         <>
           <Show when={!props.question} fallback={<span title={props.label}>{props.value}</span>}>
             <input
-              style={{ 'border-color': valid() ? 'green' : 'red', border: '1px solid' }}
+              class={[
+                'rounded border p-2 outline-none',
+                {
+                  'bg-slate-50': props.readOnly === true,
+                  'border-red-200': !valid(),
+                  'border-green-500': valid(),
+                },
+              ]}
               placeholder={props.label}
               title={props.label}
               value={props.state.value?.rawInput ?? props.value?.rawInput ?? ''}
