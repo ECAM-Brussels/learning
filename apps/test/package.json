@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@learning/core": "workspace:*",
+    "@learning/components": "workspace:*",
     "@learning/exercises": "workspace:*",
     "@solidjs/web": "^2.0.0-beta.4",
     "@tailwindcss/vite": "^4.2.2",

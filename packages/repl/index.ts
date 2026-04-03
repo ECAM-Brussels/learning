@@ -1,36 +1,35 @@
-import dedent from 'dedent'
-import { loadPyodide, version as pyodideVersion } from 'pyodide'
+const worker = new Worker(new URL('./python/worker.ts', import.meta.url), { type: 'module' })
 
-async function initPyodide() {
-  const pyodide = await loadPyodide({
-    indexURL: `https://cdn.jsdelivr.net/pyodide/v${pyodideVersion}/full/`,
-    packages: ['sympy'],
-  })
-  return pyodide
-}
-
-let pyodidePromise = initPyodide()
-
-type Output = {
+export type Output = {
+  id: string
   result?: string
   error?: string
   stdout?: string
 }
-export async function runPython(code: string): Promise<Output> {
-  const { runPython } = await pyodidePromise
-  let output: Output = {}
-  try {
-    runPython(dedent`
-      import sys
-      from io import StringIO
-      stdout_capture = StringIO()
-      sys.stdout = stdout_capture
-    `)
-    output.result = runPython(code)
-    output.stdout = runPython('sys.stdout.getvalue()')
-  } catch (error) {
-    output.error = (error as any).message
-  } finally {
-    return output
-  }
+
+export type Input = {
+  id: string
+  code: string
+}
+
+export async function pyodideStatus() {
+  let { promise, resolve } = Promise.withResolvers<boolean>()
+  worker.addEventListener('message', function listener(event: MessageEvent<{ status: 'ready' }>) {
+    if (event.data?.status !== 'ready') return
+    resolve(true)
+  })
+  return promise
+}
+
+export async function runPython(code: string) {
+  const promiseId = crypto.randomUUID()
+  let { promise, resolve } = Promise.withResolvers<Omit<Output, 'id'>>()
+  worker.addEventListener('message', function listener(event: MessageEvent<Output>) {
+    if (event.data?.id !== promiseId) return
+    worker.removeEventListener('message', listener)
+    const { id, ...rest } = event.data
+    resolve(rest)
+  })
+  worker.postMessage({ id: promiseId, code } satisfies Input)
+  return promise
 }

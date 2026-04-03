@@ -1,3 +1,4 @@
+import { Python } from '@learning/components/src/Python'
 import Exercise from '@learning/exercises'
 import { createSignal, type Component } from 'solid-js'
 import './style.css'
@@ -12,10 +13,13 @@ const App: Component = () => {
     },
     attempt: [],
   })
+  const [code, setCode] = createSignal('import time\ntime.sleep(1)\nprint("Hello, world!")')
   return (
-    <>
+    <div class="container mx-auto">
+      <textarea value={code()} onInput={(e) => setCode(e.target.value)} class="w-full border" />
+      <Python value={code()} />
       <Exercise fetch={data} save={setData} />
-    </>
+    </div>
   )
 }
 

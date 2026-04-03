@@ -33,13 +33,13 @@ export default createView(schema, feedback, {
     const correct = createMemo(() => equal() && factored())
     return (
       <>
-        <p>
-          Factorisez l'expression suivante: <Field name="question.expr" />
-        </p>
-        <p>
-          Tentative: <Field name="state.attempt" />
+        <p>Factorisez l'expression suivante:</p>
+        <div class="flex items-center justify-center gap-1">
+          <Field name="question.expr" />
+          <Latex value="=" />
+          <Field name="state.attempt" />
           <CheckMark value={correct()} />
-        </p>
+        </div>
         <Show when={answer()}>
           <p>
             La réponse est <Latex value={answer()!} />
