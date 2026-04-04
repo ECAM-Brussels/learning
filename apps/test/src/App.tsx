@@ -13,13 +13,15 @@ const App: Component = () => {
     },
     attempt: [],
   })
-  const [code, setCode] = createSignal('import time\ntime.sleep(1)\nprint("Hello, world!")')
+  const [code, setCode] = createSignal('print("Hello world")')
   return (
-    <div class="container mx-auto">
-      <textarea value={code()} onInput={(e) => setCode(e.target.value)} class="w-full border" />
-      <Python value={code()} />
-      <Exercise fetch={data} save={setData} />
-    </div>
+    <Loading>
+      <div class="container mx-auto">
+        <textarea value={code()} onInput={(e) => setCode(e.target.value)} class="w-full border" />
+        <Python value={code()} math />
+        <Exercise fetch={data} save={setData} />
+      </div>
+    </Loading>
   )
 }
 
