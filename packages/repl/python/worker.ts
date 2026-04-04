@@ -21,14 +21,20 @@ self.onmessage = async (event: MessageEvent<Input>) => {
   await pyodide.loadPackagesFromImports(event.data.code)
   let output: Output = { id: event.data.id }
   try {
+    pyodide.globals.clear()
     pyodide.runPython(dedent`
       import sys
       from io import StringIO
       stdout_capture = StringIO()
       sys.stdout = stdout_capture
     `)
-    output.result = pyodide.runPython(event.data.code)
+    const result = pyodide.runPython(event.data.code)
+    output.result = String(result)
     output.stdout = pyodide.runPython('sys.stdout.getvalue()')
+    if (event.data.options?.math && result && result._repr_latex_ !== undefined) {
+      output.result = result._repr_latex_().substr(1, result._repr_latex_().length - 2)
+      output.format = 'latex'
+    }
   } catch (error) {
     output.error = (error as any).message
   } finally {
