@@ -7,10 +7,11 @@ import * as v from 'valibot'
 
 export default function Latex(props: {
   class?: JSX.ClassList | string
-  value: Expression
+  value?: Expression
   displayMode?: boolean
 }): JSX.Element {
   const html = createMemo(async () => {
+    if (!props.value) return ''
     const latex =
       typeof props.value === 'string'
         ? props.value

@@ -11,9 +11,13 @@ import {
   type JSX,
 } from 'solid-js'
 import * as v from 'valibot'
-import { ExerciseContext, type ContextType } from './context'
+import { type ContextType } from './context'
 
 type MaybeAsync<T> = T | Promise<T>
+
+type Prettify<T> = {
+  [K in keyof T]: T[K]
+} & {}
 
 /**
  * Shape of user input
@@ -157,13 +161,15 @@ type PartUnion<
   V extends 'base' | 'feedback' = 'base',
 > = Infer<typeof PartUnion<T, K, S, V>>
 
-type Props<T extends Schema, K extends keyof T['steps'], F extends boolean = true> = {
-  question: InferFromShape<T['question'], 'feedback'>
-  state?: InferFromShape<T['steps'][K]['state'], 'feedback'>
-  previous: {
-    [S in T['steps'][K]['previous'][number]]: InferFromShape<T['steps'][S]['state'], 'feedback'>
-  }[T['steps'][K]['previous'][number]][]
-} & (F extends true ? Partial<{ correct: boolean; score: [number, number] }> : {})
+type Props<T extends Schema, K extends keyof T['steps'], F extends boolean = true> = Prettify<
+  {
+    question: InferFromShape<T['question'], 'feedback'>
+    state?: InferFromShape<T['steps'][K]['state'], 'feedback'>
+    previous: {
+      [S in T['steps'][K]['previous'][number]]: InferFromShape<T['steps'][S]['state'], 'feedback'>
+    }[T['steps'][K]['previous'][number]][]
+  } & (F extends true ? Partial<{ correct: boolean; score: [number, number] }> : {})
+>
 
 type Feedback<T extends Schema, K extends keyof T['steps']> = (
   props: Required<Props<T, K, false>>,
@@ -374,7 +380,7 @@ export function createView<T extends Schema>(
               )
             }
             return (
-              <ExerciseContext value={{ readOnly: !!part().state, state, setState }}>
+              <>
                 <Dynamic
                   component={partialRight(view[part().step], Field)}
                   {...({
@@ -397,7 +403,7 @@ export function createView<T extends Schema>(
                     Soumettre
                   </button>
                 </Show>
-              </ExerciseContext>
+              </>
             )
           }}
         </For>
