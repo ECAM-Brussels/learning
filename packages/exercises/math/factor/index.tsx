@@ -1,4 +1,5 @@
-import { CheckMark, Latex } from '@learning/components'
+import CheckMark from '@learning/components/CheckMark'
+import Latex from '@learning/components/Latex'
 import { createView, defineFeedback, defineSchema, Math } from '@learning/core'
 import { createMemo, Show } from 'solid-js'
 

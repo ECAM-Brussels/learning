@@ -1,4 +1,4 @@
-import { Latex } from '@learning/components'
+import Latex from '@learning/components/Latex'
 import { createMemo, Show } from 'solid-js'
 import * as v from 'valibot'
 import { defineField } from './exercise/base'

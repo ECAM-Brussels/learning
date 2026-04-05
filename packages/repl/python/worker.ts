@@ -29,7 +29,7 @@ self.onmessage = async (event: MessageEvent<Input>) => {
       sys.stdout = stdout_capture
     `)
     const result = pyodide.runPython(event.data.code)
-    output.result = String(result)
+    output.result = String(result ?? '')
     output.stdout = pyodide.runPython('sys.stdout.getvalue()')
     if (event.data.options?.math && result && result._repr_latex_ !== undefined) {
       output.result = result._repr_latex_().substr(1, result._repr_latex_().length - 2)

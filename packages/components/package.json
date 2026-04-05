@@ -1,7 +1,8 @@
 {
   "name": "@learning/components",
-  "module": "index.ts",
-  "type": "module",
+  "exports": {
+    "./*": "./src/*"
+  },
   "private": true,
   "devDependencies": {
     "@types/bun": "latest"

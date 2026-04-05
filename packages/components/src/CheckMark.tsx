@@ -1,9 +1,9 @@
-import { Show } from 'solid-js'
+import { Show, type JSX } from 'solid-js'
 
 type Props = {
   value?: boolean
 }
-export function CheckMark(props: Props) {
+export default function CheckMark(props: Props): JSX.Element {
   return (
     <span>
       <Show when={props.value === true}>

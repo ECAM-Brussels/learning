@@ -1,6 +1,6 @@
-import { Python } from '@learning/components/src/Python'
+import Python from '@learning/components/Python'
 import Exercise from '@learning/exercises'
-import { createSignal, type Component } from 'solid-js'
+import { createSignal, Loading, type Component } from 'solid-js'
 import './style.css'
 
 const App: Component = () => {

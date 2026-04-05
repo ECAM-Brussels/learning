@@ -5,11 +5,11 @@ import 'katex/dist/katex.min.css'
 import { createMemo, Loading, type JSX } from 'solid-js'
 import * as v from 'valibot'
 
-export function Latex(props: {
+export default function Latex(props: {
   class?: JSX.ClassList | string
   value: Expression
   displayMode?: boolean
-}) {
+}): JSX.Element {
   const html = createMemo(async () => {
     const latex =
       typeof props.value === 'string'
