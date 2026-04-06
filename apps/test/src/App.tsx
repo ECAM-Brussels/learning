@@ -1,3 +1,4 @@
+import Code from '@learning/components/Code'
 import Python from '@learning/components/Python'
 import Exercise from '@learning/exercises'
 import { createSignal, Loading, type Component } from 'solid-js'
@@ -17,7 +18,9 @@ const App: Component = () => {
   return (
     <Loading>
       <div class="container mx-auto">
-        <textarea value={code()} onInput={(e) => setCode(e.target.value)} class="w-full border" />
+        <Code language="python" onChange={setCode}>
+          {code()}
+        </Code>
         <Python value={code()} math />
         <Exercise fetch={data} save={setData} />
       </div>
