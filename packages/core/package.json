@@ -20,6 +20,7 @@
   "dependencies": {
     "@cortex-js/compute-engine": "catalog:",
     "@learning/components": "workspace:",
+    "@solidjs/router": "catalog:",
     "es-toolkit": "^1.44.0",
     "valibot": "catalog:"
   }

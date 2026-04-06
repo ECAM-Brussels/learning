@@ -107,7 +107,7 @@
   },
   "catalog": {
     "@cortex-js/compute-engine": "0.55.5",
-    "@solidjs/router": "^0.15.4",
+    "@solidjs/router": "0.17.0-next.1",
     "@solidjs/start": "^1.3.2",
     "@solidjs/web": "2.0.0-beta.5",
     "es-toolkit": "^1.44.0",
@@ -223,7 +223,7 @@
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.0-rc.12", "", {}, "sha512-HHMwmarRKvoFsJorqYlFeFRzXZqCt2ETQlEDOb9aqssrnVBB1/+xgTGtuTrIk5vzLNX1MjMtTf7W9z3tsSbrxw=="],
 
-    "@solidjs/router": ["@solidjs/router@0.15.4", "", { "peerDependencies": { "solid-js": "^1.8.6" } }, "sha512-WOpgg9a9T638cR+5FGbFi/IV4l2FpmBs1GpIMSPa0Ce9vyJN7Wts+X2PqMf9IYn0zUj2MlSJtm1gp7/HI/n5TQ=="],
+    "@solidjs/router": ["@solidjs/router@0.17.0-next.1", "", { "peerDependencies": { "@solidjs/web": "^2.0.0-beta.3", "solid-js": "^2.0.0-beta.3" } }, "sha512-yfYRlELHSNS1ZXvffI+A810F+3lAH6SVPyZGR9L+SGMIUrjQ4lb+nS9+Za4/y60Nd9y7MoD8fQyXH1pXZwdEyg=="],
 
     "@solidjs/signals": ["@solidjs/signals@0.13.9", "", {}, "sha512-+w+ShIB3hunVM0HZcXnhUhfLQvSdKlZflTQ0q3P9B/IfDOS8GPelY28wGouGt/6QzfJ1ueqx8bOg1TFQutPuaQ=="],
 
