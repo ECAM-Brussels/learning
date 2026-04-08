@@ -1,5 +1,6 @@
 import * as monaco from 'monaco-editor'
-import { createEffect, onSettled, type JSX } from 'solid-js'
+import { createEffect, createSignal, onSettled, Show, type JSX } from 'solid-js'
+import Python from './Python'
 
 self.MonacoEnvironment = {
   getWorker: async function (workerId, label) {
@@ -34,24 +35,26 @@ self.MonacoEnvironment = {
 type Props = {
   class?: JSX.ClassList | string
   children: string
-  language: string
   onChange?: (value: string) => void
+} & {
+  lang: 'python'
+  run?: boolean
+  math?: boolean
 }
 
 export default function Code(props: Props) {
   let container: HTMLDivElement | undefined
   let editor: monaco.editor.IStandaloneCodeEditor | undefined
+  const [value, setValue] = createSignal(() => props.children)
 
+  createEffect(value, (value) => {
+    if (editor?.getValue() !== value) {
+      editor?.setValue(value)
+      props.onChange?.(value)
+    }
+  })
   createEffect(
-    () => props.children,
-    (code) => {
-      if (editor?.getValue() !== code) {
-        editor?.setValue(code)
-      }
-    },
-  )
-  createEffect(
-    () => props.language,
+    () => props.lang,
     (lang) => {
       if (editor) monaco.editor.setModelLanguage(editor.getModel()!, lang)
     },
@@ -61,13 +64,11 @@ export default function Code(props: Props) {
     if (container) {
       editor = monaco.editor.create(container, {
         value: props.children,
-        language: props.language,
+        language: props.lang,
         automaticLayout: true,
         minimap: { enabled: false },
       })
-      editor.onDidChangeModelContent(() => {
-        props.onChange?.(editor!.getValue())
-      })
+      editor.onDidChangeModelContent(() => setValue(editor!.getValue()))
       editor.updateOptions({ scrollBeyondLastLine: false })
       editor.onDidContentSizeChange(() => {
         const height = editor!.getModel()!.getLineCount() * 19 + 18
@@ -77,5 +78,12 @@ export default function Code(props: Props) {
     }
     return () => editor?.dispose()
   })
-  return <div ref={container!} id="container" class={props.class ?? 'shadow'} />
+  return (
+    <>
+      <div ref={container!} id="container" class={props.class ?? 'shadow'} />
+      <Show when={props.lang === 'python' && props.run}>
+        <Python value={value()} math={props.math} />
+      </Show>
+    </>
+  )
 }
