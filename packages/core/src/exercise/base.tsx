@@ -1,17 +1,19 @@
 import { Dynamic } from '@solidjs/web'
 import { mapAsync, mapValues, partialRight, sample } from 'es-toolkit'
+import stringify from 'safe-stable-stringify'
 import {
+  createContext,
   createMemo,
   createStore,
   For,
   Loading,
   refresh,
   Show,
+  useContext,
   type Component,
   type JSX,
 } from 'solid-js'
 import * as v from 'valibot'
-import { type ContextType } from './context'
 
 type MaybeAsync<T> = T | Promise<T>
 
@@ -39,7 +41,15 @@ type Field<S = any, T = any, U = any> = {
   base: v.GenericSchema<S, T>
   feedback: v.GenericSchema<T, U>
   label: string
-  Component: Component<{ name: string; label: string; value?: U; question?: boolean } & ContextType>
+  Component: Component<{
+    name: string
+    label: string
+    value?: U
+    question?: boolean
+    state: Record<string, any>
+    setState: ReturnType<typeof createStore<Record<string, any>>>[1]
+    readOnly?: boolean
+  }>
 }
 
 /**
@@ -299,9 +309,24 @@ type FieldProps<T extends Schema, K extends keyof T['steps']> = {
 type View<T extends Schema> = {
   [K in keyof T['steps']]: (props: Props<T, K>, Field: Component<FieldProps<T, K>>) => JSX.Element
 }
+
+type ExerciseContext<T extends Schema> = {
+  fetch: (initialData: Student<T>) => MaybeAsync<Student<T>> | undefined
+  save: (
+    initialData: Student<T>,
+    exercise: v.InferOutput<ReturnType<typeof buildSchemas<T>>['Student']>,
+  ) => any
+}
+
+export const ExerciseContext = createContext<ExerciseContext<any>>({
+  fetch: (initialData) => JSON.parse(localStorage.getItem(stringify(initialData)) ?? 'null'),
+  save: (initialData, exercise) =>
+    localStorage.setItem(stringify(initialData), stringify(exercise)),
+})
+
 type FinalViewProps<T extends Schema> = {
-  fetch: () => MaybeAsync<Student<T>>
-  save: (exercise: v.InferOutput<ReturnType<typeof buildSchemas<T>>['Student']>) => any
+  data: Student<T>
+  context?: ExerciseContext<T>
 }
 
 /**
@@ -319,7 +344,12 @@ export function createView<T extends Schema>(
 ) {
   const { Student, grade } = buildSchemas(schema, feedback)
   return function Component(props: FinalViewProps<T>) {
-    const exercise = createMemo(async () => grade(await props.fetch()))
+    const exerciseContext = useContext(ExerciseContext)
+    const context = createMemo((): ExerciseContext<T> => props.context ?? exerciseContext)
+
+    const exercise = createMemo(
+      async () => await grade((await context().fetch(props.data)) ?? props.data),
+    )
     const parsedQuestion = createMemo(() =>
       v.parse(RawShapeSchema(schema.question as T['question'], 'feedback'), exercise().question),
     )
@@ -349,8 +379,8 @@ export function createView<T extends Schema>(
                   validated().output as Part<T, K, true>,
                 ],
               })
-              await props.save(graded)
-              refresh(() => exercise)
+              await context().save(props.data, graded)
+              refresh(exercise)
             }
 
             function Field(props: FieldProps<T, K>) {

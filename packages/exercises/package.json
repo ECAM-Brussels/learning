@@ -1,7 +1,8 @@
 {
   "name": "@learning/exercises",
-  "module": "index.ts",
-  "type": "module",
+  "exports": {
+    "./*": "./*"
+  },
   "private": true,
   "devDependencies": {
     "@types/bun": "latest"

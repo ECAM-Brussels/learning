@@ -1,18 +1,8 @@
 import Code from '@learning/components/Code'
-import Exercise from '@learning/exercises'
+import Factor from '@learning/exercises/math/factor/index'
 import dedent from 'dedent'
-import { createSignal, Loading } from 'solid-js'
+import { Loading } from 'solid-js'
 import './style.css'
-
-const [exercise, setExercise] = createSignal({
-  name: 'math/factor' as const,
-  question: { expr: '(x + {a})(x + {b})' },
-  params: {
-    a: [1, 2, 3],
-    b: [1, 2, 3],
-  },
-  attempt: [],
-})
 
 export default () => (
   <Loading>
@@ -25,7 +15,7 @@ export default () => (
           expand(expr)
         `}
       </Code>
-      <Exercise fetch={exercise} save={setExercise} />
+      <Factor data={{ name: 'math/factor', question: { expr: '(x + 1)(x + 2)' }, attempt: [] }} />
     </div>
   </Loading>
 )

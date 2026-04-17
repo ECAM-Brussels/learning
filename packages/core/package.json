@@ -22,6 +22,7 @@
     "@learning/components": "workspace:",
     "@solidjs/router": "catalog:",
     "es-toolkit": "^1.44.0",
+    "safe-stable-stringify": "^2.5.0",
     "valibot": "catalog:"
   }
 }
