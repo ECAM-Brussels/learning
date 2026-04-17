@@ -38,9 +38,9 @@ export function Math(label: string) {
             class={[
               'rounded border p-2 outline-none',
               {
-                'bg-slate-50': props.readOnly === true,
-                'border-red-200': !valid(),
-                'border-green-500': valid(),
+                'border-slate-200 bg-slate-50': props.readOnly === true,
+                'border-red-200': !props.readOnly && !valid(),
+                'border-green-500': !props.readOnly && valid(),
               },
             ]}
             placeholder={props.label}

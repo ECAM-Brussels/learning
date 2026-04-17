@@ -4,6 +4,7 @@ import stringify from 'safe-stable-stringify'
 import {
   createContext,
   createMemo,
+  createProjection,
   createStore,
   For,
   Loading,
@@ -316,12 +317,14 @@ type ExerciseContext<T extends Schema> = {
     initialData: Student<T>,
     exercise: v.InferOutput<ReturnType<typeof buildSchemas<T>>['Student']>,
   ) => any
+  reset?: (initialData: Student<T>) => void | Promise<void>
 }
 
 export const ExerciseContext = createContext<ExerciseContext<any>>({
   fetch: (initialData) => JSON.parse(localStorage.getItem(stringify(initialData)) ?? 'null'),
   save: (initialData, exercise) =>
     localStorage.setItem(stringify(initialData), stringify(exercise)),
+  reset: (initialData) => localStorage.removeItem(stringify(initialData)),
 })
 
 type FinalViewProps<T extends Schema> = {
@@ -347,13 +350,13 @@ export function createView<T extends Schema>(
     const exerciseContext = useContext(ExerciseContext)
     const context = createMemo((): ExerciseContext<T> => props.context ?? exerciseContext)
 
-    const exercise = createMemo(
-      async () => await grade((await context().fetch(props.data)) ?? props.data),
+    const exercise = createProjection(async () =>
+      grade((await context().fetch(props.data)) ?? props.data),
     )
     const parsedQuestion = createMemo(() =>
-      v.parse(RawShapeSchema(schema.question as T['question'], 'feedback'), exercise().question),
+      v.parse(RawShapeSchema(schema.question as T['question'], 'feedback'), exercise.question),
     )
-    const parsedAttempt = createMemo(() => v.parse(Attempt(schema, 'feedback'), exercise().attempt))
+    const parsedAttempt = createMemo(() => v.parse(Attempt(schema, 'feedback'), exercise.attempt))
     return (
       <Loading fallback="Génération de l'exercice...">
         <For each={parsedAttempt()}>
@@ -373,13 +376,17 @@ export function createView<T extends Schema>(
             const submit = async () => {
               if (!validated().success) return
               const graded = await grade({
-                ...exercise(),
+                ...exercise,
                 attempt: [
-                  ...exercise().attempt.toSpliced(-1),
+                  ...exercise.attempt.toSpliced(-1),
                   validated().output as Part<T, K, true>,
                 ],
               })
               await context().save(props.data, graded)
+              refresh(exercise)
+            }
+            const reset = async () => {
+              await context().reset?.(props.data)
               refresh(exercise)
             }
 
@@ -394,7 +401,7 @@ export function createView<T extends Schema>(
               })
               const value = () =>
                 isQuestion()
-                  ? exercise().question[name() as keyof T['question']]
+                  ? exercise.question[name() as keyof T['question']]
                   : part().state?.[name()]
               return (
                 <Dynamic
@@ -416,7 +423,7 @@ export function createView<T extends Schema>(
                   {...({
                     question: parsedQuestion(),
                     state: part().state,
-                    previous: exercise().attempt.slice(0, i()).toReversed() as any,
+                    previous: exercise.attempt.slice(0, i()).toReversed() as any,
                   } satisfies Props<T, K>)}
                 />
                 <Show when={!part().state}>
@@ -431,6 +438,11 @@ export function createView<T extends Schema>(
                     onClick={submit}
                   >
                     Soumettre
+                  </button>
+                </Show>
+                <Show when={part().state && context().reset}>
+                  <button class="rounded-lg bg-gray-100 px-3 py-2 text-gray-400" onClick={reset}>
+                    Reset
                   </button>
                 </Show>
               </>
