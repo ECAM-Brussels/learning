@@ -8,6 +8,7 @@ import {
   createStore,
   For,
   Loading,
+  omit,
   refresh,
   Show,
   useContext,
@@ -327,8 +328,7 @@ export const ExerciseContext = createContext<ExerciseContext<any>>({
   reset: (initialData) => localStorage.removeItem(stringify(initialData)),
 })
 
-type FinalViewProps<T extends Schema> = {
-  data: Student<T>
+type FinalViewProps<T extends Schema> = Student<T> & {
   context?: ExerciseContext<T>
 }
 
@@ -350,9 +350,8 @@ export function createView<T extends Schema>(
     const exerciseContext = useContext(ExerciseContext)
     const context = createMemo((): ExerciseContext<T> => props.context ?? exerciseContext)
 
-    const exercise = createProjection(async () =>
-      grade((await context().fetch(props.data)) ?? props.data),
-    )
+    const data = omit(props, 'context')
+    const exercise = createProjection(async () => grade((await context().fetch(data)) ?? data))
     const parsedQuestion = createMemo(() =>
       v.parse(RawShapeSchema(schema.question as T['question'], 'feedback'), exercise.question),
     )
@@ -382,11 +381,11 @@ export function createView<T extends Schema>(
                   validated().output as Part<T, K, true>,
                 ],
               })
-              await context().save(props.data, graded)
+              await context().save(data, graded)
               refresh(exercise)
             }
             const reset = async () => {
-              await context().reset?.(props.data)
+              await context().reset?.(data)
               refresh(exercise)
             }
 
