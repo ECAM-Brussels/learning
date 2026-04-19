@@ -8,6 +8,7 @@ import {
   createStore,
   For,
   Loading,
+  merge,
   omit,
   refresh,
   Show,
@@ -328,7 +329,10 @@ export const ExerciseContext = createContext<ExerciseContext<any>>({
   reset: (initialData) => localStorage.removeItem(stringify(initialData)),
 })
 
-type FinalViewProps<T extends Schema> = Student<T> & {
+type FinalViewProps<T extends Schema> = Omit<
+  v.InferInput<ReturnType<typeof buildSchemas<T>>['Teacher']>,
+  'name'
+> & {
   context?: ExerciseContext<T>
 }
 
@@ -345,12 +349,12 @@ export function createView<T extends Schema>(
   feedback: ReturnType<typeof defineFeedback<T>>,
   view: View<T>,
 ) {
-  const { Student, grade } = buildSchemas(schema, feedback)
+  const { grade } = buildSchemas(schema, feedback)
   return function Component(props: FinalViewProps<T>) {
     const exerciseContext = useContext(ExerciseContext)
     const context = createMemo((): ExerciseContext<T> => props.context ?? exerciseContext)
 
-    const data = omit(props, 'context')
+    const data = merge({ name: schema.name as T['name'], attempt: [] }, omit(props, 'context'))
     const exercise = createProjection(async () => grade((await context().fetch(data)) ?? data))
     const parsedQuestion = createMemo(() =>
       v.parse(RawShapeSchema(schema.question as T['question'], 'feedback'), exercise.question),

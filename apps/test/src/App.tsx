@@ -15,12 +15,7 @@ export default () => (
           expand(expr)
         `}
       </Code>
-      <Factor
-        name="math/factor"
-        question={{ expr: '(x + {a})(x + {b})' }}
-        params={{ a: [1, 2, 3], b: [1, 2, 3] }}
-        attempt={[]}
-      />
+      <Factor question={{ expr: '(x + {a})(x + {b})' }} params={{ a: [1, 2, 3], b: [1, 2, 3] }} />
     </div>
   </Loading>
 )
