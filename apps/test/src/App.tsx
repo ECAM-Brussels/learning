@@ -1,5 +1,5 @@
 import Code from '@learning/components/Code'
-import Factor from '@learning/exercises/math/factor/index'
+import Factor from '@learning/exercises/math/factor'
 import dedent from 'dedent'
 import { Loading } from 'solid-js'
 import './style.css'

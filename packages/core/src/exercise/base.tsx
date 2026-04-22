@@ -184,7 +184,7 @@ type Props<T extends Schema, K extends keyof T['steps'], F extends boolean = tru
   } & (F extends true ? Partial<{ correct: boolean; score: [number, number] }> : {})
 >
 
-type Feedback<T extends Schema, K extends keyof T['steps']> = (
+export type Feedback<T extends Schema, K extends keyof T['steps']> = (
   props: Required<Props<T, K, false>>,
 ) => MaybeAsync<{ correct: boolean; score: [number, number]; next: keyof T['steps'] | null }>
 
@@ -309,9 +309,10 @@ type FieldProps<T extends Schema, K extends keyof T['steps']> = {
     | `question.${keyof T['question'] & string}`
     | `state.${keyof T['steps'][K]['state'] & string}`
 }
-type View<T extends Schema> = {
-  [K in keyof T['steps']]: (props: Props<T, K>, Field: Component<FieldProps<T, K>>) => JSX.Element
-}
+export type View<T extends Schema, K extends keyof T['steps'] = keyof T['steps']> = (
+  props: Props<T, K>,
+  Field: Component<FieldProps<T, K>>,
+) => JSX.Element
 
 type ExerciseContext<T extends Schema> = {
   fetch: (initialData: Student<T>) => MaybeAsync<Student<T>> | undefined
@@ -347,7 +348,7 @@ type FinalViewProps<T extends Schema> = Omit<
 export function createView<T extends Schema>(
   schema: T,
   feedback: ReturnType<typeof defineFeedback<T>>,
-  view: View<T>,
+  view: { [K in keyof T['steps']]: View<T, K> },
 ) {
   const { grade } = buildSchemas(schema, feedback)
   return function Component(props: FinalViewProps<T>) {
