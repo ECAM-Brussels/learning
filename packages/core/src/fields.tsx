@@ -1,8 +1,20 @@
 import Latex from '@learning/components/Latex'
+import Markdown from '@learning/components/Markdown'
 import { createMemo, Show } from 'solid-js'
 import * as v from 'valibot'
 import { defineField } from './exercise/base'
 import { expr } from './expr'
+
+export function Text(label: string) {
+  return defineField({
+    label,
+    base: v.string(),
+    feedback: v.string(),
+    Component: (props) => {
+      return <Markdown value={props.value} />
+    },
+  })
+}
 
 export function Math(label: string) {
   const base = v.pipe(

@@ -9,4 +9,4 @@ export {
   type View,
 } from './src/exercise/base'
 export { Expression, expr } from './src/expr'
-export { Math } from './src/fields'
+export { Math, Text } from './src/fields'
