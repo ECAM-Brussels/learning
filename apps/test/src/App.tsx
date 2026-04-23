@@ -1,5 +1,6 @@
 import Code from '@learning/components/Code'
 import Factor from '@learning/exercises/math/factor'
+import Simple from '@learning/exercises/math/simple'
 import dedent from 'dedent'
 import { Loading } from 'solid-js'
 import './style.css'
@@ -16,6 +17,12 @@ export default () => (
         `}
       </Code>
       <Factor question={{ expr: '(x + {a})(x + {b})' }} params={{ a: [1, 2, 3], b: [1, 2, 3] }} />
+      <Simple
+        question={{
+          label: 'Réponse:',
+          answer: String.raw`34`,
+        }}
+      />
     </div>
   </Loading>
 )
