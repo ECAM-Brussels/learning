@@ -334,6 +334,7 @@ type FinalViewProps<T extends Schema> = Omit<
   v.InferInput<ReturnType<typeof buildSchemas<T>>['Teacher']>,
   'name'
 > & {
+  class?: JSX.ClassList | string
   context?: ExerciseContext<T>
 }
 
@@ -362,98 +363,100 @@ export function createView<T extends Schema>(
     )
     const parsedAttempt = createMemo(() => v.parse(Attempt(schema, 'feedback'), exercise.attempt))
     return (
-      <Loading fallback="Génération de l'exercice...">
-        <For each={parsedAttempt()}>
-          {<K extends keyof T['steps']>(
-            part: () =>
-              | Part<T, K, true>
-              | { step: K; state?: never; correct?: never; score?: never },
-            i: () => number,
-          ) => {
-            const [state, setState] = createStore<Partial<Part<T, K>>>(() => part().state ?? {})
-            const validated = createMemo(() =>
-              v.safeParse(Part(schema, part().step, true), {
-                ...part(),
-                state,
-              }),
-            )
-            const submit = async () => {
-              if (!validated().success) return
-              const graded = await grade({
-                ...exercise,
-                attempt: [
-                  ...exercise.attempt.toSpliced(-1),
-                  validated().output as Part<T, K, true>,
-                ],
-              })
-              await context().save(data, graded)
-              refresh(exercise)
-            }
-            const reset = async () => {
-              await context().reset?.(data)
-              refresh(exercise)
-            }
-
-            function Field(props: FieldProps<T, K>) {
-              const name = () => props.name.split('.')[1]!
-              const isQuestion = createMemo(() => props.name.startsWith('question'))
-              const field = createMemo((): Field => {
-                if (isQuestion()) {
-                  return schema.question[name() as keyof T['question']]
-                }
-                return schema.steps[part().step].state[name()]
-              })
-              const value = () =>
-                isQuestion()
-                  ? exercise.question[name() as keyof T['question']]
-                  : part().state?.[name()]
-              return (
-                <Dynamic
-                  component={field().Component}
-                  name={name()}
-                  label={field().label}
-                  question={isQuestion()}
-                  value={value()}
-                  state={state}
-                  setState={setState}
-                  readOnly={!!part().state}
-                />
+      <div class={props.class}>
+        <Loading fallback="Génération de l'exercice...">
+          <For each={parsedAttempt()}>
+            {<K extends keyof T['steps']>(
+              part: () =>
+                | Part<T, K, true>
+                | { step: K; state?: never; correct?: never; score?: never },
+              i: () => number,
+            ) => {
+              const [state, setState] = createStore<Partial<Part<T, K>>>(() => part().state ?? {})
+              const validated = createMemo(() =>
+                v.safeParse(Part(schema, part().step, true), {
+                  ...part(),
+                  state,
+                }),
               )
-            }
-            return (
-              <>
-                <Dynamic
-                  component={partialRight(view[part().step], Field)}
-                  {...({
-                    question: parsedQuestion(),
-                    state: part().state,
-                    previous: exercise.attempt.slice(0, i()).toReversed() as any,
-                  } satisfies Props<T, K>)}
-                />
-                <Show when={!part().state}>
-                  <button
-                    class={[
-                      'rounded-lg bg-green-800 px-3 py-2 text-green-100',
-                      {
-                        'cursor-not-allowed opacity-15': !validated().success,
-                      },
-                    ]}
-                    disabled={!validated().success}
-                    onClick={submit}
-                  >
-                    Soumettre
-                  </button>
-                </Show>
-                <Show when={part().state && context().reset}>
-                  <button class="rounded-lg bg-gray-100 px-3 py-2 text-gray-400" onClick={reset}>
-                    Reset
-                  </button>
-                </Show>
-              </>
-            )
-          }}
-        </For>
-      </Loading>
+              const submit = async () => {
+                if (!validated().success) return
+                const graded = await grade({
+                  ...exercise,
+                  attempt: [
+                    ...exercise.attempt.toSpliced(-1),
+                    validated().output as Part<T, K, true>,
+                  ],
+                })
+                await context().save(data, graded)
+                refresh(exercise)
+              }
+              const reset = async () => {
+                await context().reset?.(data)
+                refresh(exercise)
+              }
+
+              function Field(props: FieldProps<T, K>) {
+                const name = () => props.name.split('.')[1]!
+                const isQuestion = createMemo(() => props.name.startsWith('question'))
+                const field = createMemo((): Field => {
+                  if (isQuestion()) {
+                    return schema.question[name() as keyof T['question']]
+                  }
+                  return schema.steps[part().step].state[name()]
+                })
+                const value = () =>
+                  isQuestion()
+                    ? exercise.question[name() as keyof T['question']]
+                    : part().state?.[name()]
+                return (
+                  <Dynamic
+                    component={field().Component}
+                    name={name()}
+                    label={field().label}
+                    question={isQuestion()}
+                    value={value()}
+                    state={state}
+                    setState={setState}
+                    readOnly={!!part().state}
+                  />
+                )
+              }
+              return (
+                <>
+                  <Dynamic
+                    component={partialRight(view[part().step], Field)}
+                    {...({
+                      question: parsedQuestion(),
+                      state: part().state,
+                      previous: exercise.attempt.slice(0, i()).toReversed() as any,
+                    } satisfies Props<T, K>)}
+                  />
+                  <Show when={!part().state}>
+                    <button
+                      class={[
+                        'rounded-lg bg-green-800 px-3 py-2 text-green-100',
+                        {
+                          'cursor-not-allowed opacity-15': !validated().success,
+                        },
+                      ]}
+                      disabled={!validated().success}
+                      onClick={submit}
+                    >
+                      Soumettre
+                    </button>
+                  </Show>
+                  <Show when={part().state && context().reset}>
+                    <button class="rounded-lg bg-gray-100 px-3 py-2 text-gray-400" onClick={reset}>
+                      Reset
+                    </button>
+                  </Show>
+                </>
+              )
+            }}
+          </For>
+        </Loading>
+      </div>
     )
   }
 }
