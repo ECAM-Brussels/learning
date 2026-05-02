@@ -206,17 +206,6 @@ function Attempt<T extends Schema, V extends 'base' | 'feedback'>(schema: T, sta
   )
 }
 
-function Param<T extends boolean>(transform: T) {
-  const value = v.union([v.number(), v.string()])
-  const base = v.array(value)
-  const withTransform = v.pipe(base, v.transform(sample))
-  return (transform ? withTransform : base) as T extends true ? typeof withTransform : typeof base
-}
-
-function Params<T extends boolean>(transform: T) {
-  return v.record(v.string(), Param(transform))
-}
-
 /**
  * Create the complete valibot schemas associated with an exercise
  *
@@ -234,76 +223,65 @@ function Params<T extends boolean>(transform: T) {
  * @param schema - Basic, raw, exercise schema
  * @param feedback - Record that describe how to grade an exercise
  */
-export function buildSchemas<T extends Schema>(
+export function Exercise<T extends Schema>(schema: T) {
+  return v.object({
+    name: v.literal(schema.name as T['name']),
+    question: RawShapeSchema(schema.question as T['question'], 'base'),
+    attempt: Attempt(schema, 'base'),
+    params: v.optional(v.record(v.string(), v.array(v.union([v.number(), v.string()])))),
+  })
+}
+type Exercise<T extends Schema> = Infer<typeof Exercise<T>>
+type GradedExercise<T extends Schema> = Omit<Exercise<T>, 'params'>
+
+export const grade = async function <T extends Schema>(
   schema: T,
   feedback: ReturnType<typeof defineFeedback<T>>,
-) {
-  return {
-    Teacher: v.object({
-      name: v.literal(schema.name as T['name']),
-      question: RawShapeSchema(schema.question as T['question'], 'base'),
-      params: v.optional(Params(false)),
-    }),
-    Student: v.pipeAsync(
-      v.object({
-        name: v.literal(schema.name as T['name']),
-        question: RawShapeSchema(schema.question as T['question'], 'base'),
-        attempt: Attempt(schema, 'base'),
-        params: v.optional(Params(true)),
-      }),
-      // TODO: calls need to be deduped, waiting for solid-router release?
-      v.transformAsync(async ({ attempt, question: q, params, ...exercise }) => {
-        let question = q
-        function subs<T extends any>(param: string, value: string, v: T): T {
-          if (typeof v === 'string') {
-            return v.replaceAll(`{${param}}`, value) as T
-          } else if (Array.isArray(v)) {
-            return v.map(subs.bind(null, param, value)) as T
-          } else if (typeof v === 'object' && v !== null) {
-            return mapValues(v, subs.bind(null, param, value)) as T
-          }
-          return v
-        }
-        for (const [param, value] of Object.entries(params ?? {})) {
-          question = subs(param, String(value), question)
-        }
-        const parsedQuestion = v.parse(
-          RawShapeSchema(schema.question as T['question'], 'feedback'),
-          question,
-        )
-        const parsedAttempt = v.parse(Attempt(schema, 'feedback'), attempt)
-        let modifiedAttempt = attempt
-        if (attempt.length === 0 && schema.transform) {
-          question = await schema.transform(parsedQuestion)
-        }
-        modifiedAttempt = await mapAsync(modifiedAttempt, async (part, i) => {
-          if ('state' in part && 'state' in parsedAttempt[i]! && part.state) {
-            const result = await feedback[part.step]({
-              question: parsedQuestion,
-              state: parsedAttempt[i]!.state ?? part.state,
-              previous: parsedAttempt.slice(0, i).toReversed() as any,
-            })
-            return { ...part, ...result }
-          }
-          return part
-        })
-        if (modifiedAttempt.length === 0) modifiedAttempt.push({ step: 'start' })
-        const lastPart = modifiedAttempt.at(-1)
-        if (lastPart && 'next' in lastPart && lastPart.next) {
-          modifiedAttempt.push({ step: lastPart.next })
-        }
-        return { ...exercise, question, attempt: modifiedAttempt }
-      }),
-    ),
-    get grade() {
-      return v.parserAsync(this.Student)
-    },
+  exercise: Exercise<T>,
+): Promise<GradedExercise<T>> {
+  const { question: q, attempt, params, ...rest } = exercise
+  let question = q
+  function subs<T extends any>(param: string, value: string, v: T): T {
+    if (typeof v === 'string') {
+      return v.replaceAll(`{${param}}`, value) as T
+    } else if (Array.isArray(v)) {
+      return v.map(subs.bind(null, param, value)) as T
+    } else if (typeof v === 'object' && v !== null) {
+      return mapValues(v, subs.bind(null, param, value)) as T
+    }
+    return v
   }
+  for (const [param, value] of Object.entries(params ?? {})) {
+    question = subs(param, String(sample(value)), question)
+  }
+  const parsedQuestion = v.parse(
+    RawShapeSchema(schema.question as T['question'], 'feedback'),
+    question,
+  )
+  const parsedAttempt = v.parse(Attempt(schema, 'feedback'), attempt)
+  let modifiedAttempt = attempt
+  if (attempt.length === 0 && schema.transform) {
+    question = await schema.transform(parsedQuestion)
+  }
+  modifiedAttempt = await mapAsync(modifiedAttempt, async (part, i) => {
+    if ('state' in part && 'state' in parsedAttempt[i]! && part.state) {
+      const result = await feedback[part.step]({
+        question: parsedQuestion,
+        state: parsedAttempt[i]!.state ?? part.state,
+        previous: parsedAttempt.slice(0, i).toReversed() as any,
+      })
+      return { ...part, ...result }
+    }
+    return part
+  })
+  if (modifiedAttempt.length === 0) modifiedAttempt.push({ step: 'start' })
+  const lastPart = modifiedAttempt.at(-1)
+  if (lastPart && 'next' in lastPart && lastPart.next) {
+    modifiedAttempt.push({ step: lastPart.next })
+  }
+  return { ...rest, question, attempt: modifiedAttempt }
 }
 
-type Student<T extends Schema> =
-  | v.InferInput<ReturnType<typeof buildSchemas<T>>['Student']>
-  | v.InferOutput<ReturnType<typeof buildSchemas<T>>['Student']>
 type FieldProps<T extends Schema, K extends keyof T['steps']> = {
   name:
     | `question.${keyof T['question'] & string}`
@@ -315,12 +293,9 @@ export type View<T extends Schema, K extends keyof T['steps'] = keyof T['steps']
 ) => JSX.Element
 
 type ExerciseContext<T extends Schema> = {
-  fetch: (initialData: Student<T>) => MaybeAsync<Student<T>> | undefined
-  save: (
-    initialData: Student<T>,
-    exercise: v.InferOutput<ReturnType<typeof buildSchemas<T>>['Student']>,
-  ) => any
-  reset?: (initialData: Student<T>) => void | Promise<void>
+  fetch: (initialData: Exercise<T>) => MaybeAsync<Exercise<T>> | undefined
+  save: (initialData: Exercise<T>, exercise: GradedExercise<T>) => any
+  reset?: (initialData: Exercise<T>) => void | Promise<void>
 }
 
 export const ExerciseContext = createContext<ExerciseContext<any>>({
@@ -330,10 +305,7 @@ export const ExerciseContext = createContext<ExerciseContext<any>>({
   reset: (initialData) => localStorage.removeItem(stringify(initialData)),
 })
 
-type FinalViewProps<T extends Schema> = Omit<
-  v.InferInput<ReturnType<typeof buildSchemas<T>>['Teacher']>,
-  'name'
-> & {
+type FinalViewProps<T extends Schema> = Omit<Exercise<T>, 'name' | 'attempt'> & {
   class?: JSX.ClassList | string
   context?: ExerciseContext<T>
 }
@@ -351,13 +323,14 @@ export function createView<T extends Schema>(
   feedback: ReturnType<typeof defineFeedback<T>>,
   view: { [K in keyof T['steps']]: View<T, K> },
 ) {
-  const { grade } = buildSchemas(schema, feedback)
   return function Component(props: FinalViewProps<T>) {
     const exerciseContext = useContext(ExerciseContext)
     const context = createMemo((): ExerciseContext<T> => props.context ?? exerciseContext)
 
     const data = merge({ name: schema.name as T['name'], attempt: [] }, omit(props, 'context'))
-    const exercise = createProjection(async () => grade((await context().fetch(data)) ?? data))
+    const exercise = createProjection(async () =>
+      grade(schema, feedback, (await context().fetch(data)) ?? data),
+    )
     const parsedQuestion = createMemo(() =>
       v.parse(RawShapeSchema(schema.question as T['question'], 'feedback'), exercise.question),
     )
@@ -381,7 +354,7 @@ export function createView<T extends Schema>(
               )
               const submit = async () => {
                 if (!validated().success) return
-                const graded = await grade({
+                const graded = await grade(schema, feedback, {
                   ...exercise,
                   attempt: [
                     ...exercise.attempt.toSpliced(-1),
