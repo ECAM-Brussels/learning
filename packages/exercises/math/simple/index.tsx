@@ -24,7 +24,7 @@ const feedback = defineFeedback<typeof schema>({
   },
 })
 
-export default createView(schema, feedback, {
+const Component = createView(schema, feedback, {
   start: (props, Field) => {
     const answer = createMemo(() => props.question.answer)
     const attempt = createMemo(() => props.state?.attempt)
@@ -38,3 +38,5 @@ export default createView(schema, feedback, {
     )
   },
 })
+
+export default Component

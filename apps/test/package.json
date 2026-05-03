@@ -11,6 +11,7 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@learning/vite-plugin-build": "workspace:*",
     "@tailwindcss/typography": "^0.5.19",
     "typescript": "^5.7.2",
     "vite": "^8.0.2",

@@ -1,5 +1,5 @@
 import Code from '@learning/components/Code'
-import { ExerciseSequence } from '@learning/core'
+import { $, ExerciseSequence } from '@learning/core'
 import Factor from '@learning/exercises/math/factor'
 import Simple from '@learning/exercises/math/simple'
 import dedent from 'dedent'
@@ -18,14 +18,10 @@ export default () => (
         `}
       </Code>
       <ExerciseSequence>
-        <Factor question={{ expr: '(x + {a})(x + {b})' }} params={{ a: [1, 2, 3], b: [1, 2, 3] }} />
-        <Simple
-          question={{
-            label: 'Réponse:',
-            answer: String.raw`34`,
-          }}
-        />
+        <Factor expr={$((ctx) => ctx.expr('(x - 2) (x - 4) (x - 2)').expand().latex())} />
+        <Factor expr={$((ctx) => ctx.expr('(x - 1)^2').expand().latex())} />
       </ExerciseSequence>
+      <Simple label="Réponse hello" answer="1" />
     </div>
   </Loading>
 )

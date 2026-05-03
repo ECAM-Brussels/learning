@@ -305,10 +305,15 @@ export const ExerciseContext = createContext<ExerciseContext<any>>({
   reset: (initialData) => localStorage.removeItem(stringify(initialData)),
 })
 
-type FinalViewProps<T extends Schema> = Omit<Exercise<T>, 'name' | 'attempt'> & {
-  class?: JSX.ClassList | string
-  context?: ExerciseContext<T>
-}
+type FinalViewProps<T extends Schema> = Prettify<
+  Exercise<T>['question'] & {
+    /**
+     * Parameters to be substituted when generating the exercise
+     */
+    params?: Exercise<T>['params']
+    class?: JSX.ClassList | string
+  }
+>
 
 /**
  * Creates the component associated with the exercise
@@ -322,14 +327,17 @@ export function createView<T extends Schema>(
   schema: T,
   feedback: ReturnType<typeof defineFeedback<T>>,
   view: { [K in keyof T['steps']]: View<T, K> },
-) {
-  return function Component(props: FinalViewProps<T>) {
-    const exerciseContext = useContext(ExerciseContext)
-    const context = createMemo((): ExerciseContext<T> => props.context ?? exerciseContext)
+): Component<FinalViewProps<T>> {
+  return function Component(props) {
+    const context = useContext<ExerciseContext<T>>(ExerciseContext)
 
-    const data = merge({ name: schema.name as T['name'], attempt: [] }, omit(props, 'context'))
+    const question = createProjection(() => ({
+      question: omit(props, 'class', 'context', 'params') as unknown as Exercise<T>['question'],
+    }))
+    const params = createProjection(() => ({ params: props.params }))
+    const data = merge({ name: schema.name as T['name'], attempt: [] }, params, question)
     const exercise = createProjection(async () =>
-      grade(schema, feedback, (await context().fetch(data)) ?? data),
+      grade(schema, feedback, (await context.fetch(data)) ?? data),
     )
     const parsedQuestion = createMemo(() =>
       v.parse(RawShapeSchema(schema.question as T['question'], 'feedback'), exercise.question),
@@ -361,11 +369,11 @@ export function createView<T extends Schema>(
                     validated().output as Part<T, K, true>,
                   ],
                 })
-                await context().save(data, graded)
+                await context.save(data, graded)
                 refresh(exercise)
               }
               const reset = async () => {
-                await context().reset?.(data)
+                await context.reset?.(data)
                 refresh(exercise)
               }
 
@@ -419,7 +427,7 @@ export function createView<T extends Schema>(
                       Soumettre
                     </button>
                   </Show>
-                  <Show when={part().state && context().reset}>
+                  <Show when={part().state && context.reset}>
                     <button class="rounded-lg bg-gray-100 px-3 py-2 text-gray-400" onClick={reset}>
                       Reset
                     </button>

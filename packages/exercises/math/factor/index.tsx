@@ -29,7 +29,16 @@ export const feedback = defineFeedback<typeof schema>({
   },
 })
 
-export default createView(schema, feedback, {
+/**
+ * Exercise asking to fully factor a given expression
+ *
+ * @example
+ * // The expression can be entered as a LaTeX string
+ * <Factor expr="x^2 - 5x + 6" />
+ * @example
+ * <Factor expr="(x - {a})(x - {b})" params={{ a: [1, 2, 3], b: [1, 2, 3] }} />
+ */
+const Component = createView(schema, feedback, {
   start: start.Component,
   root: (props, Field) => {
     const root = createMemo(() => props.state?.root)
@@ -49,3 +58,5 @@ export default createView(schema, feedback, {
     )
   },
 })
+
+export default Component
