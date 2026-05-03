@@ -1,5 +1,5 @@
 import Code from '@learning/components/Code'
-import { $, ExerciseSequence } from '@learning/core'
+import { $, ExerciseSequence, expr } from '@learning/core'
 import Factor from '@learning/exercises/math/factor'
 import Simple from '@learning/exercises/math/simple'
 import dedent from 'dedent'
@@ -18,8 +18,8 @@ export default () => (
         `}
       </Code>
       <ExerciseSequence>
-        <Factor expr={$((ctx) => ctx.expr('(x - 2) (x - 4) (x - 2)').expand().latex())} />
-        <Factor expr={$((ctx) => ctx.expr('(x - 1)^2').expand().latex())} />
+        <Factor expr={$(() => expr('(x - 2) (x - 1)').expand().latex())} />
+        <Factor expr={$(() => expr('(x - 1)^2').expand().latex())} />
       </ExerciseSequence>
       <Simple label="Réponse hello" answer="1" />
     </div>
