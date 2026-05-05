@@ -28,6 +28,7 @@
         "@solidjs/web": "catalog:",
         "@tailwindcss/vite": "^4.2.2",
         "dedent": "^1.7.2",
+        "es-toolkit": "catalog:",
         "solid-js": "catalog:",
         "tailwindcss": "^4.2.2",
         "valibot": "catalog:",

@@ -6,7 +6,6 @@ import * as start from './start'
 export const schema = defineSchema({
   name: 'math/factor',
   question: { expr: Math('Expression à factoriser') },
-  transform: async (question) => ({ expr: await question.expr.expand().latex() }),
   steps: {
     start: {
       state: {

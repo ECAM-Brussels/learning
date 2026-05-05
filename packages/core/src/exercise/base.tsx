@@ -1,11 +1,12 @@
 import { Dynamic } from '@solidjs/web'
-import { mapAsync, mapValues, partialRight, sample } from 'es-toolkit'
+import { mapAsync, mapValues, partialRight } from 'es-toolkit'
 import stringify from 'safe-stable-stringify'
 import {
   createContext,
   createMemo,
   createProjection,
   createStore,
+  Errored,
   For,
   Loading,
   merge,
@@ -111,22 +112,20 @@ type Infer<
 export function defineSchema<
   const N extends string,
   Q extends RawShape,
-  T extends (question: InferFromShape<Q, 'feedback'>) => Promise<InferFromShape<Q, 'base'>>,
   const S extends Record<string, { previous?: (keyof S)[]; state: RawShape }> & {
     start: { previous?: []; state: RawShape }
   },
->(schema: { name: N; question: Q; transform?: T; steps: S }) {
+>(schema: { name: N; question: Q; steps: S }) {
   return schema
 }
 
 type Schema<
   N extends string = any,
   Q extends RawShape = any,
-  T extends (question: InferFromShape<Q, 'feedback'>) => Promise<InferFromShape<Q, 'base'>> = any,
   S extends Record<string, { previous?: (keyof S)[]; state: RawShape }> & {
     start: { previous?: []; state: RawShape }
   } = any,
-> = ReturnType<typeof defineSchema<N, Q, T, S>>
+> = ReturnType<typeof defineSchema<N, Q, S>>
 
 function Part<
   T extends Schema,
@@ -206,29 +205,11 @@ function Attempt<T extends Schema, V extends 'base' | 'feedback'>(schema: T, sta
   )
 }
 
-/**
- * Create the complete valibot schemas associated with an exercise
- *
- * These schemas handle generation, grading, and setting up the next step.
- * Their outputs need to be fully serializable for DB storage.
- *
- * Multiple schemas are provided:
- *
- * - `Student`: generates an exercise if necessary, and grade supplied parts.
- *   This is the schema that will be used when a student interacts with an exercise.
- *
- * - `Teacher`: leaves generator params raw, doesn't trigger the generator.
- *   This is the schema that will be used when the teacher creates an assignment.
- *
- * @param schema - Basic, raw, exercise schema
- * @param feedback - Record that describe how to grade an exercise
- */
 export function Exercise<T extends Schema>(schema: T) {
   return v.object({
     name: v.literal(schema.name as T['name']),
     question: RawShapeSchema(schema.question as T['question'], 'base'),
     attempt: Attempt(schema, 'base'),
-    params: v.optional(v.record(v.string(), v.array(v.union([v.number(), v.string()])))),
   })
 }
 type Exercise<T extends Schema> = Infer<typeof Exercise<T>>
@@ -239,31 +220,13 @@ export const grade = async function <T extends Schema>(
   feedback: ReturnType<typeof defineFeedback<T>>,
   exercise: Exercise<T>,
 ): Promise<GradedExercise<T>> {
-  const { question: q, attempt, params, ...rest } = exercise
-  let question = q
-  function subs<T extends any>(param: string, value: string, v: T): T {
-    if (typeof v === 'string') {
-      return v.replaceAll(`{${param}}`, value) as T
-    } else if (Array.isArray(v)) {
-      return v.map(subs.bind(null, param, value)) as T
-    } else if (typeof v === 'object' && v !== null) {
-      return mapValues(v, subs.bind(null, param, value)) as T
-    }
-    return v
-  }
-  for (const [param, value] of Object.entries(params ?? {})) {
-    question = subs(param, String(sample(value)), question)
-  }
+  const { question, attempt, ...rest } = exercise
   const parsedQuestion = v.parse(
     RawShapeSchema(schema.question as T['question'], 'feedback'),
     question,
   )
   const parsedAttempt = v.parse(Attempt(schema, 'feedback'), attempt)
-  let modifiedAttempt = attempt
-  if (attempt.length === 0 && schema.transform) {
-    question = await schema.transform(parsedQuestion)
-  }
-  modifiedAttempt = await mapAsync(modifiedAttempt, async (part, i) => {
+  let modifiedAttempt = await mapAsync(attempt, async (part, i) => {
     if ('state' in part && 'state' in parsedAttempt[i]! && part.state) {
       const result = await feedback[part.step]({
         question: parsedQuestion,
@@ -293,24 +256,20 @@ export type View<T extends Schema, K extends keyof T['steps'] = keyof T['steps']
 ) => JSX.Element
 
 type ExerciseContext<T extends Schema> = {
-  fetch: (initialData: Exercise<T>) => MaybeAsync<Exercise<T>> | undefined
-  save: (initialData: Exercise<T>, exercise: GradedExercise<T>) => any
-  reset?: (initialData: Exercise<T>) => void | Promise<void>
+  fetch: (id: string) => MaybeAsync<Exercise<T>> | undefined
+  save: (id: string, exercise: GradedExercise<T>) => any
+  reset?: (id: string) => void | Promise<void>
 }
 
 export const ExerciseContext = createContext<ExerciseContext<any>>({
-  fetch: (initialData) => JSON.parse(localStorage.getItem(stringify(initialData)) ?? 'null'),
-  save: (initialData, exercise) =>
-    localStorage.setItem(stringify(initialData), stringify(exercise)),
-  reset: (initialData) => localStorage.removeItem(stringify(initialData)),
+  fetch: (id) => JSON.parse(localStorage.getItem(id) ?? 'null'),
+  save: (id, exercise) => localStorage.setItem(id, stringify(exercise)),
+  reset: (id) => localStorage.removeItem(id),
 })
 
 type FinalViewProps<T extends Schema> = Prettify<
   Exercise<T>['question'] & {
-    /**
-     * Parameters to be substituted when generating the exercise
-     */
-    params?: Exercise<T>['params']
+    id?: string
     class?: JSX.ClassList | string
   }
 >
@@ -330,17 +289,17 @@ export function createView<T extends Schema>(
 ): Component<FinalViewProps<T>> {
   return function Component(props) {
     const context = useContext<ExerciseContext<T>>(ExerciseContext)
+    const key = () => props.id ?? ''
 
     const question = createProjection(() => ({
-      question: omit(props, 'class', 'context', 'params') as unknown as Exercise<T>['question'],
+      question: omit(props, 'class') as unknown as Exercise<T>['question'],
     }))
-    const params = createProjection(() => ({ params: props.params }))
-    const data = merge({ name: schema.name as T['name'], attempt: [] }, params, question)
+    const data = merge({ name: schema.name as T['name'], attempt: [] }, question)
     const exercise = createProjection(async () =>
-      grade(schema, feedback, (await context.fetch(data)) ?? data),
+      grade(schema, feedback, (await context.fetch(key())) ?? data),
     )
     const parsedQuestion = createMemo(() =>
-      v.parse(RawShapeSchema(schema.question as T['question'], 'feedback'), exercise.question),
+      v.parse(RawShapeSchema(schema.question as T['question'], 'feedback'), question.question),
     )
     const parsedAttempt = createMemo(() => v.parse(Attempt(schema, 'feedback'), exercise.attempt))
     return (
@@ -369,11 +328,11 @@ export function createView<T extends Schema>(
                     validated().output as Part<T, K, true>,
                   ],
                 })
-                await context.save(data, graded)
+                await context.save(key(), graded)
                 refresh(exercise)
               }
               const reset = async () => {
-                await context.reset?.(data)
+                await context.reset?.(key())
                 refresh(exercise)
               }
 
@@ -404,14 +363,14 @@ export function createView<T extends Schema>(
                 )
               }
               return (
-                <>
+                <Errored fallback={(error) => <pre>{JSON.stringify(error, null, 2)}</pre>}>
                   <Dynamic
                     component={partialRight(view[part().step], Field)}
                     {...({
                       question: parsedQuestion(),
                       state: part().state,
-                      previous: exercise.attempt.slice(0, i()).toReversed() as any,
-                    } satisfies Props<T, K>)}
+                      previous: parsedAttempt().slice(0, i()).toReversed() as any,
+                    } as Props<T, K>)}
                   />
                   <Show when={!part().state}>
                     <button
@@ -432,7 +391,7 @@ export function createView<T extends Schema>(
                       Reset
                     </button>
                   </Show>
-                </>
+                </Errored>
               )
             }}
           </For>

@@ -7,21 +7,18 @@ type Props = {
 }
 
 export function ExerciseSequence(props: Props) {
-  const id = () => `${window.location.pathname},${window.location.search},${props.id}`
+  const key = (i: number) => `sequence:${window.location.pathname}:${window.location.search}:${i}`
   return (
     <Repeat count={props.children.length}>
       {(i) => {
         return (
           <ExerciseContext
             value={{
-              fetch: (initialData) => {
-                const stored = JSON.parse(localStorage.getItem(id()) ?? '[]')
-                return stored.at(i) ?? initialData
+              fetch: () => {
+                return JSON.parse(localStorage.getItem(key(i)) ?? 'null')
               },
-              save: (_initialData, exercise) => {
-                const stored = JSON.parse(localStorage.getItem(id()) ?? '[]')
-                stored[i] = exercise
-                localStorage.setItem(id(), JSON.stringify(stored))
+              save: (_id, exercise) => {
+                localStorage.setItem(key(i), JSON.stringify(exercise))
               },
             }}
           >
