@@ -7,7 +7,8 @@ type Props = {
 }
 
 export function ExerciseSequence(props: Props) {
-  const key = (i: number) => `sequence:${window.location.pathname}:${window.location.search}:${i}`
+  const key = (i: number) =>
+    `sequence:${window.location.pathname}:${window.location.search}:${props.id ?? ''}:${i}`
   return (
     <Repeat count={props.children.length}>
       {(i) => {
