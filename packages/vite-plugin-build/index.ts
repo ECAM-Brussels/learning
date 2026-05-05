@@ -28,11 +28,12 @@ export default function buildPlugin(): Plugin {
           const fn = args[0]
           if (!t.isArrowFunctionExpression(fn) && !t.isFunctionExpression(fn)) return
           const { code: fnCode } = generate(fn)
+          const context = { encrypt, decrypt, expr }
           const code = fn.async
-            ? `return (async () => await (${fnCode})({ expr, encrypt, decrypt }))()`
-            : `return (${fnCode})({ expr, encrypt, decrypt })`
-          const runner = new Function('expr', 'encrypt', 'decrypt', code)
-          const promise = Promise.resolve(runner(expr, encrypt, decrypt)).then((result) => {
+            ? `return (async () => await (${fnCode})({${Object.keys(context).join(', ')}}))()`
+            : `return (${fnCode})({${Object.keys(context).join(', ')}})`
+          const runner = new Function(...Object.keys(context), code)
+          const promise = Promise.resolve(runner(...Object.values(context))).then((result) => {
             path.replaceWith(toLiteral(result))
           })
           promises.push(promise)
