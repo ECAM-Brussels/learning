@@ -2,7 +2,7 @@ import generate from '@babel/generator'
 import { parse } from '@babel/parser'
 import traverse from '@babel/traverse'
 import * as t from '@babel/types'
-import { expr } from '@learning/core'
+import { decrypt, encrypt, expr } from '@learning/core'
 import type { Plugin } from 'vite'
 
 export default function buildPlugin(): Plugin {
@@ -29,10 +29,10 @@ export default function buildPlugin(): Plugin {
           if (!t.isArrowFunctionExpression(fn) && !t.isFunctionExpression(fn)) return
           const { code: fnCode } = generate(fn)
           const code = fn.async
-            ? `return (async () => await (${fnCode})({ expr }))()`
-            : `return (${fnCode})({ expr })`
-          const runner = new Function('expr', code)
-          const promise = Promise.resolve(runner(expr)).then((result) => {
+            ? `return (async () => await (${fnCode})({ expr, encrypt, decrypt }))()`
+            : `return (${fnCode})({ expr, encrypt, decrypt })`
+          const runner = new Function('expr', 'encrypt', 'decrypt', code)
+          const promise = Promise.resolve(runner(expr, encrypt, decrypt)).then((result) => {
             path.replaceWith(toLiteral(result))
           })
           promises.push(promise)

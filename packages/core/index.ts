@@ -1,3 +1,4 @@
+export { decrypt, encrypt } from './src/crypto'
 export {
   Exercise,
   ExerciseContext,
@@ -11,6 +12,7 @@ export {
 export { ExerciseSequence } from './src/exercise/sequence'
 export { Expression, expr } from './src/expr'
 export { Math, Text } from './src/fields'
+export { default as symapi } from './src/symapi'
 
 /**
  * Macro that marks a build time substitution.
