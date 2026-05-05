@@ -14,8 +14,7 @@ import { createMemo } from 'solid-js'
 export const schema = defineSchema({
   name: 'math/simple',
   question: {
-    label: Text('Libellé de la réponse'),
-    encryptedAnswer: Text('Réponse chiffrée'),
+    answer: Text('Réponse chiffrée'),
   },
   steps: {
     start: {
@@ -27,8 +26,8 @@ export const schema = defineSchema({
 })
 
 const feedback = defineFeedback<typeof schema>({
-  start: async ({ question: { encryptedAnswer }, state: { attempt } }) => {
-    const correct = await compare(attempt.json, encryptedAnswer)
+  start: async ({ question: { answer }, state: { attempt } }) => {
+    const correct = await compare(attempt.json, answer)
     return { correct, score: [Number(correct), 1], next: null }
   },
 })
@@ -36,14 +35,13 @@ const feedback = defineFeedback<typeof schema>({
 const Component = createView(schema, feedback, {
   start: (props, Field) => {
     const attempt = createMemo(() => props.state?.attempt)
-    const encrypted = createMemo(() => props.question.encryptedAnswer)
+    const encrypted = createMemo(() => props.question.answer)
     const correct = createMemo(() => attempt() && compare(attempt()!.json, encrypted()))
     return (
-      <div class="flex items-center justify-start gap-4">
-        <Field name="question.label" />
+      <>
         <Field name="state.attempt" />
         <CheckMark value={correct()} />
-      </div>
+      </>
     )
   },
 })

@@ -9,7 +9,6 @@ import {
   Errored,
   For,
   Loading,
-  merge,
   omit,
   refresh,
   Show,
@@ -291,15 +290,15 @@ export function createView<T extends Schema>(
     const context = useContext<ExerciseContext<T>>(ExerciseContext)
     const key = () => props.id ?? ''
 
-    const question = createProjection(() => ({
-      question: omit(props, 'class') as unknown as Exercise<T>['question'],
+    const fetched = createMemo(() => context.fetch(key()))
+    const data = createProjection(() => ({
+      name: schema.name as T['name'],
+      question: fetched()?.question ?? (omit(props, 'class') as unknown as Exercise<T>['question']),
+      attempt: fetched()?.attempt ?? [],
     }))
-    const data = merge({ name: schema.name as T['name'], attempt: [] }, question)
-    const exercise = createProjection(async () =>
-      grade(schema, feedback, (await context.fetch(key())) ?? data),
-    )
+    const exercise = createProjection(async () => grade(schema, feedback, fetched() ?? data))
     const parsedQuestion = createMemo(() =>
-      v.parse(RawShapeSchema(schema.question as T['question'], 'feedback'), question.question),
+      v.parse(RawShapeSchema(schema.question as T['question'], 'feedback'), data.question),
     )
     const parsedAttempt = createMemo(() => v.parse(Attempt(schema, 'feedback'), exercise.attempt))
     return (

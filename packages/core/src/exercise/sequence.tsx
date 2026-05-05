@@ -11,22 +11,17 @@ export function ExerciseSequence(props: Props) {
     `sequence:${window.location.pathname}:${window.location.search}:${props.id ?? ''}:${i}`
   return (
     <Repeat count={props.children.length}>
-      {(i) => {
-        return (
-          <ExerciseContext
-            value={{
-              fetch: () => {
-                return JSON.parse(localStorage.getItem(key(i)) ?? 'null')
-              },
-              save: (_id, exercise) => {
-                localStorage.setItem(key(i), JSON.stringify(exercise))
-              },
-            }}
-          >
-            {props.children[i]}
-          </ExerciseContext>
-        )
-      }}
+      {(i) => (
+        <ExerciseContext
+          value={{
+            fetch: () => JSON.parse(localStorage.getItem(key(i)) ?? 'null'),
+            save: (_id, exercise) => localStorage.setItem(key(i), JSON.stringify(exercise)),
+            reset: () => localStorage.removeItem(key(i)),
+          }}
+        >
+          {props.children[i]}
+        </ExerciseContext>
+      )}
     </Repeat>
   )
 }
