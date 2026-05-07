@@ -4,12 +4,9 @@ import stringify from 'safe-stable-stringify'
 import {
   createContext,
   createMemo,
-  createProjection,
   createStore,
   Errored,
   For,
-  Loading,
-  omit,
   refresh,
   Show,
   useContext,
@@ -204,14 +201,19 @@ function Attempt<T extends Schema, V extends 'base' | 'feedback'>(schema: T, sta
   )
 }
 
-export function Exercise<T extends Schema>(schema: T) {
+export function Exercise<T extends Schema, S extends 'base' | 'feedback'>(
+  schema: T,
+  stage: S = 'base' as S,
+) {
   return v.object({
     name: v.literal(schema.name as T['name']),
-    question: RawShapeSchema(schema.question as T['question'], 'base'),
-    attempt: Attempt(schema, 'base'),
+    question: RawShapeSchema(schema.question as T['question'], stage),
+    attempt: Attempt(schema, stage),
   })
 }
-type Exercise<T extends Schema> = Infer<typeof Exercise<T>>
+type Exercise<T extends Schema, S extends 'base' | 'feedback' = 'base'> = Infer<
+  typeof Exercise<T, S>
+>
 type GradedExercise<T extends Schema> = Omit<Exercise<T>, 'params'>
 
 export const grade = async function <T extends Schema>(
@@ -220,17 +222,13 @@ export const grade = async function <T extends Schema>(
   exercise: Exercise<T>,
 ): Promise<GradedExercise<T>> {
   const { question, attempt, ...rest } = exercise
-  const parsedQuestion = v.parse(
-    RawShapeSchema(schema.question as T['question'], 'feedback'),
-    question,
-  )
-  const parsedAttempt = v.parse(Attempt(schema, 'feedback'), attempt)
+  const transformed = v.parse(Exercise(schema, 'feedback'), exercise)
   let modifiedAttempt = await mapAsync(attempt, async (part, i) => {
-    if ('state' in part && 'state' in parsedAttempt[i]! && part.state) {
+    if ('state' in part && 'state' in transformed.attempt[i]! && part.state) {
       const result = await feedback[part.step]({
-        question: parsedQuestion,
-        state: parsedAttempt[i]!.state ?? part.state,
-        previous: parsedAttempt.slice(0, i).toReversed() as any,
+        question: transformed.question,
+        state: transformed.attempt[i]!.state ?? part.state,
+        previous: transformed.attempt.slice(0, i).toReversed() as any,
       })
       return { ...part, ...result }
     }
@@ -290,111 +288,109 @@ export function createView<T extends Schema>(
     const context = useContext<ExerciseContext<T>>(ExerciseContext)
     const key = () => props.id ?? ''
 
-    const fetched = createMemo(() => context.fetch(key()))
-    const data = createProjection(() => ({
-      name: schema.name as T['name'],
-      question: fetched()?.question ?? (omit(props, 'class') as unknown as Exercise<T>['question']),
-      attempt: fetched()?.attempt ?? [],
-    }))
-    const exercise = createProjection(async () => grade(schema, feedback, fetched() ?? data))
-    const parsedQuestion = createMemo(() =>
-      v.parse(RawShapeSchema(schema.question as T['question'], 'feedback'), data.question),
-    )
-    const parsedAttempt = createMemo(() => v.parse(Attempt(schema, 'feedback'), exercise.attempt))
+    const exercise = createMemo(async () => {
+      const { id, class: _class, ...question } = props
+      const fetched = await context.fetch(key())
+      return {
+        name: schema.name,
+        question,
+        attempt: [{ step: 'start' }],
+        ...fetched,
+      } as GradedExercise<T>
+    })
+    const transformed = createMemo(() => v.parse(Exercise(schema, 'feedback'), exercise()))
     return (
       <div class={props.class}>
-        <Loading fallback="Génération de l'exercice...">
-          <For each={parsedAttempt()}>
-            {<K extends keyof T['steps']>(
-              part: () =>
-                | Part<T, K, true>
-                | { step: K; state?: never; correct?: never; score?: never },
-              i: () => number,
-            ) => {
-              const [state, setState] = createStore<Partial<Part<T, K>>>(() => part().state ?? {})
-              const validated = createMemo(() =>
-                v.safeParse(Part(schema, part().step, true), {
-                  ...part(),
-                  state,
-                }),
-              )
-              const submit = async () => {
-                if (!validated().success) return
-                const graded = await grade(schema, feedback, {
-                  ...exercise,
-                  attempt: [
-                    ...exercise.attempt.toSpliced(-1),
-                    validated().output as Part<T, K, true>,
-                  ],
-                })
-                await context.save(key(), graded)
-                refresh(exercise)
-              }
-              const reset = async () => {
-                await context.reset?.(key())
-                refresh(exercise)
-              }
+        <For each={transformed().attempt}>
+          {<K extends keyof T['steps']>(
+            part: () =>
+              | Part<T, K, true>
+              | { step: K; state?: never; correct?: never; score?: never },
+            i: () => number,
+          ) => {
+            const [state, setState] = createStore<Partial<Part<T, K>>>(() => part().state ?? {})
+            const validated = createMemo(() =>
+              v.safeParse(Part(schema, part().step, true), {
+                ...part(),
+                state,
+              }),
+            )
+            const submit = async () => {
+              if (!validated().success) return
+              const graded = await grade(schema, feedback, {
+                ...exercise(),
+                attempt: [
+                  ...exercise().attempt.toSpliced(-1),
+                  validated().output as Part<T, K, true>,
+                ],
+              })
+              await context.save(key(), graded)
+              refresh(exercise)
+            }
+            const reset = async () => {
+              await context.reset?.(key())
+              refresh(exercise)
+            }
 
-              function Field(props: FieldProps<T, K>) {
-                const name = () => props.name.split('.')[1]!
-                const isQuestion = createMemo(() => props.name.startsWith('question'))
-                const field = createMemo((): Field => {
-                  if (isQuestion()) {
-                    return schema.question[name() as keyof T['question']]
-                  }
-                  return schema.steps[part().step].state[name()]
-                })
-                const value = () =>
-                  isQuestion()
-                    ? exercise.question[name() as keyof T['question']]
-                    : part().state?.[name()]
-                return (
-                  <Dynamic
-                    component={field().Component}
-                    name={name()}
-                    label={field().label}
-                    question={isQuestion()}
-                    value={value()}
-                    state={state}
-                    setState={setState}
-                    readOnly={!!part().state}
-                  />
-                )
-              }
+            function Field(props: FieldProps<T, K>) {
+              const name = () => props.name.split('.')[1]!
+              const isQuestion = createMemo(() => props.name.startsWith('question'))
+              const field = createMemo((): Field => {
+                if (isQuestion()) {
+                  return schema.question[name() as keyof T['question']]
+                }
+                return schema.steps[part().step].state[name()]
+              })
+              const value = () =>
+                isQuestion()
+                  ? exercise().question[name() as keyof T['question']]
+                  : part().state?.[name()]
               return (
-                <Errored fallback={(error) => <pre>{JSON.stringify(error, null, 2)}</pre>}>
-                  <Dynamic
-                    component={partialRight(view[part().step], Field)}
-                    {...({
-                      question: parsedQuestion(),
-                      state: part().state,
-                      previous: parsedAttempt().slice(0, i()).toReversed() as any,
-                    } as Props<T, K>)}
-                  />
-                  <Show when={!part().state}>
-                    <button
-                      class={[
-                        'rounded-lg bg-green-800 px-3 py-2 text-green-100',
-                        {
-                          'cursor-not-allowed opacity-15': !validated().success,
-                        },
-                      ]}
-                      disabled={!validated().success}
-                      onClick={submit}
-                    >
-                      Soumettre
-                    </button>
-                  </Show>
-                  <Show when={part().state && context.reset}>
-                    <button class="rounded-lg bg-gray-100 px-3 py-2 text-gray-400" onClick={reset}>
-                      Reset
-                    </button>
-                  </Show>
-                </Errored>
+                <Dynamic
+                  component={field().Component}
+                  name={name()}
+                  label={field().label}
+                  question={isQuestion()}
+                  value={value()}
+                  state={state}
+                  setState={setState}
+                  readOnly={!!part().state}
+                />
               )
-            }}
-          </For>
-        </Loading>
+            }
+            return (
+              <Errored fallback={(error) => <pre>{JSON.stringify(error, null, 2)}</pre>}>
+                <Dynamic
+                  component={partialRight(view[part().step], Field)}
+                  {...({
+                    question: transformed().question,
+                    state: part().state,
+                    previous: transformed().attempt.slice(0, i()).toReversed() as any,
+                  } as Props<T, K>)}
+                />
+                <Show when={!part().state}>
+                  <button
+                    class={[
+                      'rounded-lg bg-green-800 px-3 py-2 text-green-100',
+                      {
+                        'cursor-not-allowed opacity-15': !validated().success,
+                      },
+                    ]}
+                    disabled={!validated().success}
+                    onClick={submit}
+                  >
+                    Soumettre
+                  </button>
+                </Show>
+                <Show when={part().state && context.reset}>
+                  <button class="rounded-lg bg-gray-100 px-3 py-2 text-gray-400" onClick={reset}>
+                    Reset
+                  </button>
+                </Show>
+              </Errored>
+            )
+          }}
+        </For>
       </div>
     )
   }
