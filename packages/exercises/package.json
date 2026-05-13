@@ -11,10 +11,12 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@learning/core": "workspace:*",
     "@learning/components": "workspace:*",
+    "@learning/core": "workspace:*",
+    "@learning/repl": "workspace:*",
     "@solidjs/web": "catalog:",
     "@valibot/to-json-schema": "^1.6.0",
+    "es-toolkit": "catalog:",
     "solid-js": "catalog:",
     "valibot": "catalog:"
   }

@@ -1,8 +1,10 @@
 import Code from '@learning/components/Code'
 import Latex from '@learning/components/Latex'
+import Slide from '@learning/components/Slide'
 import { $, encrypt, ExerciseSequence, expr, Practice } from '@learning/core'
 import Factor from '@learning/exercises/math/factor'
 import Simple from '@learning/exercises/math/simple'
+import Python from '@learning/exercises/python/code'
 import dedent from 'dedent'
 import { sample } from 'es-toolkit'
 import { Loading } from 'solid-js'
@@ -11,18 +13,49 @@ import './style.css'
 export default function App() {
   return (
     <Loading>
-      <div class="container mx-auto">
+      <Slide title="Calcul numérique">
+        <p>
+          L'objectif de cette session est la découverte du langage de programmation <em>Python</em>.
+        </p>
+        <p>
+          Cette page est <strong>interactive</strong>. N'hésitez pas à modifier les codes
+          ci-dessous, et le résultat changera.
+        </p>
+      </Slide>
+      <Slide title="Opérations arithmétiques">
         <Code lang="python" run math>
           {dedent /* python */ `
-            from sympy import *
-            x = Symbol("x")
-            expr = (x + 1) * (x - 2) * (x + 4)
-            expand(expr)
+            3 * 4
           `}
         </Code>
+        <div class="rounded-xl border border-slate-500 bg-slate-50 p-2">
+          <p>
+            Selon Python, que vaut <Latex value="0.1 \times 0.1" />?
+          </p>
+          <div class="flex items-center justify-end gap-4">
+            Votre réponse:
+            <Simple answer={$(() => encrypt(`${0.1 * 0.1}`))} />
+          </div>
+        </div>
+      </Slide>
+      <Slide title="Fonctions">
+        <p>
+          Définis une fonction <Latex value="f(x) = x^2" /> en Python
+        </p>
+        <Python
+          id="x-squared"
+          tests={[
+            { test: 'f(0)', result: '0' },
+            { test: 'f(1)', result: '1' },
+            { test: 'f(2)', result: '4' },
+            { test: 'f(-1)', result: '1' },
+          ]}
+        />
+      </Slide>
+      <main class="container mx-auto">
         <ExerciseSequence>
           <Factor expr={$(() => expr('(x + 2) (x + 1)').expand().latex())} />
-          <Factor expr={'x^2 - 1'} />
+          <Factor expr="x^2 - 1" />
           <div class="prose">
             <h1>Bonjour</h1>
             <p>
@@ -42,7 +75,7 @@ export default function App() {
             return { expr: await expr(`(x - ${x1}) (x - ${x2})`).expand().latex() }
           }}
         />
-      </div>
+      </main>
     </Loading>
   )
 }

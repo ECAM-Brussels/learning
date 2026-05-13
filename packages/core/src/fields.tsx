@@ -1,9 +1,34 @@
 import Latex from '@learning/components/Latex'
 import Markdown from '@learning/components/Markdown'
-import { createMemo, Show } from 'solid-js'
+import { createMemo, lazy, Show } from 'solid-js'
 import * as v from 'valibot'
 import { defineField } from './exercise/base'
 import { expr } from './expr'
+
+const Code = lazy(() => import('@learning/components/Code'))
+
+export function Python(label: string) {
+  return defineField({
+    label,
+    base: v.string(),
+    feedback: v.string(),
+    Component: (props) => {
+      return (
+        <Code
+          lang="python"
+          onChange={(value) => {
+            props.setState((s) => {
+              s[props.name] = value
+            })
+          }}
+          run
+        >
+          {props.value ?? ''}
+        </Code>
+      )
+    },
+  })
+}
 
 export function Text(label: string) {
   return defineField({
@@ -13,6 +38,22 @@ export function Text(label: string) {
     Component: (props) => {
       return <Markdown value={props.value} />
     },
+  })
+}
+
+const TestBase = v.array(
+  v.object({
+    test: v.string(),
+    result: v.string(),
+  }),
+)
+
+export function Tests(label: string) {
+  return defineField({
+    label,
+    base: TestBase,
+    feedback: TestBase,
+    Component: (props) => <>{props.value}</>,
   })
 }
 

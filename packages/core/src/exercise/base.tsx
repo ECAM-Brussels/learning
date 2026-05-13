@@ -300,7 +300,7 @@ export function createView<T extends Schema>(
     })
     const transformed = createMemo(() => v.parse(Exercise(schema, 'feedback'), exercise()))
     return (
-      <div class={props.class}>
+      <div class={['not-prose', props.class]}>
         <For each={transformed().attempt}>
           {<K extends keyof T['steps']>(
             part: () =>

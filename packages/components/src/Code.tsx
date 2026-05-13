@@ -50,8 +50,8 @@ export default function Code(props: Props) {
   createEffect(value, (value) => {
     if (editor?.getValue() !== value) {
       editor?.setValue(value)
-      props.onChange?.(value)
     }
+    props.onChange?.(value)
   })
   createEffect(
     () => props.lang,
