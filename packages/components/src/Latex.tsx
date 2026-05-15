@@ -37,3 +37,21 @@ export default function Latex(props: {
     </Loading>
   )
 }
+
+function makeTex(displayMode: boolean) {
+  return (strings: TemplateStringsArray, ...values: any[]) => {
+    const expr = String.raw(strings, ...values)
+
+    return (
+      <span
+        innerHTML={katex.renderToString(expr, {
+          displayMode,
+        })}
+      />
+    )
+  }
+}
+
+export const tex = Object.assign(makeTex(false), {
+  block: makeTex(true),
+})
