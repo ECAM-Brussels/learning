@@ -299,6 +299,10 @@ export function createView<T extends Schema>(
       } as GradedExercise<T>
     })
     const transformed = createMemo(() => v.parse(Exercise(schema, 'feedback'), exercise()))
+    const reset = async () => {
+      await context.reset?.(key())
+      refresh(exercise)
+    }
     return (
       <div class={['not-prose', props.class]}>
         <For each={transformed().attempt}>
@@ -325,10 +329,6 @@ export function createView<T extends Schema>(
                 ],
               })
               await context.save(key(), graded)
-              refresh(exercise)
-            }
-            const reset = async () => {
-              await context.reset?.(key())
               refresh(exercise)
             }
 
@@ -368,31 +368,29 @@ export function createView<T extends Schema>(
                     previous: transformed().attempt.slice(0, i()).toReversed() as any,
                   } as Props<T, K>)}
                 />
-                <div class="flex items-center justify-end gap-4">
-                  <Show when={!part().state}>
-                    <button
-                      class={[
-                        'rounded-lg bg-green-800 px-3 py-2 text-green-100',
-                        {
-                          'cursor-not-allowed opacity-15': !validated().success,
-                        },
-                      ]}
-                      disabled={!validated().success}
-                      onClick={submit}
-                    >
-                      Soumettre
-                    </button>
-                  </Show>
-                  <Show when={part().state && context.reset}>
-                    <button class="cursor-pointer text-xs text-slate-400" onClick={reset}>
-                      Réinitialiser
-                    </button>
-                  </Show>
-                </div>
+                <Show when={!part().state}>
+                  <button
+                    class={[
+                      'rounded-lg bg-green-800 px-3 py-2 text-green-100',
+                      {
+                        'cursor-not-allowed opacity-15': !validated().success,
+                      },
+                    ]}
+                    disabled={!validated().success}
+                    onClick={submit}
+                  >
+                    Soumettre
+                  </button>
+                </Show>
               </Errored>
             )
           }}
         </For>
+        <Show when={exercise().attempt?.filter((s) => 'state' in s).length > 0 && context.reset}>
+          <button class="ml-auto block cursor-pointer text-xs text-slate-400" onClick={reset}>
+            Recommencer
+          </button>
+        </Show>
       </div>
     )
   }
