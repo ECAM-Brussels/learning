@@ -1,7 +1,15 @@
 {
   "name": "@learning/components",
   "exports": {
-    "./*": "./src/*"
+    "./CheckMark": "./src/CheckMark.tsx",
+    "./Code": "./src/Code.tsx",
+    "./Environment": "./src/Environment.tsx",
+    "./Latex": "./src/Latex.tsx",
+    "./Markdown": "./src/Markdown.tsx",
+    "./Python": "./src/Python.tsx",
+    "./Scope": "./src/Scope.tsx",
+    "./Slide": "./src/Slide.tsx",
+    "./Slideshow": "./src/Slideshow.tsx"
   },
   "private": true,
   "devDependencies": {
