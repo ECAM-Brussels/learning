@@ -34,8 +34,21 @@ export const feedback = defineFeedback<typeof schema>({
  * @example
  * // The expression can be entered as a LaTeX string
  * <Factor expr="x^2 - 5x + 6" />
+ *
  * @example
- * <Factor expr="(x - {a})(x - {b})" params={{ a: [1, 2, 3], b: [1, 2, 3] }} />
+ * // To calculate the expression at build time, use the `$` macro
+ * <Factor expr={$(() => expr('(x - 2) (x - 3)').expand().latex())}
+ *
+ * @example
+ * // To generate a random expression, use `createMemo`
+ * // or use the `Practice` component.
+ * <Scope>
+ *  {() => {
+ *     const [a, b] = sampleSize([1, 2, 3, 4, 5], 2)
+ *     const question = createMemo(() => expr(`(x - ${a})(x - ${b})`).expand().latex())
+ *     return <Factor expr={question()} />
+ *   }}
+ * </Scope>
  */
 export const Factor = createView(schema, feedback, {
   start: start.Component,

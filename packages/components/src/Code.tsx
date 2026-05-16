@@ -42,6 +42,13 @@ type Props = {
   math?: boolean
 }
 
+/**
+ * Display the Monaco editor (used in VSCode)
+ *
+ * For Python (`lang="python"`), the following props are available:
+ * - `run`: whether to execute the code and display the output (default: `false`)
+ * - `math`: whether to render Sympy math outputs using KaTeX (default: `false`)
+ */
 export default function Code(props: Props) {
   let container: HTMLDivElement | undefined
   let editor: monaco.editor.IStandaloneCodeEditor | undefined

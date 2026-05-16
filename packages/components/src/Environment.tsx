@@ -5,6 +5,10 @@ const config = {
   example: { label: 'Example' },
 } as const satisfies Record<string, { label: string }>
 
+/**
+ * Create a generic box to display content
+ * (e.g. examples, definitions, exercises, etc.)
+ */
 export default function Environment(props: {
   children: JSX.Element
   title?: JSX.Element
@@ -27,4 +31,7 @@ function makeEnvironment(type: keyof typeof config) {
   )
 }
 
+/**
+ * Component to display an example
+ */
 export const Example = makeEnvironment('example')

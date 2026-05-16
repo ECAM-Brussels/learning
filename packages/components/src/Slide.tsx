@@ -7,6 +7,16 @@ type Props = {
   title?: JSX.Element
 }
 
+/**
+ * Display a slide with an optional title
+ *
+ * `<Slide>` components should be used inside a `<Slideshow>`.
+ *
+ * @example
+ * <Slide title="Hello">
+ *   <p>Hello world!</p>
+ * </Slide>
+ */
 export default function Slide(props: Props) {
   return (
     <div class="h-full w-full snap-start">
