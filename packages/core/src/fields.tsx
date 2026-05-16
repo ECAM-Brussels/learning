@@ -1,5 +1,6 @@
 import Latex from '@learning/components/Latex'
 import Markdown from '@learning/components/Markdown'
+import MathField from '@learning/components/MathField'
 import { createMemo, lazy, Show } from 'solid-js'
 import * as v from 'valibot'
 import { defineField } from './exercise/base'
@@ -87,7 +88,7 @@ export function Math(label: string) {
             </span>
           }
         >
-          <input
+          <MathField
             class={[
               'rounded border p-2 outline-none',
               {
