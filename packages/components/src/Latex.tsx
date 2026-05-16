@@ -39,16 +39,18 @@ export default function Latex(props: {
 }
 
 function makeTex(displayMode: boolean) {
-  return (strings: TemplateStringsArray, ...values: any[]) => {
-    const expr = String.raw(strings, ...values)
+  return (strings: TemplateStringsArray, ...values: (Expression | undefined)[]) => {
+    const latex = createMemo(async () => {
+      const parsed = await Promise.all(
+        values.map(async (value) => {
+          if (!value) return ''
+          return typeof value === 'string' ? value : await expr(v.parse(Expression, value)).latex()
+        }),
+      )
+      return String.raw(strings, ...parsed)
+    })
 
-    return (
-      <span
-        innerHTML={katex.renderToString(expr, {
-          displayMode,
-        })}
-      />
-    )
+    return <Latex value={latex()} displayMode={displayMode} />
   }
 }
 

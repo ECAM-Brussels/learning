@@ -2,6 +2,7 @@ import { Show, type ComponentProps } from 'solid-js'
 import type { JSX } from 'solid-js/jsx-runtime'
 
 const config = {
+  feedback: { label: 'Feedback' },
   example: { label: 'Example' },
 } as const satisfies Record<string, { label: string }>
 
@@ -35,3 +36,16 @@ function makeEnvironment(type: keyof typeof config) {
  * Component to display an example
  */
 export const Example = makeEnvironment('example')
+
+export function Feedback(
+  props: Omit<ComponentProps<typeof Environment>, 'type'> & {
+    correct?: boolean
+    state: object | undefined
+  },
+) {
+  return (
+    <Show when={props.state && !props.correct}>
+      <Environment type="feedback" {...props} />
+    </Show>
+  )
+}
