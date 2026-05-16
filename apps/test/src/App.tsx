@@ -1,5 +1,5 @@
 import Code from '@learning/components/Code'
-import Environment from '@learning/components/Environment'
+import { Example } from '@learning/components/Environment'
 import Latex, { tex } from '@learning/components/Latex'
 import Slide from '@learning/components/Slide'
 import Slideshow from '@learning/components/Slideshow'
@@ -40,13 +40,13 @@ export default function App() {
             3 * 4
           `}
           </Code>
-          <Environment type="example">
+          <Example>
             <p>Selon Python, que vaut {tex`0.1 \times 0.1`}</p>
             <div class="flex items-center justify-end gap-4">
               Votre réponse:
               <Simple id="test" answer={$(() => encrypt(`${0.1 * 0.1}`))} />
             </div>
-          </Environment>
+          </Example>
         </Slide>
         <Slide title="Fonctions">
           <p>
