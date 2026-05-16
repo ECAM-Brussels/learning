@@ -368,25 +368,27 @@ export function createView<T extends Schema>(
                     previous: transformed().attempt.slice(0, i()).toReversed() as any,
                   } as Props<T, K>)}
                 />
-                <Show when={!part().state}>
-                  <button
-                    class={[
-                      'rounded-lg bg-green-800 px-3 py-2 text-green-100',
-                      {
-                        'cursor-not-allowed opacity-15': !validated().success,
-                      },
-                    ]}
-                    disabled={!validated().success}
-                    onClick={submit}
-                  >
-                    Soumettre
-                  </button>
-                </Show>
-                <Show when={part().state && context.reset}>
-                  <button class="rounded-lg bg-gray-100 px-3 py-2 text-gray-400" onClick={reset}>
-                    Reset
-                  </button>
-                </Show>
+                <div class="flex items-center justify-end gap-4">
+                  <Show when={!part().state}>
+                    <button
+                      class={[
+                        'rounded-lg bg-green-800 px-3 py-2 text-green-100',
+                        {
+                          'cursor-not-allowed opacity-15': !validated().success,
+                        },
+                      ]}
+                      disabled={!validated().success}
+                      onClick={submit}
+                    >
+                      Soumettre
+                    </button>
+                  </Show>
+                  <Show when={part().state && context.reset}>
+                    <button class="cursor-pointer text-xs text-slate-400" onClick={reset}>
+                      Réinitialiser
+                    </button>
+                  </Show>
+                </div>
               </Errored>
             )
           }}
