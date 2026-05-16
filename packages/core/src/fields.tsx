@@ -101,7 +101,7 @@ export function Math(label: string) {
             title={props.label}
             value={props.state.value?.rawInput ?? props.value?.rawInput ?? ''}
             readonly={props.question || props.readOnly}
-            onInput={(event) => {
+            onInput={(event: InputEvent & { target: HTMLInputElement }) => {
               if (!props.question) {
                 props.setState((s) => {
                   s[props.name] = event.target.value
