@@ -1,7 +1,9 @@
 {
   "name": "@learning/exercises",
   "exports": {
-    "./*": "./*"
+    "./math/factor": "./math/factor/index.tsx",
+    "./math/simple": "./math/simple/index.tsx",
+    "./python/code": "./python/code.tsx"
   },
   "private": true,
   "devDependencies": {

@@ -37,7 +37,7 @@ export const feedback = defineFeedback<typeof schema>({
  * @example
  * <Factor expr="(x - {a})(x - {b})" params={{ a: [1, 2, 3], b: [1, 2, 3] }} />
  */
-const Component = createView(schema, feedback, {
+export const Factor = createView(schema, feedback, {
   start: start.Component,
   root: (props, Field) => {
     const root = createMemo(() => props.state?.root)
@@ -58,4 +58,4 @@ const Component = createView(schema, feedback, {
   },
 })
 
-export default Component
+export default Factor

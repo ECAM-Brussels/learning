@@ -6,7 +6,6 @@ import Slideshow from '@learning/components/Slideshow'
 import { $, encrypt, ExerciseSequence, expr, Practice } from '@learning/core'
 import Factor from '@learning/exercises/math/factor'
 import Simple from '@learning/exercises/math/simple'
-import Python from '@learning/exercises/python/code'
 import dedent from 'dedent'
 import { sample, sampleSize } from 'es-toolkit'
 import { createMemo, Loading } from 'solid-js'
@@ -52,10 +51,6 @@ export default function App() {
           <p>
             Définis une fonction <Latex value="f(x) = x^2" /> en Python
           </p>
-          <Python
-            id="x-squared"
-            tests={[0, 1, 2, -1, -26, 75].map((x) => ({ test: `f(${x})`, result: `${x ** 2}` }))}
-          />
         </Slide>
       </Slideshow>
       <main class="container mx-auto">

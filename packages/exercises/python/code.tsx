@@ -29,7 +29,7 @@ const feedback = defineFeedback<typeof schema>({
   },
 })
 
-const Component = createView(schema, feedback, {
+export const PythonCode = createView(schema, feedback, {
   start: (props, Field) => {
     const results = createMemo(async () => {
       if (!props.state) return []
@@ -65,4 +65,4 @@ async function checkTest(code: string, test: string, result: string) {
   return output.result === result
 }
 
-export default Component
+export default PythonCode

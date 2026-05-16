@@ -32,7 +32,7 @@ const feedback = defineFeedback<typeof schema>({
   },
 })
 
-const Component = createView(schema, feedback, {
+export const Simple = createView(schema, feedback, {
   start: (props, Field) => {
     const attempt = createMemo(() => props.state?.attempt)
     const encrypted = createMemo(() => props.question.answer)
@@ -52,4 +52,4 @@ async function compare(json: Parameters<typeof expr>[0], encrypted: string) {
   return symapi.expr.equal({ expr1: json, expr2: expr(latex).json })
 }
 
-export default Component
+export default Simple
