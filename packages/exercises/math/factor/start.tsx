@@ -3,7 +3,7 @@ import { Feedback } from '@learning/components/Environment'
 import { tex } from '@learning/components/Latex'
 import { expr, type Feedback as ExerciseFeedback, type View } from '@learning/core'
 import { filterAsync } from 'es-toolkit'
-import { createMemo, Errored, For, Show } from 'solid-js'
+import { createMemo, For, Show } from 'solid-js'
 import type { schema } from '../factor'
 
 export const feedback: ExerciseFeedback<typeof schema, 'start'> = async ({
@@ -55,21 +55,19 @@ export const Component: View<typeof schema, 'start'> = (props, Field) => {
                 ),
               )
               return (
-                <Errored fallback={(error) => <p>Error: {String(error)}</p>}>
-                  <li>
-                    <Show
-                      when={isMulOrPower()}
-                      fallback={<p>L'expression entrée n'est pas un produit.</p>}
-                    >
-                      <p>
-                        {unfactoredTerms()?.length > 1
-                          ? 'Les termes suivants ne sont pas complètement factorisés: '
-                          : "Le terme suivant n'est pas complètement factorisé: "}
-                        <For each={unfactoredTerms() ?? []}>{(term) => tex`${term()}`}</For>
-                      </p>
-                    </Show>
-                  </li>
-                </Errored>
+                <li>
+                  <Show
+                    when={isMulOrPower()}
+                    fallback={<p>L'expression entrée n'est pas un produit.</p>}
+                  >
+                    <p>
+                      {unfactoredTerms()?.length > 1
+                        ? 'Les termes suivants ne sont pas complètement factorisés: '
+                        : "Le terme suivant n'est pas complètement factorisé: "}
+                      <For each={unfactoredTerms() ?? []}>{(term) => tex`${term()}`}</For>
+                    </p>
+                  </Show>
+                </li>
               )
             }}
           </Show>
