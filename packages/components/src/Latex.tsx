@@ -44,6 +44,7 @@ function makeTex(displayMode: boolean) {
       const parsed = await Promise.all(
         values.map(async (value) => {
           if (!value) return ''
+          if (typeof value === 'string') return value
           return typeof value === 'string' ? value : await expr(v.parse(Expression, value)).latex()
         }),
       )

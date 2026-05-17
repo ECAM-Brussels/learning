@@ -13,11 +13,8 @@ export const feedback: Feedback<typeof schema, 'root'> = async ({
 
 export const Component: View<typeof schema, 'root'> = (props, { Field, Feedback }) => (
   <>
-    <p>
-      Trouvez une racine de <Field name="question.expr" />
-    </p>
+    <p>Trouvez une racine de {tex`y = ${props.question.expr}`}.</p>
     <div class="flex items-center justify-center gap-1">
-      <p>Racine:</p>
       {tex`x =`}
       <Field name="state.root" />
       <CheckMark value={props.correct} />

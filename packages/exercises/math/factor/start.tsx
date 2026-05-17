@@ -31,10 +31,10 @@ export const Component: View<typeof schema, 'start'> = (props, { Field, Feedback
           <ul class="list-disc pl-4">
             <Show
               when={!equal()}
-              fallback={<p>L'expression entrée est bien égale à celle de l'énoncée.</p>}
+              fallback={<p>L'expression entrée est bien égale à celle de l'énoncé.</p>}
             >
               <li>
-                <p>L'expression entrée n'est pas égale à celle de l'énoncée.</p>
+                <p>L'expression entrée n'est pas égale à celle de l'énoncé.</p>
                 <p>On vérifie en effet que</p>
                 {tex.block`${attempt().rawInput} = ${attempt().expand()},`}
                 <p>qui n'est pas égal à {tex`${props.question.expr.rawInput}`}.</p>

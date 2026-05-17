@@ -11,13 +11,7 @@ export function Practice<T extends object>(props: Props<T>) {
   const prefix = () =>
     `practice:${window.location.pathname}:${window.location.search}:${props.id ?? ''}:`
   const key = (i: number) => `${prefix()}${i}`
-  const keys = createMemo(() =>
-    Object.keys(localStorage).filter((k) => {
-      if (!k.startsWith(prefix())) return false
-      const stored = JSON.parse(localStorage.getItem(k) ?? 'null')
-      return stored.attempt.length > 1
-    }),
-  )
+  const keys = createMemo(() => Object.keys(localStorage).filter((k) => k.startsWith(prefix())))
   const next = createMemo(props.next)
   return (
     <Repeat count={keys().length + 1}>
