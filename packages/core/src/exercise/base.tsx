@@ -126,35 +126,48 @@ type Schema<
 function Part<
   T extends Schema,
   K extends keyof T['steps'],
-  S extends boolean = false,
+  S extends 'selected' | 'submitted' | 'graded' = 'selected',
   V extends 'base' | 'feedback' = 'base',
->(schema: T, step: K, withState?: S, stage?: V) {
-  const base = v.object({
+>(schema: T, step: K, stage?: S, type?: V) {
+  const selected = v.object({
     step: v.literal(step as K),
   })
-  const extended = v.object({
-    ...base.entries,
-    state: RawShapeSchema(schema.steps[step].state as T['steps'][K]['state'], stage ?? 'base'),
+  const submitted = v.object({
+    ...selected.entries,
+    state: RawShapeSchema(schema.steps[step].state as T['steps'][K]['state'], type ?? 'base'),
+    correct: v.optional(v.boolean()),
+    score: v.optional(v.tuple([v.number(), v.number()])),
   })
-  return (withState ? extended : base) as S extends true ? typeof extended : typeof base
+  const graded = v.object({
+    ...submitted.entries,
+    correct: v.boolean(),
+    score: v.tuple([v.number(), v.number()]),
+  })
+  return (
+    stage === 'selected' || stage === undefined ? selected : stage === 'graded' ? graded : submitted
+  ) as S extends 'selected'
+    ? typeof selected
+    : S extends 'graded'
+      ? typeof graded
+      : typeof submitted
 }
 
 type Part<
   T extends Schema,
   K extends keyof T['steps'],
-  S extends boolean = false,
+  S extends 'selected' | 'submitted' | 'graded' = 'selected',
   V extends 'base' | 'feedback' = 'base',
 > = Infer<typeof Part<T, K, S, V>>
 
 function PartUnion<
   T extends Schema,
   K extends readonly (keyof T['steps'])[],
-  S extends boolean = false,
+  S extends 'selected' | 'submitted' | 'graded' = 'selected',
   V extends 'base' | 'feedback' = 'base',
->(schema: T, steps: K, withState?: S, stage?: V) {
+>(schema: T, steps: K, stage?: S, type?: V) {
   return v.variant(
     'step',
-    steps.map((step) => Part(schema, step, withState, stage)),
+    steps.map((step) => Part(schema, step, stage, type)),
   ) as v.VariantSchema<
     'step',
     { [I in keyof K]: ReturnType<typeof Part<T, K[I], S, V>> },
@@ -165,7 +178,7 @@ function PartUnion<
 type PartUnion<
   T extends Schema,
   K extends readonly (keyof T['steps'])[] = readonly (keyof T['steps'])[],
-  S extends boolean = false,
+  S extends 'selected' | 'submitted' | 'graded' = 'selected',
   V extends 'base' | 'feedback' = 'base',
 > = Infer<typeof PartUnion<T, K, S, V>>
 
@@ -194,26 +207,33 @@ export function defineFeedback<T extends Schema>(data: {
   return data
 }
 
-function Attempt<T extends Schema, V extends 'base' | 'feedback'>(schema: T, stage: V) {
+function Attempt<T extends Schema, S extends 'graded' | 'submitted', V extends 'base' | 'feedback'>(
+  schema: T,
+  stage: S,
+  type: V,
+) {
   const steps = Object.keys(schema.steps) as T['steps'][keyof T['steps']]
   return v.array(
-    v.union([PartUnion(schema, steps, true, stage), PartUnion(schema, steps, false, stage)]),
+    v.union([PartUnion(schema, steps, stage, type), PartUnion(schema, steps, 'selected', type)]),
   )
 }
 
-export function Exercise<T extends Schema, S extends 'base' | 'feedback'>(
-  schema: T,
-  stage: S = 'base' as S,
-) {
+export function Exercise<
+  T extends Schema,
+  S extends 'graded' | 'submitted',
+  V extends 'base' | 'feedback',
+>(schema: T, stage: S, type: V = 'base' as V) {
   return v.object({
     name: v.literal(schema.name as T['name']),
-    question: RawShapeSchema(schema.question as T['question'], stage),
-    attempt: Attempt(schema, stage),
+    question: RawShapeSchema(schema.question as T['question'], type),
+    attempt: Attempt(schema, stage, type),
   })
 }
-type Exercise<T extends Schema, S extends 'base' | 'feedback' = 'base'> = Infer<
-  typeof Exercise<T, S>
->
+type Exercise<
+  T extends Schema,
+  S extends 'graded' | 'submitted' = 'graded',
+  V extends 'base' | 'feedback' = 'base',
+> = Infer<typeof Exercise<T, S, V>>
 type GradedExercise<T extends Schema> = Omit<Exercise<T>, 'params'>
 
 export const grade = async function <T extends Schema>(
@@ -222,7 +242,7 @@ export const grade = async function <T extends Schema>(
   exercise: Exercise<T>,
 ): Promise<GradedExercise<T>> {
   const { question, attempt, ...rest } = exercise
-  const transformed = v.parse(Exercise(schema, 'feedback'), exercise)
+  const transformed = v.parse(Exercise(schema, 'submitted', 'feedback'), exercise)
   let modifiedAttempt = await mapAsync(attempt, async (part, i) => {
     if ('state' in part && 'state' in transformed.attempt[i]! && part.state) {
       const result = await feedback[part.step]({
@@ -298,7 +318,9 @@ export function createView<T extends Schema>(
         ...fetched,
       } as GradedExercise<T>
     })
-    const transformed = createMemo(() => v.parse(Exercise(schema, 'feedback'), exercise()))
+    const transformed = createMemo(() =>
+      v.parse(Exercise(schema, 'graded', 'feedback'), exercise()),
+    )
     const reset = async () => {
       await context.reset?.(key())
       refresh(exercise)
@@ -308,13 +330,13 @@ export function createView<T extends Schema>(
         <For each={transformed().attempt}>
           {<K extends keyof T['steps']>(
             part: () =>
-              | Part<T, K, true>
+              | Part<T, K, 'graded'>
               | { step: K; state?: never; correct?: never; score?: never },
             i: () => number,
           ) => {
-            const [state, setState] = createStore<Partial<Part<T, K>>>(() => part().state ?? {})
+            const [state, setState] = createStore<{}>(() => part().state ?? {})
             const validated = createMemo(() =>
-              v.safeParse(Part(schema, part().step, true), {
+              v.safeParse(Part(schema, part().step, 'submitted'), {
                 ...part(),
                 state,
               }),
@@ -325,7 +347,7 @@ export function createView<T extends Schema>(
                 ...exercise(),
                 attempt: [
                   ...exercise().attempt.toSpliced(-1),
-                  validated().output as Part<T, K, true>,
+                  validated().output as Part<T, K, 'submitted'>,
                 ],
               })
               await context.save(key(), graded)
@@ -363,6 +385,8 @@ export function createView<T extends Schema>(
                 <Dynamic
                   component={partialRight(view[part().step], Field)}
                   {...({
+                    correct: part().correct,
+                    score: part().score,
                     question: transformed().question,
                     state: part().state,
                     previous: transformed().attempt.slice(0, i()).toReversed() as any,
