@@ -1,6 +1,5 @@
-import CheckMark from '@learning/components/CheckMark'
 import { createView, defineFeedback, defineSchema, Math } from '@learning/core'
-import { createMemo } from 'solid-js'
+import * as root from './root'
 import * as start from './start'
 
 export const schema = defineSchema({
@@ -22,10 +21,7 @@ export const schema = defineSchema({
 
 export const feedback = defineFeedback<typeof schema>({
   start: start.feedback,
-  root: async ({ question: { expr: question }, state: { root } }) => {
-    const correct = await question.checkRoot(root)
-    return { correct, score: [0, 0], next: null }
-  },
+  root: root.feedback,
 })
 
 /**
@@ -52,23 +48,7 @@ export const feedback = defineFeedback<typeof schema>({
  */
 export const Factor = createView(schema, feedback, {
   start: start.Component,
-  root: (props, { Field }) => {
-    const root = createMemo(() => props.state?.root)
-    const question = createMemo(() => props.question.expr)
-    const correct = createMemo(() => root() && question().checkRoot(root()!))
-    return (
-      <>
-        <p>
-          Trouvez une racine de <Field name="question.expr" />
-        </p>
-        <div class="flex items-center justify-center gap-1">
-          <p>Racine:</p>
-          <Field name="state.root" />
-          <CheckMark value={correct()} />
-        </div>
-      </>
-    )
-  },
+  root: root.Component,
 })
 
 export default Factor
