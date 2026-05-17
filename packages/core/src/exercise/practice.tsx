@@ -1,5 +1,7 @@
+import { Pagination } from '@learning/components/Pagination'
 import { Dynamic } from '@solidjs/web'
-import { createMemo, refresh, Repeat, type Component } from 'solid-js'
+import { range } from 'es-toolkit'
+import { createMemo, refresh, type Component } from 'solid-js'
 import { ExerciseContext } from './base'
 
 type Props<T extends object> = {
@@ -14,25 +16,23 @@ export function Practice<T extends object>(props: Props<T>) {
   const keys = createMemo(() => Object.keys(localStorage).filter((k) => k.startsWith(prefix())))
   const next = createMemo(props.next)
   return (
-    <Repeat count={keys().length + 1}>
-      {(i) => {
-        return (
-          <ExerciseContext
-            value={{
-              fetch: () => JSON.parse(localStorage.getItem(key(i)) ?? 'null'),
-              save: (_id, exercise) => {
-                localStorage.setItem(key(i), JSON.stringify(exercise))
-                refresh(() => {
-                  keys()
-                  next()
-                })
-              },
-            }}
-          >
-            <Dynamic component={props.exercise} {...next()} />
-          </ExerciseContext>
-        )
-      }}
-    </Repeat>
+    <Pagination>
+      {range(keys().length + 1).map((i) => () => (
+        <ExerciseContext
+          value={{
+            fetch: () => JSON.parse(localStorage.getItem(key(i)) ?? 'null'),
+            save: (_id, exercise) => {
+              localStorage.setItem(key(i), JSON.stringify(exercise))
+              refresh(() => {
+                keys()
+                next()
+              })
+            },
+          }}
+        >
+          <Dynamic component={props.exercise} {...next()} />
+        </ExerciseContext>
+      ))}
+    </Pagination>
   )
 }

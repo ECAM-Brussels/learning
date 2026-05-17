@@ -14,19 +14,6 @@ import './style.css'
 export default () => (
   <Loading>
     <main class="prose container mx-auto">
-      <h1>Séquence prédéterminée</h1>
-      <ExerciseSequence>
-        <Factor expr={$(() => expr('(x + 2) (x + 1)').expand().latex())} />
-        <Factor expr="x^2 - 1" />
-        <div>
-          <h3>Bonjour</h3>
-          <p>Que vaut {tex`\int_0^1 x^2 \, \mathrm{d} x`}?</p>
-          <div class="flex items-center justify-center gap-4">
-            {tex.block`\int_0^1 1 \, \mathrm{d} x =`}
-            <Simple answer={$(() => encrypt('1'))} />
-          </div>
-        </div>
-      </ExerciseSequence>
       <h1>Séquence générée</h1>
       <Practice
         exercise={Factor}
@@ -36,6 +23,19 @@ export default () => (
           return { expr: await expr(`(x - ${x1}) (x - ${x2})`).expand().latex() }
         }}
       />
+      <h1>Séquence prédéterminée</h1>
+      <ExerciseSequence>
+        <Factor expr={$(() => expr('(x + 2) (x + 1)').expand().latex())} />
+        <Factor expr="x^2 - 1" />
+        <div>
+          <h3>Bonjour</h3>
+          <p>Que vaut {tex`\int_0^1 1 \, \mathrm{d} x`}?</p>
+          <div class="flex items-center justify-center gap-4">
+            {tex.block`\int_0^1 1 \, \mathrm{d} x =`}
+            <Simple answer={$(() => encrypt('1'))} />
+          </div>
+        </div>
+      </ExerciseSequence>
     </main>
     <Slideshow>
       <Slide title="Calcul numérique">
