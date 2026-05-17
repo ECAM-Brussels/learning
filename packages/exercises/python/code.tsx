@@ -30,7 +30,7 @@ const feedback = defineFeedback<typeof schema>({
 })
 
 export const PythonCode = createView(schema, feedback, {
-  start: (props, Field) => {
+  start: (props, { Field }) => {
     const results = createMemo(async () => {
       if (!props.state) return []
       return mapAsync(props.question.tests, async ({ test, result }) =>

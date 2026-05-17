@@ -5,7 +5,6 @@ import {
   createContext,
   createMemo,
   createStore,
-  Errored,
   For,
   refresh,
   Show,
@@ -267,9 +266,17 @@ type FieldProps<T extends Schema, K extends keyof T['steps']> = {
     | `question.${keyof T['question'] & string}`
     | `state.${keyof T['steps'][K]['state'] & string}`
 }
+
+type FeedbackComponent<T extends Schema, K extends keyof T['steps']> = Component<{
+  children: JSX.Element | (() => JSX.Element)
+}>
+
 export type View<T extends Schema, K extends keyof T['steps'] = keyof T['steps']> = (
   props: Props<T, K>,
-  Field: Component<FieldProps<T, K>>,
+  utils: {
+    Field: Component<FieldProps<T, K>>
+    Feedback: FeedbackComponent<T, K>
+  },
 ) => JSX.Element
 
 type ExerciseContext<T extends Schema> = {
@@ -380,10 +387,22 @@ export function createView<T extends Schema>(
                 />
               )
             }
+
+            const Feedback: FeedbackComponent<T, K> = (props) => {
+              return (
+                <Show when={!part().correct && part().state}>
+                  <div class="m-4 rounded-xl border border-slate-400 p-4 text-slate-600">
+                    <h3>Feedback</h3>
+                    {typeof props.children === 'function' ? props.children() : props.children}
+                  </div>
+                </Show>
+              )
+            }
+
             return (
-              <Errored fallback={(error) => <pre>{JSON.stringify(error, null, 2)}</pre>}>
+              <div>
                 <Dynamic
-                  component={partialRight(view[part().step], Field)}
+                  component={partialRight(view[part().step], { Field, Feedback })}
                   {...({
                     correct: part().correct,
                     score: part().score,
@@ -406,7 +425,7 @@ export function createView<T extends Schema>(
                     Soumettre
                   </button>
                 </Show>
-              </Errored>
+              </div>
             )
           }}
         </For>

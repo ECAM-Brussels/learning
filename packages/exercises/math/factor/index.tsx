@@ -52,7 +52,7 @@ export const feedback = defineFeedback<typeof schema>({
  */
 export const Factor = createView(schema, feedback, {
   start: start.Component,
-  root: (props, Field) => {
+  root: (props, { Field }) => {
     const root = createMemo(() => props.state?.root)
     const question = createMemo(() => props.question.expr)
     const correct = createMemo(() => root() && question().checkRoot(root()!))

@@ -33,7 +33,7 @@ const feedback = defineFeedback<typeof schema>({
 })
 
 export const Simple = createView(schema, feedback, {
-  start: (props, Field) => {
+  start: (props, { Field }) => {
     const attempt = createMemo(() => props.state?.attempt)
     const encrypted = createMemo(() => props.question.answer)
     const correct = createMemo(() => attempt() && compare(attempt()!.json, encrypted()))
