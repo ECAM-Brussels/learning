@@ -1,21 +1,23 @@
+import { Dynamic } from '@solidjs/web'
 import { createEffect, createSignal, Repeat, type JSX } from 'solid-js'
 
 export function Pagination(props: {
   current?: number
   children: (() => JSX.Element)[]
   onChange?: (page: number) => void
+  progress?: (boolean | null | undefined)[]
 }) {
   const [current, setCurrent] = createSignal(() => props.current ?? 1)
-  createEffect(current, () => {
-    if (current() !== props.current) {
-      props.onChange?.(current())
+  createEffect(current, (current) => {
+    if (props.current !== current) {
+      props.onChange?.(current)
     }
   })
   return (
     <>
       <div class="flex justify-center">
         <button
-          class="cursor-pointer px-2 py-1"
+          class="cursor-pointer px-3 py-1 text-gray-400 shadow"
           onClick={() => setCurrent((prev) => Math.max(prev - 1, 1))}
         >
           ‹
@@ -24,10 +26,12 @@ export function Pagination(props: {
           {(i) => (
             <button
               class={[
-                'cursor-pointer rounded px-2 py-1',
+                'cursor-pointer border-gray-50 px-3 py-1 shadow',
                 {
-                  'bg-sky-700 text-sky-50': current() === i + 1,
+                  'border border-sky-700 font-bold text-sky-700': current() === i + 1,
                   'text-gray-400': current() !== i + 1,
+                  'bg-green-100': props.progress?.[i] === true,
+                  'bg-red-100': props.progress?.[i] === false,
                 },
               ]}
               onClick={() => setCurrent(i + 1)}
@@ -37,13 +41,13 @@ export function Pagination(props: {
           )}
         </Repeat>
         <button
-          class="cursor-pointer px-2 py-1 text-gray-400"
+          class="cursor-pointer px-3 py-1 text-gray-400 shadow"
           onClick={() => setCurrent((prev) => Math.min(prev + 1, props.children.length))}
         >
           ›
         </button>
       </div>
-      {props.children[current() - 1]?.()}
+      <Dynamic component={props.children[current() - 1]} />
     </>
   )
 }

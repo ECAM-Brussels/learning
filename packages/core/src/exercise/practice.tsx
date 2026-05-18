@@ -15,8 +15,17 @@ export function Practice<T extends object>(props: Props<T>) {
   const key = (i: number) => `${prefix()}${i}`
   const keys = createMemo(() => Object.keys(localStorage).filter((k) => k.startsWith(prefix())))
   const next = createMemo(props.next)
+  const progress = createMemo(() => {
+    return keys().map((k) => {
+      const exercise = JSON.parse(localStorage.getItem(k) ?? 'null')
+      return (
+        exercise.attempt.every((part: any) => part.correct) &&
+        exercise.attempt.at(-1)?.next === null
+      )
+    })
+  })
   return (
-    <Pagination>
+    <Pagination progress={progress()}>
       {range(keys().length + 1).map((i) => () => (
         <ExerciseContext
           value={{
