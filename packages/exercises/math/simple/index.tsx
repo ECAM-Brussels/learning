@@ -32,6 +32,21 @@ const feedback = defineFeedback<typeof schema>({
   },
 })
 
+/**
+ * Exercise that checks symbolic equality
+ *
+ * The only require prop is `answer`,
+ * which needs to be **encrypted**
+ * to ensure the answer does not leak to the client.
+ *
+ * For static exercises,
+ * use the `$` macro
+ * to ensure the answer is not in the client bundle.
+ *
+ * @example
+ * <p>Give the area of a circle of radius 1.</p>
+ * <Simple answer={$(() => encrypt(`\pi`))} />
+ */
 export const Simple = createView(schema, feedback, {
   start: (props, { Field }) => {
     const attempt = createMemo(() => props.state?.attempt)

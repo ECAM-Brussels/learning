@@ -3,28 +3,30 @@ import { Example } from '@learning/components/Environment'
 import { tex } from '@learning/components/Latex'
 import Slide from '@learning/components/Slide'
 import Slideshow from '@learning/components/Slideshow'
-import { $, encrypt, ExerciseSequence, expr, Practice } from '@learning/core'
+import { $, encrypt, expr, Sequence } from '@learning/core'
 import Factor from '@learning/exercises/math/factor'
 import Simple from '@learning/exercises/math/simple'
+import PythonCode from '@learning/exercises/python/code'
 import dedent from 'dedent'
-import { sample } from 'es-toolkit'
-import { Loading } from 'solid-js'
+import { range, sample } from 'es-toolkit'
+import { createMemo, Loading } from 'solid-js'
 import './style.css'
 
 export default () => (
   <Loading>
     <main class="prose container mx-auto">
       <h1>Séquence générée</h1>
-      <Practice
-        exercise={Factor}
-        next={async () => {
+      <Sequence
+        id="generated"
+        next={() => {
           const x1 = sample([1, 2, 3, 4, 5, 6])
           const x2 = sample([1, 2, 3, 4, 5, 6])
-          return { expr: await expr(`(x - ${x1}) (x - ${x2})`).expand().latex() }
+          const exercise = createMemo(() => expr(`(x - ${x1}) (x - ${x2})`).expand().latex())
+          return <Factor expr={exercise()} />
         }}
       />
       <h1>Séquence prédéterminée</h1>
-      <ExerciseSequence>
+      <Sequence id="predefined">
         <Factor expr={$(() => expr('(x + 2) (x + 1)').expand().latex())} />
         <Factor expr="x^2 - 1" />
         <div>
@@ -35,7 +37,12 @@ export default () => (
             <Simple answer={$(() => encrypt('1'))} />
           </div>
         </div>
-      </ExerciseSequence>
+        <div>
+          <h3>Exercice de Python</h3>
+          <p>Écrivez la fonction {tex`f(x) = x^2`} en Python</p>
+          <PythonCode tests={range(4, 7).map((i) => ({ test: `f(${i})`, result: `${i ** 2}` }))} />
+        </div>
+      </Sequence>
     </main>
     <Slideshow>
       <Slide title="Calcul numérique">

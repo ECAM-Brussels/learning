@@ -9,8 +9,7 @@ export {
   type Feedback,
   type View,
 } from './src/exercise/base'
-export { Practice } from './src/exercise/practice'
-export { ExerciseSequence } from './src/exercise/sequence'
+export { Sequence } from './src/exercise/sequence'
 export { Expression, expr } from './src/expr'
 export * from './src/fields'
 export { default as symapi } from './src/symapi'
