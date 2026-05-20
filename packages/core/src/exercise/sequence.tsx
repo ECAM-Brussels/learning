@@ -1,12 +1,20 @@
 import Pagination from '@learning/components/Pagination'
+import Scope from '@learning/components/Scope'
 import { Dynamic } from '@solidjs/web'
 import { range } from 'es-toolkit'
 import { createMemo, refresh, type Component, type JSX } from 'solid-js'
 import { ExerciseContext } from './base'
 
-type Props = {
+type Props<T extends object> = {
   id: string
 } & (
+  | {
+      exercise: Component<T>
+      next: (props: {
+        position: number
+        progress: (boolean | null | undefined)[]
+      }) => Promise<T> | T
+    }
   | {
       next: Component<{ position: number; progress: (boolean | null | undefined)[] }>
     }
@@ -23,6 +31,8 @@ type Props = {
  * 1. By statically predefining the sequence via children
  * 2. By dynamically generating the next exercise via the `next` prop,
  *    which takes a component that receives the current position and progress of the sequence.
+ *    Alternatively, `next` can generate only the props,
+ *    and the exercise component can be specified via the `exercise` prop.
  *
  * @example
  * <ExerciseSequence id="predefined">
@@ -35,14 +45,27 @@ type Props = {
  * <ExerciseSequence
  *   id="generated"
  *   next={() => {
- *     const x1 = sample([1, 2, 3, 4, 5, 6])
- *     const x2 = sample([1, 2, 3, 4, 5, 6])
- *     const exercise = createMemo(() => expr(`(x - ${x1}) (x - ${x2})`).expand().latex())
+ *     const exercise = createMemo(() => {
+ *       const x1 = sample([1, 2, 3, 4, 5, 6])
+ *       const x2 = sample([1, 2, 3, 4, 5, 6])
+ *       return expr(`(x - ${x1}) (x - ${x2})`).expand().latex()
+ *     })
  *     return <Factor expr={exercise()} />
  *   }}
  * />
+ *
+ * @example
+ * <Sequence
+ *   id="generated"
+ *   exercise={Factor}
+ *   next={async () => {
+ *     const x1 = sample([1, 2, 3, 4, 5, 6])
+ *     const x2 = sample([1, 2, 3, 4, 5, 6])
+ *     return { expr: await expr(`(x - ${x1}) (x - ${x2})`).expand().latex() }
+ *   }}
+ * />
  */
-export function Sequence(props: Props) {
+export function Sequence<T extends object>(props: Props<T>) {
   const prefix = () =>
     `sequence:${window.location.pathname}:${window.location.search}:${props.id ?? ''}:`
   const key = (i: number) => `${prefix()}:${i}`
@@ -79,6 +102,13 @@ export function Sequence(props: Props) {
         >
           {'children' in props ? (
             props.children[i]
+          ) : 'exercise' in props ? (
+            <Scope>
+              {() => {
+                const next = createMemo(() => props.next({ position: i, progress: progress() }))
+                return <Dynamic component={props.exercise} {...next()} />
+              }}
+            </Scope>
           ) : (
             <Dynamic component={props.next} position={i} progress={progress()} />
           )}
