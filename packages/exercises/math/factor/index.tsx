@@ -1,4 +1,5 @@
 import { createView, defineFeedback, defineSchema, fields } from '@learning/core'
+import * as factorFromRoot from './factorFromRoot'
 import * as root from './root'
 import * as start from './start'
 
@@ -16,12 +17,19 @@ export const schema = defineSchema({
         root: fields.Math('Racine'),
       },
     },
+    factorFromRoot: {
+      previous: ['root'],
+      state: {
+        factor: fields.Math('Facteur associé à la racine'),
+      },
+    },
   },
 })
 
 export const feedback = defineFeedback<typeof schema>({
   start: start.feedback,
   root: root.feedback,
+  factorFromRoot: factorFromRoot.feedback,
 })
 
 /**
@@ -49,6 +57,7 @@ export const feedback = defineFeedback<typeof schema>({
 export const Factor = createView(schema, feedback, {
   start: start.Component,
   root: root.Component,
+  factorFromRoot: factorFromRoot.Component,
 })
 
 export default Factor

@@ -185,9 +185,17 @@ type Props<T extends Schema, K extends keyof T['steps'], F extends boolean = tru
   {
     question: InferFromShape<T['question'], 'feedback'>
     state?: InferFromShape<T['steps'][K]['state'], 'feedback'>
-    previous: {
-      [S in T['steps'][K]['previous'][number]]: InferFromShape<T['steps'][S]['state'], 'feedback'>
-    }[T['steps'][K]['previous'][number]][]
+    previous: T['steps'][K] extends { previous: infer P }
+      ? P extends Array<any>
+        ? {
+            [I in keyof P]: P[I] extends keyof T['steps']
+              ? InferFromShape<T['steps'][P[I]]['state'], 'feedback'>
+              : never
+          }
+        : []
+      : {
+          [S in keyof T['steps']]: InferFromShape<T['steps'][S]['state'], 'feedback'>
+        }[keyof T['steps']][]
   } & (F extends true ? Partial<{ correct: boolean; score: [number, number] }> : {})
 >
 
@@ -247,7 +255,10 @@ export const grade = async function <T extends Schema>(
       const result = await feedback[part.step]({
         question: transformed.question,
         state: transformed.attempt[i]!.state ?? part.state,
-        previous: transformed.attempt.slice(0, i).toReversed() as any,
+        previous: transformed.attempt
+          .slice(0, i)
+          .toReversed()
+          .map((s: any) => s.state) as any,
       })
       return { ...part, ...result }
     }
@@ -408,7 +419,10 @@ export function createView<T extends Schema>(
                     score: part().score,
                     question: transformed().question,
                     state: part().state,
-                    previous: transformed().attempt.slice(0, i()).toReversed() as any,
+                    previous: transformed()
+                      .attempt.slice(0, i())
+                      .toReversed()
+                      .map((s: any) => s.state),
                   } as Props<T, K>)}
                 />
                 <Show when={!part().state}>

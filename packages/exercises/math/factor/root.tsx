@@ -8,7 +8,7 @@ export const feedback: Feedback<typeof schema, 'root'> = async ({
   state: { root },
 }) => {
   const correct = await question.checkRoot(root)
-  return { correct, score: [0, 0], next: correct ? 'start' : 'root' }
+  return { correct, score: [0, 0], next: correct ? 'factorFromRoot' : null }
 }
 
 export const Component: View<typeof schema, 'root'> = (props, { Field, Feedback }) => (

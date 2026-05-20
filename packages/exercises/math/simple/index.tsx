@@ -9,7 +9,6 @@ import {
   fields,
   symapi,
 } from '@learning/core'
-import { createMemo } from 'solid-js'
 
 export const schema = defineSchema({
   name: 'math/simple',
@@ -49,20 +48,20 @@ const feedback = defineFeedback<typeof schema>({
  */
 export const Simple = createView(schema, feedback, {
   start: (props, { Field }) => {
-    const attempt = createMemo(() => props.state?.attempt)
-    const encrypted = createMemo(() => props.question.answer)
-    const correct = createMemo(() => attempt() && compare(attempt()!.json, encrypted()))
     return (
       <>
         <Field name="state.attempt" />
-        <CheckMark value={correct()} />
+        <CheckMark value={props.correct} />
       </>
     )
   },
 })
 
-async function compare(json: Parameters<typeof expr>[0], encrypted: Encrypted) {
+async function compare(json: undefined, encrypted: Encrypted): Promise<undefined>
+async function compare(json: Parameters<typeof expr>[0], encrypted: Encrypted): Promise<boolean>
+async function compare(json: Parameters<typeof expr>[0] | undefined, encrypted: Encrypted) {
   'use server'
+  if (json === undefined) return undefined
   const latex = await decrypt(encrypted)
   return symapi.expr.equal({ expr1: json, expr2: expr(latex).json })
 }
