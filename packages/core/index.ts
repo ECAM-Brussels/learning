@@ -1,4 +1,4 @@
-export { decrypt, encrypt } from './src/crypto'
+export { Encrypted, decrypt, encrypt } from './src/crypto'
 export {
   Exercise,
   ExerciseContext,

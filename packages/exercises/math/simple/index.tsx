@@ -4,6 +4,7 @@ import {
   decrypt,
   defineFeedback,
   defineSchema,
+  type Encrypted,
   expr,
   fields,
   symapi,
@@ -13,7 +14,7 @@ import { createMemo } from 'solid-js'
 export const schema = defineSchema({
   name: 'math/simple',
   question: {
-    answer: fields.Text('Réponse chiffrée'),
+    answer: fields.Encrypted('Réponse chiffrée'),
   },
   steps: {
     start: {
@@ -60,7 +61,7 @@ export const Simple = createView(schema, feedback, {
   },
 })
 
-async function compare(json: Parameters<typeof expr>[0], encrypted: string) {
+async function compare(json: Parameters<typeof expr>[0], encrypted: Encrypted) {
   'use server'
   const latex = await decrypt(encrypted)
   return symapi.expr.equal({ expr1: json, expr2: expr(latex).json })

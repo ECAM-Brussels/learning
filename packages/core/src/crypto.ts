@@ -30,7 +30,10 @@ const fromBase64 = (b64: string) => Uint8Array.from(atob(b64), (c) => c.charCode
 
 const password = 'test'
 
-export async function encrypt(rawText: string) {
+export const Encrypted = v.pipe(v.string(), v.brand('encrypted'))
+export type Encrypted = v.InferOutput<typeof Encrypted>
+
+export async function encrypt(rawText: string): Promise<Encrypted> {
   'use server'
   const text = v.parse(v.string(), rawText)
   const key = await deriveKey(password)
@@ -39,12 +42,12 @@ export async function encrypt(rawText: string) {
   const result = new Uint8Array(iv.length + encrypted.byteLength)
   result.set(iv)
   result.set(new Uint8Array(encrypted), iv.length)
-  return toBase64(result)
+  return v.parse(Encrypted, toBase64(result))
 }
 
-export async function decrypt(rawCipherText: string) {
+export async function decrypt(rawCipherText: Encrypted) {
   'use server'
-  const cipherText = v.parse(v.string(), rawCipherText)
+  const cipherText = v.parse(Encrypted, rawCipherText)
   const key = await deriveKey(password)
   const data = fromBase64(cipherText)
   const iv = data.slice(0, 12)
