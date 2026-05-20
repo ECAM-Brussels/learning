@@ -1,5 +1,5 @@
 import CheckMark from '@learning/components/CheckMark'
-import { createView, defineFeedback, defineSchema, Python, Tests } from '@learning/core'
+import { createView, defineFeedback, defineSchema, fields } from '@learning/core'
 import { runPython } from '@learning/repl'
 import { mapAsync } from 'es-toolkit'
 import { createMemo, For, Show } from 'solid-js'
@@ -7,12 +7,12 @@ import { createMemo, For, Show } from 'solid-js'
 export const schema = defineSchema({
   name: 'python/code',
   question: {
-    tests: Tests('Tests à valider'),
+    tests: fields.Tests('Tests à valider'),
   },
   steps: {
     start: {
       state: {
-        attempt: Python('Code Python'),
+        attempt: fields.Python('Code Python'),
       },
     },
   },

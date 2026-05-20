@@ -1,19 +1,19 @@
-import { createView, defineFeedback, defineSchema, Math } from '@learning/core'
+import { createView, defineFeedback, defineSchema, fields } from '@learning/core'
 import * as root from './root'
 import * as start from './start'
 
 export const schema = defineSchema({
   name: 'math/factor',
-  question: { expr: Math('Expression à factoriser') },
+  question: { expr: fields.Math('Expression à factoriser') },
   steps: {
     start: {
       state: {
-        attempt: Math('Tentative'),
+        attempt: fields.Math('Tentative'),
       },
     },
     root: {
       state: {
-        root: Math('Racine'),
+        root: fields.Math('Racine'),
       },
     },
   },

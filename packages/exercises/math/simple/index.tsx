@@ -5,21 +5,20 @@ import {
   defineFeedback,
   defineSchema,
   expr,
-  Math,
+  fields,
   symapi,
-  Text,
 } from '@learning/core'
 import { createMemo } from 'solid-js'
 
 export const schema = defineSchema({
   name: 'math/simple',
   question: {
-    answer: Text('Réponse chiffrée'),
+    answer: fields.Text('Réponse chiffrée'),
   },
   steps: {
     start: {
       state: {
-        attempt: Math('Tentative'),
+        attempt: fields.Math('Tentative'),
       },
     },
   },

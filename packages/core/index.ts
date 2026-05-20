@@ -11,7 +11,7 @@ export {
 } from './src/exercise/base'
 export { Sequence } from './src/exercise/sequence'
 export { Expression, expr } from './src/expr'
-export * from './src/fields'
+export * as fields from './src/fields'
 export { default as symapi } from './src/symapi'
 
 /**
