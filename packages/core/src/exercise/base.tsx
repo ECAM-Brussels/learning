@@ -344,7 +344,7 @@ export function createView<T extends Schema>(
       refresh(exercise)
     }
     return (
-      <div class={['not-prose', props.class]}>
+      <div class={['not-prose my-4 rounded-xl p-4 shadow', props.class]}>
         <For each={transformed().attempt}>
           {<K extends keyof T['steps']>(
             part: () =>
@@ -402,10 +402,10 @@ export function createView<T extends Schema>(
             const Feedback: FeedbackComponent<T, K> = (props) => {
               return (
                 <Show when={!part().correct && part().state}>
-                  <div class="m-4 rounded-xl border border-slate-400 p-4 text-slate-600">
-                    <h3>Feedback</h3>
+                  <details open class="m-4 border-l-4 border-slate-400 px-4 text-slate-600">
+                    <summary class="font-bold">Feedback</summary>
                     {typeof props.children === 'function' ? props.children() : props.children}
-                  </div>
+                  </details>
                 </Show>
               )
             }
@@ -439,13 +439,16 @@ export function createView<T extends Schema>(
                     Soumettre
                   </button>
                 </Show>
+                <Show when={i() < transformed().attempt.length - 1}>
+                  <hr class="my-4 border-gray-200" />
+                </Show>
               </div>
             )
           }}
         </For>
         <Show when={exercise().attempt?.filter((s) => 'state' in s).length > 0 && context.reset}>
           <button class="ml-auto block cursor-pointer text-xs text-slate-400" onClick={reset}>
-            Recommencer
+            Recommencer l'exercice
           </button>
         </Show>
       </div>

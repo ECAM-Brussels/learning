@@ -16,7 +16,9 @@ export const feedback: Feedback<typeof schema, 'start'> = async ({
 
 export const Component: View<typeof schema, 'start'> = (props, { Field, Feedback }) => (
   <>
-    <p>Factorisez l'expression suivante:</p>
+    <p>
+      Factorisez <strong>complètement</strong> l'expression suivante:
+    </p>
     <div class="flex items-center justify-center gap-1">
       {tex.block`${props.question.expr} =`}
       <Field name="state.attempt" />
