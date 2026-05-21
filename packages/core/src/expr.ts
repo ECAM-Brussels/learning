@@ -75,7 +75,10 @@ function _expr(input: Math) {
       symapi.expr.match({ expr1: json, expr2: v.parse(Expression, other) }),
     roots: (complex = false) => symapi.expr.roots({ expr: json, complex }),
     simplify: () => expr(['Simplify', json]),
-    subs: (substitutions: Record<string, Math>) => expr(ce.expr(json).subs(substitutions).json),
+    subs: (rawSubstitutions: Record<string, Expression>) => {
+      const substitutions = v.parse(v.record(v.string(), Expression), rawSubstitutions)
+      return expr(ce.expr(json).subs(substitutions).json)
+    },
   }
 }
 

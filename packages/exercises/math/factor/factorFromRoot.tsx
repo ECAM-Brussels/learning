@@ -1,6 +1,7 @@
 import CheckMark from '@learning/components/CheckMark'
 import { tex } from '@learning/components/Latex'
-import { expr, type Feedback, type View } from '@learning/core'
+import { type Feedback, type View } from '@learning/core'
+import { createMemo } from 'solid-js'
 import type { schema } from '../factor'
 
 export const feedback: Feedback<typeof schema, 'factorFromRoot'> = async ({
@@ -16,18 +17,25 @@ export const feedback: Feedback<typeof schema, 'factorFromRoot'> = async ({
   return { correct, score: [0, 0], next: correct ? 'start' : null }
 }
 
-export const Component: View<typeof schema, 'factorFromRoot'> = (props, { Field, Feedback }) => (
-  <>
-    <p>La valeur {tex`x = ${props.previous[0]?.root}`} est en effet une racine.</p>
-    <p>Quel est le facteur associé ?</p>
-    <Field name="state.factor" />
-    <CheckMark value={props.correct} />
-    <Feedback>
-      <p>
-        Souviens-toi que le facteur doit également avoir {tex`x = ${props.previous[0].root}`} comme
-        racine. On vérifie que c'est bien le cas de{' '}
-        {tex`${expr(`x - ${props.previous[0].root.rawInput}`).simplify()}`}.
-      </p>
-    </Feedback>
-  </>
-)
+export const Component: View<typeof schema, 'factorFromRoot'> = (props, { Field, Feedback }) => {
+  const root = () => props.previous[0].root
+  const y = createMemo(() => props.state?.factor.subs({ x: root() }))
+  return (
+    <>
+      <p>La valeur {tex`x = ${root()}`} est en effet une racine.</p>
+      <p>Quel est le facteur associé ?</p>
+      <Field name="state.factor" />
+      <CheckMark value={props.correct} />
+      <Feedback>
+        <p>
+          Une expression et sa factorisation doivent être <strong>égales</strong>, et donc les deux
+          doivent avoir {tex`x = ${root()}`} comme racine.
+        </p>
+        <p>
+          On vérifie cependant qu'en remplaçant {tex`x = ${root()}`} dans{' '}
+          {tex`${props.state?.factor}`}, on obtient {tex`${y()}`} et non {tex`0`}.
+        </p>
+      </Feedback>
+    </>
+  )
+}

@@ -27,6 +27,10 @@ export const Component: View<typeof schema, 'start'> = (props, { Field, Feedback
         const attempt = createMemo(() => props.state!.attempt)
         const equal = createMemo(() => props.question.expr.isEqual(attempt()!))
         const factored = createMemo(() => attempt().isFactored())
+        const isExpansionUseful = createMemo(async () => {
+          const [expanded, tex] = await Promise.all([attempt().expand().latex(), attempt().latex()])
+          return expanded !== tex
+        })
         return (
           <ul class="list-disc pl-4">
             <Show
@@ -35,9 +39,11 @@ export const Component: View<typeof schema, 'start'> = (props, { Field, Feedback
             >
               <li>
                 <p>L'expression entrée n'est pas égale à celle de l'énoncé.</p>
-                <p>On vérifie en effet que</p>
-                {tex.block`${attempt().rawInput} = ${attempt().expand()},`}
-                <p>qui n'est pas égal à {tex`${props.question.expr.rawInput}`}.</p>
+                <Show when={isExpansionUseful()}>
+                  <p>On vérifie en effet que</p>
+                  {tex.block`${attempt().rawInput} = ${attempt().expand()},`}
+                  <p>qui n'est pas égal à {tex`${props.question.expr.rawInput}`}.</p>
+                </Show>
               </li>
             </Show>
             <Show when={!factored()}>

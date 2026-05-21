@@ -13,6 +13,7 @@ export const schema = defineSchema({
       },
     },
     root: {
+      previous: ['start'],
       state: {
         root: fields.Math('Racine'),
       },
@@ -48,8 +49,10 @@ export const feedback = defineFeedback<typeof schema>({
  * // or use the `Practice` component.
  * <Scope>
  *  {() => {
- *     const [a, b] = sampleSize([1, 2, 3, 4, 5], 2)
- *     const question = createMemo(() => expr(`(x - ${a})(x - ${b})`).expand().latex())
+ *     const question = createMemo(() => {
+ *       const [a, b] = sampleSize([1, 2, 3, 4, 5], 2)
+ *       expr(`(x - ${a})(x - ${b})`).expand().latex()
+ *     })
  *     return <Factor expr={question()} />
  *   }}
  * </Scope>
