@@ -11,41 +11,27 @@ const Code = lazy(() => import('@learning/components/Code'))
 
 export function Encrypted(label: string) {
   return defineField({
+    ...v.custom<EncryptedSchema>((v) => typeof v === 'string'),
     label,
-    base: v.custom<EncryptedSchema>((v) => typeof v === 'string'),
-    feedback: v.custom<EncryptedSchema>((v) => typeof v === 'string'),
-    Component: (props) => <></>,
   })
 }
 
 export function Python(label: string) {
   return defineField({
+    ...v.string(),
     label,
-    base: v.string(),
-    feedback: v.string(),
-    Component: (props) => {
-      return (
-        <Code
-          lang="python"
-          onChange={(value) => {
-            props.setState((s) => {
-              s[props.name] = value
-            })
-          }}
-          run
-        >
-          {props.value ?? ''}
-        </Code>
-      )
-    },
+    Component: (props) => (
+      <Code lang="python" onChange={props.onChange} run>
+        {props.value ?? ''}
+      </Code>
+    ),
   })
 }
 
 export function Text(label: string) {
   return defineField({
+    ...v.string(),
     label,
-    base: v.string(),
-    feedback: v.string(),
     Component: (props) => {
       return <Markdown value={props.value} />
     },
@@ -61,9 +47,8 @@ const TestBase = v.array(
 
 export function Tests(label: string) {
   return defineField({
+    ...TestBase,
     label,
-    base: TestBase,
-    feedback: TestBase,
     Component: (props) => <>{props.value}</>,
   })
 }
@@ -82,11 +67,13 @@ export function Math(label: string) {
     }, 'Expression mathématique invalide'),
   )
   return defineField({
+    ...v.union([
+      v.pipe(v.string(), v.transform(expr)),
+      v.custom<ReturnType<typeof expr>>((v) => true),
+    ]),
     label,
-    base,
-    feedback: v.pipe(v.string(), v.transform(expr)),
     Component: (props) => {
-      const valid = createMemo(() => v.safeParse(base, props.state[props.name]).success)
+      const valid = createMemo(() => v.safeParse(base, props.currentValue).success)
       return (
         <Show
           when={!props.question}
@@ -109,13 +96,11 @@ export function Math(label: string) {
             ]}
             placeholder={props.label}
             title={props.label}
-            value={props.state.value?.rawInput ?? props.value?.rawInput ?? ''}
+            value={props.value?.rawInput ?? props.value?.rawInput ?? ''}
             readonly={props.question || props.readOnly}
             onInput={(event: InputEvent & { target: HTMLInputElement }) => {
               if (!props.question) {
-                props.setState((s) => {
-                  s[props.name] = event.target.value
-                })
+                props.onChange(event.target.value)
               }
             }}
           />

@@ -2,9 +2,11 @@ import { Dynamic } from '@solidjs/web'
 import { mapAsync, mapValues, partialRight } from 'es-toolkit'
 import stringify from 'safe-stable-stringify'
 import {
+  action,
   createContext,
   createMemo,
   createStore,
+  flush,
   For,
   refresh,
   Show,
@@ -20,35 +22,19 @@ type Prettify<T> = {
   [K in keyof T]: T[K]
 } & {}
 
-/**
- * Shape of user input
- *
- * @remarks Multiple schemas need to be provided,
- * because some transforms are very useful from a DX point of view
- * (e.g. convert LaTeX strings into an object that allow symbolic manipulation)
- * but their output might be serializable.
- *
- * For this very reason,
- * transforms associated with the 'feedback' schema
- * are delayed as long as possible.
- *
- * @typeParam S - type of user input
- * @typeParam T - output type of user input
- * @typeParam U - output type of input, after transforms
- */
-type Field<S = any, T = any, U = any> = {
-  base: v.GenericSchema<S, T>
-  feedback: v.GenericSchema<T, U>
+type FieldComponent<S extends v.BaseSchema<any, any, any>> = Component<{
+  name: string
   label: string
-  Component: Component<{
-    name: string
-    label: string
-    value?: U
-    question?: boolean
-    state: Record<string, any>
-    setState: ReturnType<typeof createStore<Record<string, any>>>[1]
-    readOnly?: boolean
-  }>
+  value?: v.InferOutput<S>
+  currentValue?: v.InferOutput<S>
+  onChange: (newValue: v.InferOutput<S>) => void
+  question?: boolean
+  readOnly?: boolean
+}>
+
+type Field<S extends v.BaseSchema<any, any, any> = v.BaseSchema<any, any, any>> = S & {
+  label?: string
+  Component?: FieldComponent<S>
 }
 
 /**
@@ -59,27 +45,22 @@ type Field<S = any, T = any, U = any> = {
  * @remarks This identity helper exists
  * because preserving the exact types associated the input and their transforms is crucial.
  */
-export function defineField<S, T, U>(field: Field<S, T, U>) {
+export function defineField<F extends Field>(field: F): F {
   return field
 }
 
-type RawShape = Record<string, Field>
+type RawShape = Record<string, v.BaseSchema<any, any, any>>
 
 /**
  * Transform a record of fields (`shape`) into a Valibot schema,
- * using either the 'base' or 'feedback' schema of each field depending on the `stage` parameter.
  *
  * @param shape
  * @param stage
  * @returns Valibot schema
  */
-function RawShapeSchema<T extends RawShape, S extends 'base' | 'feedback'>(shape: T, stage: S) {
-  return v.object(mapValues(shape, (field) => field[stage]) as { [K in keyof T]: T[K][S] })
+function RawShapeSchema<T extends RawShape>(shape: T) {
+  return v.object(mapValues(shape, (field) => field) as { [K in keyof T]: T[K] })
 }
-
-type InferFromShape<T extends Record<string, Field>, S extends 'base' | 'feedback'> = v.InferOutput<
-  ReturnType<typeof RawShapeSchema<T, S>>
->
 
 /**
  * Infer the type associated with a schema factory
@@ -96,6 +77,11 @@ type Infer<
   : T extends 'input'
     ? v.InferInput<ReturnType<F>>
     : never
+
+type InferFromShape<
+  T extends Record<string, Field>,
+  U extends 'input' | 'output' = 'output',
+> = Infer<typeof RawShapeSchema<T>, U>
 
 /**
  * Defines an exercise schema
@@ -126,14 +112,13 @@ function Part<
   T extends Schema,
   K extends keyof T['steps'],
   S extends 'selected' | 'submitted' | 'graded' = 'selected',
-  V extends 'base' | 'feedback' = 'base',
->(schema: T, step: K, stage?: S, type?: V) {
+>(schema: T, step: K, stage?: S) {
   const selected = v.object({
     step: v.literal(step as K),
   })
   const submitted = v.object({
     ...selected.entries,
-    state: RawShapeSchema(schema.steps[step].state as T['steps'][K]['state'], type ?? 'base'),
+    state: RawShapeSchema(schema.steps[step].state as T['steps'][K]['state']),
     correct: v.optional(v.boolean()),
     score: v.optional(v.tuple([v.number(), v.number()])),
   })
@@ -155,46 +140,44 @@ type Part<
   T extends Schema,
   K extends keyof T['steps'],
   S extends 'selected' | 'submitted' | 'graded' = 'selected',
-  V extends 'base' | 'feedback' = 'base',
-> = Infer<typeof Part<T, K, S, V>>
+> = Infer<typeof Part<T, K, S>>
 
 function PartUnion<
   T extends Schema,
   K extends readonly (keyof T['steps'])[],
   S extends 'selected' | 'submitted' | 'graded' = 'selected',
-  V extends 'base' | 'feedback' = 'base',
->(schema: T, steps: K, stage?: S, type?: V) {
+>(schema: T, steps: K, stage?: S) {
   return v.variant(
     'step',
-    steps.map((step) => Part(schema, step, stage, type)),
-  ) as v.VariantSchema<
-    'step',
-    { [I in keyof K]: ReturnType<typeof Part<T, K[I], S, V>> },
-    undefined
-  >
+    steps.map((step) => Part(schema, step, stage)),
+  ) as v.VariantSchema<'step', { [I in keyof K]: ReturnType<typeof Part<T, K[I], S>> }, undefined>
 }
 
 type PartUnion<
   T extends Schema,
   K extends readonly (keyof T['steps'])[] = readonly (keyof T['steps'])[],
   S extends 'selected' | 'submitted' | 'graded' = 'selected',
-  V extends 'base' | 'feedback' = 'base',
-> = Infer<typeof PartUnion<T, K, S, V>>
+> = Infer<typeof PartUnion<T, K, S>>
 
-type Props<T extends Schema, K extends keyof T['steps'], F extends boolean = true> = Prettify<
+type Props<
+  T extends Schema,
+  K extends keyof T['steps'],
+  F extends boolean = true,
+  U extends 'input' | 'output' = 'output',
+> = Prettify<
   {
-    question: InferFromShape<T['question'], 'feedback'>
-    state?: InferFromShape<T['steps'][K]['state'], 'feedback'>
+    question: InferFromShape<T['question'], U>
+    state?: InferFromShape<T['steps'][K]['state'], U>
     previous: T['steps'][K] extends { previous: infer P }
       ? P extends Array<any>
         ? {
             [I in keyof P]: P[I] extends keyof T['steps']
-              ? InferFromShape<T['steps'][P[I]]['state'], 'feedback'>
+              ? InferFromShape<T['steps'][P[I]]['state'], U>
               : never
           }
         : []
       : {
-          [S in keyof T['steps']]: InferFromShape<T['steps'][S]['state'], 'feedback'>
+          [S in keyof T['steps']]: InferFromShape<T['steps'][S]['state']>
         }[keyof T['steps']][]
   } & (F extends true ? Partial<{ correct: boolean; score: [number, number] }> : {})
 >
@@ -214,48 +197,38 @@ export function defineFeedback<T extends Schema>(data: {
   return data
 }
 
-function Attempt<T extends Schema, S extends 'graded' | 'submitted', V extends 'base' | 'feedback'>(
-  schema: T,
-  stage: S,
-  type: V,
-) {
+function Attempt<T extends Schema, S extends 'graded' | 'submitted'>(schema: T, stage: S) {
   const steps = Object.keys(schema.steps) as T['steps'][keyof T['steps']]
-  return v.array(
-    v.union([PartUnion(schema, steps, stage, type), PartUnion(schema, steps, 'selected', type)]),
-  )
+  return v.array(v.union([PartUnion(schema, steps, stage), PartUnion(schema, steps, 'selected')]))
 }
 
-export function Exercise<
-  T extends Schema,
-  S extends 'graded' | 'submitted',
-  V extends 'base' | 'feedback',
->(schema: T, stage: S, type: V = 'base' as V) {
+export function Exercise<T extends Schema, S extends 'graded' | 'submitted'>(schema: T, stage: S) {
   return v.object({
     name: v.literal(schema.name as T['name']),
-    question: RawShapeSchema(schema.question as T['question'], type),
-    attempt: Attempt(schema, stage, type),
+    question: RawShapeSchema(schema.question as T['question']),
+    attempt: Attempt(schema, stage),
   })
 }
 type Exercise<
   T extends Schema,
   S extends 'graded' | 'submitted' = 'graded',
-  V extends 'base' | 'feedback' = 'base',
-> = Infer<typeof Exercise<T, S, V>>
+  U extends 'input' | 'output' = 'output',
+> = Infer<typeof Exercise<T, S>, U>
 type GradedExercise<T extends Schema> = Omit<Exercise<T>, 'params'>
 
 export const grade = async function <T extends Schema>(
   schema: T,
   feedback: ReturnType<typeof defineFeedback<T>>,
-  exercise: Exercise<T>,
+  rawExercise: Exercise<T, 'submitted', 'input'>,
 ): Promise<GradedExercise<T>> {
+  const exercise = v.parse(Exercise(schema, 'submitted'), rawExercise)
   const { question, attempt, ...rest } = exercise
-  const transformed = v.parse(Exercise(schema, 'submitted', 'feedback'), exercise)
   let modifiedAttempt = await mapAsync(attempt, async (part, i) => {
-    if ('state' in part && 'state' in transformed.attempt[i]! && part.state) {
+    if ('state' in part && part.state) {
       const result = await feedback[part.step]({
-        question: transformed.question,
-        state: transformed.attempt[i]!.state ?? part.state,
-        previous: transformed.attempt
+        question,
+        state: part.state,
+        previous: attempt
           .slice(0, i)
           .toReversed()
           .map((s: any) => s.state) as any,
@@ -278,7 +251,7 @@ type FieldProps<T extends Schema, K extends keyof T['steps']> = {
     | `state.${keyof T['steps'][K]['state'] & string}`
 }
 
-type FeedbackComponent<T extends Schema, K extends keyof T['steps']> = Component<{
+type FeedbackComponent<T extends Schema> = Component<{
   children: JSX.Element | (() => JSX.Element)
 }>
 
@@ -286,7 +259,7 @@ export type View<T extends Schema, K extends keyof T['steps'] = keyof T['steps']
   props: Props<T, K>,
   utils: {
     Field: Component<FieldProps<T, K>>
-    Feedback: FeedbackComponent<T, K>
+    Feedback: FeedbackComponent<T>
   },
 ) => JSX.Element
 
@@ -303,7 +276,7 @@ export const ExerciseContext = createContext<ExerciseContext<any>>({
 })
 
 type FinalViewProps<T extends Schema> = Prettify<
-  Exercise<T>['question'] & {
+  Exercise<T, 'graded', 'input'>['question'] & {
     id?: string
     class?: JSX.ClassList | string
   }
@@ -329,37 +302,35 @@ export function createView<T extends Schema>(
     const exercise = createMemo(async () => {
       const { id, class: _class, ...question } = props
       const fetched = await context.fetch(key())
-      return {
+      const parsed = v.parse(Exercise(schema, 'graded'), {
         name: schema.name,
-        question,
         attempt: [{ step: 'start' }],
         ...fetched,
-      } as GradedExercise<T>
+        question: { ...question, ...fetched?.question },
+      })
+      return parsed
     })
-    const transformed = createMemo(() =>
-      v.parse(Exercise(schema, 'graded', 'feedback'), exercise()),
-    )
-    const reset = async () => {
-      await context.reset?.(key())
+    const reset = action(function* () {
+      yield context.reset?.(key())
       refresh(exercise)
-    }
+    })
     return (
       <div class={['not-prose my-4 rounded-xl p-4 shadow', props.class]}>
-        <For each={transformed().attempt}>
+        <For each={exercise().attempt}>
           {<K extends keyof T['steps']>(
             part: () =>
               | Part<T, K, 'graded'>
               | { step: K; state?: never; correct?: never; score?: never },
             i: () => number,
           ) => {
-            const [state, setState] = createStore<{}>(() => part().state ?? {})
+            const [state, setState] = createStore<Record<string, any>>(() => part().state ?? {})
             const validated = createMemo(() =>
               v.safeParse(Part(schema, part().step, 'submitted'), {
                 ...part(),
                 state,
               }),
             )
-            const submit = async () => {
+            const submit = action(async function* () {
               if (!validated().success) return
               const graded = await grade(schema, feedback, {
                 ...exercise(),
@@ -368,9 +339,10 @@ export function createView<T extends Schema>(
                   validated().output as Part<T, K, 'submitted'>,
                 ],
               })
-              await context.save(key(), graded)
+              await context.save(key(), JSON.parse(JSON.stringify(graded)))
+              yield
               refresh(exercise)
-            }
+            })
 
             function Field(props: FieldProps<T, K>) {
               const name = () => props.name.split('.')[1]!
@@ -379,7 +351,7 @@ export function createView<T extends Schema>(
                 if (isQuestion()) {
                   return schema.question[name() as keyof T['question']]
                 }
-                return schema.steps[part().step].state[name()]
+                return schema.steps[part().step].state[name() as keyof T['steps'][K]['state']]
               })
               const value = () =>
                 isQuestion()
@@ -387,19 +359,26 @@ export function createView<T extends Schema>(
                   : part().state?.[name()]
               return (
                 <Dynamic
-                  component={field().Component}
-                  name={name()}
-                  label={field().label}
+                  component={field().Component ?? 'input'}
+                  name={name() as string}
+                  label={field().label ?? ''}
                   question={isQuestion()}
                   value={value()}
-                  state={state}
-                  setState={setState}
+                  currentValue={state[name()] ?? exercise().question[name() as keyof T['question']]}
+                  onChange={(newValue: any) => {
+                    try {
+                      setState((s) => {
+                        s[name()] = newValue
+                      })
+                      flush()
+                    } catch {}
+                  }}
                   readOnly={!!part().state}
                 />
               )
             }
 
-            const Feedback: FeedbackComponent<T, K> = (props) => {
+            const Feedback: FeedbackComponent<T> = (props) => {
               return (
                 <Show when={!part().correct && part().state}>
                   <details open class="m-4 border-l-4 border-slate-400 px-4 text-slate-600">
@@ -417,13 +396,13 @@ export function createView<T extends Schema>(
                   {...({
                     correct: part().correct,
                     score: part().score,
-                    question: transformed().question,
+                    question: exercise().question,
                     state: part().state,
-                    previous: transformed()
+                    previous: exercise()
                       .attempt.slice(0, i())
                       .toReversed()
-                      .map((s: any) => s.state),
-                  } as Props<T, K>)}
+                      .map((s: any) => s.state) as any,
+                  } satisfies Props<T, K>)}
                 />
                 <Show when={!part().state}>
                   <button
@@ -439,7 +418,7 @@ export function createView<T extends Schema>(
                     Soumettre
                   </button>
                 </Show>
-                <Show when={i() < transformed().attempt.length - 1}>
+                <Show when={i() < exercise().attempt.length - 1}>
                   <hr class="my-4 border-gray-200" />
                 </Show>
               </div>
