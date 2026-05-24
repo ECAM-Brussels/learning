@@ -69,7 +69,7 @@ export function Math(label: string) {
   return defineField({
     ...v.union([
       v.pipe(v.string(), v.transform(expr)),
-      v.custom<ReturnType<typeof expr>>((v) => true),
+      v.custom<NonNullable<ReturnType<typeof expr>>>((v) => true),
     ]),
     label,
     Component: (props) => {
