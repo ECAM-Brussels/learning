@@ -33,7 +33,7 @@ const password = 'test'
 export const Encrypted = v.pipe(v.string(), v.brand('encrypted'))
 export type Encrypted = v.InferOutput<typeof Encrypted>
 
-export async function encrypt(rawText: string): Promise<Encrypted> {
+export async function encrypt<T extends string>(rawText: T): Promise<T & Encrypted> {
   'use server'
   const text = v.parse(v.string(), rawText)
   const key = await deriveKey(password)
@@ -42,7 +42,7 @@ export async function encrypt(rawText: string): Promise<Encrypted> {
   const result = new Uint8Array(iv.length + encrypted.byteLength)
   result.set(iv)
   result.set(new Uint8Array(encrypted), iv.length)
-  return v.parse(Encrypted, toBase64(result))
+  return toBase64(result) as T & Encrypted
 }
 
 export async function decrypt(rawCipherText: Encrypted) {

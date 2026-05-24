@@ -1,5 +1,6 @@
 import { type ExpressionInput, ComputeEngine, N } from '@cortex-js/compute-engine'
 import * as v from 'valibot'
+import { encrypt } from './crypto'
 import symapi from './symapi'
 
 const ce = new ComputeEngine()
@@ -55,6 +56,7 @@ function _expr(input: Math) {
         .isEqual(0),
     degree: () => symapi.expr.degree({ expr: json }),
     diff: (x = 'x') => expr(['Derivative', json, x]),
+    encrypt: async () => expr(json).latex().then(encrypt),
     expand: () => expr(['Expand', json]),
     evaluate: () => ce.expr(json).evaluate(),
     N: () => N(expr(json).evaluate()) as unknown as number,
