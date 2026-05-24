@@ -1,7 +1,7 @@
 import { Heading } from '@learning/components/Heading'
 import { tex } from '@learning/components/Latex'
 import { Page } from '@learning/components/Page'
-import { $, encrypt, expr, Sequence } from '@learning/core'
+import { $, expr, Sequence } from '@learning/core'
 import Factor from '@learning/exercises/math/factor'
 import Simple from '@learning/exercises/math/simple'
 import PythonCode from '@learning/exercises/python/code'
@@ -38,9 +38,10 @@ export default () => (
         <p>Que vaut {tex`\int_0^1 1 \, \mathrm{d} x`}?</p>
         <div class="flex items-center justify-center gap-4">
           {tex.block`\int_0^1 1 \, \mathrm{d} x =`}
-          <Simple answer={$(() => encrypt('1'))} />
+          <Simple grade={(attempt) => attempt.isEqual('1')} />
         </div>
       </div>
+      <Simple grade={(attempt) => attempt.isEqual(`\pi`)} />
       <div>
         <h3>Exercice de Python</h3>
         <p>Écrivez la fonction {tex`f(x) = x^2`} en Python</p>
