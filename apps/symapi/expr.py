@@ -82,6 +82,11 @@ def is_partial_fraction_decomposition(input: OneExpression) -> bool:
     return check_term(expr)
 
 
+@router.post("/isTrue")
+def is_true(input: OneExpression) -> bool:
+    return sympy.simplify(input.expr.expr) == True
+
+
 @router.post("/match")
 def match(input: TwoExpressions) -> bool:
     expr, pattern = sympy.expand(input.expr1.expr), input.expr2.expr

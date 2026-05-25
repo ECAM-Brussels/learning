@@ -67,8 +67,16 @@ function _expr(input: Math) {
     },
     integrate: (...params: v.InferInput<typeof integrateParams>) =>
       expr(['Integrate', json, ...v.parse(integrateParams, params)]),
-    isEqual: (other: Expression) =>
-      symapi.expr.equal({ expr1: json, expr2: v.parse(Expression, other) }),
+    isEqual: async (other: Expression, error: number = 0) => {
+      if (error > 0) {
+        const diff = expr(['Subtract', json, v.parse(Expression, other)])
+          .abs()
+          .N()
+        return diff <= error
+      }
+      return await symapi.expr.equal({ expr1: json, expr2: v.parse(Expression, other) })
+    },
+    isTrue: () => symapi.expr.isTrue({ expr: json }),
     isFactored: () => symapi.expr.isFactored({ expr: json }),
     isPartialFractionDecomposition: () =>
       symapi.expr.isPartialFractionDecomposition({ expr: json }),
