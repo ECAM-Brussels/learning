@@ -58,7 +58,7 @@ export default () => (
     <MultipleFields
       id="multiple-fields"
       fields={['a', 'b']}
-      grade={({ a, b }) => expr(`a b`).subs({ a, b }).isEqual('6')}
+      grade={({ a, b }) => expr(`a b = 6`).subs({ a, b }).isTrue()}
     >
       {(Field) => (
         <>
