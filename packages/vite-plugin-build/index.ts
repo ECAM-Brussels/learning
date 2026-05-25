@@ -34,7 +34,11 @@ export default function buildPlugin(): Plugin {
             : `return (${fnCode})({${Object.keys(context).join(', ')}})`
           const runner = new Function(...Object.keys(context), code)
           const promise = Promise.resolve(runner(...Object.values(context))).then((result) => {
-            path.replaceWith(toLiteral(result))
+            if (result && typeof result === 'object' && 'json' in result) {
+              path.replaceWith(toLiteral(result.json))
+            } else {
+              path.replaceWith(toLiteral(result))
+            }
           })
           promises.push(promise)
         },
