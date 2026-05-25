@@ -57,13 +57,14 @@ export default () => (
     </Simple>
     <MultipleFields
       id="multiple-fields"
+      params={() => ({ t: sample([12, 24, 36]) })}
       fields={['a', 'b']}
-      grade={({ a, b }) => expr(`a b = 6`).subs({ a, b }).isTrue()}
+      grade={({ a, b, t }) => expr(`a b = t`).subs({ a, b, t }).isTrue()}
     >
-      {(Field) => (
+      {({ Field, params }) => (
         <>
           <p>
-            Trouvez deux nombres {tex`a`} et {tex`b`} dont le produit vaut 6
+            Trouvez deux nombres {tex`a`} et {tex`b`} dont le produit vaut {tex`${params.t}`}.
           </p>
           <div class="flex gap-16">
             <div class="flex items-center justify-center gap-4">
@@ -83,7 +84,7 @@ export default () => (
       fields={['t', 'v']}
       grade={({ t, v }) => expr('v = a t').subs({ a: 9.81, t, v }).isTrue()}
     >
-      {(Field) => (
+      {({ Field }) => (
         <p>
           Après {tex`t =`} <Field name="t" /> secondes de chute libre, la vitesse est {tex`v =`}{' '}
           <Field name="v" /> mètres par seconde.
