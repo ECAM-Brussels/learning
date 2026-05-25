@@ -1,15 +1,26 @@
 import CheckMark from '@learning/components/CheckMark'
 import { createView, defineFeedback, defineSchema, expr, fields } from '@learning/core'
-import type { ComponentProps } from 'solid-js'
+import { Dynamic } from '@solidjs/web'
+import type { Component, ComponentProps, JSX } from 'solid-js'
+import { Show } from 'solid-js'
 import * as v from 'valibot'
 
 export const schema = defineSchema({
   name: 'math/simple',
   question: {
-    params: v.optional(v.record(v.string(), v.any())),
-    grade: v.custom<(e: NonNullable<ReturnType<typeof expr>>, params: object) => Promise<boolean>>(
-      () => true,
+    children: v.optional(v.custom<Component>(() => true)),
+    params: v.optional(
+      v.union([
+        v.record(v.string(), v.any()),
+        v.pipe(
+          v.custom<() => Record<string, any>>(() => true),
+          v.transform((fn) => fn()),
+        ),
+      ]),
     ),
+    grade: v.custom<
+      (e: NonNullable<ReturnType<typeof expr>>, params: object) => Promise<boolean> | boolean
+    >(() => true),
   },
   steps: {
     start: {
@@ -28,14 +39,15 @@ const feedback = defineFeedback<typeof schema>({
 })
 
 const _Simple = createView(schema, feedback, {
-  start: (props, { Field }) => {
-    return (
-      <>
-        <Field name="state.attempt" />
-        <CheckMark value={props.correct} />
-      </>
-    )
-  },
+  start: (props, { Field }) => (
+    <>
+      <Show when={props.question.children}>
+        <Dynamic component={props.question.children} {...props.question.params} />
+      </Show>
+      <Field name="state.attempt" />
+      <CheckMark value={props.correct} />
+    </>
+  ),
 })
 
 /**
@@ -54,8 +66,9 @@ const _Simple = createView(schema, feedback, {
  * <Simple grade={(attempt) => attempt.isEqual(`\pi`)} />
  */
 const Simple = <D extends Record<string, any>>(
-  props: Omit<ComponentProps<typeof _Simple>, 'params' | 'grade'> & {
-    params?: D
+  props: Omit<ComponentProps<typeof _Simple>, 'children' | 'params' | 'grade'> & {
+    params?: (() => D) | D
+    children?: (params: D) => JSX.Element
     grade?: (attempt: NonNullable<ReturnType<typeof expr>>, params: D) => Promise<boolean>
   },
 ) => _Simple(props as any)

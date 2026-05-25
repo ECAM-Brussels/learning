@@ -31,7 +31,7 @@ export default () => (
     />
     <Heading level={2}>Séquence prédéterminée</Heading>
     <Sequence id="predefined">
-      <Factor expr={$(() => expr('(x + 2) (x + 1)').expand().latex())} />
+      <Factor expr={$(() => expr('(x + 2) (x + 3)').expand())} />
       <Factor expr="x^2 - 1" />
       <div>
         <h3>Bonjour</h3>
@@ -41,12 +41,18 @@ export default () => (
           <Simple grade={(attempt) => attempt.isEqual('1')} />
         </div>
       </div>
-      <Simple grade={(attempt) => attempt.isEqual(`\pi`)} />
+      <Simple grade={(attempt) => attempt.isEqual(`\\pi`)} />
       <div>
         <h3>Exercice de Python</h3>
         <p>Écrivez la fonction {tex`f(x) = x^2`} en Python</p>
         <PythonCode tests={range(4, 7).map((i) => ({ test: `f(${i})`, result: `${i ** 2}` }))} />
       </div>
     </Sequence>
+    <Simple
+      params={() => ({ x: sample([1, 2, 3]) })}
+      grade={(attempt, { x }) => attempt.isEqual(`(${x})^2`)}
+    >
+      {(params) => <p>Calcule {tex`${params.x}`} au carré</p>}
+    </Simple>
   </Page>
 )
