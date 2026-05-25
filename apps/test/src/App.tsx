@@ -3,6 +3,7 @@ import { tex } from '@learning/components/Latex'
 import { Page } from '@learning/components/Page'
 import { $, expr, Sequence } from '@learning/core'
 import Factor from '@learning/exercises/math/factor'
+import MultipleFields from '@learning/exercises/math/MultipleFields'
 import Simple from '@learning/exercises/math/simple'
 import PythonCode from '@learning/exercises/python/code'
 import { range, sample } from 'es-toolkit'
@@ -54,5 +55,40 @@ export default () => (
     >
       {(params) => <p>Calcule {tex`${params.x}`} au carré</p>}
     </Simple>
+    <MultipleFields
+      id="multiple-fields"
+      fields={['a', 'b']}
+      grade={({ a, b }) => expr(`a b`).subs({ a, b }).isEqual('6')}
+    >
+      {(Field) => (
+        <>
+          <p>
+            Trouvez deux nombres {tex`a`} et {tex`b`} dont le produit vaut 6
+          </p>
+          <div class="flex gap-16">
+            <div class="flex items-center justify-center gap-4">
+              {tex`a = `}
+              <Field name="a" />
+            </div>
+            <div class="flex items-center justify-center gap-4">
+              {tex`b = `}
+              <Field name="b" />
+            </div>
+          </div>
+        </>
+      )}
+    </MultipleFields>
+    <MultipleFields
+      id="test"
+      fields={['t', 'v']}
+      grade={({ t, v }) => expr('v = a t').subs({ a: 9.81, t, v }).isTrue()}
+    >
+      {(Field) => (
+        <p>
+          Après {tex`t =`} <Field name="t" /> secondes de chute libre, la vitesse est {tex`v =`}{' '}
+          <Field name="v" /> mètres par seconde.
+        </p>
+      )}
+    </MultipleFields>
   </Page>
 )

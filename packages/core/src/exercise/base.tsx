@@ -13,6 +13,7 @@ import {
   useContext,
   type Component,
   type JSX,
+  type StoreSetter,
 } from 'solid-js'
 import * as v from 'valibot'
 
@@ -251,15 +252,15 @@ type FieldProps<T extends Schema, K extends keyof T['steps']> = {
     | `state.${keyof T['steps'][K]['state'] & string}`
 }
 
-type FeedbackComponent<T extends Schema> = Component<{
+type FeedbackComponent = Component<{
   children: JSX.Element | (() => JSX.Element)
 }>
 
 export type View<T extends Schema, K extends keyof T['steps'] = keyof T['steps']> = (
-  props: Props<T, K>,
+  props: Props<T, K> & { setState: StoreSetter<Record<string, any>> },
   utils: {
     Field: Component<FieldProps<T, K>>
-    Feedback: FeedbackComponent<T>
+    Feedback: FeedbackComponent
   },
 ) => JSX.Element
 
@@ -378,7 +379,7 @@ export function createView<T extends Schema>(
               )
             }
 
-            const Feedback: FeedbackComponent<T> = (props) => {
+            const Feedback: FeedbackComponent = (props) => {
               return (
                 <Show when={!part().correct && part().state}>
                   <details open class="m-4 border-l-4 border-slate-400 px-4 text-slate-600">
@@ -398,11 +399,12 @@ export function createView<T extends Schema>(
                     score: part().score,
                     question: exercise().question,
                     state: part().state,
+                    setState,
                     previous: exercise()
                       .attempt.slice(0, i())
                       .toReversed()
                       .map((s: any) => s.state) as any,
-                  } satisfies Props<T, K>)}
+                  } satisfies Parameters<View<T, K>>[0])}
                 />
                 <Show when={!part().state}>
                   <button
