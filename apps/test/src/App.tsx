@@ -61,19 +61,19 @@ export default () => (
       fields={['a', 'b']}
       grade={({ a, b, t }) => expr(`a b = t`).subs({ a, b, t }).isTrue()}
     >
-      {({ Field, params }) => (
+      {(props) => (
         <>
           <p>
-            Trouvez deux nombres {tex`a`} et {tex`b`} dont le produit vaut {tex`${params.t}`}.
+            Trouvez deux nombres {tex`a`} et {tex`b`} dont le produit vaut {tex`${props.t}`}.
           </p>
           <div class="flex gap-16">
             <div class="flex items-center justify-center gap-4">
               {tex`a = `}
-              <Field name="a" />
+              {props.a}
             </div>
             <div class="flex items-center justify-center gap-4">
               {tex`b = `}
-              <Field name="b" />
+              {props.b}
             </div>
           </div>
         </>
@@ -84,10 +84,10 @@ export default () => (
       fields={['t', 'v']}
       grade={({ t, v }) => expr('v = a t').subs({ a: 9.81, t, v }).isTrue()}
     >
-      {({ Field }) => (
+      {(props) => (
         <p>
-          Après {tex`t =`} <Field name="t" /> secondes de chute libre, la vitesse est {tex`v =`}{' '}
-          <Field name="v" /> mètres par seconde.
+          Après {tex`t =`} {props.t} secondes de chute libre, la vitesse est {tex`v =`} {props.v}{' '}
+          mètres par seconde.
         </p>
       )}
     </MultipleFields>

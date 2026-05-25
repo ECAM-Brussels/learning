@@ -1,17 +1,13 @@
 import MathField from '@learning/components/MathField'
 import { createView, defineFeedback, defineSchema, type expr } from '@learning/core'
-import { Show, type Component, type ComponentProps, type JSX } from 'solid-js'
+import { createProjection, Show, type ComponentProps, type JSX } from 'solid-js'
 import * as v from 'valibot'
-
-type Field<N extends string> = Component<{ name: N }>
 
 export const schema = defineSchema({
   name: 'math/multiplefields',
   question: {
     fields: v.optional(v.array(v.string()), ['attempt']),
-    children: v.custom<({ Field, params }: { Field: Field<string>; params: any }) => JSX.Element>(
-      () => true,
-    ),
+    children: v.custom<(props: any) => JSX.Element>(() => true),
     params: v.optional(
       v.union([
         v.record(v.string(), v.any()),
@@ -56,9 +52,13 @@ const _MultipleFields = createView(schema, feedback, {
         />
       )
     }
+    const innerProps = createProjection(() => ({
+      ...props.question.params,
+      ...Object.fromEntries(props.question.fields.map((f) => [f, <Field name={f} />])),
+    }))
     return (
       <>
-        {props.question.children({ Field, params: props.question.params ?? {} })}
+        {props.question.children(innerProps)}
         <Show when={props.correct !== undefined}>
           <div
             class={[
@@ -87,7 +87,7 @@ export function MultipleFields<const F extends string[], D extends Record<string
     grade: (
       props: Record<F[number], NonNullable<ReturnType<typeof expr>>> & D,
     ) => Promise<boolean> | boolean
-    children: ({ Field, params }: { Field: Field<F[number]>; params: D }) => JSX.Element
+    children: (props: D & { [K in F[number]]: JSX.Element }) => JSX.Element
   },
 ) {
   return _MultipleFields(props as any)
