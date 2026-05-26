@@ -1,6 +1,5 @@
 import CheckMark from '@learning/components/CheckMark'
-import { tex } from '@learning/components/Latex'
-import { expr, type Feedback, type View } from '@learning/core'
+import { expr, tex, type Feedback, type View } from '@learning/core'
 import { filterAsync } from 'es-toolkit'
 import { createMemo, For, Show } from 'solid-js'
 import type { schema } from '../factor'

@@ -1,6 +1,5 @@
 import CheckMark from '@learning/components/CheckMark'
-import { tex } from '@learning/components/Latex'
-import { type Feedback, type View } from '@learning/core'
+import { type Feedback, type View, tex } from '@learning/core'
 import type { schema } from '../factor'
 
 export const feedback: Feedback<typeof schema, 'root'> = async ({

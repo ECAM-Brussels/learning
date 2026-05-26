@@ -44,7 +44,6 @@
     "packages/components": {
       "name": "@learning/components",
       "dependencies": {
-        "@learning/core": "workspace:*",
         "@learning/repl": "workspace:*",
         "@solidjs/web": "catalog:",
         "katex": "^0.16.35",

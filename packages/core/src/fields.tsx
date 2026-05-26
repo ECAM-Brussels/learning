@@ -1,13 +1,12 @@
+import { Code } from '@learning/components/Code'
 import Latex from '@learning/components/Latex'
 import Markdown from '@learning/components/Markdown'
 import MathField from '@learning/components/MathField'
-import { createMemo, lazy, Show } from 'solid-js'
+import { createMemo, Show } from 'solid-js'
 import * as v from 'valibot'
 import { Encrypted as EncryptedSchema } from './crypto'
 import { defineField } from './exercise/base'
 import { expr } from './expr'
-
-const Code = lazy(() => import('@learning/components/Code'))
 
 export function Encrypted(label: string) {
   return defineField({

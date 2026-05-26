@@ -1,7 +1,6 @@
 import { Heading } from '@learning/components/Heading'
-import { tex } from '@learning/components/Latex'
 import { Page } from '@learning/components/Page'
-import { $, expr, Generate, Sequence } from '@learning/core'
+import { $, expr, Generate, Sequence, tex } from '@learning/core'
 import Exercise from '@learning/exercises/math/Exercise'
 import Factor from '@learning/exercises/math/factor'
 import PythonCode from '@learning/exercises/python/code'

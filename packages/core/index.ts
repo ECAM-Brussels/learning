@@ -14,6 +14,7 @@ export { Sequence } from './src/exercise/sequence'
 export { Expression, expr } from './src/expr'
 export * as fields from './src/fields'
 export { default as symapi } from './src/symapi'
+export * from './src/tex'
 
 /**
  * Macro that marks a build time substitution.
