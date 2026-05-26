@@ -2,9 +2,8 @@ import { Heading } from '@learning/components/Heading'
 import { tex } from '@learning/components/Latex'
 import { Page } from '@learning/components/Page'
 import { $, expr, Sequence } from '@learning/core'
+import Exercise from '@learning/exercises/math/Exercise'
 import Factor from '@learning/exercises/math/factor'
-import MultipleFields from '@learning/exercises/math/MultipleFields'
-import Simple from '@learning/exercises/math/simple'
 import PythonCode from '@learning/exercises/python/code'
 import { range, sample } from 'es-toolkit'
 import './style.css'
@@ -34,28 +33,37 @@ export default () => (
     <Sequence id="predefined">
       <Factor expr={$(() => expr('(x + 2) (x + 3)').expand())} />
       <Factor expr="x^2 - 1" />
-      <div>
-        <h3>Bonjour</h3>
-        <p>Que vaut {tex`\int_0^1 1 \, \mathrm{d} x`}?</p>
-        <div class="flex items-center justify-center gap-4">
-          {tex.block`\int_0^1 1 \, \mathrm{d} x =`}
-          <Simple grade={(attempt) => attempt.isEqual('1')} />
-        </div>
-      </div>
-      <Simple grade={(attempt) => attempt.isEqual(`\\pi`)} />
+      <Exercise fields={['attempt']} grade={({ attempt }) => attempt.isEqual('1')}>
+        {(props) => (
+          <>
+            <h3>Bonjour</h3>
+            <p>Que vaut {tex`\int_0^1 1 \, \mathrm{d} x`}?</p>
+            <div class="flex items-center justify-center gap-4">
+              {tex.block`\int_0^1 1 \, \mathrm{d} x =`}
+              {props.attempt}
+            </div>
+          </>
+        )}
+      </Exercise>
       <div>
         <h3>Exercice de Python</h3>
         <p>Écrivez la fonction {tex`f(x) = x^2`} en Python</p>
         <PythonCode tests={range(4, 7).map((i) => ({ test: `f(${i})`, result: `${i ** 2}` }))} />
       </div>
     </Sequence>
-    <Simple
+    <Exercise
+      id="square"
       params={() => ({ x: sample([1, 2, 3]) })}
-      grade={(attempt, { x }) => attempt.isEqual(`(${x})^2`)}
+      fields={['y']}
+      grade={({ x, y }) => y.isEqual(`(${x})^2`)}
     >
-      {(params) => <p>Calcule {tex`${params.x}`} au carré</p>}
-    </Simple>
-    <MultipleFields
+      {(props) => (
+        <p>
+          Calcule {tex`${props.x}`} au carré: {props.y}
+        </p>
+      )}
+    </Exercise>
+    <Exercise
       id="multiple-fields"
       params={() => ({ t: sample([12, 24, 36]) })}
       fields={['a', 'b']}
@@ -78,8 +86,8 @@ export default () => (
           </div>
         </>
       )}
-    </MultipleFields>
-    <MultipleFields
+    </Exercise>
+    <Exercise
       id="test"
       fields={['t', 'v']}
       grade={({ t, v }) => expr('v = a t').subs({ a: 9.81, t, v }).isTrue()}
@@ -90,6 +98,6 @@ export default () => (
           mètres par seconde.
         </p>
       )}
-    </MultipleFields>
+    </Exercise>
   </Page>
 )

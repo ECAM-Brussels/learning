@@ -2,8 +2,7 @@
   "name": "@learning/exercises",
   "exports": {
     "./math/factor": "./math/factor/index.tsx",
-    "./math/MultipleFields": "./math/MultipleFields.tsx",
-    "./math/simple": "./math/simple/index.tsx",
+    "./math/Exercise": "./math/Exercise.tsx",
     "./python/code": "./python/code.tsx"
   },
   "private": true,
