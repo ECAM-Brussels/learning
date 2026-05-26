@@ -53,19 +53,18 @@ export default () => (
     <Exercise
       id="square"
       params={() => ({ x: sample([1, 2, 3]) })}
-      fields={['y']}
-      grade={({ x, y }) => y.isEqual(`(${x})^2`)}
+      grade={({ x, attempt }) => attempt.isEqual(`(${x})^2`)}
     >
       {(props) => (
         <p>
-          Calcule {tex`${props.x}`} au carré: {props.y}
+          Calcule {tex`${props.x}`} au carré: {props.attempt}
         </p>
       )}
     </Exercise>
     <Exercise
       id="multiple-fields"
       params={() => ({ t: sample([12, 24, 36]) })}
-      fields={['a', 'b']}
+      inputs={['a', 'b']}
       grade={({ a, b, t }) => expr(`a b = t`).subs({ a, b, t }).isTrue()}
       feedback={(props) => (
         <p>
@@ -95,7 +94,7 @@ export default () => (
     <Exercise
       id="test"
       params={() => ({ t: sample([1, 2, 3, 4, 5]) })}
-      fields={['v']}
+      inputs={['v']}
       grade={({ t, v }) => expr('v = a t').subs({ a: 9.81, t, v }).isTrue()}
       feedback={(props) => (
         <>
@@ -103,7 +102,7 @@ export default () => (
           {tex.block`
             v = a \cdot t
               = 9.81 \cdot ${props.t}
-              = ${expr('a t').subs({ a: 9.81, t: props.t }).simplify()}
+              = ${expr('a t').subs({ a: 9.81, t: props.t }).N()}
           `}
         </>
       )}

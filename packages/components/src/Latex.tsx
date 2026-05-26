@@ -45,7 +45,8 @@ function makeTex(displayMode: boolean) {
         values.map(async (value) => {
           if (!value) return ''
           if (typeof value === 'string') return value
-          return typeof value === 'string' ? value : await expr(v.parse(Expression, value)).latex()
+          if (typeof value === 'number') return value
+          return await expr(v.parse(Expression, value)).latex()
         }),
       )
       return String.raw(strings, ...parsed)

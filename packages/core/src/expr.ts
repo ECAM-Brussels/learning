@@ -59,7 +59,7 @@ function _expr(input: Math) {
     encrypt: async () => expr(json).latex().then(encrypt),
     expand: () => expr(['Expand', json]),
     evaluate: () => ce.expr(json).evaluate(),
-    N: () => N(expr(json).evaluate()) as unknown as number,
+    N: () => Number(N(expr(json).evaluate())),
     factor: () => expr(['Factor', json]),
     func: () => {
       if (!Array.isArray(json)) throw new Error(`Only arrays have the property func`)

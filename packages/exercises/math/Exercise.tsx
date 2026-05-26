@@ -5,10 +5,14 @@ import { mapValues } from 'es-toolkit'
 import { createProjection, flush, Show, type ComponentProps, type JSX } from 'solid-js'
 import * as v from 'valibot'
 
+type Prettify<T> = {
+  [K in keyof T]: T[K]
+} & {}
+
 export const schema = defineSchema({
   name: 'math/exercise',
   question: {
-    fields: v.optional(v.array(v.string()), ['attempt']),
+    inputs: v.optional(v.array(v.string()), ['attempt']),
     children: v.custom<(props: object) => JSX.Element>(() => true),
     params: v.optional(
       v.union([
@@ -70,7 +74,7 @@ const _Exercise = createView(schema, feedback, {
     }
     const innerProps = createProjection(() => ({
       ...props.question.params,
-      ...Object.fromEntries(props.question.fields.map((f) => [f, <Field name={f} />])),
+      ...Object.fromEntries(props.question.inputs.map((f) => [f, <Field name={f} />])),
     }))
     return (
       <>
@@ -106,18 +110,20 @@ const _Exercise = createView(schema, feedback, {
 
 type PartialProps = Omit<
   ComponentProps<typeof _Exercise>,
-  'fields' | 'grade' | 'children' | 'params' | 'feedback'
+  'inputs' | 'grade' | 'children' | 'params' | 'feedback'
 >
 
 export function Exercise<const F extends string = 'attempt', D extends Record<string, any> = {}>(
   props: PartialProps & {
-    fields?: F[]
+    inputs?: F[]
     params?: (() => D) | D
     grade: (
-      props: { [K in F]: NonNullable<ReturnType<typeof expr>> } & D,
+      props: Prettify<{ [K in F]: NonNullable<ReturnType<typeof expr>> } & D>,
     ) => Promise<boolean> | boolean
-    children: (props: D & { [K in F]: JSX.Element }) => JSX.Element
-    feedback?: (props: { [K in F]: NonNullable<ReturnType<typeof expr>> } & D) => JSX.Element
+    children: (props: Prettify<D & { [K in F]: JSX.Element }>) => JSX.Element
+    feedback?: (
+      props: Prettify<{ [K in F]: NonNullable<ReturnType<typeof expr>> } & D>,
+    ) => JSX.Element
   },
 ): JSX.Element {
   return _Exercise(props as any)
