@@ -1,7 +1,7 @@
 import { Heading } from '@learning/components/Heading'
 import { tex } from '@learning/components/Latex'
 import { Page } from '@learning/components/Page'
-import { $, expr, Sequence } from '@learning/core'
+import { $, expr, Generate, Sequence } from '@learning/core'
 import Exercise from '@learning/exercises/math/Exercise'
 import Factor from '@learning/exercises/math/factor'
 import PythonCode from '@learning/exercises/python/code'
@@ -19,15 +19,23 @@ export default () => (
       y = ${expr('(x - 2) (x - 3)^3').expand()}\\
       \int_0^1 x^2 \, \mathrm{d} x = ${expr('x^2').integrate('x', 0, 1)}
     `}
+    <Generate
+      exercise={Factor}
+      data={() => ({
+        expr: expr('(x - a) (x - b)')
+          .subs({ a: sample([1, 2, 3]), b: 0 })
+          .expand(),
+      })}
+    />
     <Heading level={2}>Séquence générée</Heading>
     <Sequence
       id="generated"
       exercise={Factor}
-      next={() => {
-        const x1 = sample([1, 2, 3, 4, 5, 6])
-        const x2 = sample([1, 2, 3, 4, 5, 6])
-        return { expr: expr(`(x - ${x1}) (x - ${x2})`).expand() }
-      }}
+      next={() => ({
+        expr: expr(`(x - x_1) (x - x_2)`)
+          .subs({ x_1: sample([1, 2, 3, 4, 5]), x_2: sample([1, 2, 3, 4, 5]) })
+          .expand(),
+      })}
     />
     <Heading level={2}>Séquence prédéterminée</Heading>
     <Sequence id="predefined">
