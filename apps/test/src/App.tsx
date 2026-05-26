@@ -33,10 +33,9 @@ export default () => (
     <Sequence id="predefined">
       <Factor expr={$(() => expr('(x + 2) (x + 3)').expand())} />
       <Factor expr="x^2 - 1" />
-      <Exercise fields={['attempt']} grade={({ attempt }) => attempt.isEqual('1')}>
+      <Exercise grade={({ attempt }) => attempt.isEqual('1')}>
         {(props) => (
           <>
-            <h3>Bonjour</h3>
             <p>Que vaut {tex`\int_0^1 1 \, \mathrm{d} x`}?</p>
             <div class="flex items-center justify-center gap-4">
               {tex.block`\int_0^1 1 \, \mathrm{d} x =`}
@@ -95,12 +94,23 @@ export default () => (
     </Exercise>
     <Exercise
       id="test"
-      fields={['t', 'v']}
+      params={() => ({ t: sample([1, 2, 3, 4, 5]) })}
+      fields={['v']}
       grade={({ t, v }) => expr('v = a t').subs({ a: 9.81, t, v }).isTrue()}
+      feedback={(props) => (
+        <>
+          <p>La vitesse se calcule avec la formule</p>
+          {tex.block`
+            v = a \cdot t
+              = 9.81 \cdot ${props.t}
+              = ${expr('a t').subs({ a: 9.81, t: props.t }).simplify()}
+          `}
+        </>
+      )}
     >
       {(props) => (
         <p>
-          Après {tex`t =`} {props.t} secondes de chute libre, la vitesse est {tex`v =`} {props.v}{' '}
+          Après {tex`t = ${props.t}`} secondes de chute libre, la vitesse est {tex`v =`} {props.v}{' '}
           mètres par seconde.
         </p>
       )}

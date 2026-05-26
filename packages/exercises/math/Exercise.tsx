@@ -8,7 +8,7 @@ import * as v from 'valibot'
 export const schema = defineSchema({
   name: 'math/exercise',
   question: {
-    fields: v.array(v.string()),
+    fields: v.optional(v.array(v.string()), ['attempt']),
     children: v.custom<(props: object) => JSX.Element>(() => true),
     params: v.optional(
       v.union([
@@ -50,16 +50,16 @@ export const feedback = defineFeedback<typeof schema>({
 
 const _Exercise = createView(schema, feedback, {
   start: (props) => {
-    const Field = (attrs: { name: string }) => {
+    const Field = (attrs: { name?: string }) => {
       return (
         <MathField
           class="rounded border border-slate-200 py-2 outline-none"
-          value={props.state?.state?.[attrs.name]?.rawInput ?? ''}
+          value={props.state?.state?.[attrs.name ?? 'attempt']?.rawInput ?? ''}
           onInput={(e: InputEvent & { target: HTMLInputElement }) => {
             try {
               props.setState((s) => {
                 if (!s.state) s.state = {}
-                s['state'][attrs.name] = e.target.value
+                s['state'][attrs.name ?? 'attempt'] = e.target.value
               })
               flush()
             } catch {}
@@ -109,9 +109,9 @@ type PartialProps = Omit<
   'fields' | 'grade' | 'children' | 'params' | 'feedback'
 >
 
-export function Exercise<const F extends string, D extends Record<string, any> = {}>(
+export function Exercise<const F extends string = 'attempt', D extends Record<string, any> = {}>(
   props: PartialProps & {
-    fields: F[]
+    fields?: F[]
     params?: (() => D) | D
     grade: (
       props: { [K in F]: NonNullable<ReturnType<typeof expr>> } & D,
