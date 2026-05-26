@@ -1,5 +1,6 @@
 import MathField from '@learning/components/MathField'
 import { createView, defineFeedback, defineSchema, expr } from '@learning/core'
+import { Dynamic } from '@solidjs/web'
 import { mapValues } from 'es-toolkit'
 import { createProjection, flush, Show, type ComponentProps, type JSX } from 'solid-js'
 import * as v from 'valibot'
@@ -20,6 +21,7 @@ export const schema = defineSchema({
       {},
     ),
     grade: v.custom<(props: object) => Promise<boolean> | boolean>(() => true),
+    feedback: v.optional(v.custom<(props: object) => JSX.Element>(() => true)),
   },
   steps: {
     start: {
@@ -84,6 +86,17 @@ const _Exercise = createView(schema, feedback, {
             ]}
           >
             {props.correct === true ? 'Correct!' : 'Incorrect!'}
+            <div>
+              <Show when={!props.correct && props.question.feedback}>
+                {(feedback) => (
+                  <Dynamic
+                    component={feedback()}
+                    {...props.question.params}
+                    {...props.state?.state}
+                  />
+                )}
+              </Show>
+            </div>
           </div>
         </Show>
       </>
@@ -93,7 +106,7 @@ const _Exercise = createView(schema, feedback, {
 
 type PartialProps = Omit<
   ComponentProps<typeof _Exercise>,
-  'fields' | 'grade' | 'children' | 'params'
+  'fields' | 'grade' | 'children' | 'params' | 'feedback'
 >
 
 export function Exercise<const F extends string, D extends Record<string, any> = {}>(
@@ -104,6 +117,7 @@ export function Exercise<const F extends string, D extends Record<string, any> =
       props: { [K in F]: NonNullable<ReturnType<typeof expr>> } & D,
     ) => Promise<boolean> | boolean
     children: (props: D & { [K in F]: JSX.Element }) => JSX.Element
+    feedback?: (props: { [K in F]: NonNullable<ReturnType<typeof expr>> } & D) => JSX.Element
   },
 ): JSX.Element {
   return _Exercise(props as any)

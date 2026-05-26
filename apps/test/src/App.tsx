@@ -68,6 +68,12 @@ export default () => (
       params={() => ({ t: sample([12, 24, 36]) })}
       fields={['a', 'b']}
       grade={({ a, b, t }) => expr(`a b = t`).subs({ a, b, t }).isTrue()}
+      feedback={(props) => (
+        <p>
+          {tex`${props.a} \times ${props.b}`} vaut {tex`${expr('a b').subs(props)}`}, ce qui n'est
+          pas égal à {tex`${props.t}`}
+        </p>
+      )}
     >
       {(props) => (
         <>
