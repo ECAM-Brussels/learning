@@ -3,6 +3,7 @@ import { Page } from '@learning/components/Page'
 import { $, expr, Generate, Sequence, tex } from '@learning/core'
 import Exercise from '@learning/exercises/math/Exercise'
 import Factor from '@learning/exercises/math/factor'
+import { MultipleChoice } from '@learning/exercises/MultipleChoice'
 import PythonCode from '@learning/exercises/python/code'
 import { range, sample } from 'es-toolkit'
 import './style.css'
@@ -10,6 +11,19 @@ import './style.css'
 export default () => (
   <Page>
     <Heading level={1}>CAS</Heading>
+    <MultipleChoice
+      id="mcq-integrale"
+      choices={{
+        '1/2': <>{tex`${expr('x').integrate('x', 0, 1)}`}</>,
+        '1/3': <>{tex`${expr('x').integrate('x', -1, 1)}`}</>,
+        '1': <>{tex`${expr('x^2').integrate('x', 0, 1)}`}</>,
+      }}
+      grade={(selection) => selection.length === 1 && selection[0] === '1/2'}
+    >
+      <p>
+        Que vaut l'intégrale de {tex`x`} entre {tex`0`} et {tex`1`} ?
+      </p>
+    </MultipleChoice>
     <p>
       Pour l'écriture du feedback, il est important de pouvoir faire des calculs symboliques de
       manière lisible.
