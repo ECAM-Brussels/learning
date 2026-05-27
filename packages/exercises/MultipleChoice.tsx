@@ -53,7 +53,6 @@ const _MultipleChoice = createView(schema, feedback, {
   start: (props) => (
     <>
       {props.question.children}
-      {Object.keys(props.question.choices)}
       <div class="align-center my-2 flex items-center gap-8">
         <For each={Object.entries(props.question.choices).filter(([key]) => key !== 'toJSON')}>
           {(entry) => (
