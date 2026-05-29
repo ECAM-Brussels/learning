@@ -6,7 +6,7 @@ import { createMemo, Show } from 'solid-js'
 import * as v from 'valibot'
 import { Encrypted as EncryptedSchema } from './crypto'
 import { defineField } from './exercise/base'
-import { expr } from './expr'
+import { expr, Expression } from './expr'
 
 export function Encrypted(label: string) {
   return defineField({
@@ -66,10 +66,7 @@ export function Math(label: string) {
     }, 'Expression mathématique invalide'),
   )
   return defineField({
-    ...v.union([
-      v.pipe(v.string(), v.transform(expr)),
-      v.custom<NonNullable<ReturnType<typeof expr>>>((v) => true),
-    ]),
+    ...v.union([v.pipe(v.string(), v.transform(expr)), Expression]),
     label,
     Component: (props) => {
       const valid = createMemo(() => v.safeParse(base, props.currentValue).success)

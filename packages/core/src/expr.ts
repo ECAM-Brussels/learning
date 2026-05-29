@@ -1,4 +1,9 @@
-import { type ExpressionInput, ComputeEngine, N } from '@cortex-js/compute-engine'
+import {
+  type ExpressionInput as CEExpressionInput,
+  ComputeEngine,
+  N,
+} from '@cortex-js/compute-engine'
+import stringify from 'safe-stable-stringify'
 import * as v from 'valibot'
 import { encrypt } from './crypto'
 import symapi from './symapi'
@@ -17,7 +22,7 @@ const integrateParams = v.union([
   ),
 ])
 
-const Math: v.GenericSchema<ExpressionInput> = v.union([
+const Math: v.GenericSchema<CEExpressionInput> = v.union([
   v.pipe(
     v.string(),
     v.check((expr) => ce.parse(expr).isValid, "Ceci n'est pas une expression mathématique valide"),
@@ -31,14 +36,25 @@ const Math: v.GenericSchema<ExpressionInput> = v.union([
 ])
 type Math = v.InferInput<typeof Math>
 
-export const Expression = v.union([
+const ExpressionInput = v.union([
   Math,
   v.pipe(
     v.looseObject({ json: Math }),
     v.transform((v) => v.json),
   ),
 ])
-export type Expression = v.InferInput<typeof Expression>
+type ExpressionInput = v.InferInput<typeof ExpressionInput>
+
+export const Expression = v.union([
+  v.pipe(Math, v.transform(_expr)),
+  v.custom<ReturnType<typeof _expr>>((value): value is ReturnType<typeof _expr> => {
+    return typeof value === 'object' && value !== null && 'json' in value && 'latex' in value
+  }),
+])
+
+export type Expression<T extends 'input' | 'output' = 'input'> = T extends 'input'
+  ? v.InferInput<typeof Expression>
+  : ReturnType<typeof _expr>
 
 function _expr(input: Math) {
   const json = v.parse(Math, input)
@@ -50,9 +66,9 @@ function _expr(input: Math) {
       if (!Array.isArray(json)) throw new Error(`Only arrays have the property args`)
       return json.slice(1) as Math[]
     },
-    checkRoot: (root: Expression, x = 'x') =>
+    checkRoot: (root: ExpressionInput, x = 'x') =>
       expr(json)
-        .subs({ [x]: v.parse(Expression, root) })
+        .subs({ [x]: v.parse(ExpressionInput, root) })
         .isEqual(0),
     degree: () => symapi.expr.degree({ expr: json }),
     diff: (x = 'x') => expr(['Derivative', json, x]),
@@ -67,35 +83,36 @@ function _expr(input: Math) {
     },
     integrate: (...params: v.InferInput<typeof integrateParams>) =>
       expr(['Integrate', json, ...v.parse(integrateParams, params)]),
-    isEqual: async (other: Expression, error: number = 0) => {
+    isEqual: async (other: ExpressionInput, error: number = 0) => {
       if (error > 0) {
-        const diff = expr(['Subtract', json, v.parse(Expression, other)])
+        const diff = expr(['Subtract', json, v.parse(ExpressionInput, other)])
           .abs()
           .N()
         return diff <= error
       }
-      return await symapi.expr.equal({ expr1: json, expr2: v.parse(Expression, other) })
+      return await symapi.expr.equal({ expr1: json, expr2: v.parse(ExpressionInput, other) })
     },
     isTrue: () => symapi.expr.isTrue({ expr: json }),
     isFactored: () => symapi.expr.isFactored({ expr: json }),
     isPartialFractionDecomposition: () =>
       symapi.expr.isPartialFractionDecomposition({ expr: json }),
     latex: () => symapi.expr.latex({ expr: json }),
-    matches: (other: Expression) =>
-      symapi.expr.match({ expr1: json, expr2: v.parse(Expression, other) }),
+    matches: (other: ExpressionInput) =>
+      symapi.expr.match({ expr1: json, expr2: v.parse(ExpressionInput, other) }),
     roots: (complex = false) => symapi.expr.roots({ expr: json, complex }),
     simplify: () => expr(['Simplify', json]),
-    subs: (rawSubstitutions: Record<string, Expression>) => {
-      const substitutions = v.parse(v.record(v.string(), Expression), rawSubstitutions)
+    subs: (rawSubstitutions: Record<string, ExpressionInput>) => {
+      const substitutions = v.parse(v.record(v.string(), ExpressionInput), rawSubstitutions)
       return expr(ce.expr(json).subs(substitutions).json)
     },
+    toString: () => (typeof input === 'string' ? input : stringify(json)),
     toJSON: () => input,
   }
 }
 
 export function expr<T extends Math | undefined>(
   input: T,
-): T extends undefined ? undefined : ReturnType<typeof _expr> {
+): T extends undefined ? undefined : Expression<'output'> {
   if (input === undefined) return undefined as any
   return _expr(input) as any
 }
@@ -112,7 +129,7 @@ type Quantity = v.InferInput<typeof Quantity>
 export function quantity(qty: Quantity) {
   const json = v.parse(Quantity, qty)
 
-  function apply(method: string, ...args: ExpressionInput[]) {
+  function apply(method: string, ...args: CEExpressionInput[]) {
     return ce.expr([method, ...args]).evaluate()
   }
 

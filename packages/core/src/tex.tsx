@@ -1,7 +1,7 @@
 import Latex from '@learning/components/Latex'
 import { createMemo } from 'solid-js'
 import * as v from 'valibot'
-import { expr, Expression } from './expr'
+import { Expression } from './expr'
 
 function makeTex(displayMode: boolean) {
   return (strings: TemplateStringsArray, ...values: (Expression | undefined)[]) => {
@@ -11,7 +11,7 @@ function makeTex(displayMode: boolean) {
           if (!value) return ''
           if (typeof value === 'string') return value
           if (typeof value === 'number') return value
-          return await expr(v.parse(Expression, value)).latex()
+          return await v.parse(Expression, value).latex()
         }),
       )
       return String.raw(strings, ...parsed)
