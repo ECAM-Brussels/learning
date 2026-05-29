@@ -30,6 +30,7 @@ type FieldComponent<S extends v.BaseSchema<any, any, any>> = Component<{
   currentValue?: v.InferOutput<S>
   onChange: (newValue: v.InferOutput<S>) => void
   question?: boolean
+  requestSubmit: () => void
   readOnly?: boolean
 }>
 
@@ -375,6 +376,7 @@ export function createView<T extends Schema>(
                     } catch {}
                   }}
                   readOnly={!!part().state}
+                  requestSubmit={() => submit()}
                 />
               )
             }

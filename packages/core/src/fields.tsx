@@ -97,6 +97,12 @@ export function Math(label: string) {
             title={props.label}
             value={props.value?.rawInput ?? props.value?.rawInput ?? ''}
             readonly={props.question || props.readOnly}
+            onKeyDown={(event: KeyboardEvent) => {
+              if (event.key === 'Enter') {
+                event.preventDefault()
+                props.requestSubmit()
+              }
+            }}
             onInput={(event: InputEvent & { target: HTMLInputElement }) => {
               if (!props.question) {
                 props.onChange(event.target.value)
