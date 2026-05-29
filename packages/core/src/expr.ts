@@ -71,6 +71,10 @@ function _expr(input: Math) {
         .subs({ [x]: v.parse(ExpressionInput, root) })
         .isEqual(0),
     degree: () => symapi.expr.degree({ expr: json }),
+    delta: (x: string, a: ExpressionInput, b: ExpressionInput) => {
+      const f = (t: ExpressionInput) => expr(json).subs({ [x]: v.parse(ExpressionInput, t) }).json
+      return expr(['Subtract', f(b), f(a)])
+    },
     diff: (x = 'x') => expr(['Derivative', json, x]),
     encrypt: async () => expr(json).latex().then(encrypt),
     expand: () => expr(['Expand', json]),
