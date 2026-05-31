@@ -5,6 +5,7 @@
     "./Code": "./src/Code.tsx",
     "./Environment": "./src/Environment.tsx",
     "./Heading": "./src/Heading.tsx",
+    "./Highlight": "./src/Highlight.tsx",
     "./Latex": "./src/Latex.tsx",
     "./Markdown": "./src/Markdown.tsx",
     "./MathField": "./src/MathField.tsx",
@@ -17,7 +18,8 @@
   },
   "private": true,
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "shiki": "^4.1.0"
   },
   "peerDependencies": {
     "typescript": "^5"
@@ -25,6 +27,7 @@
   "dependencies": {
     "@learning/repl": "workspace:*",
     "@solidjs/web": "catalog:",
+    "dedent": "^1.7.2",
     "katex": "^0.16.35",
     "mathlive": "^0.109.2",
     "micromark": "^4.0.2",
