@@ -2,24 +2,53 @@ import { Example, Remark } from '@learning/components/Environment'
 import { Heading } from '@learning/components/Heading'
 import { hl } from '@learning/components/Highlight'
 import { Page } from '@learning/components/Page'
-import { $, encrypt, expr, Generate, Sequence, tex } from '@learning/core'
+import { expr, tex } from '@learning/core'
 import Exercise from '@learning/exercises/math/Exercise'
-import Factor from '@learning/exercises/math/factor'
-import { MultipleChoice } from '@learning/exercises/MultipleChoice'
-import PythonCode from '@learning/exercises/python/code'
-import { range, sample } from 'es-toolkit'
+import { sample } from 'es-toolkit'
 import './style.css'
 
 export default () => (
-  <Page>
-    <Heading level={1}>Exemples</Heading>
+  <Page title="Learning">
+    <Heading level={1}>Calcul formel</Heading>
+    <Heading level={2}>Formules {tex`\LaTeX`} statiques</Heading>
+    <p>
+      Les formules mathématiques s'affichent via la commande <code>tex</code>, qui s'utilise comme
+      suit:
+    </p>
+    <div class="grid grid-cols-2 items-center gap-12">
+      {hl('jsx') /* jsx */ `{tex\`x^2 + y^2 = z^2\`}`}
+      {tex /* tex */ `x^2 + y^2 = z^2`}
+    </div>
+    <p>
+      Si vous souhaitez que la formule s'affiche de manière centrée sur une seule ligne (
+      <em>mode display</em>), il suffit de faire en sorte que la formule comporte plus d'une ligne.
+    </p>
+    <div class="grid grid-cols-2 items-center gap-12">
+      {hl('jsx') /* tsx */ `
+        {tex\`
+          \\int_a^b f'(x) \\, \\mathrm{d}x = f(b) - f(a)
+        \`}
+      `}
+      {tex /* tex */ `
+        \int_a^b f'(x) \, \mathrm{d}x = f(b) - f(a)
+      `}
+    </div>
+    <Heading level={2}>Calcul formel</Heading>
+    <p>
+      Le calcul formel est la partie essentielle qui permet la génération d'exercices qui{' '}
+      <em>tombent juste</em> et la correction symbolique.
+    </p>
+    {hl('tsx') /* tsx */ `
+      expr('a').subs({ a: 9.81 }).integrate('t')
+    `}
+    <Heading level={1}>Création d'exercices</Heading>
     <Heading level={2}>Avec réponse préencodée</Heading>
     <p>
       Tout d'abord, commençons par l'exemple le plus simple possible: un exercice avec{' '}
       <strong>réponse préencodée</strong>. Voici l'exercice que nous allons tenter de répliquer:
     </p>
     <Example title="Exercice avec réponse préencodée">
-      <Exercise id="simple" grade={(props) => props.attempt.isEqual('2')}>
+      <Exercise id="simple" grade={(props) => props.attempt.isEqual(2)}>
         {(props) => (
           <p>
             Que vaut {tex`1 + 1`} ? {props.attempt}
@@ -43,11 +72,11 @@ export default () => (
       </Exercise>
     `}
     <p>
-      Dans le code ci-dessus, le corps d'<code>Exercise</code> est une <strong>fonction</strong>.
-      Cette fonction reçoit en argument des propriétés utiles pour construire la question, comme{' '}
-      <code>props.attempt</code>, qui contient le champ de saisie de l'exercice.
+      Dans le code ci-dessus, <code>props</code> est une variable qui contient toutes les{' '}
+      <em>propriétés</em> de l'exercice. En particulier, <code>props.attempt</code> nous sera utile
+      car il contient le <strong>champ de saisie</strong>.
     </p>
-    <Remark>
+    <Remark title="Renommer le champ de saisie">
       <p>
         Notons qu'il est possible de renommer le champ <code>props.attempt</code> si nécéssaire, en
         spécifiant le paramètre <code>inputs</code> de l'exercice. Dans l'exemple ci-dessous, nous
@@ -66,17 +95,112 @@ export default () => (
     <p>
       Il reste maintenant à voir comment <strong>corriger</strong> l'exercice. Ceci se fait en
       spécifant la propriété <code>grade</code> de <code>Exercise</code>. Dans notre cas, on
-      souhaite vérifier que la tentative est égale à {tex`2`}.
+      souhaite vérifier que la tentative est égale à {tex`2`}. La proprieté <code>grade</code> aura
+      également accès au champ de saisie via <code>props.attempt</code>.
     </p>
     {hl('tsx') /* tsx */ `
-      <Exercise grade={(props) => props.attempt.isEqual('1 + 1')}>
+      <Exercise grade={(props) => props.attempt.isEqual('1 + 1')} /* presque fini */>
         {(props) => <p>Que vaut {tex\`1 + 1\`} ? {props.attempt}</p>}
+      </Exercise>
+    `}
+    <Remark title="Propriétés de la fonction de correction">
+      <p>
+        Remarquez que dans le code ci-dessus, <code>props.attempt</code> a une signification
+        différente en fonction du contexte.
+      </p>
+      <ul>
+        <li>
+          Dans l'exercice lui-même, <code>props.attempt</code> représente le{' '}
+          <strong>champ de saisie</strong>.
+        </li>
+        <li>
+          Dans la fonction de correction, <code>props.attempt</code> représente la{' '}
+          <strong>valeur entrée</strong>.
+        </li>
+      </ul>
+    </Remark>
+    <p>
+      La dernière pièce manquante est qu'il faut préciser un identifiant unique <code>id</code> à
+      l'exercice. Ceci permet de correctement grouper les tentatives des étudiants et étudiantes. Le
+      code final est alors:
+    </p>
+    {hl('tsx') /* tsx */ `
+      <Exercise id="1+1" grade={(props) => props.attempt.isEqual('1 + 1')}>
+        {(props) => <p>Que vaut {tex\`1 + 1\`} ? {props.attempt}</p>}
+      </Exercise>
+    `}
+    <Heading level={2}>Plusieurs champs de saisie</Heading>
+    <p>
+      Nous avons vu que par défaut, le champ de saisie s'appelle <code>attempt</code>. Qu'en est-il
+      si nous voulions créer un exercice avec <strong>plusieurs champs de saisie</strong>?
+    </p>
+    <Example title="Exemple avec plusieurs champs de saisie">
+      <p>Voici un exercice comportant deux champs de saisie indisociables.</p>
+      <Exercise
+        id="multiple-inputs"
+        inputs={['a', 'b']}
+        grade={(props) => expr('a + b').subs(props).isEqual(6)}
+      >
+        {(props) => (
+          <>
+            <p>
+              Trouvez deux nombres {tex`a`} et {tex`b`} tels que {tex`a + b = 6`}.
+            </p>
+            <div class="flex items-center justify-center gap-4">
+              <div>
+                {tex`a = `}
+                {props.a}
+              </div>
+              <div>
+                {tex`b = `}
+                {props.b}
+              </div>
+            </div>
+          </>
+        )}
+      </Exercise>
+    </Example>
+    <p>
+      Pour créer l'exercice plus haut, il suffit de nommer les champs de saisie via la propriété{' '}
+      <code>inputs</code>. Nommons ces champs <code>a</code> et <code>b</code> comme suit:
+    </p>
+    {hl('tsx') /* tsx */ `
+      <Exercise
+        inputs={['a', 'b']}
+        /* (id, grade...) */
+      >
+        {/* ... */}
+      </Exercise>
+    `}
+    <p>
+      Dans la fonction de correction et dans l'exercice, les champs de saisie (ou leur valeur en
+      fonction du contexte) sont désormais accessibles via <code>props.a</code> et{' '}
+      <code>props.b</code>.
+    </p>
+    <p>Le code final de l'exercice est alors:</p>
+    {hl('tsx') /* tsx */ `
+      <Exercise
+        id="multiple-inputs"
+        inputs={['a', 'b']}
+        grade={(props) => expr('a + b').subs(props).isEqual(6)}
+      >
+        {(props) => (
+          <p>
+            Trouvez deux nombres {tex\`a\`} et {tex\`b\`} tels que {tex\`a + b = 6\`}.
+            {tex\`a= \`} {props.a},
+            {tex\`b = \`} {props.b}
+          </p>
+        )}
       </Exercise>
     `}
     <Heading level={2}>Feedback</Heading>
     <Heading level={2}>Avec des paramètres aléatoires</Heading>
     <p>Et si je voulais faire varier des paramètres pour créer des exercices différents ?</p>
     <Example title="Exemple avec paramètres variables">
+      <p>
+        L'exercice que nous allons créer cette fois nous permet d'additionner deux{' '}
+        <strong>nombres aléatoires</strong>.
+      </p>
       <Exercise
         id="with-params"
         inputs={['c']}
@@ -90,132 +214,37 @@ export default () => (
         )}
       </Exercise>
     </Example>
-    <Heading level={1}>CAS</Heading>
-    <MultipleChoice
-      id="mcq-integrale"
-      choices={{
-        a: tex`${expr('x').integrate('x', 0, 1)}`,
-        b: tex`${expr('x').delta('x', 0, 1)}`,
-        c: tex`${expr('x^2').integrate('x', 0, 1)}`,
-      }}
-      answer={$(() => encrypt('a'))}
-    >
-      <p>
-        Que vaut l'intégrale de {tex`x`} entre {tex`0`} et {tex`1`} ?
-      </p>
-    </MultipleChoice>
     <p>
-      Pour l'écriture du feedback, il est important de pouvoir faire des calculs symboliques de
-      manière lisible.
+      Les paramètres aléatoires sont déclarés dans la propriété <code>params</code> de{' '}
+      <code>Exercise</code>. Il faut y spécifier une <strong>fonction</strong> qui explique comment
+      générer les paramètres. Pour notre exemple, nous allons spécifier deux paramètres aléatoires{' '}
+      <code>a</code> et <code>b</code>, choisis entre 1 et 3.
     </p>
-    {tex`
-      y = ${expr('(x - 2) (x - 3)^3').expand()}\\
-      \int_0^1 x^2 \, \mathrm{d} x = ${expr('x^2').integrate('x', 0, 1)}
+    {hl('tsx') /* tsx */ `
+      <Exercise
+        params={() => ({ a: sample([1, 2, 3]), b: sample([1, 2, 3]) })}
+        /* (plus tard...) */
+      >
+        {/* ... */}
+      </Exercise>
     `}
-    <Generate
-      exercise={Factor}
-      data={() => ({
-        expr: expr('(x - a) (x - b)')
-          .subs({ a: sample([1, 2, 3]), b: 0 })
-          .expand(),
-      })}
-    />
-    <Heading level={2}>Séquence générée</Heading>
-    <Sequence
-      id="generated"
-      exercise={Factor}
-      next={() => ({
-        expr: expr(`(x - x_1) (x - x_2)`)
-          .subs({ x_1: sample([1, 2, 3, 4, 5]), x_2: sample([1, 2, 3, 4, 5]) })
-          .expand(),
-      })}
-    />
-    <Heading level={2}>Séquence prédéterminée</Heading>
-    <Sequence id="predefined">
-      <Factor expr={$(() => expr('(x + 2) (x + 3)').expand())} />
-      <Factor expr="x^2 - 1" />
-      <Exercise grade={({ attempt }) => attempt.isEqual('1')}>
+    <p>
+      Les paramètres sont maintenant accessibles dans le composant et la fonction de correction via{' '}
+      <code>props.a</code> et <code>props.b</code> respectivement.
+    </p>
+    {hl('tsx') /* tsx */ `
+      <Exercise
+        params={() => ({ a: sample([1, 2, 3]), b: sample([1, 2, 3]) })}
+        grade={(props) => expr('a + b').subs(props).isEqual(props.attempt)}
+        /* (id...) */
+      >
         {(props) => (
-          <>
-            <p>Que vaut {tex`\int_0^1 1 \, \mathrm{d} x`}?</p>
-            <div class="flex items-center justify-center gap-4">
-              {tex`
-                \int_0^1 1 \, \mathrm{d} x =
-              `}
-              {props.attempt}
-            </div>
-          </>
+          <p>
+            Que vaut {tex\`\${props.a} + \${props.b}\`} ? {props.attempt}
+          </p>
         )}
       </Exercise>
-      <div>
-        <h3>Exercice de Python</h3>
-        <p>Écrivez la fonction {tex`f(x) = x^2`} en Python</p>
-        <PythonCode tests={range(4, 7).map((i) => ({ test: `f(${i})`, result: `${i ** 2}` }))} />
-      </div>
-    </Sequence>
-    <Exercise
-      id="square"
-      params={() => ({ x: sample([1, 2, 3]) })}
-      grade={({ x, attempt }) => attempt.isEqual(`(${x})^2`)}
-    >
-      {(props) => (
-        <p>
-          Calcule {tex`${props.x}`} au carré: {props.attempt}
-        </p>
-      )}
-    </Exercise>
-    <Exercise
-      id="multiple-fields"
-      params={() => ({ t: sample([12, 24, 36]) })}
-      inputs={['a', 'b']}
-      grade={({ a, b, t }) => expr(`a b = t`).subs({ a, b, t }).isTrue()}
-      feedback={(props) => (
-        <p>
-          {tex`${props.a} \times ${props.b}`} vaut {tex`${expr('a b').subs(props)}`}, ce qui n'est
-          pas égal à {tex`${props.t}`}
-        </p>
-      )}
-    >
-      {(props) => (
-        <>
-          <p>
-            Trouvez deux nombres {tex`a`} et {tex`b`} dont le produit vaut {tex`${props.t}`}.
-          </p>
-          <div class="flex gap-16">
-            <div class="flex items-center justify-center gap-4">
-              {tex`a = `}
-              {props.a}
-            </div>
-            <div class="flex items-center justify-center gap-4">
-              {tex`b = `}
-              {props.b}
-            </div>
-          </div>
-        </>
-      )}
-    </Exercise>
-    <Exercise
-      id="test"
-      params={() => ({ t: sample([1, 2, 3, 4, 5]) })}
-      inputs={['v']}
-      grade={({ t, v }) => expr('v = a t').subs({ a: 9.81, t, v }).isTrue()}
-      feedback={(props) => (
-        <>
-          <p>La vitesse se calcule avec la formule</p>
-          {tex`
-            v = a \cdot t
-              = 9.81 \cdot ${props.t}
-              = ${expr('a t').subs({ a: 9.81, t: props.t }).N()}
-          `}
-        </>
-      )}
-    >
-      {(props) => (
-        <p>
-          Après {tex`t = ${props.t}`} secondes de chute libre, la vitesse est {tex`v =`} {props.v}{' '}
-          mètres par seconde.
-        </p>
-      )}
-    </Exercise>
+    `}
+    <Heading level={2}>Séquences d'exercices</Heading>
   </Page>
 )

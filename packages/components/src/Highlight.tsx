@@ -9,7 +9,7 @@ export function Highlight(props: { code: string; class?: string } & Partial<Opti
   const html = createMemo(() => codeToHtml(props.code, options))
   return (
     <pre
-      class={['not-prose mx-4 rounded-md border border-gray-100 p-4 shadow-sm', props.class]}
+      class={['not-prose m-4 rounded-md border border-gray-100 p-4 shadow-sm', props.class]}
       innerHTML={html()}
     />
   )

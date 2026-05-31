@@ -6,7 +6,7 @@ export function Heading(props: { children: JSX.Element; level: 1 | 2 | 3 | 4 | 5
   const [id, setId] = createSignal<string | undefined>()
   const toc = useTableOfContents()
   createEffect(
-    () => String(props.children),
+    () => props.children,
     (title) => {
       toc?.[1]((t) => {
         if (props.level < 3) {
