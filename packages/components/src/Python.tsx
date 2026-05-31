@@ -2,7 +2,11 @@ import { pyodideStatus, runPython } from '@learning/repl'
 import { createMemo, Loading, Show, type JSX } from 'solid-js'
 import Latex from './Latex'
 
-export default function Python(props: { value: string; math?: boolean }): JSX.Element {
+export default function Python(props: {
+  class?: string
+  value: string
+  math?: boolean
+}): JSX.Element {
   const ready = createMemo(pyodideStatus)
   const output = createMemo(() => runPython(props.value, { math: props.math ?? false }))
   const noOutput = createMemo(
@@ -12,7 +16,7 @@ export default function Python(props: { value: string; math?: boolean }): JSX.El
     <Loading fallback={<pre class="my-8 rounded-xl p-4 shadow-sm">Initializing Python...</pre>}>
       {ready() && ''}
       <Show when={!noOutput()}>
-        <pre class="my-8 rounded-xl p-4 shadow-sm">
+        <pre class={['not-prose my-8', props.class ?? 'rounded-xl p-4 shadow-sm']}>
           <Loading fallback="Executing code...">
             <Show
               when={output().format !== 'latex'}

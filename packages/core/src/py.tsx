@@ -9,7 +9,7 @@ type Options = {
 function makePy(options: Options) {
   return (strings: TemplateStringsArray, ...values: unknown[]) => {
     const code = createMemo(() => dedent(String.raw(strings, ...values)))
-    return <Python value={code()} math={options.math} />
+    return <Python class="" value={code()} math={options.math} />
   }
 }
 
