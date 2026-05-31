@@ -19,7 +19,10 @@ export function Heading(props: { children: JSX.Element; level: 1 | 2 | 3 | 4 | 5
   return (
     <Dynamic
       component={`h${props.level ?? 1}`}
-      class={{ 'text-cyan-900': props.level === 1, 'text-cyan-800': props.level === 2 }}
+      class={[
+        'print:break-after-avoid',
+        { 'text-cyan-900': props.level === 1, 'text-cyan-800': props.level === 2 },
+      ]}
       id={id()}
     >
       {props.children}

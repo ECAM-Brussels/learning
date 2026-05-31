@@ -17,7 +17,7 @@ export default function Environment(props: {
   type: keyof typeof config
 }) {
   return (
-    <div class="my-4 rounded-xl border border-gray-200 p-4">
+    <div class="my-4 rounded-xl border border-gray-200 p-4 print:break-inside-avoid">
       <h3 class="not-prose font-bold">
         {config[props.type].label}
         <Show when={props.title}>

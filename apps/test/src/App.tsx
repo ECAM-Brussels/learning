@@ -2,8 +2,9 @@ import { Example, Remark } from '@learning/components/Environment'
 import { Heading } from '@learning/components/Heading'
 import { hl } from '@learning/components/Highlight'
 import { Page } from '@learning/components/Page'
-import { expr, tex } from '@learning/core'
+import { expr, Sequence, tex } from '@learning/core'
 import Exercise from '@learning/exercises/math/Exercise'
+import Factor from '@learning/exercises/math/factor'
 import { sample } from 'es-toolkit'
 import './style.css'
 
@@ -194,6 +195,47 @@ export default () => (
       </Exercise>
     `}
     <Heading level={2}>Feedback</Heading>
+    <p>
+      Pour afficher un retour aux étudiants, on peut exposer un composant <code>Feedback</code>
+    </p>
+    {hl('tsx') /* tsx */ `
+      <Exercise id="1+1" grade={(props) => props.attempt.isEqual('1 + 1')}>
+        {(props, Feedback) => (
+          <>
+            <p>Que vaut {tex\`1 + 1\`} ? {props.attempt}</p>
+            <Feedback>
+              {tex\`
+                1 + 1 = \${expr('1 + 1').simplify()}
+              \`}
+            </Feedback>
+          </>
+        )}
+      </Exercise>
+    `}
+    <p>
+      Par défaut, le feedback est affiché seulement si l'exercice est incorrect. Ce comportement
+      peut être changé en spécifiant le paramètre <code>when</code> du composant{' '}
+      <code>Feedback</code>. Les valeurs acceptées sont
+    </p>
+    <dl>
+      <dt>always</dt>
+      <dd>Affiche le feedback dès qu'une réponse est soumise.</dd>
+      <dt>correct</dt>
+      <dd>Affiche le feedback dès qu'une réponse est correcte.</dd>
+      <dt>incorrect</dt>
+      <dd>Affiche le feedback dès qu'une réponse est incorrecte.</dd>
+    </dl>
+    {hl('tsx') /* tsx */ `
+      <Feedback when="always">
+        <p>La réponse {props.attempt} a été soumise.</p>
+      </Feedback>
+      <Feedback when="correct">
+        <p>La réponse {props.attempt} a été soumise et est correcte.</p>
+      </Feedback>
+      <Feedback when="incorrect">
+        <p>La réponse {props.attempt} a été soumise et est correcte.</p>
+      </Feedback>
+    `}
     <Heading level={2}>Avec des paramètres aléatoires</Heading>
     <p>Et si je voulais faire varier des paramètres pour créer des exercices différents ?</p>
     <Example title="Exemple avec paramètres variables">
@@ -245,6 +287,58 @@ export default () => (
         )}
       </Exercise>
     `}
-    <Heading level={2}>Séquences d'exercices</Heading>
+    <Heading level={1}>Séquences d'exercices</Heading>
+    <p>
+      Les séquences permettent de grouper plusieurs exercices. Une pagination automatique est
+      fournie, avec une coloration indiquant le progrès de l'étudiante ou de l'étudiant. Deux
+      possibilités sont offertes:
+    </p>
+    <ul>
+      <li>
+        Une séquence <strong>prédéterminée</strong>, où les exercices doivent être explicitement
+        encodés manuellement.
+        <Example title="Séquence d'exercices prédéterminée">
+          <Sequence id="sequence-example">
+            <Factor expr="x^2 - 5x + 6" />
+            <Factor expr="x^2 - 1" />
+            <Exercise grade={(props) => props.attempt.isEqual(`\\pi`)}>
+              {(props) => (
+                <>
+                  <p>Que vaut l'aire du cercle de rayon 1?</p>
+                  {props.attempt}
+                </>
+              )}
+            </Exercise>
+          </Sequence>
+        </Example>
+      </li>
+      <li>
+        Une séquence <strong>générée</strong> à la volée, où les exercices apparaissent un à un au
+        fur et à mesure que l'étudiante ou l'étudiant progresse.
+        <Example title="Séquence d'exercices générée">
+          <Sequence
+            id="generated-sequence-example"
+            exercise={Factor}
+            next={() => {
+              const x1 = sample([1, 2, 3, 4, 5, 6])
+              const x2 = sample([1, 2, 3, 4, 5, 6])
+              return { expr: expr(`(x - ${x1}) (x - ${x2})`).expand() }
+            }}
+          />
+        </Example>
+      </li>
+    </ul>
+    <Heading level={2}>Séquence prédéterminée</Heading>
+    <p>
+      La séquence prédéterminée est relativement simple à mettre en place: il suffit d'imbriquer les
+      exercices à l'intérieur du composant <code>Sequence</code>. Cette dernière doit avoir un
+      identifiant unique (<code>id</code>), mais les exercices eux-mêmes n'en ont pas besoin.
+    </p>
+    {hl('tsx') /* tsx */ `
+      <Sequence id="sequence-example">
+        <Factor expr="x^2 - 5x + 6" />
+        <Factor expr="x^2 - 1" />
+      </Sequence>
+    `}
   </Page>
 )

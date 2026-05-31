@@ -16,7 +16,7 @@ export function Page(props: { title?: JSX.Element; children: JSX.Element }) {
   return (
     <Loading>
       <TableOfContents value={store as TOC}>
-        <div class="flex max-h-screen w-screen justify-center overflow-hidden">
+        <div class="flex max-h-screen w-screen justify-center overflow-hidden print:max-h-none">
           <main class="prose container max-w-270 overflow-auto scroll-smooth p-8">
             <Show when={props.title}>
               <h1 class="text-center text-5xl font-bold text-cyan-900">{props.title}</h1>
