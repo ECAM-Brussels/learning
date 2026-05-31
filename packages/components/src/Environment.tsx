@@ -4,6 +4,7 @@ import type { JSX } from 'solid-js/jsx-runtime'
 const config = {
   feedback: { label: 'Feedback' },
   example: { label: 'Example' },
+  remark: { label: 'Remark' },
 } as const satisfies Record<string, { label: string }>
 
 /**
@@ -19,7 +20,9 @@ export default function Environment(props: {
     <div class="rounded-xl border border-gray-200 p-4">
       <h3 class="not-prose font-bold">
         {config[props.type].label}
-        <Show when={props.title}>{props.title}</Show>
+        <Show when={props.title}>
+          <span class="font-light"> ({props.title})</span>
+        </Show>
       </h3>
       {props.children}
     </div>
@@ -36,3 +39,4 @@ function makeEnvironment(type: keyof typeof config) {
  * Component to display an example
  */
 export const Example = makeEnvironment('example')
+export const Remark = makeEnvironment('remark')
