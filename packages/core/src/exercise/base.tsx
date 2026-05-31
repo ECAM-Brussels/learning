@@ -1,3 +1,4 @@
+import CheckMark from '@learning/components/CheckMark'
 import { Dynamic } from '@solidjs/web'
 import { mapAsync, mapValues, partialRight } from 'es-toolkit'
 import stringify from 'safe-stable-stringify'
@@ -316,6 +317,14 @@ export function createView<T extends Schema>(
       yield context.reset?.(key())
       refresh(exercise)
     })
+
+    const correct = createMemo(() => {
+      if (exercise().attempt.length === 0) return null
+      const results = exercise().attempt.map((p) => ('correct' in p ? p.correct : null))
+      if (results.includes(false)) return false
+      if (results.every((r) => r === true)) return true
+      return null
+    })
     return (
       <div class={['not-prose my-4 rounded-xl p-4 shadow', props.class]}>
         <For each={exercise().attempt}>
@@ -429,11 +438,26 @@ export function createView<T extends Schema>(
             )
           }}
         </For>
-        <Show when={exercise().attempt?.filter((s) => 'state' in s).length > 0 && context.reset}>
-          <button class="ml-auto block cursor-pointer text-xs text-slate-400" onClick={reset}>
-            Recommencer l'exercice
-          </button>
-        </Show>
+        <div
+          class={[
+            'mt-2 flex p-2 text-slate-400',
+            { 'bg-green-50': correct() === true, 'bg-red-50': correct() === false },
+          ]}
+        >
+          <span class="text-xs">
+            <Show when={correct()}>
+              Correct <CheckMark value={true} />
+            </Show>
+            <Show when={correct() === false}>
+              Incorrect <CheckMark value={false} />
+            </Show>
+          </span>
+          <Show when={exercise().attempt?.filter((s) => 'state' in s).length > 0 && context.reset}>
+            <button class="ml-auto block cursor-pointer text-xs text-slate-400" onClick={reset}>
+              Recommencer l'exercice
+            </button>
+          </Show>
+        </div>
       </div>
     )
   }

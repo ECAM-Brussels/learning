@@ -1,19 +1,32 @@
 import MathField from '@learning/components/MathField'
 import { createView, defineFeedback, defineSchema, expr } from '@learning/core'
-import { Dynamic } from '@solidjs/web'
 import { mapValues } from 'es-toolkit'
-import { createProjection, flush, Show, type ComponentProps, type JSX } from 'solid-js'
+import {
+  createMemo,
+  createProjection,
+  flush,
+  Show,
+  type ComponentProps,
+  type JSX,
+  type ParentComponent,
+} from 'solid-js'
 import * as v from 'valibot'
 
 type Prettify<T> = {
   [K in keyof T]: T[K]
 } & {}
 
+type Feedback = {
+  when?: 'correct' | 'incorrect' | 'always'
+}
+
 export const schema = defineSchema({
   name: 'math/exercise',
   question: {
     inputs: v.optional(v.array(v.string()), ['attempt']),
-    children: v.custom<(props: object) => JSX.Element>(() => true),
+    children: v.custom<(props: object, Feedback: ParentComponent<Feedback>) => JSX.Element>(
+      () => true,
+    ),
     params: v.optional(
       v.union([
         v.record(v.string(), v.any()),
@@ -25,7 +38,6 @@ export const schema = defineSchema({
       {},
     ),
     grade: v.custom<(props: object) => Promise<boolean> | boolean>(() => true),
-    feedback: v.optional(v.custom<(props: object) => JSX.Element>(() => true)),
   },
   steps: {
     start: {
@@ -72,39 +84,39 @@ const _Exercise = createView(schema, feedback, {
         />
       )
     }
-    const innerProps = createProjection(() => ({
-      ...props.question.params,
-      ...Object.fromEntries(props.question.inputs.map((f) => [f, <Field name={f} />])),
-    }))
-    return (
-      <>
-        {props.question.children?.(innerProps)}
-        <Show when={props.correct !== undefined}>
+
+    const Feedback: ParentComponent<Feedback> = (attrs) => {
+      const when = createMemo(() => {
+        const conditions: Record<NonNullable<typeof attrs.when>, boolean> = {
+          correct: props.correct === true,
+          incorrect: props.correct === false,
+          always: true,
+        }
+        return props.state && conditions[attrs.when ?? 'incorrect']
+      })
+      return (
+        <Show when={when()}>
           <div
             class={[
-              'my-2 rounded-xl p-4',
+              'my-4 rounded-xl p-4',
               {
-                'bg-green-50 text-green-900': props.correct === true,
+                'bg-green-50 p-4 text-green-900': props.correct === true,
                 'bg-red-50 text-red-900': props.correct === false,
               },
             ]}
           >
-            {props.correct === true ? 'Correct!' : 'Incorrect!'}
-            <div>
-              <Show when={!props.correct && props.question.feedback}>
-                {(feedback) => (
-                  <Dynamic
-                    component={feedback()}
-                    {...props.question.params}
-                    {...props.state?.state}
-                  />
-                )}
-              </Show>
-            </div>
+            {attrs.children}
           </div>
         </Show>
-      </>
-    )
+      )
+    }
+
+    const innerProps = createProjection(() => ({
+      ...props.question.params,
+      ...Object.fromEntries(props.question.inputs.map((f) => [f, <Field name={f} />])),
+    }))
+
+    return props.question.children?.(innerProps, Feedback)
   },
 })
 
@@ -120,9 +132,9 @@ export function Exercise<const F extends string = 'attempt', D extends Record<st
     grade: (
       props: Prettify<{ [K in F]: NonNullable<ReturnType<typeof expr>> } & D>,
     ) => Promise<boolean> | boolean
-    children: (props: Prettify<D & { [K in F]: JSX.Element }>) => JSX.Element
-    feedback?: (
-      props: Prettify<{ [K in F]: NonNullable<ReturnType<typeof expr>> } & D>,
+    children: (
+      props: Prettify<D & { [K in F]: JSX.Element }>,
+      Feedback: ParentComponent<Feedback>,
     ) => JSX.Element
   },
 ): JSX.Element {
