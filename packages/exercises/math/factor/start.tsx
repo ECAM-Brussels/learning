@@ -19,7 +19,9 @@ export const Component: View<typeof schema, 'start'> = (props, { Field, Feedback
       Factorisez <strong>complètement</strong> l'expression suivante:
     </p>
     <div class="flex items-center justify-center gap-1">
-      {tex.block`${props.question.expr} =`}
+      {tex`
+        ${props.question.expr} =
+      `}
       <Field name="state.attempt" />
       <CheckMark value={props.correct} />
     </div>
@@ -42,7 +44,9 @@ export const Component: View<typeof schema, 'start'> = (props, { Field, Feedback
                 <p>L'expression entrée n'est pas égale à celle de l'énoncé.</p>
                 <Show when={isExpansionUseful()}>
                   <p>On vérifie en effet que</p>
-                  {tex.block`${attempt().rawInput} = ${attempt().expand()},`}
+                  {tex`
+                    ${attempt().rawInput} = ${attempt().expand()},
+                  `}
                   <p>qui n'est pas égal à {tex`${props.question.expr.rawInput}`}.</p>
                 </Show>
               </li>
