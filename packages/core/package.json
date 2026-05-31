@@ -21,6 +21,7 @@
     "@cortex-js/compute-engine": "catalog:",
     "@learning/components": "workspace:",
     "@solidjs/router": "catalog:",
+    "dedent": "^1.7.2",
     "es-toolkit": "^1.44.0",
     "safe-stable-stringify": "^2.5.0",
     "valibot": "catalog:"
