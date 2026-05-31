@@ -56,6 +56,8 @@ def parse_expr(expr: MathJSON) -> sympy.Expr:
                 return sympy.Rational(*args)
             case "Simplify":
                 return sympy.simplify(args[0])
+            case "Subtract":
+                return sympy.Add(args[0], -args[1], evaluate=False)
             case "Sqrt":
                 return sympy.sqrt(*args)
             case "Tuple":
