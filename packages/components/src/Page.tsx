@@ -23,11 +23,13 @@ export function Page(props: { title?: JSX.Element; children: JSX.Element }) {
             </Show>
             {props.children}
           </main>
-          <aside class="max-w-96 p-4 shadow">
+          <aside class="max-w-96 p-4 shadow print:hidden">
             <h1 class="my-4 text-2xl font-bold">Table des matières</h1>
             <For each={store[0]}>
-              {(node) => (
-                <p class={['font-lg my-2', { 'ml-2': node().level === 2 }]}>{node().title}</p>
+              {(node, i) => (
+                <a href={`#${i()}`} class={['font-lg my-2 block', { 'ml-2': node().level === 2 }]}>
+                  {node().title}
+                </a>
               )}
             </For>
           </aside>
