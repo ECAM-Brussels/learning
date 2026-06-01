@@ -137,7 +137,7 @@
     },
   },
   "catalog": {
-    "@cortex-js/compute-engine": "0.55.5",
+    "@cortex-js/compute-engine": "0.58.0",
     "@solidjs/router": "0.17.0-next.1",
     "@solidjs/start": "^1.3.2",
     "@solidjs/web": "2.0.0-beta.5",
@@ -146,7 +146,7 @@
     "valibot": "^1.3.1",
   },
   "packages": {
-    "@arnog/colors": ["@arnog/colors@0.3.0", "", {}, "sha512-CDZFMVWeE3HqcrzvacY2Y8257RS9c0f8+D+MWjbjmb5IWpOZPPeJSqWyxkVcFleCjA+x5aq6foc57cVaP+AMQg=="],
+    "@arnog/colors": ["@arnog/colors@0.5.0", "", {}, "sha512-NB7yqrO7qvInsqJdqz6C6mDU+2oiKmbBbk3czMS0E7KkGxLRy538tEHCsB5TKqmaxxXpi6/U120TnGl8NsDePg=="],
 
     "@babel/code-frame": ["@babel/code-frame@7.29.0", "", { "dependencies": { "@babel/helper-validator-identifier": "^7.28.5", "js-tokens": "^4.0.0", "picocolors": "^1.1.1" } }, "sha512-9NhCeYjq9+3uxgdtp20LSiJXJvN0FeCtNGpJxuMFZ1Kv3cWUNb6DOhJwUvcVCzKGR66cw4njwM6hrJLqgOwbcw=="],
 
@@ -184,7 +184,7 @@
 
     "@babel/types": ["@babel/types@7.29.0", "", { "dependencies": { "@babel/helper-string-parser": "^7.27.1", "@babel/helper-validator-identifier": "^7.28.5" } }, "sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A=="],
 
-    "@cortex-js/compute-engine": ["@cortex-js/compute-engine@0.55.5", "", { "dependencies": { "@arnog/colors": "^0.3.0", "complex-esm": "^2.1.1-esm1", "decimal.js": "^10.6.0" } }, "sha512-s1XjFFlM5gjU4uw6F49YGev7cFEu/gQgvZQWD3Baa3CQxHGZe4p5YRcwMac8NUKAzj7ap2Pal+zX4lzkuyTrVg=="],
+    "@cortex-js/compute-engine": ["@cortex-js/compute-engine@0.58.0", "", { "dependencies": { "@arnog/colors": "^0.5.0", "complex-esm": "^2.1.1-esm1", "decimal.js": "^10.6.0" } }, "sha512-N0+vXjVZfKwJS7ZIGvq41mojI55m5TrdDXveAXzNjzjZ9iNiNrdEzXL2EmrcP+9GCWCwTonrEeZWAIG78f3INg=="],
 
     "@emnapi/core": ["@emnapi/core@1.10.0", "", { "dependencies": { "@emnapi/wasi-threads": "1.2.1", "tslib": "^2.4.0" } }, "sha512-yq6OkJ4p82CAfPl0u9mQebQHKPJkY7WrIuk205cTYnYe+k2Z8YBh11FrbRG/H6ihirqcacOgl2BIO8oyMQLeXw=="],
 
@@ -725,5 +725,7 @@
     "@learning/repl/@types/bun/bun-types": ["bun-types@1.3.14", "", { "dependencies": { "@types/node": "*" } }, "sha512-4N0ig0fEomHt5R0KCFWjovxow98rIoRwKolrYdCcknNwMekCXRnWEUvgu5soYV8QXtVsrUD8B95MBOZGPvr6KQ=="],
 
     "@learning/vite-plugin-build/@types/bun/bun-types": ["bun-types@1.3.14", "", { "dependencies": { "@types/node": "*" } }, "sha512-4N0ig0fEomHt5R0KCFWjovxow98rIoRwKolrYdCcknNwMekCXRnWEUvgu5soYV8QXtVsrUD8B95MBOZGPvr6KQ=="],
+
+    "mathlive/@cortex-js/compute-engine/@arnog/colors": ["@arnog/colors@0.3.0", "", {}, "sha512-CDZFMVWeE3HqcrzvacY2Y8257RS9c0f8+D+MWjbjmb5IWpOZPPeJSqWyxkVcFleCjA+x5aq6foc57cVaP+AMQg=="],
   }
 }
