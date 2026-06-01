@@ -1,5 +1,5 @@
 import MathField from '@learning/components/MathField'
-import { createView, defineFeedback, defineSchema, expr } from '@learning/core'
+import { createView, defineFeedback, defineSchema, expr, Expression } from '@learning/core'
 import { mapValues } from 'es-toolkit'
 import {
   createMemo,
@@ -19,6 +19,7 @@ type Prettify<T> = {
 
 type Feedback = {
   when?: 'correct' | 'incorrect' | 'always'
+  correct?: boolean
 }
 
 export const schema = defineSchema({
@@ -87,10 +88,11 @@ const _Exercise = createView(schema, feedback, {
     }
 
     const Feedback: ParentComponent<Feedback> = (attrs) => {
+      const correct = createMemo(() => attrs.correct ?? props.correct)
       const when = createMemo(() => {
         const conditions: Record<NonNullable<typeof attrs.when>, boolean> = {
-          correct: props.correct === true,
-          incorrect: props.correct === false,
+          correct: correct() === true,
+          incorrect: correct() === false,
           always: true,
         }
         return props.state && conditions[attrs.when ?? 'incorrect']
@@ -101,8 +103,8 @@ const _Exercise = createView(schema, feedback, {
             class={[
               'my-4 rounded-xl p-4',
               {
-                'bg-green-50 p-4 text-green-900': props.correct === true,
-                'bg-red-50 text-red-900': props.correct === false,
+                'bg-green-50 p-4 text-green-900': correct() === true,
+                'bg-red-50 text-red-900': correct() === false,
               },
             ]}
           >
@@ -115,6 +117,7 @@ const _Exercise = createView(schema, feedback, {
     const innerProps = createProjection(() => ({
       ...props.question.params,
       ...Object.fromEntries(props.question.inputs.map((f) => [f, <Field name={f} />])),
+      state: props.state?.state,
     }))
 
     return (
@@ -134,11 +137,11 @@ export function Exercise<const F extends string = 'attempt', D extends Record<st
   props: PartialProps & {
     inputs?: F[]
     params?: (() => D) | D
-    grade: (
-      props: Prettify<{ [K in F]: NonNullable<ReturnType<typeof expr>> } & D>,
-    ) => Promise<boolean> | boolean
+    grade: (props: Prettify<{ [K in F]: Expression<'output'> } & D>) => Promise<boolean> | boolean
     children: (
-      props: Prettify<D & { [K in F]: JSX.Element }>,
+      props: Prettify<
+        D & { [K in F]: JSX.Element } & { state?: { [K in F]: Expression<'output'> } }
+      >,
       Feedback: ParentComponent<Feedback>,
     ) => JSX.Element
   },

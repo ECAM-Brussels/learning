@@ -1,3 +1,4 @@
+import CheckMark from '@learning/components/CheckMark'
 import { Example, Remark } from '@learning/components/Environment'
 import { Heading } from '@learning/components/Heading'
 import { hl } from '@learning/components/Highlight'
@@ -6,6 +7,7 @@ import { expr, Sequence, tex } from '@learning/core'
 import Exercise from '@learning/exercises/math/Exercise'
 import Factor from '@learning/exercises/math/factor'
 import { sample } from 'es-toolkit'
+import { createMemo, Show } from 'solid-js'
 import './style.css'
 
 export default () => (
@@ -444,9 +446,9 @@ export default () => (
       params={() => ({
         G: '6.6743 \\times 10^{-11}',
         ...sample([
+          { planet: 'de la Terre', r: 6371008.4, M: 5.97217e24 },
           { planet: 'de Mercure', r: 2439400, M: 3.30103e23 },
           { planet: 'de Vénus', r: 6051800, M: 4.86731e24 },
-          { planet: 'de la Terre', r: 6371008.4, M: 5.97217e24 },
           { planet: 'de Mars', r: 3389500, M: 6.41691e23 },
           { planet: 'de Jupiter', r: 69911000, M: 1.898125e27 },
           { planet: 'de Saturne', r: 58232000, M: 5.68317e26 },
@@ -463,6 +465,14 @@ export default () => (
       }
     >
       {(props, Feedback) => {
+        const acc = createMemo(() => expr('G M / r^2').subs({ G: props.G, M: props.M, r: props.r }))
+        const firstCheck = createMemo(() => props.state?.a.isEqual(acc(), 0.1))
+        const secondCheck = createMemo(() =>
+          props.state?.W.isEqual(expr('m a').subs({ m: props.state!.m, a: acc() }), 0.1),
+        )
+        const coherent = createMemo(() =>
+          props.state?.W.isEqual(expr('m a').subs({ m: props.state!.m, a: props.state!.a }), 0.1),
+        )
         return (
           <ol>
             <li>
@@ -472,30 +482,44 @@ export default () => (
                 {tex`a =`}
                 {props.a}
                 {tex`\mathrm{m}/\mathrm{s}^2`}
+                <CheckMark value={firstCheck()} />
               </div>
               <Feedback when="always">
                 {tex`
                   a = \frac{G M}{r^2}
                     = \frac{${props.G} \cdot ${props.M}}{${props.r}^2}
-                    = ${expr(`G M / r^2`)
-                      .subs({ G: props.G, M: props.M, r: props.r })
-                      .N(2)} \mathrm{m}/\mathrm{s}^2
+                    = ${acc().N(3)} \mathrm{m}/\mathrm{s}^2
                 `}
               </Feedback>
             </li>
-            <li>Donnez votre masse et calculez votre poids à la surface {props.planet}.</li>
-            <div class="flex items-center justify-center gap-16">
-              <div class="flex items-center justify-center gap-4">
-                {tex`m = `}
-                {props.m}
-                {tex`\mathrm{kg}`}
+            <li>
+              Donnez votre masse et calculez votre poids à la surface {props.planet}.
+              <div class="flex items-center justify-center gap-16">
+                <div class="flex items-center justify-center gap-4">
+                  {tex`m = `}
+                  {props.m}
+                  {tex`\mathrm{kg}`}
+                </div>
+                <div class="flex items-center justify-center gap-4">
+                  {tex`W = `}
+                  {props.W}
+                  {tex`\mathrm{N}`}
+                  <CheckMark value={secondCheck()} />
+                </div>
               </div>
-              <div class="flex items-center justify-center gap-4">
-                {tex`W = `}
-                {props.W}
-                {tex`\mathrm{N}`}
-              </div>
-            </div>
+              <Feedback when="always" correct={secondCheck()}>
+                <Show when={!secondCheck() && coherent()}>
+                  <p>
+                    La réponse est cohérente avec l'accélération (incorrecte) entrée plus haute.
+                  </p>
+                </Show>
+                {tex`
+                  W = m a
+                    = ${props.state?.m} \cdot ${acc().N(5)}
+                    = ${expr('m a').subs({ m: props.state!.m, a: acc() }).N(2)} \mathrm{N}
+                `}
+              </Feedback>
+            </li>
           </ol>
         )
       }}
