@@ -9,7 +9,12 @@ import { sample } from 'es-toolkit'
 import './style.css'
 
 export default () => (
-  <Page title="Learning">
+  <Page title="Introduction à Learning">
+    <p class="text-lg">
+      Learning est un framework permettant de créer des applications d'apprentissage interactives.
+      Dans cette page, nous vous présentons comment créer une simple séquence d'exercices corrigés
+      symboliquement.
+    </p>
     <Heading level={1}>Calcul formel</Heading>
     <Heading level={2}>Formules {tex`\LaTeX`} statiques</Heading>
     <p>
@@ -34,13 +39,93 @@ export default () => (
         \int_a^b f'(x) \, \mathrm{d}x = f(b) - f(a)
       `}
     </div>
-    <Heading level={2}>Calcul formel</Heading>
+    <Heading level={2}>Manipulation d'expressions</Heading>
     <p>
       Le calcul formel est la partie essentielle qui permet la génération d'exercices qui{' '}
       <em>tombent juste</em> et la correction symbolique.
     </p>
+    <p>
+      Pour créer une expression mathématique manipulable, on utilise la fonction <code>expr</code>,
+      qui prend en argument le code {tex`\LaTeX`} de l'expression.
+    </p>
     {hl('tsx') /* tsx */ `
-      expr('a').subs({ a: 9.81 }).integrate('t')
+      expr('x^2 + 2x + 1')
+    `}
+    <p>
+      Plusieurs opérations sont disponibles sur les expressions mathématiques, et voici les plus
+      courantes:
+    </p>
+    <ul>
+      <li>
+        <strong>Égalité symbolique</strong>: on peut vérifier que deux expressions sont
+        symboliquement égales. La méthode <code>isEqual</code> prend en argument une autre
+        expression, ou son code {tex`\LaTeX`}.
+        {hl('tsx') /* tsx */ `
+          expr('x^2 + 2x + 1').isEqual('(x + 1)^2') // Promise<true>
+        `}
+      </li>
+      <li>
+        <strong>Égalité numérique à une erreur près</strong>:
+        {hl('tsx') /* tsx */ `
+          expr('\\\\pi')).isEqual('3.14', 0.1) // Promise<true>
+          expr(1).isEqual(2, 0.1) // Promise<false>
+        `}
+      </li>
+      <li>
+        <strong>Substitutions</strong>: on peut remplacer des variables par d'autres expressions à
+        l'aide de la méthode <code>subs</code>.
+        {hl('tsx') /* tsx */ `
+          expr('x^2 + 2x + 1').subs({ x: 'y'}) // y^2 + 2y + 1
+          expr('x^2 + 2x + 1').subs({ x: 1 }) // 4
+          expr('x_0 + v_0 t + a t^2 / 2').subs({ a: 9.81, v_0: 0, x_0: 0 })
+        `}
+        <Remark title="Variables indicées">
+          Le système interprète <code>x0</code> comme {tex`x \cdot 0 = 0`}. Pour éviter cela, il
+          faut écrire les variables indicées avec un underscore (<code>_</code>), c'est-à-dire{' '}
+          <code>x_0</code>.
+        </Remark>
+      </li>
+      <li>
+        <strong>Simplifications</strong>: plusieurs méthodes de simplification sont disponibles,
+        notamment <code>simplify</code>, <code>expand</code>, <code>factor</code>.
+        {hl('tsx') /* tsx */ `
+          expr('3 \\\\times 5').simplify() // 15
+          expr('(x + 1)^2').expand() // x^2 + 2x + 1
+          expr('x^2 + 2x + 1').factor() // (x + 1)^2
+        `}
+      </li>
+      <li>
+        <strong>Évaluation numérique</strong>: on peut évaluer une expression numériquement à l'aide
+        de la méthode <code>N</code>.
+        {hl('tsx') /* tsx */ `
+          expr('\\\\pi r^2').subs({ r: 2 }).N() // 12.566370614359172
+        `}
+      </li>
+      <li>
+        <strong>Différentiation et intégration</strong>: on peut utiliser les méthodes{' '}
+        <code>diff</code> et <code>integrate</code>:
+        {hl('tsx') /* tsx */ `
+          expr('x^2 + 2x + 1').diff('x') // 2x + 2
+          expr('2x + 2').integrate('x') // x^2 + 2x (sans le + C!)
+          expr('x').integrate('x', 0, 1) // 1/2
+        `}
+      </li>
+    </ul>
+    <Heading level={2}>Affichage d'expressions</Heading>
+    <p>
+      La fonction <code>tex</code> interagit bien avec les expressions et remplace toute expression
+      du type <code>{'${...}'}</code> par son code {tex`\LaTeX`}.
+    </p>
+    {hl('tsx') /* tsx */ `
+      <p>
+        L'aire d'un disque de rayon {tex\`2\`} est
+        {tex\`
+          A
+            = \\\\\pi r^2
+            = \${expr('\\\\pi r^2').subs({ r: 2 })}
+            = \${expr('\\\\pi r^2').subs({ r: 2 }).N()}
+        \`}
+      </p>
     `}
     <Heading level={1}>Création d'exercices</Heading>
     <Heading level={2}>Avec réponse préencodée</Heading>
@@ -116,7 +201,7 @@ export default () => (
         </li>
         <li>
           Dans la fonction de correction, <code>props.attempt</code> représente la{' '}
-          <strong>valeur entrée</strong>.
+          <strong>valeur entrée</strong>, représentée comme une expression mathématique.
         </li>
       </ul>
     </Remark>
@@ -126,7 +211,10 @@ export default () => (
       code final est alors:
     </p>
     {hl('tsx') /* tsx */ `
-      <Exercise id="1+1" grade={(props) => props.attempt.isEqual('1 + 1')}>
+      <Exercise
+        id="1+1"
+        grade={(props) => props.attempt.isEqual('1 + 1')}
+      >
         {(props) => <p>Que vaut {tex\`1 + 1\`} ? {props.attempt}</p>}
       </Exercise>
     `}
@@ -199,7 +287,10 @@ export default () => (
       Pour afficher un retour aux étudiants, on peut exposer un composant <code>Feedback</code>
     </p>
     {hl('tsx') /* tsx */ `
-      <Exercise id="1+1" grade={(props) => props.attempt.isEqual('1 + 1')}>
+      <Exercise
+        id="1+1-with-feedback"
+        grade={(props) => props.attempt.isEqual('1 + 1')}
+      >
         {(props, Feedback) => (
           <>
             <p>Que vaut {tex\`1 + 1\`} ? {props.attempt}</p>
@@ -332,7 +423,8 @@ export default () => (
     <p>
       La séquence prédéterminée est relativement simple à mettre en place: il suffit d'imbriquer les
       exercices à l'intérieur du composant <code>Sequence</code>. Cette dernière doit avoir un
-      identifiant unique (<code>id</code>), mais les exercices eux-mêmes n'en ont pas besoin.
+      identifiant unique (<code>id</code>), mais les exercices eux-mêmes n'ont plus besoin d'
+      <code>id</code>.
     </p>
     {hl('tsx') /* tsx */ `
       <Sequence id="sequence-example">
@@ -340,5 +432,7 @@ export default () => (
         <Factor expr="x^2 - 1" />
       </Sequence>
     `}
+    <Heading level={2}>Séquence générée</Heading>
+    <p>TODO</p>
   </Page>
 )
