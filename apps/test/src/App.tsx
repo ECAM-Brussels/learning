@@ -96,9 +96,11 @@ export default () => (
       </li>
       <li>
         <strong>Évaluation numérique</strong>: on peut évaluer une expression numériquement à l'aide
-        de la méthode <code>N</code>.
+        de la méthode <code>N</code>. On peut optionnellement spécifier une précision en nombre de
+        chiffres significatifs.
         {hl('tsx') /* tsx */ `
           expr('\\\\pi r^2').subs({ r: 2 }).N() // 12.566370614359172
+          expr('\\\\pi').N(2) // 3.14
         `}
       </li>
       <li>
@@ -452,14 +454,12 @@ export default () => (
           { planet: 'de Neptune', r: 24622000, M: 1.024092e26 },
         ]),
       })}
-      grade={async (props) =>
-        (
-          await Promise.all([
-            expr('G M / r^2').subs(props).isEqual(props.a, 0.1),
-            props.m.N() > 0,
-            expr('m a').subs(props).isEqual(props.W, 0.1),
-          ])
-        ).every(Boolean)
+      grade={(props) =>
+        Promise.all([
+          expr('G M / r^2').subs(props).isEqual(props.a, 0.1),
+          props.m.N() > 0,
+          expr('m a').subs(props).isEqual(props.W, 0.1),
+        ]).then((res) => res.every(Boolean))
       }
     >
       {(props, Feedback) => {
@@ -479,7 +479,7 @@ export default () => (
                     = \frac{${props.G} \cdot ${props.M}}{${props.r}^2}
                     = ${expr(`G M / r^2`)
                       .subs({ G: props.G, M: props.M, r: props.r })
-                      .N()} \mathrm{m}/\mathrm{s}^2
+                      .N(2)} \mathrm{m}/\mathrm{s}^2
                 `}
               </Feedback>
             </li>

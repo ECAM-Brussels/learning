@@ -3,6 +3,7 @@ import {
   ComputeEngine,
   N,
 } from '@cortex-js/compute-engine'
+import { round } from 'es-toolkit'
 import stringify from 'safe-stable-stringify'
 import * as v from 'valibot'
 import { encrypt } from './crypto'
@@ -88,7 +89,10 @@ function _expr(input: Math) {
     encrypt: async () => expr(json).latex().then(encrypt),
     expand: () => expr(['Expand', json]),
     evaluate: () => ce.expr(json).evaluate(),
-    N: () => Number(N(expr(json).evaluate())),
+    N: (precision?: number) => {
+      const result = Number(N(expr(json).evaluate()))
+      return precision === undefined ? result : round(result, precision)
+    },
     factor: () => expr(['Factor', json]),
     func: () => {
       if (!Array.isArray(json)) throw new Error(`Only arrays have the property func`)
