@@ -442,28 +442,24 @@ export default () => (
       params={() => ({
         G: '6.6743 \\times 10^{-11}',
         ...sample([
-          { planet: 'de la Terre', r: 6371, M: 5.972e24 },
-          { planet: 'de la Lune', r: 1737, M: 7.342e22 },
-          { planet: 'de Mars', r: 3389.5, M: 6.39e23 },
-          { planet: 'du Soleil', r: 695700, M: 1.989e30 },
-          { planet: 'de Vénus', r: 6051.8, M: 4.867e24 },
-          { planet: 'de Mercure', r: 2439.7, M: 3.285e23 },
-          { planet: 'de Jupiter', r: 69911, M: 1.898e27 },
-          { planet: 'de Saturne', r: 58232, M: 5.683e26 },
-          { planet: "d'Uranus", r: 25362, M: 8.681e25 },
-          { planet: 'de Neptune', r: 24622, M: 1.024e26 },
+          { planet: 'de Mercure', r: 2439400, M: 3.30103e23 },
+          { planet: 'de Vénus', r: 6051800, M: 4.86731e24 },
+          { planet: 'de la Terre', r: 6371008.4, M: 5.97217e24 },
+          { planet: 'de Mars', r: 3389500, M: 6.41691e23 },
+          { planet: 'de Jupiter', r: 69911000, M: 1.898125e27 },
+          { planet: 'de Saturne', r: 58232000, M: 5.68317e26 },
+          { planet: "d'Uranus", r: 25362000, M: 8.68099e25 },
+          { planet: 'de Neptune', r: 24622000, M: 1.024092e26 },
         ]),
       })}
       grade={async (props) =>
         (
           await Promise.all([
-            expr('K M / r^2')
-              .subs({ ...props, K: props.G, r: 1000 * props.r })
-              .isEqual(props.a, 0.1),
+            expr('G M / r^2').subs(props).isEqual(props.a, 0.1),
             props.m.N() > 0,
             expr('m a').subs(props).isEqual(props.W, 0.1),
           ])
-        ).every((check) => check)
+        ).every(Boolean)
       }
     >
       {(props, Feedback) => {
@@ -471,7 +467,7 @@ export default () => (
           <ol>
             <li>
               Déterminez l'accélération gravitationnelle à la surface {props.planet}, qui a pour
-              rayon {tex`${props.r}`} km et pour masse {tex`${props.M}`} kg.
+              rayon {tex`${props.r}`} m et pour masse {tex`${props.M}`} kg.
               <div class="flex items-center justify-center gap-4">
                 {tex`a =`}
                 {props.a}
@@ -480,9 +476,9 @@ export default () => (
               <Feedback when="always">
                 {tex`
                   a = \frac{G M}{r^2}
-                    = \frac{${props.G} \cdot ${props.M}}{${1000 * props.r}^2}
-                    = ${expr(`K M / r^2`)
-                      .subs({ K: props.G, M: props.M, r: 1000 * props.r })
+                    = \frac{${props.G} \cdot ${props.M}}{${props.r}^2}
+                    = ${expr(`G M / r^2`)
+                      .subs({ G: props.G, M: props.M, r: props.r })
                       .N()} \mathrm{m}/\mathrm{s}^2
                 `}
               </Feedback>

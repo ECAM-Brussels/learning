@@ -22,11 +22,18 @@ const integrateParams = v.union([
   ),
 ])
 
+function sanitize<T extends CEExpressionInput>(json: T): T {
+  if (json === 'CatalanConstant') return 'G' as T
+  if (typeof json === 'number' || typeof json === 'string') return json
+  if (Array.isArray(json)) return json.map(sanitize) as unknown as T
+  return json
+}
+
 const Math: v.GenericSchema<CEExpressionInput> = v.union([
   v.pipe(
     v.string(),
     v.check((expr) => ce.parse(expr).isValid, "Ceci n'est pas une expression mathématique valide"),
-    v.transform((input) => ce.parse(input).json),
+    v.transform((input) => sanitize(ce.parse(input).json)),
   ),
   v.number(),
   v.tupleWithRest(
@@ -55,6 +62,8 @@ export const Expression = v.union([
 export type Expression<T extends 'input' | 'output' = 'input'> = T extends 'input'
   ? v.InferInput<typeof Expression>
   : ReturnType<typeof _expr>
+
+console.log('Catalan', _expr('G').json)
 
 function _expr(input: Math) {
   const json = v.parse(Math, input)
