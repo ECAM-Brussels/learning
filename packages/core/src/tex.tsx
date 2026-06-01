@@ -1,5 +1,6 @@
 import Latex from '@learning/components/Latex'
-import { createMemo } from 'solid-js'
+import { mapAsync } from 'es-toolkit'
+import { createMemo, Errored } from 'solid-js'
 import * as v from 'valibot'
 import { Expression } from './expr'
 
@@ -16,16 +17,18 @@ import { Expression } from './expr'
  */
 export const tex = (strings: TemplateStringsArray, ...values: (Expression | undefined)[]) => {
   const latex = createMemo(async () => {
-    const parsed = await Promise.all(
-      values.map(async (value) => {
-        if (!value) return ''
-        if (typeof value === 'string') return value
-        if (typeof value === 'number') return value
-        return await v.parse(Expression, value).latex()
-      }),
-    )
+    const parsed = await mapAsync(values, async (value) => {
+      if (!value) return ''
+      if (typeof value === 'string') return value
+      if (typeof value === 'number') return String(value).replace(/e\+?(\d+)/, '\\cdot 10^{ $1 }')
+      return await v.parse(Expression, value).latex()
+    })
     return String.raw(strings, ...parsed)
   })
   const displayMode = createMemo(() => latex().split('\n').length > 1)
-  return <Latex value={latex()} displayMode={displayMode()} />
+  return (
+    <Errored fallback={(error) => <pre>Erreur: {String(error)}</pre>}>
+      <Latex value={latex()} displayMode={displayMode()} />
+    </Errored>
+  )
 }

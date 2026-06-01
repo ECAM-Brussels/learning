@@ -4,6 +4,7 @@ import { mapValues } from 'es-toolkit'
 import {
   createMemo,
   createProjection,
+  Errored,
   flush,
   Show,
   type ComponentProps,
@@ -116,7 +117,11 @@ const _Exercise = createView(schema, feedback, {
       ...Object.fromEntries(props.question.inputs.map((f) => [f, <Field name={f} />])),
     }))
 
-    return props.question.children?.(innerProps, Feedback)
+    return (
+      <Errored fallback={(error) => <pre>{String(error)}</pre>}>
+        {props.question.children?.(innerProps, Feedback)}
+      </Errored>
+    )
   },
 })
 
