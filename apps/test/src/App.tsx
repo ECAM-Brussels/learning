@@ -434,5 +434,75 @@ export default () => (
     `}
     <Heading level={2}>Séquence générée</Heading>
     <p>TODO</p>
+    <Heading level={1}>Exemples</Heading>
+    <Heading level={2}>Gravitation universelle</Heading>
+    <Exercise
+      id="universal-gravitation"
+      inputs={['a', 'm', 'W']}
+      params={() => ({
+        G: '6.6743 \\times 10^{-11}',
+        ...sample([
+          { planet: 'de la Terre', r: 6371, M: 5.972e24 },
+          { planet: 'de la Lune', r: 1737, M: 7.342e22 },
+          { planet: 'de Mars', r: 3389.5, M: 6.39e23 },
+          { planet: 'du Soleil', r: 695700, M: 1.989e30 },
+          { planet: 'de Vénus', r: 6051.8, M: 4.867e24 },
+          { planet: 'de Mercure', r: 2439.7, M: 3.285e23 },
+          { planet: 'de Jupiter', r: 69911, M: 1.898e27 },
+          { planet: 'de Saturne', r: 58232, M: 5.683e26 },
+          { planet: "d'Uranus", r: 25362, M: 8.681e25 },
+          { planet: 'de Neptune', r: 24622, M: 1.024e26 },
+        ]),
+      })}
+      grade={async (props) =>
+        (
+          await Promise.all([
+            expr('K M / r^2')
+              .subs({ ...props, K: props.G, r: 1000 * props.r })
+              .isEqual(props.a, 0.1),
+            props.m.N() > 0,
+            expr('m a').subs(props).isEqual(props.W, 0.1),
+          ])
+        ).every((check) => check)
+      }
+    >
+      {(props, Feedback) => {
+        return (
+          <ol>
+            <li>
+              Déterminez l'accélération gravitationnelle à la surface {props.planet}, qui a pour
+              rayon {tex`${props.r}`} km et pour masse {tex`${props.M}`} kg.
+              <div class="flex items-center justify-center gap-4">
+                {tex`a =`}
+                {props.a}
+                {tex`\mathrm{m}/\mathrm{s}^2`}
+              </div>
+              <Feedback when="always">
+                {tex`
+                  a = \frac{G M}{r^2}
+                    = \frac{${props.G} \cdot ${props.M}}{${1000 * props.r}^2}
+                    = ${expr(`K M / r^2`)
+                      .subs({ K: props.G, M: props.M, r: 1000 * props.r })
+                      .N()} \mathrm{m}/\mathrm{s}^2
+                `}
+              </Feedback>
+            </li>
+            <li>Donnez votre masse et calculez votre poids à la surface {props.planet}.</li>
+            <div class="flex items-center justify-center gap-16">
+              <div class="flex items-center justify-center gap-4">
+                {tex`m = `}
+                {props.m}
+                {tex`\mathrm{kg}`}
+              </div>
+              <div class="flex items-center justify-center gap-4">
+                {tex`W = `}
+                {props.W}
+                {tex`\mathrm{N}`}
+              </div>
+            </div>
+          </ol>
+        )
+      }}
+    </Exercise>
   </Page>
 )
