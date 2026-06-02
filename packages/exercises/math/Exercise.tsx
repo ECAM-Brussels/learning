@@ -48,7 +48,7 @@ export const schema = defineSchema({
           v.union([
             v.pipe(
               v.record(v.string(), v.string()),
-              v.transform((record) => mapValues(record, expr)),
+              v.transform((record) => mapValues(record, (s) => expr(s))),
             ),
             v.record(v.string(), v.any()),
           ]),

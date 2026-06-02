@@ -66,7 +66,13 @@ export function Math(label: string) {
     }, 'Expression mathématique invalide'),
   )
   return defineField({
-    ...v.union([v.pipe(v.string(), v.transform(expr)), Expression]),
+    ...v.union([
+      v.pipe(
+        v.string(),
+        v.transform((s) => expr(s)),
+      ),
+      Expression,
+    ]),
     label,
     Component: (props) => {
       const valid = createMemo(() => v.safeParse(base, props.currentValue).success)
