@@ -326,7 +326,13 @@ export function createView<T extends Schema>(
       return null
     })
     return (
-      <div class={['not-prose my-4 rounded-xl p-4 shadow', props.class]}>
+      <div
+        class={[
+          'my-4 rounded-xl p-4 shadow',
+          { 'not-prose': exercise().name !== 'math/exercise' },
+          props.class,
+        ]}
+      >
         <For each={exercise().attempt}>
           {<K extends keyof T['steps']>(
             part: () =>

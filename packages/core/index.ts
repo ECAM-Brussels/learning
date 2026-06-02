@@ -11,7 +11,7 @@ export {
 } from './src/exercise/base'
 export { Generate } from './src/exercise/generate'
 export { Sequence } from './src/exercise/sequence'
-export { Expression, expr } from './src/expr'
+export { Expression, expr, type Quantity } from './src/expr'
 export * as fields from './src/fields'
 export * from './src/py'
 export { default as symapi } from './src/symapi'

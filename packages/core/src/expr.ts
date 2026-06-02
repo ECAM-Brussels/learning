@@ -54,19 +54,17 @@ const ExpressionInput = v.union([
 type ExpressionInput = v.InferInput<typeof ExpressionInput>
 
 export const Expression = v.union([
-  v.pipe(Math, v.transform(_expr)),
-  v.custom<ReturnType<typeof _expr>>((value): value is ReturnType<typeof _expr> => {
+  v.pipe(Math, v.transform(expression)),
+  v.custom<ReturnType<typeof expression>>((value): value is ReturnType<typeof expression> => {
     return typeof value === 'object' && value !== null && 'json' in value && 'latex' in value
   }),
 ])
 
 export type Expression<T extends 'input' | 'output' = 'input'> = T extends 'input'
   ? v.InferInput<typeof Expression>
-  : ReturnType<typeof _expr>
+  : ReturnType<typeof expression>
 
-console.log('Catalan', _expr('G').json)
-
-function _expr(input: Math) {
+function expression(input: Math) {
   const json = v.parse(Math, input)
   return {
     rawInput: input,
@@ -127,48 +125,78 @@ function _expr(input: Math) {
   }
 }
 
-export function expr<T extends Math | undefined>(
-  input: T,
-): T extends undefined ? undefined : Expression<'output'> {
-  if (input === undefined) return undefined as any
-  return _expr(input) as any
-}
+const Unit = v.pipe(
+  v.custom<CEExpressionInput>(() => true),
+  v.transform(
+    (unit) =>
+      (
+        ce.expr(['Quantity', '1', unit]).evaluate().json as [
+          'Quantity',
+          CEExpressionInput,
+          CEExpressionInput,
+        ]
+      )[2],
+  ),
+)
+type Unit = v.InferInput<typeof Unit>
 
-const Quantity = v.union([
-  Math,
+const QuantityInput = v.union([
+  v.tuple([v.literal('Quantity'), ExpressionInput, Unit]),
   v.pipe(
-    v.tuple([Math, Math]),
-    v.transform((quantity) => ce.expr(['Quantity', ...quantity]).evaluate()),
+    v.tuple([ExpressionInput, Unit]),
+    v.transform(([magnitude, unit]) => ['Quantity', magnitude, unit] as const),
+  ),
+  v.pipe(
+    v.tuple([v.looseObject({ magnitude: Expression, unit: Unit })]),
+    v.transform(([v]) => ['Quantity', v.magnitude.json, v.unit] as const),
   ),
 ])
-type Quantity = v.InferInput<typeof Quantity>
 
-export function quantity(qty: Quantity) {
-  const json = v.parse(Quantity, qty)
+const QuantityWithError = v.union([
+  v.tuple([QuantityInput, v.number()]),
+  v.pipe(
+    QuantityInput,
+    v.transform((quantity) => [quantity, 0] as const),
+  ),
+])
+
+export function quantity(...rawQuantity: v.InferInput<typeof QuantityInput>) {
+  const json = v.parse(QuantityInput, rawQuantity)
 
   function apply(method: string, ...args: CEExpressionInput[]) {
-    return ce.expr([method, ...args]).evaluate()
+    const json = ce.expr([method, ...args]).evaluate().json
+    if (!Array.isArray(json) || json[0] !== 'Quantity' || json.length !== 3)
+      throw new Error(`Expected a Quantity as result of applying ${method} to ${stringify(args)}`)
+    return quantity(json[1], json[2])
   }
 
   return {
-    convert: (rawUnit: Quantity) => {
-      const unit = v.parse(Quantity, rawUnit)
-      return quantity(apply('UnitConvert', json, unit).json)
-    },
-    magnitude: () => expr(apply('QuantityMagnitude', json).json),
-    subtract: (rawOther: Quantity) => {
-      const other = v.parse(Quantity, rawOther)
-      return quantity(apply('Subtract', json, other).json)
-    },
-    unit: () => apply('QuantityUnit', json).latex,
+    convert: (unit: Unit) => apply('UnitConvert', json, v.parse(Unit, unit)),
+    magnitude: expr(json[1]),
+    subtract: (...rawOther: v.InferInput<typeof QuantityInput>) =>
+      apply('Subtract', json, v.parse(QuantityInput, rawOther)),
+    unit: json[2],
     json,
-
-    async isEqual(rawExpr2: Quantity, rawError?: Quantity) {
-      const expr2 = v.parse(Quantity, rawExpr2)
-      const error = rawError ? v.parse(Quantity, rawError) : undefined
-      if (!error) return this.subtract(expr2).magnitude().isEqual(0)
-      const diff = this.subtract(expr2).convert(error).magnitude().abs().N()
-      return diff < quantity(error).magnitude().abs().N()
+    isEqual: (...rawArgs: v.InferInput<typeof QuantityWithError>) => {
+      const [other, error] = v.parse(QuantityWithError, rawArgs)
+      return (
+        quantity(json[1], json[2])
+          .subtract(...other)
+          .convert(other[2])
+          .magnitude.N() <= error
+      )
     },
+    latex: () => ce.expr(json).latex,
   }
+}
+
+export type Quantity = ReturnType<typeof quantity>
+
+export function expr(input: undefined, unit?: undefined): undefined
+export function expr(input: Math, unit?: undefined): Expression<'output'>
+export function expr(input: Math, unit: string): Quantity
+export function expr(input?: Math, unit?: string) {
+  if (input === undefined) return undefined
+  if (unit === undefined) return expression(input)
+  return quantity(input, unit)
 }
