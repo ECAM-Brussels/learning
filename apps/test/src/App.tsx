@@ -445,6 +445,8 @@ export default () => (
       inputs={['a', 'm', 'W']}
       params={() => ({
         G: '6.6743 \\times 10^{-11}',
+        distanceUnit: sample(['m', 'km']),
+        massUnit: sample(['g', 'kg']),
         ...sample([
           { planet: 'de la Terre', r: 6371008.4, M: 5.97217e24 },
           { planet: 'de Mercure', r: 2439400, M: 3.30103e23 },
@@ -477,7 +479,8 @@ export default () => (
           <ol>
             <li>
               Déterminez l'accélération gravitationnelle à la surface {props.planet}, qui a pour
-              rayon {tex`${props.r}`} m et pour masse {tex`${props.M}`} kg.
+              rayon {tex`${expr(props.r, 'm').convert(props.distanceUnit)}`} et pour masse{' '}
+              {tex`${expr(props.M, 'kg').convert(props.massUnit)}`}.
               <div class="flex items-center justify-center gap-4">
                 {tex`a =`}
                 {props.a}
@@ -485,6 +488,12 @@ export default () => (
                 <CheckMark value={firstCheck()} />
               </div>
               <Feedback when="always">
+                <p>Après conversion,</p>
+                {tex`
+                  r = ${expr(props.r, 'm')},
+                  \quad M = ${expr(props.M, 'kg')}
+                `}
+                <p>Dès lors, on a</p>
                 {tex`
                   a = \frac{G M}{r^2}
                     = \frac{${props.G} \cdot ${props.M}}{${props.r}^2}
