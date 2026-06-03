@@ -9,6 +9,8 @@ import * as v from 'valibot'
 import { encrypt } from './crypto'
 import symapi from './symapi'
 
+type MaybeAsync<T> = T | Promise<T>
+
 const ce = new ComputeEngine()
 
 const integrateParams = v.union([
@@ -98,14 +100,14 @@ function expression(input: Math) {
     },
     integrate: (...params: v.InferInput<typeof integrateParams>) =>
       expr(['Integrate', json, ...v.parse(integrateParams, params)]),
-    isEqual: async (other: ExpressionInput, error: number = 0) => {
+    isEqual: async (other: MaybeAsync<ExpressionInput>, error: number = 0) => {
       if (error > 0) {
-        const diff = expr(['Subtract', json, v.parse(ExpressionInput, other)])
+        const diff = expr(['Subtract', json, v.parse(ExpressionInput, await other)])
           .abs()
           .N()
         return diff <= error
       }
-      return await symapi.expr.equal({ expr1: json, expr2: v.parse(ExpressionInput, other) })
+      return await symapi.expr.equal({ expr1: json, expr2: v.parse(ExpressionInput, await other) })
     },
     isTrue: () => symapi.expr.isTrue({ expr: json }),
     isFactored: () => symapi.expr.isFactored({ expr: json }),
