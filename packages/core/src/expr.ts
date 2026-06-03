@@ -129,16 +129,10 @@ function expression(input: Math) {
 
 const Unit = v.pipe(
   v.custom<CEExpressionInput>(() => true),
-  v.transform(
-    (unit) =>
-      (
-        ce.expr(['Quantity', '1', unit]).evaluate().json as [
-          'Quantity',
-          CEExpressionInput,
-          CEExpressionInput,
-        ]
-      )[2],
-  ),
+  v.transform((unit) => {
+    if (typeof unit === 'string' && unit.includes('\\')) return ce.parse(unit).json
+    return unit
+  }),
 )
 type Unit = v.InferInput<typeof Unit>
 
@@ -189,6 +183,8 @@ export function quantity(...rawQuantity: v.InferInput<typeof QuantityInput>) {
       )
     },
     latex: () => ce.expr(json).latex,
+    rawInput: rawQuantity,
+    toJSON: () => rawQuantity,
   }
 }
 
