@@ -3,11 +3,13 @@ import type { paths } from './symapi.d'
 
 const BASE_URL = 'http://localhost:8088'
 
-type Folders<Prefix extends string> = keyof paths extends `${Prefix}/${infer First}/${string}`
-  ? First
-  : keyof paths extends `${Prefix}/${infer First}`
+type Folders<Prefix extends string> = keyof paths extends infer K
+  ? K extends `${Prefix}/${infer First}/${string}`
     ? First
-    : never
+    : K extends `${Prefix}/${infer First}`
+      ? First
+      : never
+  : never
 
 type Fetch<Path extends keyof paths> = paths[Path] extends { post: infer Post }
   ? Post extends {
