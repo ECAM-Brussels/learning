@@ -1,8 +1,8 @@
 import Latex from '@learning/components/Latex'
 import { mapAsync } from 'es-toolkit'
 import { createMemo, Errored } from 'solid-js'
-import * as v from 'valibot'
-import { Expression, type Quantity } from './expr'
+
+type MaybePromise<T> = T | Promise<T>
 
 /**
  * A helper for rendering LaTeX in JSX using template literals
@@ -17,16 +17,16 @@ import { Expression, type Quantity } from './expr'
  */
 export const tex = (
   strings: TemplateStringsArray,
-  ...values: (Expression | undefined | Quantity)[]
+  ...values: MaybePromise<
+    undefined | null | string | number | { latex: () => MaybePromise<string> }
+  >[]
 ) => {
   const latex = createMemo(async () => {
-    const parsed = await mapAsync(values, async (value) => {
+    const parsed = await mapAsync(values, async (v) => {
+      const value = await v
       if (!value) return ''
-      if (typeof value === 'string') return value
-      if (typeof value === 'number') return String(value).replace(/e\+?(\d+)/, '\\cdot 10^{ $1 }')
-      if (typeof value === 'object' && 'latex' in value && typeof value.latex === 'function')
-        return await value.latex()
-      return await v.parse(Expression, value).latex()
+      if (typeof value === 'object') return value.latex()
+      return String(value).replace(/e\+?(\d+)/, '\\cdot 10^{ $1 }')
     })
     return String.raw(strings, ...parsed)
   })
