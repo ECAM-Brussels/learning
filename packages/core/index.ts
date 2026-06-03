@@ -1,3 +1,4 @@
+export * from './src/chemistry'
 export { Encrypted, decrypt, encrypt } from './src/crypto'
 export {
   Exercise,

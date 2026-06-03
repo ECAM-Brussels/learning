@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "antlr4-python3-runtime==4.11",
+    "chempy>=0.10.1",
     "fastapi[standard]>=0.128.0",
     "sympy>=1.14.0",
 ]

@@ -3,7 +3,7 @@ import { Example, Remark } from '@learning/components/Environment'
 import { Heading } from '@learning/components/Heading'
 import { hl } from '@learning/components/Highlight'
 import { Page } from '@learning/components/Page'
-import { expr, Sequence, tex } from '@learning/core'
+import { expr, Sequence, substance, tex } from '@learning/core'
 import Exercise from '@learning/exercises/math/Exercise'
 import Factor from '@learning/exercises/math/factor'
 import { sample } from 'es-toolkit'
@@ -34,11 +34,11 @@ export default () => (
     <div class="grid grid-cols-2 items-center gap-12">
       {hl('jsx') /* tsx */ `
         {tex\`
-          \\int_a^b f'(x) \\, \\mathrm{d}x = f(b) - f(a)
+          x^2 + y^2 = z^2
         \`}
       `}
       {tex /* tex */ `
-        \int_a^b f'(x) \, \mathrm{d}x = f(b) - f(a)
+        x^2 + y^2 = z^2
       `}
     </div>
     <Heading level={2}>Manipulation d'expressions</Heading>
@@ -200,7 +200,7 @@ export default () => (
       </p>
       <ul>
         <li>
-          Dans l'exercice lui-même, <code>props.attempt</code> représente le{' '}
+          Dans l'exercice lui-même, <code>props.attempt</code> représente le A
           <strong>champ de saisie</strong>.
         </li>
         <li>
@@ -532,6 +532,36 @@ export default () => (
           </ol>
         )
       }}
+    </Exercise>
+    <Heading level={2}>Masse molaire</Heading>
+    <Exercise
+      id="molar-mass"
+      params={() => ({
+        substance: sample([
+          'H2O',
+          'CO2',
+          'O2',
+          'N2',
+          'CH4',
+          'NH3',
+          'H2SO4',
+          'NaCl',
+          'CaCO3',
+          'C6H12O6',
+        ]),
+      })}
+      grade={(props) => props.attempt.isEqual(substance(props.substance).molarMass(), 0.1)}
+    >
+      {(props) => (
+        <>
+          <p>Que vaut la masse molaire de {tex`${substance(props.substance)}`} ?</p>
+          <div class="flex items-center gap-4">
+            Réponse:
+            {props.attempt}
+            {tex`\mathrm{g}/\mathrm{mol}`}
+          </div>
+        </>
+      )}
     </Exercise>
   </Page>
 )

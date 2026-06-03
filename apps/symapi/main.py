@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from expr import router as expr_router
+from chemistry import router as chemistry_router
 
 app = FastAPI()
 
@@ -12,4 +13,5 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(chemistry_router)
 app.include_router(expr_router)
