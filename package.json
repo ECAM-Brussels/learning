@@ -31,8 +31,8 @@
     "test:watch": "turbo run test:watch"
   },
   "workspaces": [
-    "apps/**",
-    "content/**",
-    "packages/**"
+    "apps/*",
+    "content/*",
+    "packages/*"
   ]
 }
