@@ -1,4 +1,4 @@
-import CheckMark from '@learning/components/CheckMark'
+import { Answer } from '@learning/components/Answer'
 import { Example, Remark } from '@learning/components/Environment'
 import { Heading } from '@learning/components/Heading'
 import { hl } from '@learning/components/Highlight'
@@ -141,9 +141,10 @@ export default () => (
     <Example title="Exercice avec réponse préencodée">
       <Exercise id="simple" grade={(props) => props.attempt.isEqual(2)}>
         {(props) => (
-          <p>
-            Que vaut {tex`1 + 1`} ? {props.attempt}
-          </p>
+          <>
+            <p>Que vaut {tex`1 + 1`} ?</p>
+            <Answer>Réponse: {props.attempt}</Answer>
+          </>
         )}
       </Exercise>
     </Example>
@@ -401,7 +402,7 @@ export default () => (
               {(props) => (
                 <>
                   <p>Que vaut l'aire du cercle de rayon 1?</p>
-                  {props.attempt}
+                  <Answer>Réponse: {props.attempt}</Answer>
                 </>
               )}
             </Exercise>
@@ -482,12 +483,11 @@ export default () => (
               Déterminez l'accélération gravitationnelle à la surface {props.planet}, qui a pour
               rayon {tex`${expr(props.r, 'm').convert(props.distanceUnit)}`} et pour masse{' '}
               {tex`${expr(props.M, 'kg').convert(props.massUnit)}`}.
-              <div class="flex items-center justify-center gap-4">
+              <Answer correct={firstCheck()}>
                 {tex`a =`}
                 {props.a}
                 {tex`\mathrm{m}/\mathrm{s}^2`}
-                <CheckMark value={firstCheck()} />
-              </div>
+              </Answer>
               <Feedback when="always">
                 <p>Après conversion,</p>
                 {tex`
@@ -505,17 +505,16 @@ export default () => (
             <li>
               Donnez votre masse et calculez votre poids à la surface {props.planet}.
               <div class="flex items-center justify-center gap-16">
-                <div class="flex items-center justify-center gap-4">
+                <Answer>
                   {tex`m = `}
                   {props.m}
                   {tex`\mathrm{kg}`}
-                </div>
-                <div class="flex items-center justify-center gap-4">
+                </Answer>
+                <Answer correct={secondCheck()}>
                   {tex`W = `}
                   {props.W}
                   {tex`\mathrm{N}`}
-                  <CheckMark value={secondCheck()} />
-                </div>
+                </Answer>
               </div>
               <Feedback when="always" correct={secondCheck()}>
                 <Show when={!secondCheck() && coherent()}>
@@ -556,11 +555,11 @@ export default () => (
       {(props) => (
         <>
           <p>Que vaut la masse molaire de {tex`${substance(props.substance)}`} ?</p>
-          <div class="flex items-center gap-4">
+          <Answer>
             Réponse:
             {props.attempt}
             {tex`\mathrm{g}/\mathrm{mol}`}
-          </div>
+          </Answer>
         </>
       )}
     </Exercise>
@@ -571,16 +570,20 @@ export default () => (
       grade={(props) => props.attempt.isEqual('\\pi 2^2', '\\operatorname{\\mathrm{cm}}^2')}
     >
       {(props) => (
-        <p>
-          Quel est l'aire d'un disque de rayon {tex`${expr(2, 'cm')}`}: {props.attempt}
-        </p>
+        <>
+          <p>Quel est l'aire d'un disque de rayon {tex`${expr(2, 'cm')}`} ?</p>
+          <Answer>
+            {tex`\text{Aire} =`}
+            {props.attempt}
+          </Answer>
+        </>
       )}
     </Exercise>
     <Heading level={2}>Question à choix multiple</Heading>
     <MultipleChoice
       id="mcq"
       choices={{ a: 'A', b: 'B', c: 'C', d: 'D' }}
-      grade={(selection) => selection.length === 3 && !selection.includes('a')}
+      grade={(sel) => sel.length === 3 && !sel.includes('a')}
     >
       <p>Sélectionne les consonnes</p>
     </MultipleChoice>

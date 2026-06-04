@@ -1,6 +1,7 @@
 {
   "name": "@learning/components",
   "exports": {
+    "./Answer": "./src/Answer.tsx",
     "./CheckMark": "./src/CheckMark.tsx",
     "./Code": "./src/Code.tsx",
     "./Environment": "./src/Environment.tsx",
