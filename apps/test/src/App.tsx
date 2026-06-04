@@ -6,6 +6,7 @@ import { Page } from '@learning/components/Page'
 import { expr, Sequence, substance, tex } from '@learning/core'
 import Exercise from '@learning/exercises/math/Exercise'
 import Factor from '@learning/exercises/math/factor'
+import MultipleChoice from '@learning/exercises/MultipleChoice'
 import { sample } from 'es-toolkit'
 import { createMemo, Show } from 'solid-js'
 import './style.css'
@@ -575,5 +576,13 @@ export default () => (
         </p>
       )}
     </Exercise>
+    <Heading level={2}>Question à choix multiple</Heading>
+    <MultipleChoice
+      id="mcq"
+      choices={{ a: 'A', b: 'B', c: 'C', d: 'D' }}
+      grade={(selection) => selection.length === 3 && !selection.includes('a')}
+    >
+      <p>Sélectionne les consonnes</p>
+    </MultipleChoice>
   </Page>
 )
