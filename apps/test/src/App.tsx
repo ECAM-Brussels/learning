@@ -1,4 +1,5 @@
 import { Answer } from '@learning/components/Answer'
+import CheckMark from '@learning/components/CheckMark'
 import { Example, Remark } from '@learning/components/Environment'
 import { Heading } from '@learning/components/Heading'
 import { hl } from '@learning/components/Highlight'
@@ -202,7 +203,7 @@ export default () => (
       </p>
       <ul>
         <li>
-          Dans l'exercice lui-même, <code>props.attempt</code> représente le A
+          Dans l'exercice lui-même, <code>props.attempt</code> représente le{' '}
           <strong>champ de saisie</strong>.
         </li>
         <li>
@@ -212,6 +213,27 @@ export default () => (
       </ul>
     </Remark>
     <p>
+      Placer correctement le champ de réponse avec un <CheckMark value={true} /> est une tâche
+      répétitive. Il est recommandé d'utiliser le composant <code>Answer</code> qui se charge de
+      cela automatiquement. Le code devient alors:
+    </p>
+    {hl('tsx') /* tsx */ `
+      <Exercise grade={(props) => props.attempt.isEqual('1 + 1')} /* presque fini */>
+        {(props) => (
+          <>
+            <p>Que vaut {tex\`1 + 1\`} ? {props.attempt}</p>
+            <Answer>Réponse: {props.attempt}</Answer>
+          </>
+        )}
+      </Exercise>
+    `}
+    <p>
+      Dans le code ci-dessus, nous tombons sur une subtilité du langage TSX. Une fonction ne peut
+      retourner qu'un seul élément, or nous en avons deux: <code>p</code> et <code>Answer</code>.
+      Pour régler ce problème, il suffit de les envelopper dans une balise vide{' '}
+      <code>&lt;&gt;</code> appelée <em>fragment</em>.
+    </p>
+    <p>
       La dernière pièce manquante est qu'il faut préciser un identifiant unique <code>id</code> à
       l'exercice. Ceci permet de correctement grouper les tentatives des étudiants et étudiantes. Le
       code final est alors:
@@ -220,8 +242,13 @@ export default () => (
       <Exercise
         id="1+1"
         grade={(props) => props.attempt.isEqual('1 + 1')}
-      >
-        {(props) => <p>Que vaut {tex\`1 + 1\`} ? {props.attempt}</p>}
+      > 
+        {(props) => (
+          <>
+            <p>Que vaut {tex\`1 + 1\`} ? {props.attempt}</p>
+            <Answer>Réponse: {props.attempt}</Answer>
+          </>
+        )}
       </Exercise>
     `}
     <Heading level={2}>Plusieurs champs de saisie</Heading>
@@ -241,16 +268,12 @@ export default () => (
             <p>
               Trouvez deux nombres {tex`a`} et {tex`b`} tels que {tex`a + b = 6`}.
             </p>
-            <div class="flex items-center justify-center gap-4">
-              <div>
-                {tex`a = `}
-                {props.a}
-              </div>
-              <div>
-                {tex`b = `}
-                {props.b}
-              </div>
-            </div>
+            <Answer>
+              {tex`a = `}
+              {props.a}
+              {tex`\quad b = `}
+              {props.b}
+            </Answer>
           </>
         )}
       </Exercise>
@@ -282,8 +305,12 @@ export default () => (
         {(props) => (
           <p>
             Trouvez deux nombres {tex\`a\`} et {tex\`b\`} tels que {tex\`a + b = 6\`}.
-            {tex\`a= \`} {props.a},
-            {tex\`b = \`} {props.b}
+            <Answer>
+              {tex\`a = \`}
+              {props.a}
+              {tex\`\\quad b = \`}
+              {props.b}
+            </Answer>
           </p>
         )}
       </Exercise>

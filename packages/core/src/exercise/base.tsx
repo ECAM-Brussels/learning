@@ -1,4 +1,5 @@
 import CheckMark from '@learning/components/CheckMark'
+import { StepContext } from '@learning/components/StepContext'
 import { Dynamic } from '@solidjs/web'
 import { mapAsync, mapValues, partialRight } from 'es-toolkit'
 import stringify from 'safe-stable-stringify'
@@ -408,7 +409,7 @@ export function createView<T extends Schema>(
             }
 
             return (
-              <div>
+              <StepContext value={{ correct: part().correct }}>
                 <Dynamic
                   component={partialRight(view[part().step], { Field, Feedback })}
                   {...({
@@ -440,7 +441,7 @@ export function createView<T extends Schema>(
                 <Show when={i() < exercise().attempt.length - 1}>
                   <hr class="my-4 border-gray-200" />
                 </Show>
-              </div>
+              </StepContext>
             )
           }}
         </For>

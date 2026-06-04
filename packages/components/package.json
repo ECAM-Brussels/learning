@@ -15,7 +15,8 @@
     "./Python": "./src/Python.tsx",
     "./Scope": "./src/Scope.tsx",
     "./Slide": "./src/Slide.tsx",
-    "./Slideshow": "./src/Slideshow.tsx"
+    "./Slideshow": "./src/Slideshow.tsx",
+    "./StepContext": "./src/StepContext.tsx"
   },
   "private": true,
   "devDependencies": {
