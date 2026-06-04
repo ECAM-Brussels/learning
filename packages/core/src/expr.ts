@@ -163,7 +163,9 @@ export function quantity(...rawQuantity: v.InferInput<typeof QuantityInput>) {
   function apply(method: string, ...args: CEExpressionInput[]) {
     const json = ce.expr([method, ...args]).evaluate().json
     if (!Array.isArray(json) || json[0] !== 'Quantity' || json.length !== 3)
-      throw new Error(`Expected a Quantity as result of applying ${method} to ${stringify(args)}`)
+      throw new Error(
+        `Expected a Quantity as result of applying ${method} to ${stringify(args)}, but got ${stringify(json)}`,
+      )
     return quantity(json[1], json[2])
   }
 

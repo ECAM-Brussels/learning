@@ -54,10 +54,12 @@ export default () => (
     </p>
     <p>
       Pour créer une expression mathématique manipulable, on utilise la fonction <code>expr</code>,
-      qui prend en argument le code {tex`\LaTeX`} de l'expression.
+      qui prend en argument le code {tex`\LaTeX`} de l'expression. L'unité peut également être
+      spécifiée en deuxième argument.
     </p>
     {hl('tsx') /* tsx */ `
       expr('x^2 + 2x + 1')
+      expr('5', 'km/h')
     `}
     <p>
       Plusieurs opérations sont disponibles sur les expressions mathématiques, et voici les plus
@@ -118,6 +120,13 @@ export default () => (
           expr('x^2 + 2x + 1').diff('x') // 2x + 2
           expr('2x + 2').integrate('x') // x^2 + 2x (sans le + C!)
           expr('x').integrate('x', 0, 1) // 1/2
+        `}
+      </li>
+      <li>
+        <strong>Conversion d'unités</strong>: on peut convertir les expressions avec unités comme
+        suit:
+        {hl('tsx') /* tsx */ `
+          expr('5', 'km').convert('m') // 5000m
         `}
       </li>
     </ul>
@@ -193,7 +202,8 @@ export default () => (
       Il reste maintenant à voir comment <strong>corriger</strong> l'exercice. Ceci se fait en
       spécifant la propriété <code>grade</code> de <code>Exercise</code>. Dans notre cas, on
       souhaite vérifier que la tentative est égale à {tex`2`}. La proprieté <code>grade</code> aura
-      également accès au champ de saisie via <code>props.attempt</code>.
+      également accès à la valeur du champ de saisie, vue comme expression mathématique, via{' '}
+      <code>props.attempt</code>.
     </p>
     {hl('tsx') /* tsx */ `
       <Exercise grade={(props) => props.attempt.isEqual('1 + 1')} /* presque fini */>
@@ -379,9 +389,10 @@ export default () => (
         grade={(props) => expr('a + b = c').subs(props).isTrue()}
       >
         {(props) => (
-          <p>
-            Que vaut {tex`${props.a} + ${props.b}`} ? {props.c}
-          </p>
+          <>
+            <p>Que vaut {tex`${props.a} + ${props.b}`} ?</p>
+            <Answer>Réponse: {props.c}</Answer>
+          </>
         )}
       </Exercise>
     </Example>

@@ -18,7 +18,7 @@ export function Highlight(props: { code: string; class?: string } & Partial<Opti
   )
 }
 
-export function hl(lang: string) {
+export function hl(lang: Options['lang']) {
   return (strings: TemplateStringsArray, ...values: unknown[]) => {
     const code = createMemo(() =>
       dedent(strings.reduce((acc, str, i) => acc + str + (values[i] ?? ''), '')),
