@@ -1,5 +1,5 @@
 import dedent from 'dedent'
-import { codeToHtml } from 'shiki'
+import { type BundledLanguage, codeToHtml } from 'shiki'
 import { createMemo, merge, omit } from 'solid-js'
 
 type Options = Parameters<typeof codeToHtml>[1]
@@ -18,7 +18,7 @@ export function Highlight(props: { code: string; class?: string } & Partial<Opti
   )
 }
 
-export function hl(lang: Options['lang']) {
+export function hl(lang: BundledLanguage) {
   return (strings: TemplateStringsArray, ...values: unknown[]) => {
     const code = createMemo(() =>
       dedent(strings.reduce((acc, str, i) => acc + str + (values[i] ?? ''), '')),
