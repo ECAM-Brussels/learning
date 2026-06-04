@@ -1,9 +1,10 @@
 import MathField from '@learning/components/MathField'
 import { createView, defineFeedback, defineSchema, expr, Expression } from '@learning/core'
-import { mapValues } from 'es-toolkit'
+import type { Quantity } from 'packages/core/src/expr'
 import {
   createMemo,
   createProjection,
+  createSignal,
   Errored,
   flush,
   Show,
@@ -26,6 +27,7 @@ export const schema = defineSchema({
   name: 'math/exercise',
   question: {
     inputs: v.optional(v.array(v.string()), ['attempt']),
+    quantities: v.optional(v.array(v.string()), []),
     children: v.custom<(props: object, Feedback: ParentComponent<Feedback>) => JSX.Element>(
       () => true,
     ),
@@ -46,9 +48,20 @@ export const schema = defineSchema({
       state: {
         state: v.optional(
           v.union([
-            v.pipe(
-              v.record(v.string(), v.string()),
-              v.transform((record) => mapValues(record, (s) => expr(s))),
+            v.record(
+              v.string(),
+              v.union([
+                v.pipe(
+                  v.string(),
+                  v.transform((s) => expr(s)),
+                ),
+                v.pipe(
+                  v.tuple([v.string(), v.string()]),
+                  v.transform((qty) => {
+                    return expr(qty[0], qty[1])
+                  }),
+                ),
+              ]),
             ),
             v.record(v.string(), v.any()),
           ]),
@@ -61,28 +74,51 @@ export const schema = defineSchema({
 
 export const feedback = defineFeedback<typeof schema>({
   start: async ({ question: { grade, params }, state: { state } }) => {
-    const correct = await grade({ ...state, ...params })
-    return { correct, score: [Number(correct), 1] as const, next: null }
+    try {
+      const correct = await grade({ ...state, ...params })
+      return { correct, score: [Number(correct), 1] as const, next: null }
+    } catch (error) {
+      console.error('Error during grading:', error)
+      return { correct: false, score: [0, 1] as const, next: null }
+    }
   },
 })
 
 const _Exercise = createView(schema, feedback, {
   start: (props) => {
-    const Field = (attrs: { name?: string }) => {
+    const Field = (attrs: { name: string }) => {
+      const [element, setElement] = createSignal<any>(null)
+      const quantity = createMemo(() => props.question.quantities?.includes(attrs.name))
+      const value = createMemo(() => {
+        const input = props.state?.state?.[attrs.name]?.rawInput
+        if (!quantity()) return input ?? ''
+        if (props.correct === undefined)
+          return String.raw`\placeholder[magnitude]{${input?.[0] ?? ''}} \placeholder[unit]{${input?.[1] ?? ''}}`
+        return input.join(' ')
+      })
       return (
         <MathField
+          style={{ padding: 0 }}
           class="rounded border border-slate-200 py-2 outline-none"
-          value={props.state?.state?.[attrs.name ?? 'attempt']?.rawInput ?? ''}
+          ref={setElement}
+          value={value()}
           onInput={(e: InputEvent & { target: HTMLInputElement }) => {
-            try {
+            if (quantity()) {
+              const magnitude = element().getPromptValue('magnitude') ?? ''
+              const unit = element().getPromptValue('unit') ?? ''
               props.setState((s) => {
                 if (!s.state) s.state = {}
-                s['state'][attrs.name ?? 'attempt'] = e.target.value
+                s.state[attrs.name] = [magnitude, unit]
               })
-              flush()
-            } catch {}
+            } else {
+              props.setState((s) => {
+                if (!s.state) s.state = {}
+                s.state[attrs.name] = e.target.value
+              })
+            }
+            flush()
           }}
-          readonly={props.correct !== undefined}
+          readonly={props.correct !== undefined || quantity()}
         />
       )
     }
@@ -133,14 +169,23 @@ type PartialProps = Omit<
   'inputs' | 'grade' | 'children' | 'params' | 'feedback'
 >
 
-export function Exercise<const F extends string = 'attempt', D extends Record<string, any> = {}>(
+export function Exercise<
+  const F extends string = 'attempt',
+  Q extends F | never = never,
+  D extends Record<string, any> = {},
+>(
   props: PartialProps & {
     inputs?: F[]
+    quantities?: Q[]
     params?: (() => D) | D
-    grade: (props: Prettify<{ [K in F]: Expression<'output'> } & D>) => Promise<boolean> | boolean
+    grade: (
+      props: Prettify<{ [K in F]: K extends Q ? Quantity : Expression<'output'> } & D>,
+    ) => Promise<boolean> | boolean
     children: (
       props: Prettify<
-        D & { [K in F]: JSX.Element } & { state?: { [K in F]: Expression<'output'> } }
+        D & { [K in F]: JSX.Element } & {
+          state?: { [K in F]: K extends Q ? Quantity : Expression<'output'> }
+        }
       >,
       Feedback: ParentComponent<Feedback>,
     ) => JSX.Element

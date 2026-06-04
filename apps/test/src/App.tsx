@@ -497,7 +497,7 @@ export default () => (
                 {tex`
                   a = \frac{G M}{r^2}
                     = \frac{${props.G} \cdot ${props.M}}{${props.r}^2}
-                    = ${acc().N(3)} \mathrm{m}/\mathrm{s}^2
+                    = ${acc().unit('m/s^2').N(3)}
                 `}
               </Feedback>
             </li>
@@ -525,7 +525,7 @@ export default () => (
                 {tex`
                   W = m a
                     = ${props.state?.m} \cdot ${acc().N(5)}
-                    = ${expr('m a').subs({ m: props.state!.m, a: acc() }).N(2)} \mathrm{N}
+                    = ${expr('m a').subs({ m: props.state!.m, a: acc() }).unit('N').N(2)}
                 `}
               </Feedback>
             </li>
@@ -561,6 +561,18 @@ export default () => (
             {tex`\mathrm{g}/\mathrm{mol}`}
           </div>
         </>
+      )}
+    </Exercise>
+    <Heading level={2}>Question avec unités</Heading>
+    <Exercise
+      id="conversion"
+      quantities={['attempt']}
+      grade={(props) => props.attempt.isEqual('\\pi 2^2', '\\operatorname{\\mathrm{cm}}^2')}
+    >
+      {(props) => (
+        <p>
+          Quel est l'aire d'un disque de rayon {tex`${expr(2, 'cm')}`}: {props.attempt}
+        </p>
       )}
     </Exercise>
   </Page>

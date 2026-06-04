@@ -124,6 +124,7 @@ function expression(input: Math) {
     },
     toString: () => (typeof input === 'string' ? input : stringify(json)),
     toJSON: () => input,
+    unit: (unit: Unit) => quantity(json, unit),
   }
 }
 
@@ -173,16 +174,21 @@ export function quantity(...rawQuantity: v.InferInput<typeof QuantityInput>) {
       apply('Subtract', json, v.parse(QuantityInput, rawOther)),
     unit: json[2],
     json,
-    isEqual: (...rawArgs: v.InferInput<typeof QuantityWithError>) => {
+    isEqual: async (...rawArgs: v.InferInput<typeof QuantityWithError>) => {
       const [other, error] = v.parse(QuantityWithError, rawArgs)
-      return (
-        quantity(json[1], json[2])
-          .subtract(...other)
-          .convert(other[2])
-          .magnitude.N() <= error
-      )
+      try {
+        return (
+          quantity(json[1], json[2])
+            .subtract(...other)
+            .convert(other[2])
+            .magnitude.N() <= error
+        )
+      } catch {
+        return false
+      }
     },
     latex: () => ce.expr(json).latex,
+    N: (precision?: number) => quantity(expr(json[1]).N(precision), json[2]),
     rawInput: rawQuantity,
     toJSON: () => rawQuantity,
   }
