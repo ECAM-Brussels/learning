@@ -1,6 +1,7 @@
 import {
   Answer,
   CheckMark,
+  code,
   Example,
   Feedback,
   Heading,
@@ -18,6 +19,11 @@ import './style.css'
 
 export default () => (
   <Page title="Introduction à Learning">
+    {code({ lang: 'python', math: true, run: true }) /* python */ `
+      from sympy import *
+      x = Symbol("x")
+      factor(x**2 - 5*x + 6)
+    `}
     <p class="text-lg">
       Learning est un framework permettant de créer des applications d'apprentissage interactives.
       Dans cette page, nous vous présentons comment créer une simple séquence d'exercices corrigés
