@@ -18,14 +18,22 @@ type MaybePromise<T> = T | Promise<T>
 export const tex = (
   strings: TemplateStringsArray,
   ...values: MaybePromise<
-    undefined | null | string | number | { latex: () => MaybePromise<string> }
+    | undefined
+    | null
+    | string
+    | number
+    | { rawInput: string }
+    | { latex: () => MaybePromise<string> }
   >[]
 ) => {
   const latex = createMemo(async () => {
     const parsed = await mapAsync(values, async (v) => {
       const value = await v
       if (!value) return ''
-      if (typeof value === 'object') return value.latex()
+      if (typeof value === 'object' && 'rawInput' in value && typeof value.rawInput === 'string')
+        return value.rawInput
+      if (typeof value === 'object' && 'latex' in value && typeof value.latex === 'function')
+        return value.latex()
       return String(value).replace(/e\+?(\d+)/, '\\cdot 10^{ $1 }')
     })
     return String.raw(strings, ...parsed)
