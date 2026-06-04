@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    "bierner.comment-tagged-templates",
+    "bradlc.vscode-tailwindcss",
+    "esbenp.prettier-vscode",
+    "ms-python.black-formatter"
+  ]
+}
