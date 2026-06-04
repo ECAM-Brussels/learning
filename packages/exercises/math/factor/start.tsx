@@ -1,5 +1,4 @@
-import CheckMark from '@learning/components/CheckMark'
-import { Feedback } from '@learning/components/Feedback'
+import { CheckMark, Feedback } from '@learning/components'
 import { expr, tex, type StepFeedback, type View } from '@learning/core'
 import { filterAsync } from 'es-toolkit'
 import { createMemo, For, Show } from 'solid-js'

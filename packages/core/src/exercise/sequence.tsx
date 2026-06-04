@@ -1,5 +1,4 @@
-import Pagination from '@learning/components/Pagination'
-import Scope from '@learning/components/Scope'
+import { Pagination, Scope } from '@learning/components'
 import { Dynamic } from '@solidjs/web'
 import { range } from 'es-toolkit'
 import { createMemo, refresh, type Component, type JSX } from 'solid-js'

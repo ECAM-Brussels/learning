@@ -3,7 +3,7 @@ import katex from 'katex'
 import 'katex/dist/katex.min.css'
 import { createMemo, Loading, type JSX } from 'solid-js'
 
-export default function Latex(props: {
+export function Latex(props: {
   class?: JSX.ClassList | string
   value?: string
   displayMode?: boolean

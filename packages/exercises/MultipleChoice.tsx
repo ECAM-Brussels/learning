@@ -1,4 +1,4 @@
-import CheckMark from '@learning/components/CheckMark'
+import { CheckMark } from '@learning/components'
 import { createView, decrypt, defineFeedback, defineSchema, Encrypted } from '@learning/core'
 import { flush, For, type ComponentProps, type JSX } from 'solid-js'
 import * as v from 'valibot'

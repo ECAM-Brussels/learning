@@ -1,5 +1,4 @@
-import CheckMark from '@learning/components/CheckMark'
-import { StepContext } from '@learning/components/StepContext'
+import { CheckMark, StepContext } from '@learning/components'
 import { Dynamic } from '@solidjs/web'
 import { mapAsync, mapValues, partialRight } from 'es-toolkit'
 import stringify from 'safe-stable-stringify'

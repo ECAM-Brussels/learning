@@ -7,7 +7,7 @@ type MarkdownProps = {
   value?: string
 }
 
-export default function Markdown(props: MarkdownProps) {
+export function Markdown(props: MarkdownProps) {
   const html = () =>
     props.value &&
     micromark(props.value, {

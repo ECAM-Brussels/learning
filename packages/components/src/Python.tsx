@@ -1,12 +1,8 @@
 import { pyodideStatus, runPython } from '@learning/repl'
 import { createMemo, Loading, Show, type JSX } from 'solid-js'
-import Latex from './Latex'
+import { Latex } from './Latex'
 
-export default function Python(props: {
-  class?: string
-  value: string
-  math?: boolean
-}): JSX.Element {
+export function Python(props: { class?: string; value: string; math?: boolean }): JSX.Element {
   const ready = createMemo(pyodideStatus)
   const output = createMemo(() => runPython(props.value, { math: props.math ?? false }))
   const noOutput = createMemo(

@@ -1,5 +1,5 @@
 import { createMemo, useContext, type ParentComponent } from 'solid-js'
-import CheckMark from './CheckMark'
+import { CheckMark } from './CheckMark'
 import { StepContext } from './StepContext'
 
 type MaybeAsync<T> = T | Promise<T>

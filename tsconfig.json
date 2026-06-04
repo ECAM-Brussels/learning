@@ -29,7 +29,6 @@
 
     "baseUrl": ".",
     "paths": {
-      "@learning/components/*": ["packages/components/src/*"],
       "@learning/exercises/*": ["packages/exercises/*"]
     }
   }

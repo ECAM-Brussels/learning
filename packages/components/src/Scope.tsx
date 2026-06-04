@@ -20,5 +20,3 @@ import type { JSX } from 'solid-js/jsx-runtime'
 export function Scope(props: { children: () => JSX.Element }) {
   return <Loading>{props.children()}</Loading>
 }
-
-export default Scope

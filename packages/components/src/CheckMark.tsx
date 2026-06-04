@@ -10,7 +10,7 @@ import { Show, type JSX } from 'solid-js'
  * <CheckMark value={false} /> // ❌
  * <CheckMark /> // (nothing)
  */
-export default function CheckMark(props: {
+export function CheckMark(props: {
   /**
    * Specify whether to display a check mark (true), a cross (false), or nothing (undefined).
    */

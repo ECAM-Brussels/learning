@@ -17,7 +17,7 @@ type Props = {
  *   <p>Hello world!</p>
  * </Slide>
  */
-export default function Slide(props: Props) {
+export function Slide(props: Props) {
   return (
     <div class="h-full w-full snap-start overflow-hidden">
       <Show when={props.title}>

@@ -1,4 +1,4 @@
-import Latex from '@learning/components/Latex'
+import { Latex } from '@learning/components'
 import { mapAsync } from 'es-toolkit'
 import { createMemo, Errored } from 'solid-js'
 

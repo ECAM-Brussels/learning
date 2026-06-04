@@ -1,5 +1,4 @@
-import CheckMark from '@learning/components/CheckMark'
-import { Feedback } from '@learning/components/Feedback'
+import { CheckMark, Feedback } from '@learning/components'
 import { type StepFeedback, type View, tex } from '@learning/core'
 import type { schema } from '../factor'
 

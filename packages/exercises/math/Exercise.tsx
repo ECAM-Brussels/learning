@@ -1,4 +1,4 @@
-import MathField from '@learning/components/MathField'
+import { MathField } from '@learning/components'
 import { createView, defineFeedback, defineSchema, expr, Expression } from '@learning/core'
 import type { Quantity } from 'packages/core/src/expr'
 import {

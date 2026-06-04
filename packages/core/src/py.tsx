@@ -1,4 +1,4 @@
-import Python from '@learning/components/Python'
+import { Python } from '@learning/components'
 import dedent from 'dedent'
 import { createMemo, type JSX } from 'solid-js'
 

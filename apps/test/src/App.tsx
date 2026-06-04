@@ -1,10 +1,13 @@
-import { Answer } from '@learning/components/Answer'
-import CheckMark from '@learning/components/CheckMark'
-import { Example, Remark } from '@learning/components/Environment'
-import { Feedback } from '@learning/components/Feedback'
-import { Heading } from '@learning/components/Heading'
-import { hl } from '@learning/components/Highlight'
-import { Page } from '@learning/components/Page'
+import {
+  Answer,
+  CheckMark,
+  Example,
+  Feedback,
+  Heading,
+  hl,
+  Page,
+  Remark,
+} from '@learning/components'
 import { expr, Sequence, substance, tex } from '@learning/core'
 import Exercise from '@learning/exercises/math/Exercise'
 import Factor from '@learning/exercises/math/factor'
