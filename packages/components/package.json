@@ -5,6 +5,7 @@
     "./CheckMark": "./src/CheckMark.tsx",
     "./Code": "./src/Code.tsx",
     "./Environment": "./src/Environment.tsx",
+    "./Feedback": "./src/Feedback.tsx",
     "./Heading": "./src/Heading.tsx",
     "./Highlight": "./src/Highlight.tsx",
     "./Latex": "./src/Latex.tsx",

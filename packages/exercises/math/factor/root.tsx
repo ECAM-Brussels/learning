@@ -1,8 +1,9 @@
 import CheckMark from '@learning/components/CheckMark'
-import { type Feedback, type View, tex } from '@learning/core'
+import { Feedback } from '@learning/components/Feedback'
+import { type StepFeedback, type View, tex } from '@learning/core'
 import type { schema } from '../factor'
 
-export const feedback: Feedback<typeof schema, 'root'> = async ({
+export const feedback: StepFeedback<typeof schema, 'root'> = async ({
   question: { expr: question },
   state: { root },
 }) => {
@@ -10,7 +11,7 @@ export const feedback: Feedback<typeof schema, 'root'> = async ({
   return { correct, score: [0, 0], next: correct ? 'factorFromRoot' : null }
 }
 
-export const Component: View<typeof schema, 'root'> = (props, { Field, Feedback }) => (
+export const Component: View<typeof schema, 'root'> = (props, { Field }) => (
   <>
     <p>Trouvez une racine de {tex`y = ${props.question.expr}`}.</p>
     <div class="flex items-center justify-center gap-1">

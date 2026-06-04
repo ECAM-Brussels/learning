@@ -1,6 +1,7 @@
 import { Answer } from '@learning/components/Answer'
 import CheckMark from '@learning/components/CheckMark'
 import { Example, Remark } from '@learning/components/Environment'
+import { Feedback } from '@learning/components/Feedback'
 import { Heading } from '@learning/components/Heading'
 import { hl } from '@learning/components/Highlight'
 import { Page } from '@learning/components/Page'
@@ -317,16 +318,17 @@ export default () => (
     `}
     <Heading level={2}>Feedback</Heading>
     <p>
-      Pour afficher un retour aux étudiants, on peut exposer un composant <code>Feedback</code>
+      Pour afficher un retour aux étudiants, il existe un composant <code>Feedback</code>
     </p>
     {hl('tsx') /* tsx */ `
       <Exercise
         id="1+1-with-feedback"
         grade={(props) => props.attempt.isEqual('1 + 1')}
       >
-        {(props, Feedback) => (
+        {(props) => (
           <>
-            <p>Que vaut {tex\`1 + 1\`} ? {props.attempt}</p>
+            <p>Que vaut {tex\`1 + 1\`}</p>
+            <Answer>Réponse: {props.attempt}</Answer>
             <Feedback>
               {tex\`
                 1 + 1 = \${expr('1 + 1').simplify()}
@@ -495,7 +497,7 @@ export default () => (
         ]).then((res) => res.every(Boolean))
       }
     >
-      {(props, Feedback) => {
+      {(props) => {
         const acc = createMemo(() => expr('G M / r^2').subs({ G: props.G, M: props.M, r: props.r }))
         const firstCheck = createMemo(() => props.state?.a.isEqual(acc(), 0.1))
         const secondCheck = createMemo(() =>

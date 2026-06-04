@@ -7,7 +7,7 @@ export {
   defineFeedback,
   defineField,
   defineSchema,
-  type Feedback,
+  type Feedback as StepFeedback,
   type View,
 } from './src/exercise/base'
 export { Generate } from './src/exercise/generate'

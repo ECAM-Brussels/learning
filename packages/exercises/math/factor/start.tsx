@@ -1,10 +1,11 @@
 import CheckMark from '@learning/components/CheckMark'
-import { expr, tex, type Feedback, type View } from '@learning/core'
+import { Feedback } from '@learning/components/Feedback'
+import { expr, tex, type StepFeedback, type View } from '@learning/core'
 import { filterAsync } from 'es-toolkit'
 import { createMemo, For, Show } from 'solid-js'
 import type { schema } from '../factor'
 
-export const feedback: Feedback<typeof schema, 'start'> = async ({
+export const feedback: StepFeedback<typeof schema, 'start'> = async ({
   question: { expr: question },
   state: { attempt },
 }) => {
@@ -13,7 +14,7 @@ export const feedback: Feedback<typeof schema, 'start'> = async ({
   return { correct, score: [Number(correct), 1], next: correct ? null : 'root' }
 }
 
-export const Component: View<typeof schema, 'start'> = (props, { Field, Feedback }) => (
+export const Component: View<typeof schema, 'start'> = (props, { Field }) => (
   <>
     <p>
       Factorisez <strong>complètement</strong> l'expression suivante:

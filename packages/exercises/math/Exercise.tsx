@@ -7,10 +7,8 @@ import {
   createSignal,
   Errored,
   flush,
-  Show,
   type ComponentProps,
   type JSX,
-  type ParentComponent,
 } from 'solid-js'
 import * as v from 'valibot'
 
@@ -18,19 +16,12 @@ type Prettify<T> = {
   [K in keyof T]: T[K]
 } & {}
 
-type Feedback = {
-  when?: 'correct' | 'incorrect' | 'always'
-  correct?: boolean
-}
-
 export const schema = defineSchema({
   name: 'math/exercise',
   question: {
     inputs: v.optional(v.array(v.string()), ['attempt']),
     quantities: v.optional(v.array(v.string()), []),
-    children: v.custom<(props: object, Feedback: ParentComponent<Feedback>) => JSX.Element>(
-      () => true,
-    ),
+    children: v.custom<(props: object) => JSX.Element>(() => true),
     params: v.optional(
       v.union([
         v.record(v.string(), v.any()),
@@ -57,9 +48,7 @@ export const schema = defineSchema({
                 ),
                 v.pipe(
                   v.tuple([v.string(), v.string()]),
-                  v.transform((qty) => {
-                    return expr(qty[0], qty[1])
-                  }),
+                  v.transform((qty) => expr(...qty)),
                 ),
               ]),
             ),
@@ -93,7 +82,7 @@ const _Exercise = createView(schema, feedback, {
         const input = props.state?.state?.[attrs.name]?.rawInput
         if (!quantity()) return input ?? ''
         if (props.correct === undefined)
-          return String.raw`\placeholder[magnitude]{${input?.[0] ?? ''}} \placeholder[unit]{${input?.[1] ?? ''}}`
+          return String.raw`\placeholder[magnitude]{${input?.[0] ?? ' '}} \, \placeholder[unit]{${input?.[1] ?? ' '}}`
         return input.join(' ')
       })
       return (
@@ -123,33 +112,6 @@ const _Exercise = createView(schema, feedback, {
       )
     }
 
-    const Feedback: ParentComponent<Feedback> = (attrs) => {
-      const correct = createMemo(() => attrs.correct ?? props.correct)
-      const when = createMemo(() => {
-        const conditions: Record<NonNullable<typeof attrs.when>, boolean> = {
-          correct: correct() === true,
-          incorrect: correct() === false,
-          always: true,
-        }
-        return props.state && conditions[attrs.when ?? 'incorrect']
-      })
-      return (
-        <Show when={when()}>
-          <div
-            class={[
-              'my-4 rounded-xl p-4',
-              {
-                'bg-green-50 p-4 text-green-900': correct() === true,
-                'bg-red-50 text-red-900': correct() === false,
-              },
-            ]}
-          >
-            {attrs.children}
-          </div>
-        </Show>
-      )
-    }
-
     const innerProps = createProjection(() => ({
       ...props.question.params,
       ...Object.fromEntries(props.question.inputs.map((f) => [f, <Field name={f} />])),
@@ -158,7 +120,7 @@ const _Exercise = createView(schema, feedback, {
 
     return (
       <Errored fallback={(error) => <pre>{String(error)}</pre>}>
-        {props.question.children?.(innerProps, Feedback)}
+        {props.question.children?.(innerProps)}
       </Errored>
     )
   },
@@ -187,7 +149,6 @@ export function Exercise<
           state?: { [K in F]: K extends Q ? Quantity : Expression<'output'> }
         }
       >,
-      Feedback: ParentComponent<Feedback>,
     ) => JSX.Element
   },
 ): JSX.Element {

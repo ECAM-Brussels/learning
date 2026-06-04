@@ -255,15 +255,10 @@ type FieldProps<T extends Schema, K extends keyof T['steps']> = {
     | `state.${keyof T['steps'][K]['state'] & string}`
 }
 
-type FeedbackComponent = Component<{
-  children: JSX.Element | (() => JSX.Element)
-}>
-
 export type View<T extends Schema, K extends keyof T['steps'] = keyof T['steps']> = (
   props: Props<T, K> & { setState: StoreSetter<Record<string, any>> },
   utils: {
     Field: Component<FieldProps<T, K>>
-    Feedback: FeedbackComponent
   },
 ) => JSX.Element
 
@@ -397,21 +392,10 @@ export function createView<T extends Schema>(
               )
             }
 
-            const Feedback: FeedbackComponent = (props) => {
-              return (
-                <Show when={!part().correct && part().state}>
-                  <details open class="m-4 border-l-4 border-slate-400 px-4 text-slate-600">
-                    <summary class="font-bold">Feedback</summary>
-                    {typeof props.children === 'function' ? props.children() : props.children}
-                  </details>
-                </Show>
-              )
-            }
-
             return (
               <StepContext value={{ correct: part().correct }}>
                 <Dynamic
-                  component={partialRight(view[part().step], { Field, Feedback })}
+                  component={partialRight(view[part().step], { Field })}
                   {...({
                     correct: part().correct,
                     score: part().score,
