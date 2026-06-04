@@ -1,4 +1,4 @@
-import { createMemo, Show, useContext, type Component, type JSX } from 'solid-js'
+import { createMemo, Loading, Show, useContext, type Component, type JSX } from 'solid-js'
 import { StepContext } from './StepContext'
 
 export const Feedback: Component<{
@@ -17,30 +17,32 @@ export const Feedback: Component<{
     return conditions[props.when ?? 'incorrect']
   })
   return (
-    <Show when={when()}>
-      <details
-        open
-        class={[
-          'm-4 rounded border-l-4 p-4 py-2 text-slate-600',
-          {
-            'border-green-900': correct() === true,
-            'border-red-900': correct() === false,
-          },
-        ]}
-      >
-        <summary
+    <Loading fallback={<p>Chargement du feedback...</p>}>
+      <Show when={when()}>
+        <details
+          open
           class={[
-            'font-bold',
+            'm-4 rounded border-l-4 p-4 py-2 text-slate-600',
             {
-              'text-green-900': correct() === true,
-              'text-red-900': correct() === false,
+              'border-green-900': correct() === true,
+              'border-red-900': correct() === false,
             },
           ]}
         >
-          Feedback
-        </summary>
-        {typeof props.children === 'function' ? props.children() : props.children}
-      </details>
-    </Show>
+          <summary
+            class={[
+              'font-bold',
+              {
+                'text-green-900': correct() === true,
+                'text-red-900': correct() === false,
+              },
+            ]}
+          >
+            Feedback
+          </summary>
+          {typeof props.children === 'function' ? props.children() : props.children}
+        </details>
+      </Show>
+    </Loading>
   )
 }

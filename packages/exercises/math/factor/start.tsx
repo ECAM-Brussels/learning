@@ -46,9 +46,9 @@ export const Component: View<typeof schema, 'start'> = (props, { Field }) => (
                 <Show when={isExpansionUseful()}>
                   <p>On vérifie en effet que</p>
                   {tex`
-                    ${attempt().rawInput} = ${attempt().expand()},
+                    ${attempt()} = ${attempt().expand()},
                   `}
-                  <p>qui n'est pas égal à {tex`${props.question.expr.rawInput}`}.</p>
+                  <p>qui n'est pas égal à {tex`${props.question.expr}`}.</p>
                 </Show>
               </li>
             </Show>
@@ -57,7 +57,9 @@ export const Component: View<typeof schema, 'start'> = (props, { Field }) => (
                 const isProduct = createMemo(() => ['Multiply', 'Power'].includes(attempt().func()))
                 const unfactoredTerms = createMemo(() =>
                   filterAsync(
-                    attempt().args().map(expr),
+                    attempt()
+                      .args()
+                      .map((s) => expr(s)),
                     async (term) => !(await term.isFactored()),
                   ),
                 )
@@ -71,8 +73,10 @@ export const Component: View<typeof schema, 'start'> = (props, { Field }) => (
                         {unfactoredTerms()?.length > 1
                           ? 'Les termes suivants ne sont pas complètement factorisés: '
                           : "Le terme suivant n'est pas complètement factorisé: "}
-                        <For each={unfactoredTerms() ?? []}>{(term) => tex`${term()}`}</For>
                       </p>
+                      <div class="flex gap-12">
+                        <For each={unfactoredTerms() ?? []}>{(term) => tex`${term()}`}</For>
+                      </div>
                     </Show>
                   </li>
                 )

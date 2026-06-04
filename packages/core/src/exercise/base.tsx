@@ -8,6 +8,7 @@ import {
   createContext,
   createMemo,
   createStore,
+  Errored,
   flush,
   For,
   refresh,
@@ -394,20 +395,22 @@ export function createView<T extends Schema>(
 
             return (
               <StepContext value={{ correct: part().correct }}>
-                <Dynamic
-                  component={partialRight(view[part().step], { Field })}
-                  {...({
-                    correct: part().correct,
-                    score: part().score,
-                    question: exercise().question,
-                    state: part().state,
-                    setState,
-                    previous: exercise()
-                      .attempt.slice(0, i())
-                      .toReversed()
-                      .map((s: any) => s.state) as any,
-                  } satisfies Parameters<View<T, K>>[0])}
-                />
+                <Errored fallback={(error) => <p>Une erreur est survenue: {String(error)}</p>}>
+                  <Dynamic
+                    component={partialRight(view[part().step], { Field })}
+                    {...({
+                      correct: part().correct,
+                      score: part().score,
+                      question: exercise().question,
+                      state: part().state,
+                      setState,
+                      previous: exercise()
+                        .attempt.slice(0, i())
+                        .toReversed()
+                        .map((s: any) => s.state) as any,
+                    } satisfies Parameters<View<T, K>>[0])}
+                  />
+                </Errored>
                 <Show when={!part().state}>
                   <button
                     class={[
