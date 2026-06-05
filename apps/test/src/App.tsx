@@ -488,7 +488,51 @@ export default () => (
       </Sequence>
     `}
     <Heading level={2}>Séquence générée</Heading>
-    <p>TODO</p>
+    <p>Pour définir une séquence générée, il suffit de préciser deux paramètres:</p>
+    <ul>
+      <li>
+        <code>id</code>: nom de la séquence
+      </li>
+      <li>
+        <code>next</code>: une fonction qui retourne l'exercice suivant
+      </li>
+    </ul>
+    <p>À titre d'exemple, le code suivant</p>
+    {hl('tsx') /* tsx */ `
+      <Sequence
+        id="generated-random"
+        next={() => (
+          <Exercise
+            inputs={['c']}
+            params={() => ({ a: sample([1, 2, 3]), b: sample([1, 2, 3]) })}
+            grade={(props) => expr('a + b = c').subs(props).isTrue()}
+          >
+            {(props) => (
+              <Answer>
+                {tex\`\${props.a} + \${props.b} =\`} {props.c}
+              </Answer>
+            )}
+          </Exercise>
+        )}
+      />
+    `}
+    <p>génère la séquence suivante:</p>
+    <Sequence
+      id="generated-random"
+      next={() => (
+        <Exercise
+          inputs={['c']}
+          params={() => ({ a: sample([1, 2, 3]), b: sample([1, 2, 3]) })}
+          grade={(props) => expr('a + b = c').subs(props).isTrue()}
+        >
+          {(props) => (
+            <Answer>
+              {tex`${props.a} + ${props.b} =`} {props.c}
+            </Answer>
+          )}
+        </Exercise>
+      )}
+    />
     <Heading level={1}>Exemples</Heading>
     <Heading level={2}>Gravitation universelle</Heading>
     <Exercise
