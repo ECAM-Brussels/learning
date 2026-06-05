@@ -19,6 +19,9 @@ import './style.css'
 
 export default () => (
   <Page title="Introduction à Learning">
+    <button class="cursor-pointer" onClick={() => localStorage.clear()}>
+      Vider la mémoire
+    </button>
     {code({ lang: 'python', math: true, run: true }) /* python */ `
       from sympy import *
       x = Symbol("x")
