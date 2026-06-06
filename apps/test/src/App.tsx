@@ -708,11 +708,11 @@ export default () => (
                 <Feedback>
                   <p>Avec les données entrées, la portée est de</p>
                   {tex`
-                      ${range}
-                        = ${range.subs(props.state!)}
-                        = ${range.subs(props.state!).subs({ g: 9.81 }).simplify()}
-                        = ${range.subs(props.state!).subs({ g: 9.81 }).N()} \ \mathrm{m}
-                    `}
+                    ${range}
+                      = ${range.subs(props.state!)}
+                      = ${range.subs(props.state!).subs({ g: 9.81 }).simplify()}
+                      = ${range.subs(props.state!).subs({ g: 9.81 }).N()} \ \mathrm{m}
+                  `}
                 </Feedback>
               </>
             )}
