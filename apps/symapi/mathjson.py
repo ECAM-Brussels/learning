@@ -46,6 +46,8 @@ def parse_expr(expr: MathJSON) -> sympy.Expr:
                 return sympy.factor(args[0])
             case "Integrate":
                 return sympy.integrate(*args)
+            case "InvisibleOperator":
+                return sympy.Mul(*args, evaluate=False)
             case "Multiply":
                 return sympy.Mul(*args, evaluate=False)
             case "Negate":

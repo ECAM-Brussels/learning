@@ -1,6 +1,6 @@
 import { Latex } from '@learning/components'
 import { mapAsync } from 'es-toolkit'
-import { createMemo, Errored } from 'solid-js'
+import { createMemo } from 'solid-js'
 
 type MaybePromise<T> = T | Promise<T>
 
@@ -15,33 +15,34 @@ type MaybePromise<T> = T | Promise<T>
  *   \int_0^1 x^2 \, \mathrm{d} x = \frac 1 3
  * `} // renders in display mode
  */
-export const tex = (
-  strings: TemplateStringsArray,
-  ...values: MaybePromise<
-    | undefined
-    | null
-    | string
-    | number
-    | { rawInput: string }
-    | { latex: () => MaybePromise<string> }
-  >[]
-) => {
-  const latex = createMemo(async () => {
-    const parsed = await mapAsync(values, async (v) => {
-      const value = await v
-      if (!value) return ''
-      if (typeof value === 'object' && 'rawInput' in value && typeof value.rawInput === 'string')
-        return value.rawInput
-      if (typeof value === 'object' && 'latex' in value && typeof value.latex === 'function')
-        return value.latex()
-      return String(value).replace(/e\+?(\d+)/, '\\cdot 10^{ $1 }')
+export const tex = Object.assign(
+  (
+    strings: TemplateStringsArray,
+    ...values: MaybePromise<
+      | undefined
+      | null
+      | string
+      | number
+      | { rawInput: string }
+      | { latex: () => MaybePromise<string> }
+    >[]
+  ) => {
+    const latex = createMemo(async () => {
+      const parsed = await mapAsync(values, async (v) => {
+        const value = await v
+        if (!value) return ''
+        if (typeof value === 'object' && 'rawInput' in value && typeof value.rawInput === 'string')
+          return value.rawInput
+        if (typeof value === 'object' && 'latex' in value && typeof value.latex === 'function')
+          return value.latex()
+        return String(value).replace(/e\+?(\d+)/, '\\cdot 10^{ $1 }')
+      })
+      return String.raw(strings, ...parsed)
     })
-    return String.raw(strings, ...parsed)
-  })
-  const displayMode = createMemo(() => latex().split('\n').length > 1)
-  return (
-    <Errored fallback={(error) => <pre>Erreur: {String(error)}</pre>}>
-      <Latex value={latex()} displayMode={displayMode()} />
-    </Errored>
-  )
-}
+    const displayMode = createMemo(() => latex().split('\n').length > 1)
+    return <Latex value={latex()} displayMode={displayMode()} />
+  },
+  {
+    raw: String.raw,
+  },
+)
