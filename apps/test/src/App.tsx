@@ -8,6 +8,7 @@ import {
   hl,
   Page,
   Remark,
+  Scope,
 } from '@learning/components'
 import { expr, Sequence, substance, tex } from '@learning/core'
 import Exercise from '@learning/exercises/math/Exercise'
@@ -683,5 +684,41 @@ export default () => (
     >
       <p>Sélectionne les consonnes</p>
     </MultipleChoice>
+    <Heading level={2}>Portée d'un projectile</Heading>
+    <Scope>
+      {() => {
+        const range = expr(tex.raw`\frac{v_0^2 \sin (2 \theta)} {g}`)
+        return (
+          <Exercise
+            id="projectile-range"
+            params={() => ({ d: 10000 })}
+            inputs={['theta', 'v_0']}
+            grade={(props) => range.subs(props).subs({ g: 9.81 }).isEqual(props.d, 0.1)}
+          >
+            {(props) => (
+              <>
+                <p>
+                  Proposez un angle de tir et une vitesse initiale telle que le projectile atteint
+                  une portée de {tex`${expr(props.d, 'm').convert('km')}`}.
+                </p>
+                <Answer>
+                  {tex`\theta = `} {props.theta}
+                  {tex`v_0 = `} {props.v_0}
+                </Answer>
+                <Feedback>
+                  <p>Avec les données entrées, la portée est de</p>
+                  {tex`
+                      ${range}
+                        = ${range.subs(props.state!)}
+                        = ${range.subs(props.state!).subs({ g: 9.81 }).simplify()}
+                        = ${range.subs(props.state!).subs({ g: 9.81 }).N()} \ \mathrm{m}
+                    `}
+                </Feedback>
+              </>
+            )}
+          </Exercise>
+        )
+      }}
+    </Scope>
   </Page>
 )
