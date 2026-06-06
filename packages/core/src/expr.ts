@@ -68,11 +68,11 @@ function expression(input: Math) {
     },
     checkRoot: (root: Math, x = 'x') =>
       expression({ json })
-        .subs({ [x]: v.parse(Math, root) })
+        .subs({ [x]: root })
         .isEqual(0),
     degree: () => symapi.expr.degree({ expr: json }),
     delta: (x: string, a: Math, b: Math) => {
-      const f = (t: Math) => expression({ json }).subs({ [x]: v.parse(Math, t) }).json
+      const f = (t: Math) => expression({ json }).subs({ [x]: t }).json
       return expression({ json: ['Subtract', f(b), f(a)] }).simplify()
     },
     diff: (x = 'x') => expression({ json: ['Derivative', json, x] }),
@@ -97,14 +97,14 @@ function expression(input: Math) {
           .N()
         return diff <= error
       }
-      return await symapi.expr.equal({ expr1: json, expr2: v.parse(Math, await other) })
+      return await symapi.expr.equal({ expr1: json, expr2: v.parse(Math, await other).json })
     },
     isTrue: () => symapi.expr.isTrue({ expr: json }),
     isFactored: () => symapi.expr.isFactored({ expr: json }),
     isPartialFractionDecomposition: () =>
       symapi.expr.isPartialFractionDecomposition({ expr: json }),
     latex: () => symapi.expr.latex({ expr: json }),
-    matches: (other: Math) => symapi.expr.match({ expr1: json, expr2: v.parse(Math, other) }),
+    matches: (other: Math) => symapi.expr.match({ expr1: json, expr2: v.parse(Math, other).json }),
     roots: (complex = false) => symapi.expr.roots({ expr: json, complex }),
     simplify: () => expression({ json: ['Simplify', json] }),
     subs: (rawSubstitutions: Record<string, Math>) => {
