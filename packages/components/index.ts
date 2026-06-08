@@ -1,4 +1,5 @@
 export * from './src/Answer'
+export * from './src/Board'
 export * from './src/CheckMark'
 export * from './src/Code'
 export * from './src/Environment'

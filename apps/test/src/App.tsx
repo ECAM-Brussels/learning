@@ -1,5 +1,6 @@
 import {
   Answer,
+  Board,
   CheckMark,
   code,
   Example,
@@ -720,5 +721,32 @@ export default () => (
         )
       }}
     </Scope>
+    <Heading level={2}>JSXGraph</Heading>
+    <Board boundingbox={[-1.2, 1.2, 1.2, -1.2]}>
+      <Board.Circle radius={1} center={[0, 0]} dash={2} fixed>
+        {(circle) => (
+          <Board.Glider on={circle} start={[1, 1]} name="P">
+            {(P) => (
+              <>
+                <Board.Angle points={[[1, 0], [0, 0], P]} name="\theta" />
+                <Board.Segment from={[0, 0]} to={P} strokeColor="black" name="1" />
+                <Board.Segment
+                  from={[0, 0]}
+                  to={[() => P.X(), 0]}
+                  name="\cos \theta"
+                  strokeColor="darkgreen"
+                />
+                <Board.Segment
+                  from={[0, 0]}
+                  to={[0, () => P.Y()]}
+                  name="\sin \theta"
+                  strokeColor="darkred"
+                />
+              </>
+            )}
+          </Board.Glider>
+        )}
+      </Board.Circle>
+    </Board>
   </Page>
 )
