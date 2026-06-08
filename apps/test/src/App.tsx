@@ -748,6 +748,20 @@ export default () => (
                   name="\sin \theta"
                   strokeColor="darkred"
                 />
+                <Board.Segment
+                  from={[() => P.X(), 0]}
+                  to={P}
+                  opacity={0.5}
+                  dash={2}
+                  strokeColor="lightgray"
+                />
+                <Board.Segment
+                  from={[0, () => P.Y()]}
+                  to={P}
+                  opacity={0.5}
+                  dash={2}
+                  strokeColor="lightgray"
+                />
               </>
             )}
           </Board.Glider>
