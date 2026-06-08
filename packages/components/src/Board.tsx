@@ -78,6 +78,43 @@ export const Board = Object.assign(
       const attrs = omit(props, 'points', 'children')
       return <Element type="angle" parent={props.points} attrs={attrs} children={props.children} />
     },
+    Arc: (
+      props: {
+        points: [
+          [Coordinate, Coordinate] | JXG.Point,
+          [Coordinate, Coordinate] | JXG.Point,
+          [Coordinate, Coordinate] | JXG.Point,
+        ]
+        children?: (arc: JXG.Arc) => JSX.Element
+      } & JXG.ArcAttributes,
+    ) => {
+      const attrs = omit(props, 'points', 'children')
+      return (
+        <Element
+          type="arc"
+          parent={props.points}
+          attrs={{ withLabel: attrs.name ? true : false, ...attrs }}
+          children={props.children}
+        />
+      )
+    },
+    Arrow: (
+      props: {
+        from: [Coordinate, Coordinate] | JXG.Point
+        to: [Coordinate, Coordinate] | JXG.Point
+        children?: (arrow: JXG.Arrow) => JSX.Element
+      } & JXG.ArrowAttributes,
+    ) => {
+      const attrs = omit(props, 'from', 'to', 'children')
+      return (
+        <Element
+          type="arrow"
+          parent={[props.from, props.to]}
+          attrs={{ withLabel: attrs.name ? true : false, ...attrs }}
+          children={props.children}
+        />
+      )
+    },
     Circle: (
       props: {
         center: [Coordinate, Coordinate] | JXG.Point
@@ -121,6 +158,17 @@ export const Board = Object.assign(
       const attrs = omit(props, 'points', 'children')
       return <Element type="line" parent={props.points} attrs={attrs} children={props.children} />
     },
+    Point: (
+      props: {
+        position: [Coordinate, Coordinate]
+        children?: (point: JXG.Point) => JSX.Element
+      } & JXG.PointAttributes,
+    ) => {
+      const attrs = omit(props, 'position', 'children')
+      return (
+        <Element type="point" parent={props.position} attrs={attrs} children={props.children} />
+      )
+    },
     Plot: (
       props: {
         fn: (x: number) => number
@@ -132,16 +180,29 @@ export const Board = Object.assign(
         <Element type="functiongraph" parent={[props.fn]} children={props.children} attrs={attrs} />
       )
     },
-    Point: (
+    Polygon: (
       props: {
-        position: [Coordinate, Coordinate]
-        children?: (point: JXG.Point) => JSX.Element
-      } & JXG.PointAttributes,
+        points: Array<[Coordinate, Coordinate] | JXG.Point>
+        children?: (polygon: JXG.Polygon) => JSX.Element
+      } & JXG.PolygonAttributes,
     ) => {
-      const attrs = omit(props, 'position', 'children')
+      const attrs = omit(props, 'points', 'children')
       return (
-        <Element type="point" parent={props.position} attrs={attrs} children={props.children} />
+        <Element type="polygon" parent={props.points} attrs={attrs} children={props.children} />
       )
+    },
+    Sector: (
+      props: {
+        points: [
+          [Coordinate, Coordinate] | JXG.Point,
+          [Coordinate, Coordinate] | JXG.Point,
+          [Coordinate, Coordinate] | JXG.Point,
+        ]
+        children?: (sector: JXG.Sector) => JSX.Element
+      } & JXG.SectorAttributes,
+    ) => {
+      const attrs = omit(props, 'points', 'children')
+      return <Element type="sector" parent={props.points} attrs={attrs} children={props.children} />
     },
     Segment: (
       props: {

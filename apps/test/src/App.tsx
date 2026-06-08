@@ -723,13 +723,19 @@ export default () => (
     </Scope>
     <Heading level={2}>JSXGraph</Heading>
     <Board boundingbox={[-1.2, 1.2, 1.2, -1.2]}>
-      <Board.Circle radius={1} center={[0, 0]} dash={2} fixed>
+      <Board.Circle radius={1} center={[0, 0]} dash={2} fixed strokeColor="lightgray">
         {(circle) => (
           <Board.Glider on={circle} start={[1, 1]} name="P">
             {(P) => (
               <>
+                <Board.Arc
+                  points={[[0, 0], [1, 0], P]}
+                  strokeColor="blue"
+                  strokeWidth={2}
+                  name="\theta"
+                />
                 <Board.Angle points={[[1, 0], [0, 0], P]} name="\theta" />
-                <Board.Segment from={[0, 0]} to={P} strokeColor="black" name="1" />
+                <Board.Arrow from={[0, 0]} to={P} strokeColor="black" name="1" />
                 <Board.Segment
                   from={[0, 0]}
                   to={[() => P.X(), 0]}
