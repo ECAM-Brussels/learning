@@ -49,7 +49,7 @@ const Math = v.union([
       json: v.custom<MathJsonExpression>(() => true),
     }),
     v.transform(({ rawInput, json }) => ({
-      rawInput: rawInput ?? stringify(json),
+      rawInput: rawInput ?? sanitize(json),
       json: sanitize(json),
     })),
   ),
