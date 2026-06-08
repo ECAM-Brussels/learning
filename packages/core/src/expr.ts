@@ -36,9 +36,23 @@ function sanitize<T extends CEExpressionInput>(json: T): T {
 const Math = v.union([
   v.pipe(
     v.union([v.string(), v.number()]),
-    v.transform((input) => ({ json: sanitize(ce.parse(String(input), { form: 'raw' }).json) })),
+    v.transform((input) => ({
+      rawInput: input,
+      json: sanitize(ce.parse(String(input), { form: 'raw' }).json),
+    })),
   ),
-  v.object({ json: v.custom<MathJsonExpression>(() => true) }),
+  v.pipe(
+    v.object({
+      rawInput: v.optional(
+        v.union([v.string(), v.number(), v.custom<MathJsonExpression>(() => true)]),
+      ),
+      json: v.custom<MathJsonExpression>(() => true),
+    }),
+    v.transform(({ rawInput, json }) => ({
+      rawInput: rawInput ?? stringify(json),
+      json: sanitize(json),
+    })),
+  ),
 ])
 type Math = v.InferInput<typeof Math>
 
@@ -57,9 +71,9 @@ export type Expression<T extends 'input' | 'output' = 'input'> = T extends 'inpu
   : ReturnType<typeof expression>
 
 function expression(input: Math) {
-  const { json } = v.parse(Math, input)
+  const { rawInput, json } = v.parse(Math, input)
   return {
-    rawInput: input,
+    rawInput,
     json,
     abs: () => expression({ json: ['Abs', json] }),
     args: () => {
