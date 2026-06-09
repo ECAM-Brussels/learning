@@ -681,6 +681,17 @@ export default () => (
         </>
       )}
     </Exercise>
+    <Heading level={2}>Comparaison d'équation</Heading>
+    <Exercise id="equivalent-equations" grade={(props) => props.attempt.isEquivalent('y = x')}>
+      {(props) => (
+        <>
+          <p>
+            Donne l'équation d'une droite passant par {tex`(0, 0)`} et {tex`(1, 1)`}.
+          </p>
+          <Answer>{props.attempt}</Answer>
+        </>
+      )}
+    </Exercise>
     <Heading level={2}>Question à choix multiple</Heading>
     <MultipleChoice
       id="mcq"

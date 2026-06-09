@@ -51,6 +51,21 @@ def equal(input: TwoExpressions) -> bool:
     return sympy.simplify(expr) == 0
 
 
+@router.post("/equivalent")
+def equivalent(input: TwoExpressions) -> bool:
+    eq1, eq2 = input.expr1.expr, input.expr2.expr
+    if not isinstance(eq1, sympy.Eq):
+        raise ValueError("expr1 must be an equation")
+    if not isinstance(eq2, sympy.Eq):
+        raise ValueError("expr2 must be an equation")
+    eq1 = sympy.simplify(eq1.lhs - eq1.rhs)
+    eq2 = sympy.simplify(eq2.lhs - eq2.rhs)
+    if eq1 == True and eq2 == True:
+        return True
+    quotient = sympy.simplify(eq1 / eq2)
+    return quotient.is_constant() and quotient != 0
+
+
 @router.post("/isFactored")
 def is_factored(input: OneExpression) -> bool:
     expr = input.expr.expr
