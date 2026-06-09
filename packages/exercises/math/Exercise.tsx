@@ -16,6 +16,8 @@ type Prettify<T> = {
   [K in keyof T]: T[K]
 } & {}
 
+type MaybeAsync<T> = T | Promise<T>
+
 export const schema = defineSchema({
   name: 'math/exercise',
   question: {
@@ -32,7 +34,7 @@ export const schema = defineSchema({
       ]),
       {},
     ),
-    grade: v.custom<(props: object) => Promise<boolean> | boolean>(() => true),
+    grade: v.custom<(props: object) => MaybeAsync<boolean> | MaybeAsync<boolean>[]>(() => true),
   },
   steps: {
     start: {
@@ -64,7 +66,10 @@ export const schema = defineSchema({
 export const feedback = defineFeedback<typeof schema>({
   start: async ({ question: { grade, params }, state: { state } }) => {
     try {
-      const correct = await grade({ ...state, ...params })
+      const result = grade({ ...state, ...params })
+      const correct = Array.isArray(result)
+        ? (await Promise.all(result)).every(Boolean)
+        : await result
       return { correct, score: [Number(correct), 1] as const, next: null }
     } catch (error) {
       console.error('Error during grading:', error)
@@ -142,7 +147,7 @@ export function Exercise<
     params?: (() => D) | D
     grade: (
       props: Prettify<{ [K in F]: K extends Q ? Quantity : Expression<'output'> } & D>,
-    ) => Promise<boolean> | boolean
+    ) => MaybeAsync<boolean> | MaybeAsync<boolean>[]
     children: (
       props: Prettify<
         D & { [K in F]: JSX.Element } & {

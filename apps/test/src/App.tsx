@@ -24,6 +24,12 @@ export default () => (
     <button class="cursor-pointer" onClick={() => localStorage.clear()}>
       Vider la mémoire
     </button>
+    {tex`
+      ${expr([3, -3, 1]).cross([4, 9, 2])}
+      = ${expr([3, -3, 1]).cross([4, 9, 2]).simplify()}
+
+      = ${expr([3, -3, 1]).cross([4, 9, 2]).simplify().norm().simplify()}
+    `}
     {code({ lang: 'python', math: true, run: true }) /* python */ `
       from sympy import *
       x = Symbol("x")
@@ -558,13 +564,11 @@ export default () => (
           { planet: 'de Neptune', r: 24622000, M: 1.024092e26 },
         ]),
       })}
-      grade={(props) =>
-        Promise.all([
-          expr('G M / r^2').subs(props).isEqual(props.a, 0.1),
-          props.m.N() > 0,
-          expr('m a').subs(props).isEqual(props.W, 0.1),
-        ]).then((res) => res.every(Boolean))
-      }
+      grade={(props) => [
+        expr('G M / r^2').subs(props).isEqual(props.a, 0.1),
+        props.m.N() > 0,
+        expr('m a').subs(props).isEqual(props.W, 0.1),
+      ]}
     >
       {(props) => {
         const acc = createMemo(() => expr('G M / r^2').subs({ G: props.G, M: props.M, r: props.r }))
