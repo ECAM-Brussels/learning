@@ -4,7 +4,7 @@ import {
   type MathJsonExpression,
   N,
 } from '@cortex-js/compute-engine'
-import { mapValues, round } from 'es-toolkit'
+import { mapAsync, mapValues, range, round } from 'es-toolkit'
 import stringify from 'safe-stable-stringify'
 import * as v from 'valibot'
 import { encrypt } from './crypto'
@@ -210,12 +210,80 @@ export function quantity(...rawQuantity: v.InferInput<typeof QuantityInput>) {
   }
 }
 
+const Vector = v.array(Math)
+
+function vector(rawComponents: Math[]) {
+  const components = v.parse(Vector, rawComponents)
+  return {
+    cross: (rawOther: Math[]) => {
+      const other = v.parse(Vector, rawOther)
+      if (components.length !== 3 || other.length !== 3)
+        throw new Error(`Cross product is only defined for 3-dimensional vectors`)
+      return vector([
+        {
+          json: [
+            'Subtract',
+            ['Multiply', components[1]!.json, other[2]!.json],
+            ['Multiply', components[2]!.json, other[1]!.json],
+          ],
+        },
+        {
+          json: [
+            'Subtract',
+            ['Multiply', components[2]!.json, other[0]!.json],
+            ['Multiply', components[0]!.json, other[2]!.json],
+          ],
+        },
+        {
+          json: [
+            'Subtract',
+            ['Multiply', components[0]!.json, other[1]!.json],
+            ['Multiply', components[1]!.json, other[0]!.json],
+          ],
+        },
+      ])
+    },
+    dot: (rawOther: Math[]) => {
+      const other = v.parse(Vector, rawOther)
+      if (components.length !== other.length)
+        throw new Error(`Cannot compute the dot product of vectors of different dimensions`)
+      return expression({
+        json: ['Add', ...components.map((c, i) => ['Multiply', c.json, other[i]!.json] as const)],
+      })
+    },
+    isEqual: async (rawOther: Math[]) => {
+      const other = v.parse(Vector, rawOther)
+      if (components.length !== other.length) return false
+      const results = await mapAsync(range(components.length), async (i) =>
+        expression(components[i]!).isEqual(other[i]!),
+      )
+      return results.every(Boolean)
+    },
+    latex: async () => {
+      const c = await mapAsync(components, (component) => expression(component).latex())
+      return `\\begin{bmatrix}${c.join('\\\\')}\\end{bmatrix}`
+    },
+    norm: () =>
+      expression({
+        json: ['Sqrt', ['Add', ...components.map((c) => ['Power', c.json, 2] as const)]],
+      }),
+    simplify: () =>
+      vector(
+        components.map((c) => ({
+          json: ['Simplify', c.json],
+        })),
+      ),
+  }
+}
+
 export type Quantity = ReturnType<typeof quantity>
 
 export function expr(input: undefined, unit?: undefined): undefined
+export function expr(input: Math[], unit?: undefined): ReturnType<typeof vector>
 export function expr(input: Math, unit?: undefined): Expression<'output'>
 export function expr(input: Math, unit: string): Quantity
-export function expr(input?: Math, unit?: string) {
+export function expr(input?: Math | Math[], unit?: string) {
+  if (Array.isArray(input)) return vector(input)
   if (input === undefined) return undefined
   if (unit === undefined) return expression(input)
   return quantity(input, unit)
