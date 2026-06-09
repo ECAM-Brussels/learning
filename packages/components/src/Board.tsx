@@ -118,7 +118,7 @@ export const Board = Object.assign(
     Circle: (
       props: {
         center: [Coordinate, Coordinate] | JXG.Point
-        radius: Coordinate
+        radius: Coordinate | JXG.Point
         children?: (circle: JXG.Circle) => JSX.Element
       } & Omit<JXG.CircleAttributes, 'center'>,
     ) => {
