@@ -42,7 +42,7 @@ export function Page(props: { title?: JSX.Element; children: JSX.Element }) {
             </Show>
             {props.children}
           </main>
-          <aside class="overflow:hidden max-h-screen max-w-96 bg-slate-50 p-4 text-slate-600 shadow print:hidden">
+          <aside class="max-h-screen max-w-96 overflow-y-auto bg-slate-50 p-4 text-slate-600 shadow print:hidden">
             <h1 class="my-4 text-2xl font-bold">Table des matières</h1>
             <For each={store}>
               {(node, i) => (
