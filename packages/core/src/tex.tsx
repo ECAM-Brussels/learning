@@ -1,6 +1,6 @@
 import { Latex } from '@learning/components'
 import { mapAsync } from 'es-toolkit'
-import { createMemo } from 'solid-js'
+import { createMemo, Errored } from 'solid-js'
 
 type MaybePromise<T> = T | Promise<T>
 
@@ -40,7 +40,17 @@ export const tex = Object.assign(
       return String.raw(strings, ...parsed)
     })
     const displayMode = createMemo(() => latex().split('\n').length > 1)
-    return <Latex value={latex()} displayMode={displayMode()} />
+    return (
+      <Errored
+        fallback={
+          <span class="border border-red-900 px-1 text-red-900">
+            Erreur lors de l'affichage de la formule
+          </span>
+        }
+      >
+        <Latex value={latex()} displayMode={displayMode()} />
+      </Errored>
+    )
   },
   {
     raw: String.raw,
