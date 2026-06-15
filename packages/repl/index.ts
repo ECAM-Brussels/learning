@@ -1,3 +1,4 @@
+import { EventIterator } from 'event-iterator'
 const worker = new Worker(new URL('./python/worker.ts', import.meta.url), { type: 'module' })
 
 export type Output = {
@@ -18,14 +19,22 @@ export type Input = {
   options?: Options
 }
 
-export async function pyodideStatus() {
-  let { promise, resolve } = Promise.withResolvers<boolean>()
-  worker.addEventListener('message', function listener(event: MessageEvent<{ status: 'ready' }>) {
-    if (event.data?.status !== 'ready') return
-    worker.removeEventListener('message', listener)
-    resolve(true)
+type Status = 'loading' | 'importing' | 'executing' | 'ready'
+
+export async function* pyodideStatus() {
+  const iterator = new EventIterator<Status>(({ push, stop }) => {
+    const listener = (event: MessageEvent<{ status?: Status }>) => {
+      const status = event.data?.status
+      if (!status) return
+      push(status)
+      if (status === 'ready') stop()
+    }
+    worker.addEventListener('message', listener)
+    return () => worker.removeEventListener('message', listener)
   })
-  return promise
+  for await (const status of iterator) {
+    yield status
+  }
 }
 
 export async function runPython(code: string, options?: { math: boolean }) {

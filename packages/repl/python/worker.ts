@@ -16,9 +16,11 @@ function initPyodide() {
 
 self.onmessage = async (event: MessageEvent<Input>) => {
   initPyodide()
+  self.postMessage({ status: 'loading' })
   const pyodide = await pyodidePromise!
-  self.postMessage({ status: 'ready' })
+  self.postMessage({ status: 'importing' })
   await pyodide.loadPackagesFromImports(event.data.code)
+  self.postMessage({ status: 'executing' })
   let output: Output = { id: event.data.id }
   try {
     pyodide.globals.clear()
@@ -39,5 +41,6 @@ self.onmessage = async (event: MessageEvent<Input>) => {
     output.error = (error as any).message
   } finally {
     self.postMessage(output)
+    self.postMessage({ status: 'ready' })
   }
 }
