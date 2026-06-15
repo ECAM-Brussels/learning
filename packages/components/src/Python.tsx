@@ -21,7 +21,7 @@ export function Python(props: { class?: string; value: string; math?: boolean })
         <pre
           class={[
             'not-prose my-8',
-            { 'bg-red-50': output().error !== undefined },
+            { 'bg-red-50 text-xs': output().error !== undefined },
             props.class ?? 'rounded-xl p-4 shadow-sm',
           ]}
         >
