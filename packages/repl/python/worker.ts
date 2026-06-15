@@ -15,12 +15,12 @@ function initPyodide() {
 }
 
 self.onmessage = async (event: MessageEvent<Input>) => {
+  self.postMessage({ id: event.data.id, status: 'loading' })
   initPyodide()
-  self.postMessage({ status: 'loading' })
   const pyodide = await pyodidePromise!
-  self.postMessage({ status: 'importing' })
+  self.postMessage({ id: event.data.id, status: 'importing' })
   await pyodide.loadPackagesFromImports(event.data.code)
-  self.postMessage({ status: 'executing' })
+  self.postMessage({ id: event.data.id, status: 'executing' })
   let output: Output = { id: event.data.id }
   try {
     pyodide.globals.clear()
