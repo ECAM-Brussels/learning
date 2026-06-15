@@ -1,7 +1,6 @@
 export * from './src/chemistry'
 export { Encrypted, decrypt, encrypt } from './src/crypto'
 export {
-  Exercise,
   ExerciseContext,
   createView,
   defineFeedback,
@@ -12,6 +11,7 @@ export {
 } from './src/exercise/base'
 export { Generate } from './src/exercise/generate'
 export { Sequence } from './src/exercise/sequence'
+export { Exercise, Step } from './src/exercise/test'
 export { Expression, expr, type Quantity } from './src/expr'
 export * as fields from './src/fields'
 export * from './src/py'
