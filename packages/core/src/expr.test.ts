@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { expr, quantity } from './expr'
+import { expr } from './expr'
 
 type Test<T = any> = {
   desc: string
@@ -145,6 +145,18 @@ test.each<Test>([
     promise: expr('x^2 - 5x + 6').factor().latex(),
     result: String.raw`\left(x - 3\right) \left(x - 2\right)`,
   }),
+  define({
+    desc: 'latex: simplify(x^2) = x^2',
+    promise: expr('x^2').simplify().latex(),
+    result: 'x^{2}',
+  }),
+  define({
+    desc: 'latex: abs(simplify(x^2)) has no Simplify node',
+    promise: Promise.resolve(expr('x^2').simplify().abs().latex()).then(
+      (latex) => !latex.includes('Simplify'),
+    ),
+    result: true,
+  }),
 
   define({
     desc: 'pattern: x^2 - 4 = (a + b) (a - b)',
@@ -208,37 +220,37 @@ test.each<Test>([
 
   define({
     desc: 'isEqual with error: 1.005kg equals 1kg ± 0.01kg',
-    promise: quantity('1.005\\mathrm{kg}').isEqual('1\\mathrm{kg}', '0.01\\mathrm{kg}'),
+    promise: expr(1.005, 'kg').isEqual([1, 'kg'], 0.01),
     result: true,
   }),
   define({
     desc: 'isEqual with error: 1.02kg does not equal 1kg ± 0.01kg',
-    promise: quantity('1.02\\mathrm{kg}').isEqual('1\\mathrm{kg}', '0.01\\mathrm{kg}'),
+    promise: expr(1.02, 'kg').isEqual([1, 'kg'], 0.01),
     result: false,
   }),
   define({
     desc: 'isEqual with error: 9.85 m/s² equals 9.8 m/s² ± 0.1 m/s²',
-    promise: quantity('9.85\\mathrm{m/s^2}').isEqual('9.8\\mathrm{m/s^2}', '0.1\\mathrm{m/s^2}'),
+    promise: expr(9.85, 'm/s^2').isEqual([9.8, 'm/s^2'], 0.1),
     result: true,
   }),
   define({
     desc: 'isEqual with error: 1050g equals 1kg ± 100g',
-    promise: quantity('1050\\mathrm{g}').isEqual('1\\mathrm{kg}', '100\\mathrm{g}'),
+    promise: expr(1050, 'g').isEqual([1, 'kg'], 0.1),
     result: true,
   }),
   define({
     desc: 'isEqual with error: 1200g does not equal 1kg ± 100g',
-    promise: quantity('1200\\mathrm{g}').isEqual('1\\mathrm{kg}', '100\\mathrm{g}'),
+    promise: expr(1200, 'g').isEqual([1, 'kg'], 0.1),
     result: false,
   }),
   define({
     desc: 'isEqual with error: 101400 Pa equals 101325 Pa ± 100 Pa',
-    promise: quantity('101400\\mathrm{Pa}').isEqual('101325\\mathrm{Pa}', '100\\mathrm{Pa}'),
+    promise: expr(101400, 'Pa').isEqual([101325, 'Pa'], 100),
     result: true,
   }),
   define({
     desc: 'isEqual with error: 101600 Pa does not equal 101325 Pa ± 100 Pa',
-    promise: quantity('101600\\mathrm{Pa}').isEqual('101325\\mathrm{Pa}', '100\\mathrm{Pa}'),
+    promise: expr(101600, 'Pa').isEqual([101325, 'Pa'], 100),
     result: false,
   }),
 ])('$desc', async ({ promise, result }) => {

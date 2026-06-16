@@ -72,6 +72,15 @@ export type Expression<T extends 'input' | 'output' = 'input'> = T extends 'inpu
 
 function expression(input: Math) {
   const { rawInput, json } = v.parse(Math, input)
+  const instructionOps = new Set(['Simplify', 'Expand', 'Factor', 'Derivative', 'Integrate'])
+
+  const hasInstructionOp = (value: MathJsonExpression): boolean => {
+    if (!Array.isArray(value)) return false
+    const [head, ...tail] = value
+    if (typeof head === 'string' && instructionOps.has(head)) return true
+    return tail.some(hasInstructionOp)
+  }
+
   return {
     rawInput,
     json,
@@ -90,7 +99,7 @@ function expression(input: Math) {
       return expression({ json: ['Subtract', f(b), f(a)] }).simplify()
     },
     diff: (x = 'x') => expression({ json: ['Derivative', json, x] }),
-    encrypt: async () => expression({ json }).latex().then(encrypt),
+    encrypt: async () => Promise.resolve(expression({ json }).latex()).then(encrypt),
     expand: () => expression({ json: ['Expand', json] }),
     evaluate: () => ce.expr(json).evaluate(),
     N: (precision?: number) => {
@@ -119,7 +128,15 @@ function expression(input: Math) {
     isFactored: () => symapi.expr.isFactored({ expr: json }),
     isPartialFractionDecomposition: () =>
       symapi.expr.isPartialFractionDecomposition({ expr: json }),
-    latex: () => symapi.expr.latex({ expr: json }),
+    latex: () => {
+      try {
+        const evaluated = ce.expr(json, { form: 'raw' }).evaluate()
+        if (hasInstructionOp(evaluated.json)) return symapi.expr.latex({ expr: json })
+        return evaluated.latex
+      } catch {
+        return symapi.expr.latex({ expr: json })
+      }
+    },
     matches: (other: Math) => symapi.expr.match({ expr1: json, expr2: v.parse(Math, other).json }),
     roots: (complex = false) => symapi.expr.roots({ expr: json, complex }),
     simplify: () => expression({ json: ['Simplify', json] }),
@@ -262,7 +279,9 @@ function vector(rawComponents: Math[]) {
       return results.every(Boolean)
     },
     latex: async () => {
-      const c = await mapAsync(components, (component) => expression(component).latex())
+      const c = await mapAsync(components, (component) =>
+        Promise.resolve(expression(component).latex()),
+      )
       return `\\begin{bmatrix}${c.join('\\\\')}\\end{bmatrix}`
     },
     norm: () =>

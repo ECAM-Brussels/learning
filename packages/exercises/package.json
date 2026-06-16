@@ -1,7 +1,7 @@
 {
   "name": "@learning/exercises",
   "exports": {
-    "./math/factor": "./math/factor/index.tsx",
+    "./math/Factor": "./math/Factor.tsx",
     "./math/Exercise": "./math/Exercise.tsx",
     "./python/code": "./python/code.tsx",
     "./MultipleChoice": "./MultipleChoice.tsx"

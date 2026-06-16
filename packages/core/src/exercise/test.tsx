@@ -5,6 +5,7 @@ import {
   createContext,
   createEffect,
   createMemo,
+  createProjection,
   createSignal,
   createStore,
   deep,
@@ -13,10 +14,11 @@ import {
   refresh,
   Show,
   useContext,
+  type Component,
   type JSX,
 } from 'solid-js'
 import * as v from 'valibot'
-import { expr } from '../expr'
+import { expr, Expression } from '../expr'
 
 // Typescript helpers
 type MaybeAsync<T> = T | Promise<T>
@@ -26,10 +28,13 @@ type AwaitAll<T extends Record<string, unknown>> = {
 
 // Custom schemas
 const CustomSchemas = {
-  expr: v.pipe(
-    v.string(),
-    v.transform((s) => expr(s)),
-  ),
+  expr: v.union([
+    v.pipe(
+      v.string(),
+      v.transform((s) => expr(s)),
+    ),
+    Expression,
+  ]),
 } as const
 type CustomSchemas = typeof CustomSchemas
 
@@ -84,7 +89,7 @@ const StepContext = createContext<{
   steps: readonly StoredStep[]
   position: number
   saveStep: (position: number, step: StoredStep) => MaybeAsync<void>
-}>()
+} | null>(null)
 
 type StepProps<
   I extends StepInputs,
@@ -97,38 +102,46 @@ type StepProps<
   children?: ((props: AwaitAll<F>) => JSX.Element) | JSX.Element
 }
 
-export function Exercise<
-  I extends StepInputs,
-  F extends Record<string, unknown> & { correct: MaybeAsync<boolean> },
->(props: { id: string } & StepProps<I, F>) {
-  const [steps, setSteps] = createStore<StoredStep[]>([])
-  onSettled(() => {
-    const saved = localStorage.getItem(`exercise-${props.id}`)
-    if (saved) setSteps((_) => JSON.parse(saved))
-  })
-  createEffect(
-    () => deep(steps),
-    (steps) => {
-      if (steps.length > 0) localStorage.setItem(`exercise-${props.id}`, stringify(steps))
-    },
-  )
-  return (
-    <StepContext
-      value={{
-        steps,
-        position: 0,
-        saveStep: (position, step) => {
-          const submitted = { ...step, submitted: true }
-          setSteps((s) => {
-            if (position >= s.length) s.push(submitted)
-            else s[position] = submitted
-          })
-        },
-      }}
-    >
-      <Step {...props} />
-    </StepContext>
-  )
+export function createStepComponent<P extends StepInputs>(
+  schema: P,
+  Component: Component<Inputs<P, 'output'>>,
+) {
+  return (rawProps: Inputs<P, 'input'> & { id?: string }) => {
+    const props = createProjection(() => v.parse(Inputs(schema), rawProps))
+    const [steps, setSteps] = createStore<StoredStep[]>([])
+    const context = useContext(StepContext)
+    onSettled(() => {
+      if (!context) {
+        const saved = localStorage.getItem(`exercise-${props.id}`)
+        if (saved) setSteps((_) => JSON.parse(saved))
+      }
+    })
+    createEffect(
+      () => deep(steps),
+      (steps) => {
+        if (!context && steps.length > 0)
+          localStorage.setItem(`exercise-${props.id}`, stringify(steps))
+      },
+    )
+    return (
+      <StepContext
+        value={{
+          steps,
+          position: 0,
+          saveStep: (position, step) => {
+            const submitted = { ...step, submitted: true }
+            setSteps((s) => {
+              if (position >= s.length) s.push(submitted)
+              else s[position] = submitted
+            })
+          },
+          ...context,
+        }}
+      >
+        <Component {...props} />
+      </StepContext>
+    )
+  }
 }
 
 export function Step<
@@ -168,7 +181,7 @@ export function Step<
   )
   return (
     <>
-      <Loading>{props.prompt(fields(), undefined)}</Loading>
+      <Loading>{props.prompt(fields(), feedbackResult())}</Loading>
       <Show when={!step().submitted}>
         <button
           onClick={action(function* () {

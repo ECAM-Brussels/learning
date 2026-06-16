@@ -13,7 +13,7 @@ import {
 } from '@learning/components'
 import { expr, Sequence, substance, tex } from '@learning/core'
 import Exercise from '@learning/exercises/math/Exercise'
-import Factor from '@learning/exercises/math/factor'
+import { Factor } from '@learning/exercises/math/Factor'
 import MultipleChoice from '@learning/exercises/MultipleChoice'
 import { sample } from 'es-toolkit'
 import { createMemo, Show } from 'solid-js'
