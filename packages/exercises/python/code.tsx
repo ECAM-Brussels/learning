@@ -1,68 +1,74 @@
-import CheckMark from '@learning/components/CheckMark'
-import { createView, defineFeedback, defineSchema, fields } from '@learning/core'
+import { CheckMark, Code } from '@learning/components'
+import { createStepComponent, Step } from '@learning/core'
 import { runPython } from '@learning/repl'
 import { mapAsync } from 'es-toolkit'
-import { createMemo, For, Show } from 'solid-js'
+import { createMemo, For, type JSX } from 'solid-js'
+import * as v from 'valibot'
 
-export const schema = defineSchema({
-  name: 'python/code',
-  question: {
-    tests: fields.Tests('Tests à valider'),
+export const PythonExercise = createStepComponent(
+  {
+    prompt: v.optional(v.custom<JSX.Element>(() => true)),
+    tests: v.optional(
+      v.array(v.object({ desc: v.optional(v.string()), test: v.string(), result: v.string() })),
+      [],
+    ),
+    math: v.optional(v.boolean(), false),
   },
-  steps: {
-    start: {
-      state: {
-        attempt: fields.Python('Code Python'),
-      },
-    },
-  },
-})
-
-const feedback = defineFeedback<typeof schema>({
-  start: async ({ question: { tests }, state: { attempt } }) => {
-    const results = await mapAsync(tests, async ({ test, result }) =>
-      checkTest(attempt, test, result),
-    )
-    const passed = results.filter(Boolean).length
-    const correct = passed === results.length
-    return { correct, score: [passed, results.length], next: null }
-  },
-})
-
-export const PythonCode = createView(schema, feedback, {
-  start: (props, { Field }) => {
-    const results = createMemo(async () => {
-      if (!props.state) return []
-      return mapAsync(props.question.tests, async ({ test, result }) =>
-        checkTest(props.state!.attempt, test, result),
-      )
-    }, [])
-    return (
-      <>
-        <Field name="state.attempt" />
-        <Show when={results().length > 0}>
-          <details>
-            <summary>
-              {results()?.filter(Boolean).length} tests corrects sur {results()?.length}
-              <CheckMark value={results()?.every(Boolean)} />
-            </summary>
-            <For each={results()}>
-              {(result, i) => (
-                <li>
-                  <code>{props.question.tests.at(i())?.test}:</code> <CheckMark value={result()} />
-                </li>
-              )}
-            </For>
-          </details>
-        </Show>
-      </>
-    )
-  },
-})
+  (props) => (
+    <Step
+      id={props.id}
+      inputs={{ code: v.string() }}
+      feedback={(inputs) => ({
+        correct: false,
+        tests: mapAsync(props.tests, async (test) => ({
+          ...test,
+          passed: await checkTest(inputs.state.code, test.test, test.result),
+        })),
+      })}
+      prompt={(inputs) => {
+        const code = createMemo(() => inputs.savedState?.code ?? '')
+        return (
+          <>
+            {props.prompt}
+            <Code
+              lang="python"
+              onChange={(newValue) => {
+                if (newValue !== (inputs.state.code ?? '')) {
+                  inputs.setState('code', newValue)
+                }
+              }}
+              math={props.math}
+              children={code()}
+            />
+          </>
+        )
+      }}
+    >
+      {(feedback) => (
+        <details>
+          <summary>
+            {feedback.tests.filter((t) => t.passed).length} tests corrects sur{' '}
+            {feedback.tests.length}
+            <CheckMark value={feedback.tests.every((t) => t.passed)} />
+          </summary>
+          <For each={feedback.tests}>
+            {(test, i) => (
+              <li>
+                <code>{test().desc ?? test().test}:</code> <CheckMark value={test().passed} />
+              </li>
+            )}
+          </For>
+        </details>
+      )}
+    </Step>
+  ),
+)
 
 async function checkTest(code: string, test: string, result: string) {
-  const output = await runPython(code + `\n` + test)
-  return output.result === result
+  for await (const chunk of runPython(`${code}\nprint(${test})`)) {
+    if (!chunk.status) {
+      return `${chunk.result}${chunk.stdout}` === result
+    }
+  }
+  throw new Error('Python test did not return a result')
 }
-
-export default PythonCode

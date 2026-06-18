@@ -74,10 +74,7 @@ export function Sequence<T extends object>(props: Props<T>) {
     return range(length()).map((k) => {
       try {
         const exercise = JSON.parse(localStorage.getItem(key(k)) ?? 'null')
-        return (
-          exercise.attempt.every((part: any) => part.correct) &&
-          exercise.attempt.at(-1)?.next === null
-        )
+        return exercise.every((part: any) => part.correct)
       } catch {
         return null
       }

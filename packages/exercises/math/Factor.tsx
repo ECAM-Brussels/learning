@@ -8,6 +8,7 @@ export const Factor = createStepComponent(
   { expr: 'expr', roots: v.optional(v.array(Expression), []) },
   (props) => (
     <Step
+      id={props.id}
       name="Math/Factor/start"
       inputs={{ attempt: 'expr' }}
       feedback={async (inputs) => {
@@ -48,6 +49,7 @@ const Root = createStepComponent(
   { expr: 'expr', roots: v.optional(v.array(Expression), []) },
   (props) => (
     <Step
+      id={props.id}
       name="Math/Factor/root"
       inputs={{ root: 'expr' }}
       feedback={({ root }) => ({ correct: props.expr.checkRoot(root), root })}
