@@ -1,5 +1,5 @@
 import { runPython } from '@learning/repl'
-import { createMemo, isPending, Loading, Match, Show, Switch, type JSX } from 'solid-js'
+import { createMemo, Loading, Match, Show, Switch, type JSX } from 'solid-js'
 import { Latex } from './Latex'
 
 export function Python(props: { class?: string; value: string; math?: boolean }): JSX.Element {
@@ -14,7 +14,6 @@ export function Python(props: { class?: string; value: string; math?: boolean })
           <Match when={output().status === 'loading'}>Chargement de Pyodide...</Match>
           <Match when={output().status === 'importing'}>Import des librairies...</Match>
           <Match when={output().status === 'executing'}>Exécution du code...</Match>
-          <Match when={isPending(output)}>Calcul en cours...</Match>
         </Switch>
       </pre>
       <Show when={!empty()}>

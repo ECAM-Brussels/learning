@@ -172,6 +172,7 @@ export function Step<
     const parsed = v.parse(StoredStep(props.inputs), step())
     return await allKeyed(await props.feedback(parsed.state))
   })
+  const promptComponent = createMemo(() => partialRight(props.prompt, feedbackResult()))
   const fields = createMemo(() =>
     mapValues(props.inputs, (_schema, name) => (
       <input
@@ -192,7 +193,7 @@ export function Step<
     <>
       <Loading>
         <Dynamic
-          component={partialRight(props.prompt, feedbackResult())}
+          component={promptComponent()}
           {...({
             ...fields(),
             savedState: context.steps()[context.position]?.state as Inputs<I, 'input'> | undefined,
@@ -224,24 +225,26 @@ export function Step<
           Soumettre
         </button>
       </Show>
-      <Show when={step().submitted && feedbackResult()}>
-        {(feedback) => (
-          <StepContext value={{ ...context, position: context.position + 1 }}>
-            {typeof props.children === 'function' ? props.children(feedback()) : props.children}
-          </StepContext>
-        )}
-      </Show>
-      <Show when={steps().length > 0 && stepContext === null}>
-        <button
-          class="ml-auto block cursor-pointer text-xs text-slate-400"
-          onClick={() => {
-            localStorage.clear()
-            refresh(steps)
-          }}
-        >
-          Recommencer
-        </button>
-      </Show>
+      <Loading fallback={<p>Calcul du feedback...</p>}>
+        <Show when={step().submitted && feedbackResult()}>
+          {(feedback) => (
+            <StepContext value={{ ...context, position: context.position + 1 }}>
+              {typeof props.children === 'function' ? props.children(feedback()) : props.children}
+            </StepContext>
+          )}
+        </Show>
+        <Show when={steps().length > 0 && stepContext === null}>
+          <button
+            class="ml-auto block cursor-pointer text-xs text-slate-400"
+            onClick={() => {
+              localStorage.clear()
+              refresh(steps)
+            }}
+          >
+            Recommencer
+          </button>
+        </Show>
+      </Loading>
     </>
   )
 }

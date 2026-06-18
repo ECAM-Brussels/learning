@@ -9,7 +9,7 @@ export const PythonExercise = createStepComponent(
   {
     prompt: v.optional(v.custom<JSX.Element>(() => true)),
     tests: v.optional(
-      v.array(v.object({ desc: v.optional(v.string()), test: v.string(), result: v.string() })),
+      v.array(v.object({ desc: v.optional(v.string()), test: v.string(), expected: v.string() })),
       [],
     ),
     math: v.optional(v.boolean(), false),
@@ -18,13 +18,16 @@ export const PythonExercise = createStepComponent(
     <Step
       id={props.id}
       inputs={{ code: v.string() }}
-      feedback={(inputs) => ({
-        correct: false,
-        tests: mapAsync(props.tests, async (test) => ({
+      feedback={async (inputs) => {
+        const tests = await mapAsync(props.tests, async (test) => ({
           ...test,
-          passed: await checkTest(inputs.state.code, test.test, test.result),
-        })),
-      })}
+          ...(await checkTest(inputs.code, test.test, test.expected)),
+        }))
+        return {
+          correct: tests.every((t) => t.passed),
+          tests,
+        }
+      }}
       prompt={(inputs) => {
         const code = createMemo(() => inputs.savedState?.code ?? '')
         return (
@@ -32,12 +35,8 @@ export const PythonExercise = createStepComponent(
             {props.prompt}
             <Code
               lang="python"
-              onChange={(newValue) => {
-                if (newValue !== (inputs.state.code ?? '')) {
-                  inputs.setState('code', newValue)
-                }
-              }}
-              math={props.math}
+              onChange={(newValue) => inputs.setState('code', newValue)}
+              run
               children={code()}
             />
           </>
@@ -54,7 +53,10 @@ export const PythonExercise = createStepComponent(
           <For each={feedback.tests}>
             {(test, i) => (
               <li>
-                <code>{test().desc ?? test().test}:</code> <CheckMark value={test().passed} />
+                <code>
+                  {test().desc ?? test().test} -&gt; {test().result}
+                </code>
+                <CheckMark value={test().passed} />
               </li>
             )}
           </For>
@@ -64,10 +66,11 @@ export const PythonExercise = createStepComponent(
   ),
 )
 
-async function checkTest(code: string, test: string, result: string) {
+async function checkTest(code: string, test: string, expected: string) {
   for await (const chunk of runPython(`${code}\nprint(${test})`)) {
     if (!chunk.status) {
-      return `${chunk.result}${chunk.stdout}` === result
+      const result = `${chunk.result}${chunk.stdout}`
+      return { result, passed: result.trim() === expected.trim() }
     }
   }
   throw new Error('Python test did not return a result')
