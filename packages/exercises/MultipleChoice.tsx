@@ -1,6 +1,6 @@
 import { CheckMark } from '@learning/components'
 import { createStepComponent, Step } from '@learning/core'
-import { For, type JSX } from 'solid-js'
+import { For, Loading, type JSX } from 'solid-js'
 import * as v from 'valibot'
 
 type MaybeAsync<T> = T | Promise<T>
@@ -25,7 +25,7 @@ const InternalMultipleChoice = createStepComponent(
         correct: props.correct(inputs.selection),
         selection: inputs.selection,
       })}
-      prompt={(inputs, feedback) => (
+      prompt={(ctx) => (
         <>
           {props.prompt}
           <div class="my-4 flex items-center gap-2">
@@ -35,11 +35,11 @@ const InternalMultipleChoice = createStepComponent(
                   <input
                     class="mr-2"
                     type="checkbox"
-                    checked={inputs.state.selection?.includes(entry()[0])}
-                    disabled={feedback !== undefined}
+                    checked={ctx.state.selection?.includes(entry()[0])}
+                    disabled={ctx.savedState !== undefined}
                     onChange={(e) => {
                       const checked = e.currentTarget.checked
-                      inputs.setState('selection', (prev) => {
+                      ctx.setState('selection', (prev) => {
                         prev = prev?.filter((v) => v !== entry()[0]) ?? []
                         if (checked) prev.push(entry()[0])
                         return prev
@@ -50,7 +50,9 @@ const InternalMultipleChoice = createStepComponent(
                 </label>
               )}
             </For>
-            <CheckMark value={feedback?.correct} />
+            <Loading>
+              <CheckMark value={ctx.feedback?.correct} />
+            </Loading>
           </div>
         </>
       )}

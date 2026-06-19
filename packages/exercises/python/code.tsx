@@ -28,14 +28,14 @@ export const PythonExercise = createStepComponent(
           tests,
         }
       }}
-      prompt={(inputs) => {
-        const code = createMemo(() => inputs.savedState?.code ?? '')
+      prompt={(ctx) => {
+        const code = createMemo(() => ctx.savedState?.code ?? '')
         return (
           <>
             {props.prompt}
             <Code
               lang="python"
-              onChange={(newValue) => inputs.setState('code', newValue)}
+              onChange={(newValue) => ctx.setState('code', newValue)}
               run
               children={code()}
             />

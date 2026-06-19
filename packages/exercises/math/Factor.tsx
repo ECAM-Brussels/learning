@@ -18,7 +18,7 @@ export const Factor = createStepComponent(
         })
         return { correct: equal && factored, equal, factored, roots: props.roots }
       }}
-      prompt={(fields, feedback) => (
+      prompt={(ctx) => (
         <>
           <p>
             <Show when={props.roots.length > 0} fallback="Factorisez">
@@ -27,8 +27,8 @@ export const Factor = createStepComponent(
             </Show>{' '}
             l'expression suivante
           </p>
-          <Answer correct={feedback?.correct}>
-            {tex`${props.expr} =`} {fields.attempt}
+          <Answer>
+            {tex`${props.expr} =`} {ctx.inputs.attempt}
           </Answer>
         </>
       )}
@@ -53,7 +53,7 @@ const Root = createStepComponent(
       name="Math/Factor/root"
       inputs={{ root: 'expr' }}
       feedback={({ root }) => ({ correct: props.expr.checkRoot(root), root })}
-      prompt={(fields, feedback) => (
+      prompt={(ctx) => (
         <>
           <p>
             Trouvez une racine de {tex`y = ${props.expr}`}
@@ -63,8 +63,8 @@ const Root = createStepComponent(
             </Show>
             .
           </p>
-          <Answer correct={feedback?.correct}>
-            {tex`x = `} {fields.root}
+          <Answer correct={ctx.feedback?.correct}>
+            {tex`x = `} {ctx.inputs.root}
           </Answer>
         </>
       )}
