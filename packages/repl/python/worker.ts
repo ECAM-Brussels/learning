@@ -24,6 +24,12 @@ self.onmessage = async (event: MessageEvent<Input>) => {
   let output: Output = { id: event.data.id }
   try {
     pyodide.globals.clear()
+    if (event.data.options?.math && event.data.code.includes('matplotlib')) {
+      pyodide.runPython(dedent`
+        import os
+        os.environ["MPLBACKEND"] = "AGG"
+      `)
+    }
     pyodide.runPython(dedent`
       import sys
       from io import StringIO
@@ -33,9 +39,25 @@ self.onmessage = async (event: MessageEvent<Input>) => {
     const result = pyodide.runPython(event.data.code)
     output.result = String(result ?? '')
     output.stdout = pyodide.runPython('sys.stdout.getvalue()')
-    if (event.data.options?.math && result && result._repr_latex_ !== undefined) {
-      output.result = result._repr_latex_().substr(1, result._repr_latex_().length - 2)
-      output.format = 'latex'
+    if (event.data.options?.math) {
+      if (result && result._repr_latex_ !== undefined) {
+        output.result = result._repr_latex_().substr(1, result._repr_latex_().length - 2)
+        output.format = 'latex'
+      } else if (event.data.code.includes('matplotlib')) {
+        const image = pyodide.runPython(dedent`
+          import base64
+          import io
+          import matplotlib.pyplot as plt
+
+          buffer = io.BytesIO()
+          plt.savefig(buffer, format='png')
+          plt.close()
+          buffer.seek(0)
+          base64.b64encode(buffer.read()).decode('utf-8')
+        `)
+        output.result = `data:image/png;base64,${image}`
+        output.format = 'image'
+      }
     }
   } catch (error) {
     output.error = (error as any).message

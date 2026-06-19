@@ -7,7 +7,7 @@ export type Output =
       result?: string
       error?: string
       stdout?: string
-      format?: 'text' | 'latex'
+      format?: 'text' | 'latex' | 'image'
       status?: never
     }
   | {
@@ -43,5 +43,6 @@ export async function* runPython(code: string, options?: { math: boolean }) {
   worker.postMessage({ id: promiseId, code, options } satisfies Input)
   for await (const status of iterator) {
     yield status
+    console.log('Python worker status:', status)
   }
 }
