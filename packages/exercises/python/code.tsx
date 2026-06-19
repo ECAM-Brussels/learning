@@ -2,7 +2,7 @@ import { CheckMark, Code } from '@learning/components'
 import { createStepComponent, Step } from '@learning/core'
 import { runPython } from '@learning/repl'
 import { mapAsync } from 'es-toolkit'
-import { createMemo, For, type JSX } from 'solid-js'
+import { createMemo, For, Show, type JSX } from 'solid-js'
 import * as v from 'valibot'
 
 export const PythonExercise = createStepComponent(
@@ -44,7 +44,7 @@ export const PythonExercise = createStepComponent(
       }}
     >
       {(feedback) => (
-        <details>
+        <details class="not-prose">
           <summary>
             {feedback.tests.filter((t) => t.passed).length} tests corrects sur{' '}
             {feedback.tests.length}
@@ -57,6 +57,9 @@ export const PythonExercise = createStepComponent(
                   {test().desc ?? test().test} -&gt; {test().result}
                 </code>
                 <CheckMark value={test().passed} />
+                <Show when={!test().passed}>
+                  <p>Résultat attendu: {test().expected}</p>
+                </Show>
               </li>
             )}
           </For>
