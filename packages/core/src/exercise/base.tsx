@@ -1,5 +1,5 @@
 import { Dynamic } from '@solidjs/web'
-import { allKeyed, mapValues, partialRight } from 'es-toolkit'
+import { allKeyed, mapValues } from 'es-toolkit'
 import stringify from 'safe-stable-stringify'
 import {
   action,
@@ -107,19 +107,18 @@ type StepProps<
   name?: string
   inputs: I
   feedback: (inputValues: Inputs<I, 'output'>) => MaybeAsync<F>
-  prompt: (
-    props: { [K in keyof I]: JSX.Element } & {
-      savedState?: Inputs<I, 'input'>
-      state: Partial<Inputs<I, 'input'>>
-      setState: <K extends keyof I>(
-        key: K,
-        value:
-          | Inputs<I, 'input'>[K]
-          | ((prev: Inputs<I, 'input'>[K] | undefined) => Inputs<I, 'input'>[K]),
-      ) => void
-    },
-    feedback?: AwaitAll<F>,
-  ) => JSX.Element
+  prompt: (props: {
+    inputs: { [K in keyof I]: JSX.Element }
+    savedState?: Inputs<I, 'input'>
+    state: Partial<Inputs<I, 'input'>>
+    setState: <K extends keyof I>(
+      key: K,
+      value:
+        | Inputs<I, 'input'>[K]
+        | ((prev: Inputs<I, 'input'>[K] | undefined) => Inputs<I, 'input'>[K]),
+    ) => void
+    feedback?: AwaitAll<F>
+  }) => JSX.Element
   children?: ((props: AwaitAll<F>) => JSX.Element) | JSX.Element
 }
 
@@ -172,7 +171,6 @@ export function Step<
     const parsed = v.parse(StoredStep(props.inputs), step())
     return await allKeyed(await props.feedback(parsed.state))
   })
-  const promptComponent = createMemo(() => partialRight(props.prompt, feedbackResult()))
   const fields = createMemo(() =>
     mapValues(props.inputs, (_schema, name) => (
       <input
@@ -191,11 +189,11 @@ export function Step<
   )
   return (
     <>
-      <Loading>
+      <Loading fallback={<p>Chargement du prompt...</p>}>
         <Dynamic
-          component={promptComponent()}
+          component={props.prompt}
           {...({
-            ...fields(),
+            inputs: fields(),
             savedState: context.steps()[context.position]?.state as Inputs<I, 'input'> | undefined,
             state: step().state as Partial<Inputs<I, 'input'>>,
             setState: (key, value) => {
@@ -206,6 +204,9 @@ export function Step<
                   [key]: value instanceof Function ? value(prev.state[key]) : value,
                 },
               }))
+            },
+            get feedback() {
+              return feedbackResult()
             },
           } satisfies Parameters<StepProps<I, F>['prompt']>[0])}
         />
