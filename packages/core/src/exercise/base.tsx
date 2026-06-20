@@ -140,11 +140,11 @@ export function createStepComponent<P extends StepInputs>(
     const props = createMemo(() => v.parse(Inputs(schema), { ...rawProps, ...fetched()?.props }))
 
     createEffect(
-      () => [isExercise(), fetched(), props()] as const,
-      ([isExercise, stored, props]) => {
+      () => [rawProps.id, isExercise(), fetched(), props()] as const,
+      ([id, isExercise, stored, props]) => {
         if (isExercise && stored === null) {
           ;(async function () {
-            await exerciseContext.save(rawProps.id ?? '', { props, steps: [] })
+            await exerciseContext.save(id ?? '', { props, steps: [] })
             refresh(fetched)
           })()
         }
@@ -153,6 +153,37 @@ export function createStepComponent<P extends StepInputs>(
 
     return <Component {...props()} id={rawProps.id} />
   }
+}
+
+type JSONValue = string | number | boolean | null | { [key: string]: JSONValue } | JSONValue[]
+
+export function Exercise<
+  T extends StepInputs | undefined = undefined,
+  D extends Record<string, any> = T extends StepInputs
+    ? Inputs<T, 'input'>
+    : Record<string, JSONValue>,
+>(props: { id?: string; schema?: T; data: D | (() => MaybeAsync<D>); children: Component<D> }) {
+  const exerciseContext = useContext(ExerciseContext)
+  const fetched = createMemo(() => exerciseContext.fetch(props.id ?? ''))
+  const data = createMemo(async (): Promise<D> => {
+    const raw = props.data instanceof Function ? await props.data() : props.data
+    if (!props.schema) return { ...raw, ...(fetched()?.props ?? {}) } as D
+    return v.parse(Inputs(props.schema), { ...raw, ...fetched()?.props }) as any
+  })
+
+  createEffect(
+    () => [props.id, fetched(), data()] as const,
+    ([id, stored, data]) => {
+      if (stored === null) {
+        ;(async function () {
+          await exerciseContext.save(id ?? '', { props: data, steps: [] })
+          refresh(fetched)
+        })()
+      }
+    },
+  )
+
+  return <Dynamic component={props.children} {...data()} />
 }
 
 export function Step<
