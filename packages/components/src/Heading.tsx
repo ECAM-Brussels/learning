@@ -24,18 +24,10 @@ export function Heading(props: { children: JSX.Element; level: 1 | 2 | 3 | 4 | 5
     const observer = new IntersectionObserver(
       debounce((entries) => {
         const entry = entries[0]!
-        const index = Number(id())
-        if (!Number.isNaN(index))
+        if (id())
           setToc((t) => {
-            const node = t[index]
-            if (!node) return
-
-            const nextVisible = entry.isIntersecting
-            const nextPosition = entry.boundingClientRect.top
-            if (node.visible === nextVisible && node.position === nextPosition) return
-
-            node.visible = nextVisible
-            node.position = nextPosition
+            t[Number(id())]!.visible = entry.isIntersecting
+            t[Number(id())]!.position = entry.boundingClientRect.top
           })
       }, 200),
     )
