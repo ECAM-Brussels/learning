@@ -1,4 +1,4 @@
-import { Answer, Feedback } from '@learning/components'
+import { Attempt, Feedback } from '@learning/components'
 import { createStepComponent, expr, Expression, Step, tex } from '@learning/core'
 import { allKeyed } from 'es-toolkit'
 import { createMemo, Match, Switch } from 'solid-js'
@@ -40,9 +40,9 @@ export const Factor = createStepComponent(
         prompt={(ctx) => (
           <>
             <p>Factorisez l'expression suivante</p>
-            <Answer>
+            <Attempt correct={() => ctx.feedback?.correct}>
               {tex`${props.expr} = ${start()}`} {ctx.inputs.attempt}
-            </Answer>
+            </Attempt>
           </>
         )}
       >

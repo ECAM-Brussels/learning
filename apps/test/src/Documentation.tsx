@@ -1,4 +1,4 @@
-import { Answer, CheckMark, Example, Heading, hl, Remark } from '@learning/components'
+import { Attempt, CheckMark, Example, Heading, hl, Remark } from '@learning/components'
 import { Step as Exercise, expr, tex } from '@learning/core'
 
 export const Documentation = () => (
@@ -153,7 +153,7 @@ export const Documentation = () => (
         prompt={(ctx) => (
           <>
             <p>Que vaut {tex`1 + 1`} ?</p>
-            <Answer>Réponse: {ctx.inputs.attempt}</Answer>
+            <Attempt>Réponse: {ctx.inputs.attempt}</Attempt>
           </>
         )}
       />
@@ -213,7 +213,7 @@ export const Documentation = () => (
     </Remark>
     <p>
       Placer correctement le champ de réponse avec un <CheckMark value={true} /> est une tâche
-      répétitive. Il est recommandé d'utiliser le composant <code>Answer</code> qui se charge de
+      répétitive. Il est recommandé d'utiliser le composant <code>Attempt</code> qui se charge de
       cela automatiquement. Le code devient alors:
     </p>
     {hl('tsx') /* tsx */ `
@@ -223,14 +223,14 @@ export const Documentation = () => (
         prompt={(inputs) => (
           <>
             <p>Que vaut {tex\`1 + 1\`} ? {inputs.attempt}</p>
-            <Answer>Réponse: {inputs.attempt}</Answer>
+            <Attempt>Réponse: {inputs.attempt}</Attempt>
           </>
         )}
       />
     `}
     <p>
       Dans le code ci-dessus, nous tombons sur une subtilité du langage TSX. Une fonction ne peut
-      retourner qu'un seul élément, or nous en avons deux: <code>p</code> et <code>Answer</code>.
+      retourner qu'un seul élément, or nous en avons deux: <code>p</code> et <code>Attempt</code>.
       Pour régler ce problème, il suffit de les envelopper dans une balise vide{' '}
       <code>&lt;&gt;</code> appelée <em>fragment</em>.
     </p>
@@ -247,7 +247,7 @@ export const Documentation = () => (
         prompt={(inputs) => (
           <>
             <p>Que vaut {tex\`1 + 1\`} ? {inputs.attempt}</p>
-            <Answer>Réponse: {inputs.attempt}</Answer>
+            <Attempt>Réponse: {inputs.attempt}</Attempt>
           </>
         )}
       />
@@ -259,17 +259,17 @@ export const Documentation = () => (
         id="multiple-inputs"
         inputs={{ a: 'expr', b: 'expr' }}
         feedback={(inputs) => ({ correct: expr('a + b').subs(inputs).isEqual(6) })}
-        prompt={(inputs) => (
+        prompt={(ctx) => (
           <>
             <p>
               Trouvez deux nombres {tex`a`} et {tex`b`} tels que {tex`a + b = 6`}.
             </p>
-            <Answer>
+            <Attempt>
               {tex`a = `}
-              {inputs.a}
+              {ctx.inputs.a}
               {tex`\quad b = `}
-              {inputs.b}
-            </Answer>
+              {ctx.inputs.b}
+            </Attempt>
           </>
         )}
       />
@@ -297,15 +297,15 @@ export const Documentation = () => (
         id="multiple-inputs"
         inputs={{ a: 'expr', b: 'expr' }}
         feedback={(inputs) => ({ correct: expr('a + b').subs(inputs).isEqual(6) })}
-        prompt={(inputs) => (
+        prompt={(ctx) => (
           <p>
             Trouvez deux nombres {tex\`a\`} et {tex\`b\`} tels que {tex\`a + b = 6\`}.
-            <Answer>
+            <Attempt>
               {tex\`a = \`}
-              {inputs.a}
+              {ctx.inputs.a}
               {tex\`\\quad b = \`}
-              {inputs.b}
-            </Answer>
+              {ctx.inputs.b}
+            </Attempt>
           </p>
         )}
       />
@@ -322,7 +322,7 @@ export const Documentation = () => (
         {(props) => (
           <>
             <p>Que vaut {tex\`1 + 1\`}</p>
-            <Answer>Réponse: {props.attempt}</Answer>
+            <Attempt>Réponse: {props.attempt}</Attempt>
             <Feedback>
               {tex\`
                 1 + 1 = \${expr('1 + 1').simplify()}

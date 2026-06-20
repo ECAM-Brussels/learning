@@ -1,4 +1,4 @@
-import { Answer, Feedback } from '@learning/components'
+import { Attempt, Feedback } from '@learning/components'
 import { createStepComponent, expr, Expression, Step, tex } from '@learning/core'
 import { createMemo, Match, Show, Switch } from 'solid-js'
 import * as v from 'valibot'
@@ -29,9 +29,9 @@ export const Root = createStepComponent(
               </Show>
               .
             </p>
-            <Answer correct={ctx.feedback?.correct}>
+            <Attempt correct={() => ctx.feedback?.correct}>
               {tex`x = `} {ctx.inputs.root}
-            </Answer>
+            </Attempt>
           </>
         )
       }}

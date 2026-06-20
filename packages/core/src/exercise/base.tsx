@@ -1,3 +1,4 @@
+import { FeedbackContext } from '@learning/components'
 import { Dynamic } from '@solidjs/web'
 import { allKeyed, mapValues } from 'es-toolkit'
 import stringify from 'safe-stable-stringify'
@@ -230,7 +231,9 @@ export function Step<
         <Show when={step().submitted && feedbackResult()}>
           {(feedback) => (
             <StepContext value={{ ...context, position: context.position + 1 }}>
-              {typeof props.children === 'function' ? props.children(feedback()) : props.children}
+              <FeedbackContext value={{ correct: feedback().correct }}>
+                {typeof props.children === 'function' ? props.children(feedback()) : props.children}
+              </FeedbackContext>
             </StepContext>
           )}
         </Show>
