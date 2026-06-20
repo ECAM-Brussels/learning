@@ -1,10 +1,12 @@
 import { Page } from '@learning/components'
 import { tex } from '@learning/core'
+import { Factor } from '@learning/exercises/math/algebra/Factor'
 import { PythonExercise } from '@learning/exercises/python/code'
 import { Documentation } from './Documentation'
 
 export default () => (
   <Page title="Tests">
+    <Factor id="app-test" expr="x^2 - 1" />
     <PythonExercise
       prompt={
         <p>
