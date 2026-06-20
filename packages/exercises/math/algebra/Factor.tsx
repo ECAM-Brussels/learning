@@ -49,7 +49,7 @@ export const Factor = createStepComponent(
         {(feedback) => (
           <Switch>
             <Match when={feedback.correct}>C'est correct!</Match>
-            <Match when={feedback.isMultiple}>
+            <Match when={feedback.factored && feedback.isMultiple}>
               <Feedback>
                 <p>
                   La réponse est <em>presque</em> correcte. N'oublie pas qu'une expression et sa
