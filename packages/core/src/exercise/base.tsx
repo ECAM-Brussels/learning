@@ -5,6 +5,7 @@ import stringify from 'safe-stable-stringify'
 import {
   action,
   createContext,
+  createEffect,
   createMemo,
   createSignal,
   Loading,
@@ -80,9 +81,14 @@ type StoredStep<
   ? v.InferOutput<ReturnType<typeof StoredStep<I>>>
   : v.InferInput<ReturnType<typeof StoredStep<I>>>
 
+type StoredExercise = {
+  props: Record<string, unknown>
+  steps: StoredStep[]
+}
+
 type ExerciseContext = {
-  fetch: (id: string) => MaybeAsync<StoredStep[]>
-  save: (id: string, exercise: StoredStep[]) => MaybeAsync<void>
+  fetch: (id: string) => MaybeAsync<StoredExercise | null>
+  save: (id: string, exercise: StoredExercise) => MaybeAsync<void>
   reset?: (id: string) => MaybeAsync<void>
 }
 
@@ -126,7 +132,25 @@ export function createStepComponent<P extends StepInputs>(
   Component: Component<Inputs<P, 'output'>>,
 ) {
   return (rawProps: Inputs<P, 'input'> & { id?: string }) => {
-    const props = createMemo(() => v.parse(Inputs(schema), rawProps))
+    const stepContext = useContext(StepContext)
+    const exerciseContext = useContext(ExerciseContext)
+    const isExercise = createMemo(() => stepContext === null)
+
+    const fetched = createMemo(() => exerciseContext.fetch(rawProps.id ?? ''))
+    const props = createMemo(() => v.parse(Inputs(schema), { ...rawProps, ...fetched()?.props }))
+
+    createEffect(
+      () => [isExercise(), fetched(), props()] as const,
+      ([isExercise, stored, props]) => {
+        if (isExercise && stored === null) {
+          ;(async function () {
+            await exerciseContext.save(rawProps.id ?? '', { props, steps: [] })
+            refresh(fetched)
+          })()
+        }
+      },
+    )
+
     return <Component {...props()} id={rawProps.id} />
   }
 }
@@ -138,18 +162,25 @@ export function Step<
   const exerciseContext = useContext(ExerciseContext)
   const stepContext = useContext(StepContext)
   const steps = createMemo<readonly StoredStep[]>(async () =>
-    stepContext ? stepContext.steps() : ((await exerciseContext.fetch(props.id ?? '')) ?? []),
+    stepContext
+      ? stepContext.steps()
+      : ((await exerciseContext.fetch(props.id ?? ''))?.steps ?? []),
   )
   const context = createMemo((): StepContext => {
     if (stepContext) return stepContext
     return {
       steps,
-      saveStep: action(function* (position: number, step: StoredStep) {
+      saveStep: action(async function* (position: number, step: StoredStep) {
         step = { ...step, submitted: true }
         const snapshot = [...steps()]
         if (position >= snapshot.length) snapshot.push(step)
         else snapshot[position] = step
-        yield exerciseContext.save(props.id ?? '', snapshot)
+        await exerciseContext.save(props.id ?? '', {
+          props: {},
+          ...((await exerciseContext.fetch(props.id ?? '')) ?? {}),
+          steps: snapshot,
+        })
+        yield
         refresh(steps)
       }),
       position: 0,

@@ -1,5 +1,5 @@
 import { CheckMark, Code } from '@learning/components'
-import { createStepComponent, Step } from '@learning/core'
+import { createStepComponent, omitFromJSON, Step } from '@learning/core'
 import { runPython } from '@learning/repl'
 import type { JSX } from '@solidjs/web'
 import { mapAsync } from 'es-toolkit'
@@ -8,7 +8,7 @@ import * as v from 'valibot'
 
 export const PythonExercise = createStepComponent(
   {
-    prompt: v.optional(v.custom<JSX.Element>(() => true)),
+    prompt: omitFromJSON(v.custom<JSX.Element>(() => true)),
     tests: v.optional(
       v.array(v.object({ desc: v.optional(v.string()), test: v.string(), expected: v.string() })),
       [],
