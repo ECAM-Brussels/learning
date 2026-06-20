@@ -1,8 +1,8 @@
 {
   "name": "@learning/exercises",
   "exports": {
-    "./math/Factor": "./math/Factor.tsx",
-    "./math/Exercise": "./math/Exercise.tsx",
+    "./math/algebra/Factor": "./math/algebra/Factor.tsx",
+    "./math/algebra/Root": "./math/algebra/Root.tsx",
     "./python/code": "./python/code.tsx",
     "./MultipleChoice": "./MultipleChoice.tsx"
   },
