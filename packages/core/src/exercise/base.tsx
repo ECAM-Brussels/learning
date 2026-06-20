@@ -1,4 +1,4 @@
-import { FeedbackContext } from '@learning/components'
+import { FeedbackContext, MathField } from '@learning/components'
 import { Dynamic, type JSX } from '@solidjs/web'
 import { allKeyed, mapValues } from 'es-toolkit'
 import stringify from 'safe-stable-stringify'
@@ -202,20 +202,29 @@ export function Step<
     return await allKeyed(await props.feedback(parsed.state))
   })
   const fields = createMemo(() =>
-    mapValues(props.inputs, (_schema, name) => (
-      <input
-        value={step().state[name] ?? ''}
-        onChange={(e) => {
-          setStep((prev) => ({
-            ...prev,
-            state: {
-              ...prev.state,
-              [name]: e.currentTarget.value as any,
-            },
-          }))
-        }}
-      />
-    )),
+    mapValues(props.inputs, (_schema, name) => {
+      const component = createMemo(() => {
+        if (_schema === 'expr') return MathField
+        return 'input'
+      })
+      return (
+        <Dynamic
+          class="rounded border border-gray-200"
+          component={component()}
+          value={step().state[name] ?? ''}
+          onChange={(e: Event & { target: HTMLInputElement }) => {
+            setStep((prev) => ({
+              ...prev,
+              state: {
+                ...prev.state,
+                [name]: e.target.value,
+              },
+            }))
+          }}
+          readonly={step().submitted}
+        />
+      )
+    }),
   )
   return (
     <>
