@@ -24,14 +24,26 @@ export function Python(props: { class?: string; value: string; math?: boolean })
             props.class ?? 'rounded-xl p-4 shadow-sm',
           ]}
         >
-          <Show
-            when={output().format !== 'latex'}
-            fallback={<Latex value={output().result ?? ''} />}
+          <Switch
+            fallback={
+              <>
+                {output().error}
+                {output().stdout}
+                {output().result}
+              </>
+            }
           >
-            {output().error}
-            {output().stdout}
-            {output().result}
-          </Show>
+            <Match when={output().format == 'latex'}>
+              <Latex value={output().result ?? ''} />
+            </Match>
+            <Match when={output().format == 'image'}>
+              <img
+                class="mx-auto my-0"
+                src={output().result}
+                alt="Résultat de l'exécution du code"
+              />
+            </Match>
+          </Switch>
         </pre>
       </Show>
     </Loading>
