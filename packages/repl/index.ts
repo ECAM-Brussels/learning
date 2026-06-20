@@ -43,6 +43,5 @@ export async function* runPython(code: string, options?: { math: boolean }) {
   worker.postMessage({ id: promiseId, code, options } satisfies Input)
   for await (const status of iterator) {
     yield status
-    console.log('Python worker status:', status)
   }
 }
