@@ -1,6 +1,5 @@
 import { Answer, CheckMark, Example, Heading, hl, Remark } from '@learning/components'
 import { Step as Exercise, expr, tex } from '@learning/core'
-import './style.css'
 
 export const Documentation = () => (
   <>
@@ -151,10 +150,10 @@ export const Documentation = () => (
         id="simple"
         inputs={{ attempt: 'expr' }}
         feedback={(inputs) => ({ correct: inputs.attempt.isEqual(2) })}
-        prompt={(inputs) => (
+        prompt={(ctx) => (
           <>
             <p>Que vaut {tex`1 + 1`} ?</p>
-            <Answer>Réponse: {inputs.attempt}</Answer>
+            <Answer>Réponse: {ctx.inputs.attempt}</Answer>
           </>
         )}
       />
@@ -172,7 +171,7 @@ export const Documentation = () => (
     {hl('tsx') /* tsx */ `
       <Exercise /* (plus tard...) */
         inputs={{ attempt: 'expr' }}
-        prompt={(inputs) => <p>Que vaut {tex\`1 + 1\`} ? {inputs.attempt}</p>}
+        prompt={(ctx) => <p>Que vaut {tex\`1 + 1\`} ? {ctx.inputs.attempt}</p>}
       />
     `}
     <p>
