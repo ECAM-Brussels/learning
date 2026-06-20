@@ -1,3 +1,4 @@
+import type { JSX } from '@solidjs/web'
 import { JSXGraph } from 'jsxgraph'
 import katex from 'katex'
 import 'katex/dist/katex.min.css'
@@ -7,7 +8,6 @@ import {
   createSignal,
   deep,
   Errored,
-  type JSX,
   merge,
   omit,
   onSettled,

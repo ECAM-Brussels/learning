@@ -1,14 +1,14 @@
-import { Dynamic } from '@solidjs/web'
+import { Dynamic, type JSX } from '@solidjs/web'
 import katex from 'katex'
 import 'katex/dist/katex.min.css'
-import { createMemo, Loading, type JSX } from 'solid-js'
+import { createMemo, Loading } from 'solid-js'
 
 export function Latex(props: {
-  class?: JSX.ClassList | string
+  class?: JSX.ClassValue | string
   value?: string
   displayMode?: boolean
 }): JSX.Element {
-  const html = createMemo(async () => {
+  const html = createMemo(() => {
     if (!props.value) return ''
     return katex.renderToString(props.value, {
       displayMode: props.displayMode,

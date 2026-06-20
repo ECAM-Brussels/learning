@@ -1,5 +1,6 @@
+import type { JSX } from '@solidjs/web'
 import * as monaco from 'monaco-editor'
-import { createEffect, createSignal, onSettled, Show, type JSX } from 'solid-js'
+import { createEffect, createSignal, onSettled, Show } from 'solid-js'
 import { Python } from './Python'
 
 self.MonacoEnvironment = {
@@ -33,7 +34,7 @@ self.MonacoEnvironment = {
 }
 
 type Props = {
-  class?: JSX.ClassList | string
+  class?: JSX.ClassValue | string
   children: string
   onChange?: (value: string) => void
 } & {

@@ -1,9 +1,9 @@
+import type { JSX } from '@solidjs/web'
 import { micromark } from 'micromark'
 import { math, mathHtml } from 'micromark-extension-math'
-import type { JSX } from 'solid-js/jsx-runtime'
 
 type MarkdownProps = {
-  class?: JSX.ClassList
+  class?: JSX.ClassValue
   value?: string
 }
 

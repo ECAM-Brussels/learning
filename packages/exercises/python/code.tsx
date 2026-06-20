@@ -1,8 +1,9 @@
 import { CheckMark, Code } from '@learning/components'
 import { createStepComponent, Step } from '@learning/core'
 import { runPython } from '@learning/repl'
+import type { JSX } from '@solidjs/web'
 import { mapAsync } from 'es-toolkit'
-import { createMemo, For, Show, type JSX } from 'solid-js'
+import { createMemo, For, Show } from 'solid-js'
 import * as v from 'valibot'
 
 export const PythonExercise = createStepComponent(
@@ -54,11 +55,11 @@ export const PythonExercise = createStepComponent(
             {(test, i) => (
               <li>
                 <code>
-                  {test().desc ?? test().test} -&gt; {test().result}
+                  {test.desc ?? test.test} -&gt; {test.result}
                 </code>
-                <CheckMark value={test().passed} />
-                <Show when={!test().passed}>
-                  <p>Résultat attendu: {test().expected}</p>
+                <CheckMark value={test.passed} />
+                <Show when={!test.passed}>
+                  <p>Résultat attendu: {test.expected}</p>
                 </Show>
               </li>
             )}

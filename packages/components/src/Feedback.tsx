@@ -1,8 +1,7 @@
-import { createMemo, Loading, useContext, type Component, type JSX } from 'solid-js'
+import { createMemo, Loading, useContext, type ParentComponent } from 'solid-js'
 import { FeedbackContext } from './FeedbackContext'
 
-export const Feedback: Component<{
-  children: JSX.Element
+export const Feedback: ParentComponent<{
   correct?: (() => boolean | undefined) | boolean
 }> = (props) => {
   const context = useContext(FeedbackContext)

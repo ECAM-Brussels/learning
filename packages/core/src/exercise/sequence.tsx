@@ -1,7 +1,7 @@
 import { Pagination, Scope } from '@learning/components'
-import { Dynamic } from '@solidjs/web'
+import { Dynamic, type JSX } from '@solidjs/web'
 import { range } from 'es-toolkit'
-import { createMemo, refresh, type Component, type JSX } from 'solid-js'
+import { createMemo, refresh, type Component } from 'solid-js'
 import { ExerciseContext } from './base'
 
 type Props<T extends object> = {
@@ -88,17 +88,13 @@ export function Sequence<T extends object>(props: Props<T>) {
             fetch: () => JSON.parse(localStorage.getItem(key(i)) ?? 'null'),
             save: (_id, exercise) => {
               localStorage.setItem(key(i), JSON.stringify(exercise))
-              refresh(() => {
-                keys()
-                progress()
-              })
+              refresh(keys)
+              refresh(progress)
             },
             reset: () => {
               localStorage.removeItem(key(i))
-              refresh(() => {
-                keys()
-                progress()
-              })
+              refresh(keys)
+              refresh(progress)
             },
           }}
         >

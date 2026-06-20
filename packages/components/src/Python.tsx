@@ -1,5 +1,6 @@
 import { runPython } from '@learning/repl'
-import { createMemo, Loading, Match, Show, Switch, type JSX } from 'solid-js'
+import type { JSX } from '@solidjs/web'
+import { createMemo, Loading, Match, Show, Switch } from 'solid-js'
 import { Latex } from './Latex'
 
 export function Python(props: { class?: string; value: string; math?: boolean }): JSX.Element {

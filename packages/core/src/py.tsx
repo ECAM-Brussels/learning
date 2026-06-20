@@ -1,6 +1,7 @@
 import { Python } from '@learning/components'
+import type { JSX } from '@solidjs/web'
 import dedent from 'dedent'
-import { createMemo, type JSX } from 'solid-js'
+import { createMemo } from 'solid-js'
 
 type Options = {
   math?: boolean

@@ -1,19 +1,17 @@
 import { FeedbackContext } from '@learning/components'
-import { Dynamic } from '@solidjs/web'
+import { Dynamic, type JSX } from '@solidjs/web'
 import { allKeyed, mapValues } from 'es-toolkit'
 import stringify from 'safe-stable-stringify'
 import {
   action,
   createContext,
   createMemo,
-  createProjection,
   createSignal,
   Loading,
   refresh,
   Show,
   useContext,
   type Component,
-  type JSX,
 } from 'solid-js'
 import * as v from 'valibot'
 import { expr, Expression } from '../expr'
@@ -128,8 +126,8 @@ export function createStepComponent<P extends StepInputs>(
   Component: Component<Inputs<P, 'output'>>,
 ) {
   return (rawProps: Inputs<P, 'input'> & { id?: string }) => {
-    const props = createProjection(() => v.parse(Inputs(schema), rawProps))
-    return <Component {...props} id={rawProps.id} />
+    const props = createMemo(() => v.parse(Inputs(schema), rawProps))
+    return <Component {...props()} id={rawProps.id} />
   }
 }
 
@@ -142,7 +140,7 @@ export function Step<
   const steps = createMemo<readonly StoredStep[]>(async () =>
     stepContext ? stepContext.steps() : ((await exerciseContext.fetch(props.id ?? '')) ?? []),
   )
-  const context = createProjection((): StepContext => {
+  const context = createMemo((): StepContext => {
     if (stepContext) return stepContext
     return {
       steps,
@@ -162,9 +160,9 @@ export function Step<
     () =>
       ({
         name: props.name,
-        state: context.steps()[context.position]?.state ?? {},
+        state: context().steps()[context().position]?.state ?? {},
         submitted: false,
-        ...context.steps()[context.position],
+        ...context().steps()[context().position],
       }) as any,
   )
   const feedbackResult = createMemo(async () => {
@@ -195,7 +193,9 @@ export function Step<
           component={props.prompt}
           {...({
             inputs: fields(),
-            savedState: context.steps()[context.position]?.state as Inputs<I, 'input'> | undefined,
+            savedState: context().steps()[context().position]?.state as
+              | Inputs<I, 'input'>
+              | undefined,
             state: step().state as Partial<Inputs<I, 'input'>>,
             setState: (key, value) => {
               setStep((prev) => ({
@@ -218,7 +218,7 @@ export function Step<
           onClick={async () => {
             const parsed = v.parse(StoredStep(props.inputs), step())
             const correct = (await allKeyed(await props.feedback(parsed.state))).correct
-            context.saveStep(context?.position ?? 0, {
+            context().saveStep(context().position ?? 0, {
               ...step(),
               correct,
             })
@@ -230,7 +230,7 @@ export function Step<
       <Loading fallback={<p>Calcul du feedback...</p>}>
         <Show when={step().submitted && feedbackResult()}>
           {(feedback) => (
-            <StepContext value={{ ...context, position: context.position + 1 }}>
+            <StepContext value={{ ...context(), position: context().position + 1 }}>
               <FeedbackContext value={{ correct: feedback().correct }}>
                 {typeof props.children === 'function' ? props.children(feedback()) : props.children}
               </FeedbackContext>

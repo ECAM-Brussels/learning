@@ -1,5 +1,5 @@
+import type { JSX } from '@solidjs/web'
 import { Show, type ComponentProps } from 'solid-js'
-import type { JSX } from 'solid-js/jsx-runtime'
 
 const config = {
   feedback: { label: 'Feedback' },

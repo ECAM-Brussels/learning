@@ -1,5 +1,5 @@
-import { Dynamic } from '@solidjs/web'
-import { createEffect, createSignal, For, type JSX } from 'solid-js'
+import { Dynamic, type JSX } from '@solidjs/web'
+import { createEffect, createSignal, For } from 'solid-js'
 
 export function Pagination(props: {
   current?: number

@@ -1,6 +1,6 @@
-import { Dynamic } from '@solidjs/web'
+import { Dynamic, type JSX } from '@solidjs/web'
 import { debounce } from 'es-toolkit'
-import { createEffect, createSignal, onSettled, type JSX } from 'solid-js'
+import { createEffect, createSignal, onSettled } from 'solid-js'
 import { useTableOfContents } from './Page'
 
 export function Heading(props: { children: JSX.Element; level: 1 | 2 | 3 | 4 | 5 | 6 }) {
@@ -24,10 +24,18 @@ export function Heading(props: { children: JSX.Element; level: 1 | 2 | 3 | 4 | 5
     const observer = new IntersectionObserver(
       debounce((entries) => {
         const entry = entries[0]!
-        if (id())
+        const index = Number(id())
+        if (!Number.isNaN(index))
           setToc((t) => {
-            t[Number(id())]!.visible = entry.isIntersecting
-            t[Number(id())]!.position = entry.boundingClientRect.top
+            const node = t[index]
+            if (!node) return
+
+            const nextVisible = entry.isIntersecting
+            const nextPosition = entry.boundingClientRect.top
+            if (node.visible === nextVisible && node.position === nextPosition) return
+
+            node.visible = nextVisible
+            node.position = nextPosition
           })
       }, 200),
     )

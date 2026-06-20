@@ -1,9 +1,10 @@
+import type { JSX } from '@solidjs/web'
 import {
+  type ParentComponent,
   createContext,
   createMemo,
   createStore,
   For,
-  type JSX,
   Loading,
   Show,
   useContext,
@@ -22,7 +23,7 @@ export const TableOfContents = createContext<TOC>()
 
 export const useTableOfContents = () => useContext(TableOfContents)
 
-export function Page(props: { title?: JSX.Element; children: JSX.Element }) {
+export const Page: ParentComponent<{ title?: JSX.Element }> = (props) => {
   const [store, setStore] = createStore<Node[]>([])
   const active = createMemo(() => {
     let index = store.map((n) => n.visible).findIndex((v) => v)
@@ -51,16 +52,16 @@ export function Page(props: { title?: JSX.Element; children: JSX.Element }) {
                   class={[
                     'font-lg block border-l-4 py-2',
                     {
-                      'pl-2': node().level === 1,
-                      'pl-4': node().level === 2,
-                      'pl-6': node().level === 3,
+                      'pl-2': node.level === 1,
+                      'pl-4': node.level === 2,
+                      'pl-6': node.level === 3,
                       'border-sky-600 bg-blue-50': active() === i(),
                       'border-transparent hover:border-slate-300 hover:bg-slate-50':
                         active() !== i(),
                     },
                   ]}
                 >
-                  {node().title}
+                  {node.title}
                 </a>
               )}
             </For>
