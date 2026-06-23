@@ -1,26 +1,27 @@
 import { FeedbackContext, MathField } from '@learning/components'
 import { Dynamic, type JSX } from '@solidjs/web'
-import { allKeyed, mapValues } from 'es-toolkit'
+import { mapValues } from 'es-toolkit'
 import stringify from 'safe-stable-stringify'
 import {
   action,
   createContext,
-  createEffect,
   createMemo,
   createSignal,
   Loading,
+  merge,
   refresh,
   Show,
   useContext,
   type Component,
+  type ComponentProps,
 } from 'solid-js'
 import * as v from 'valibot'
 import { expr, Expression } from '../expr'
 
-type MaybeAsync<T> = T | Promise<T>
-type AwaitAll<T extends Record<string, unknown>> = {
-  [K in keyof T]: Awaited<T[K]>
+type Prettify<T> = {
+  [K in keyof T]: T[K]
 } & {}
+type MaybeAsync<T> = T | Promise<T>
 
 const CustomSchemas = {
   expr: v.union([
@@ -65,9 +66,10 @@ type Inputs<
       : v.InferInput<ReturnType<typeof Inputs<T>>>
     : never
 
-function StoredStep<I extends StepInputs>(inputs: I) {
+function StoredStep<D extends StepInputs, I extends StepInputs>(data: D, inputs: I) {
   return v.object({
     name: v.optional(v.string()),
+    data: Inputs(data),
     state: v.partial(Inputs(inputs)),
     submitted: v.optional(v.boolean(), false),
     correct: v.optional(v.boolean()),
@@ -75,14 +77,14 @@ function StoredStep<I extends StepInputs>(inputs: I) {
 }
 
 type StoredStep<
+  D extends StepInputs = Record<string, v.UnknownSchema>,
   I extends StepInputs = Record<string, v.UnknownSchema>,
   U extends 'input' | 'output' = 'input',
 > = U extends 'output'
-  ? v.InferOutput<ReturnType<typeof StoredStep<I>>>
-  : v.InferInput<ReturnType<typeof StoredStep<I>>>
+  ? v.InferOutput<ReturnType<typeof StoredStep<D, I>>>
+  : v.InferInput<ReturnType<typeof StoredStep<D, I>>>
 
 type StoredExercise = {
-  props: Record<string, unknown>
   steps: StoredStep[]
 }
 
@@ -105,93 +107,50 @@ type StepContext = {
 }
 const StepContext = createContext<StepContext | null>(null)
 
-type StepProps<
-  I extends StepInputs,
-  F extends Record<string, unknown> & { correct: MaybeAsync<boolean> },
-> = {
+type StepSchema = { inputs: StepInputs; data: StepInputs }
+type StepProps<S extends StepSchema> = {
   name?: string
-  inputs: I
-  feedback: (inputValues: Inputs<I, 'output'>) => MaybeAsync<F>
+  schema: S
+  data: Inputs<S['data'], 'input'> | (() => MaybeAsync<Inputs<S['data'], 'input'>>)
+  correct: (ctx: {
+    data: Inputs<S['data'], 'output'>
+    inputs: Inputs<S['inputs'], 'output'>
+  }) => MaybeAsync<boolean>
   prompt: (props: {
-    inputs: { [K in keyof I]: JSX.Element }
-    savedState?: Inputs<I, 'input'>
-    state: Partial<Inputs<I, 'input'>>
-    setState: <K extends keyof I>(
-      key: K,
-      value:
-        | Inputs<I, 'input'>[K]
-        | ((prev: Inputs<I, 'input'>[K] | undefined) => Inputs<I, 'input'>[K]),
-    ) => void
-    feedback?: AwaitAll<F>
+    data: Inputs<S['data'], 'output'>
+    inputs: { [K in keyof S['inputs']]: JSX.Element }
+    state: {
+      saved?: Inputs<S['inputs'], 'input'>
+      current: Partial<Inputs<S['inputs'], 'input'>>
+      set: <K extends keyof S['inputs']>(
+        key: K,
+        value:
+          | Inputs<S['inputs'], 'input'>[K]
+          | ((
+              prev: Inputs<S['inputs'], 'input'>[K] | undefined,
+            ) => Inputs<S['inputs'], 'input'>[K]),
+      ) => void
+      correct?: boolean
+    }
   }) => JSX.Element
-  children?: ((props: AwaitAll<F>) => JSX.Element) | JSX.Element
+  children?:
+    | ((props: {
+        data: Inputs<S['data'], 'output'>
+        inputs: Inputs<S['inputs'], 'output'>
+      }) => JSX.Element)
+    | JSX.Element
+  next?:
+    | ((props: {
+        data: Inputs<S['data'], 'output'>
+        inputs: Inputs<S['inputs'], 'output'>
+      }) => JSX.Element)
+    | JSX.Element
 }
 
-export function createStepComponent<P extends StepInputs>(
-  schema: P,
-  Component: Component<Inputs<P, 'output'>>,
-) {
-  return (rawProps: Inputs<P, 'input'> & { id?: string }) => {
-    const stepContext = useContext(StepContext)
-    const exerciseContext = useContext(ExerciseContext)
-    const isExercise = createMemo(() => stepContext === null)
-
-    const fetched = createMemo(() => exerciseContext.fetch(rawProps.id ?? ''))
-    const props = createMemo(() => v.parse(Inputs(schema), { ...rawProps, ...fetched()?.props }))
-
-    createEffect(
-      () => [rawProps.id, isExercise(), fetched(), props()] as const,
-      ([id, isExercise, stored, props]) => {
-        if (isExercise && stored === null) {
-          ;(async function () {
-            await exerciseContext.save(id ?? '', { props, steps: [] })
-            refresh(fetched)
-          })()
-        }
-      },
-    )
-
-    return <Component {...props()} id={rawProps.id} />
-  }
-}
-
-type JSONValue = string | number | boolean | null | { [key: string]: JSONValue } | JSONValue[]
-
-export function Exercise<
-  T extends StepInputs | undefined = undefined,
-  D extends Record<string, any> = T extends StepInputs
-    ? Inputs<T, 'input'>
-    : Record<string, JSONValue>,
->(props: { id?: string; schema?: T; data: D | (() => MaybeAsync<D>); children: Component<D> }) {
-  const exerciseContext = useContext(ExerciseContext)
-  const fetched = createMemo(() => exerciseContext.fetch(props.id ?? ''))
-  const data = createMemo(async (): Promise<D> => {
-    const raw = props.data instanceof Function ? await props.data() : props.data
-    if (!props.schema) return { ...raw, ...(fetched()?.props ?? {}) } as D
-    return v.parse(Inputs(props.schema), { ...raw, ...fetched()?.props }) as any
-  })
-
-  createEffect(
-    () => [props.id, fetched(), data()] as const,
-    ([id, stored, data]) => {
-      if (stored === null) {
-        ;(async function () {
-          await exerciseContext.save(id ?? '', { props: data, steps: [] })
-          refresh(fetched)
-        })()
-      }
-    },
-  )
-
-  return <Dynamic component={props.children} {...data()} />
-}
-
-export function Step<
-  I extends StepInputs,
-  F extends Record<string, unknown> & { correct: MaybeAsync<boolean> },
->(props: StepProps<I, F> & { id?: string }) {
+export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }) {
   const exerciseContext = useContext(ExerciseContext)
   const stepContext = useContext(StepContext)
+
   const steps = createMemo<readonly StoredStep[]>(async () =>
     stepContext
       ? stepContext.steps()
@@ -202,12 +161,10 @@ export function Step<
     return {
       steps,
       saveStep: action(async function* (position: number, step: StoredStep) {
-        step = { ...step, submitted: true }
         const snapshot = [...steps()]
         if (position >= snapshot.length) snapshot.push(step)
         else snapshot[position] = step
         await exerciseContext.save(props.id ?? '', {
-          props: {},
           ...((await exerciseContext.fetch(props.id ?? '')) ?? {}),
           steps: snapshot,
         })
@@ -218,22 +175,30 @@ export function Step<
     }
   })
 
-  const [step, setStep] = createSignal<StoredStep<I>>(
-    () =>
+  const inputs = createMemo(() => v.parse(Inputs(props.schema.inputs as S['inputs']), step().state))
+
+  const [step, setStep] = createSignal<StoredStep<S['data'], S['inputs']>>(
+    async () =>
       ({
         name: props.name,
+        data: v.parse(
+          Inputs(props.schema.data as S['data']),
+          typeof props.data === 'function' ? await props.data() : props.data,
+        ),
         state: context().steps()[context().position]?.state ?? {},
         submitted: false,
         ...context().steps()[context().position],
       }) as any,
   )
-  const feedbackResult = createMemo(async () => {
+  const correct = createMemo(async () => {
     if (!step().submitted) return undefined
-    const parsed = v.parse(StoredStep(props.inputs), step())
-    return await allKeyed(await props.feedback(parsed.state))
+    return props.correct({
+      data: step().data,
+      inputs: v.parse(Inputs(props.schema.inputs as S['inputs']), step().state),
+    })
   })
   const fields = createMemo(() =>
-    mapValues(props.inputs, (_schema, name) => {
+    mapValues(props.schema.inputs as S['inputs'], (_schema, name) => {
       const component = createMemo(() => {
         if (_schema === 'expr') return MathField
         return 'input'
@@ -260,66 +225,87 @@ export function Step<
   return (
     <>
       <Loading fallback={<p>Chargement du prompt...</p>}>
-        <Dynamic
-          component={props.prompt}
-          {...({
-            inputs: fields(),
-            savedState: context().steps()[context().position]?.state as
-              | Inputs<I, 'input'>
-              | undefined,
-            state: step().state as Partial<Inputs<I, 'input'>>,
-            setState: (key, value) => {
-              setStep((prev) => ({
-                ...prev,
-                state: {
-                  ...prev.state,
-                  [key]: value instanceof Function ? value(prev.state[key]) : value,
+        <FeedbackContext
+          value={{
+            get correct() {
+              return correct()
+            },
+          }}
+        >
+          <Dynamic
+            component={props.prompt}
+            data={step().data}
+            inputs={fields()}
+            state={
+              {
+                saved: context().steps()[context().position]?.state,
+                current: step().state as Partial<Inputs<S['inputs'], 'input'>>,
+                set: (key, value) => {
+                  setStep((prev) => ({
+                    ...prev,
+                    state: {
+                      ...prev.state,
+                      [key]: value instanceof Function ? value(prev.state[key]) : value,
+                    },
+                  }))
                 },
-              }))
-            },
-            get feedback() {
-              return feedbackResult()
-            },
-          } satisfies Parameters<StepProps<I, F>['prompt']>[0])}
-        />
+                get correct() {
+                  return correct()
+                },
+              } as ComponentProps<typeof props.prompt>['state']
+            }
+          />
+        </FeedbackContext>
       </Loading>
       <Show when={!step().submitted}>
         <button
           class="rounded-lg bg-green-800 px-3 py-2 text-green-100"
           onClick={async () => {
-            const parsed = v.parse(StoredStep(props.inputs), step())
-            const correct = (await allKeyed(await props.feedback(parsed.state))).correct
-            context().saveStep(context().position ?? 0, {
+            const inputs = v.parse(Inputs(props.schema.inputs as S['inputs']), step().state)
+            const correct = await props.correct({ data: step().data, inputs })
+            await context().saveStep(context().position ?? 0, {
               ...step(),
               correct,
+              submitted: true,
             })
+            refresh(steps)
+            refresh(step)
           }}
         >
           Soumettre
         </button>
       </Show>
-      <Loading fallback={<p>Calcul du feedback...</p>}>
-        <Show when={step().submitted && feedbackResult()}>
-          {(feedback) => (
-            <StepContext value={{ ...context(), position: context().position + 1 }}>
-              <FeedbackContext value={{ correct: feedback().correct }}>
-                {typeof props.children === 'function' ? props.children(feedback()) : props.children}
+      <Show when={step().submitted}>
+        <Loading fallback={<p>Calcul du feedback...</p>}>
+          <StepContext value={{ ...context(), position: context().position + 1 }}>
+            <Show
+              when={!correct()}
+              fallback={
+                typeof props.next === 'function' ? (
+                  <Dynamic component={props.next} data={step().data} inputs={inputs()} />
+                ) : (
+                  props.next
+                )
+              }
+            >
+              <FeedbackContext value={{ correct: false }}>
+                {typeof props.children === 'function'
+                  ? props.children({ data: step().data, inputs: inputs() })
+                  : props.children}
               </FeedbackContext>
-            </StepContext>
-          )}
-        </Show>
-        <Show when={steps().length > 0 && stepContext === null}>
-          <button
-            class="ml-auto block cursor-pointer text-xs text-slate-400"
-            onClick={() => {
-              localStorage.clear()
-              refresh(steps)
-            }}
-          >
-            Recommencer
-          </button>
-        </Show>
-      </Loading>
+            </Show>
+          </StepContext>
+        </Loading>
+      </Show>
     </>
   )
+}
+
+export function createStep<S extends StepSchema, P extends keyof StepProps<S>>(
+  step: { schema: S } & { [K in P]: StepProps<S>[K] },
+): Component<Prettify<Omit<StepProps<S>, P> & Partial<Pick<StepProps<S>, P>> & { id?: string }>> {
+  return (props) => {
+    const merged = merge(step, props) as unknown as StepProps<S> & { id?: string }
+    return <Step {...merged} />
+  }
 }

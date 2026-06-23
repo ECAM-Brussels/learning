@@ -1,14 +1,16 @@
-import { Loading, type ParentComponent } from 'solid-js'
+import { Loading, useContext, type ParentComponent } from 'solid-js'
 import { CheckMark } from './CheckMark'
+import { FeedbackContext } from './FeedbackContext'
 
 export const Attempt: ParentComponent<{
-  correct?: (() => boolean | undefined) | boolean
+  correct?: boolean
 }> = (props) => {
+  const context = useContext(FeedbackContext)
   return (
     <div class="flex items-center justify-center gap-2">
       {props.children}{' '}
       <Loading>
-        <CheckMark value={typeof props.correct === 'function' ? props.correct() : props.correct} />
+        <CheckMark value={props.correct ?? context?.correct} />
       </Loading>
     </div>
   )
