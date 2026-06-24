@@ -281,24 +281,24 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
           </button>
         }
       >
-        <Loading fallback={<p>Calcul du feedback...</p>}>
-          <StepContext value={nextContext()}>
-            <Errored
-              fallback={(err) => (
-                <details open>
-                  <summary>Erreur</summary>
-                  {String(err())}
-                </details>
-              )}
-            >
+        <StepContext value={nextContext()}>
+          <Errored
+            fallback={(err) => (
+              <details open>
+                <summary>Erreur</summary>
+                {String(err())}
+              </details>
+            )}
+          >
+            <Loading fallback="Calcul du feedback">
               <Dynamic
                 component={correct() ? props.next : props.children}
                 data={step().data}
                 inputs={step().state}
               />
-            </Errored>
-          </StepContext>
-        </Loading>
+            </Loading>
+          </Errored>
+        </StepContext>
       </Show>
     </FeedbackContext>
   )
