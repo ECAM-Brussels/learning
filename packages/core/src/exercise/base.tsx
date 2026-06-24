@@ -140,11 +140,17 @@ type StepProps<S extends StepSchema> = {
   children?: (props: {
     data: Inputs<S['data'], 'output'>
     inputs: Inputs<S['inputs'], 'output'>
-    correct: boolean
-    Route?: (props: {
+    next?: (props: {
       data: Inputs<S['data'], 'output'>
       inputs: Inputs<S['inputs'], 'output'>
-      correct: boolean
+    }) => JSX.Element
+  }) => JSX.Element
+  next?: (props: {
+    data: Inputs<S['data'], 'output'>
+    inputs: Inputs<S['inputs'], 'output'>
+    next?: (props: {
+      data: Inputs<S['data'], 'output'>
+      inputs: Inputs<S['inputs'], 'output'>
     }) => JSX.Element
   }) => JSX.Element
 }
@@ -296,10 +302,10 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
             >
               <Loading fallback="Calcul du feedback">
                 <Dynamic
-                  correct={step().correct === true}
-                  component={props.children}
+                  component={correct() ? props.next : props.children}
                   data={v.parse(Inputs(props.schema.data as S['data']), step().data)}
                   inputs={v.parse(Inputs(props.schema.inputs as S['inputs']), step().state)}
+                  next={props.next}
                 />
               </Loading>
             </Errored>
@@ -313,24 +319,11 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
 export function createStep<S extends StepSchema>(
   step: Omit<StepProps<S>, 'data'>,
 ): Component<
-  { id?: string } & Pick<StepProps<S>, 'children'> &
+  { id?: string } & Pick<StepProps<S>, 'next' | 'children'> &
     (Inputs<S['data'], 'input'> | { data: StepProps<S>['data'] })
 > {
   return (props) => {
     const data = omit(props, 'id', 'data', 'children') as Inputs<S['data'], 'input'> | undefined
-    return (
-      <Step
-        {...step}
-        data={'data' in props ? props.data : data}
-        id={props.id}
-        children={(attrs) => (
-          <Dynamic
-            component={props.children ?? step.children}
-            {...attrs}
-            Route={props.children ? step.children : undefined}
-          />
-        )}
-      />
-    )
+    return <Step {...step} {...props} data={'data' in props ? props.data : data} />
   }
 }

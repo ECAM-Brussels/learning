@@ -1,7 +1,7 @@
 import { Attempt } from '@learning/components'
 import { createStep, tex } from '@learning/core'
 import { allKeyed } from 'es-toolkit'
-import { createMemo, Match, Switch } from 'solid-js'
+import { Root } from './Root'
 
 export const Factor = createStep({
   name: 'math/algebra/factor',
@@ -26,15 +26,7 @@ export const Factor = createStep({
       </Attempt>
     </>
   ),
-  children: (ctx) => {
-    const factored = createMemo(() => ctx.inputs.attempt.isFactored())
-    const equal = createMemo(() => ctx.inputs.attempt.isEqual(ctx.data.expr))
-    return (
-      <Switch>
-        <Match when={ctx.correct}>Correct!</Match>
-        <Match when={!factored()}>La tentative n'est pas complètement factorisée.</Match>
-        <Match when={!equal()}>La tentative n'est pas équivalente à l'expression originale.</Match>
-      </Switch>
-    )
-  },
+  children: (ctx) => (
+    <Root expr={ctx.data.expr} next={() => <Factor expr={ctx.data.expr} next={ctx.next} />} />
+  ),
 })
