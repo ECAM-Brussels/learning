@@ -114,6 +114,7 @@ type StepSchema = { inputs: StepInputs; data: StepInputs }
 type StepProps<S extends StepSchema> = {
   name?: string
   schema: S
+  class?: string
   data: Inputs<S['data'], 'input'> | (() => MaybeAsync<Inputs<S['data'], 'input'>>)
   correct: (ctx: {
     data: Inputs<S['data'], 'output'>
@@ -137,12 +138,14 @@ type StepProps<S extends StepSchema> = {
     }
   }) => JSX.Element
   children?: (props: {
-    data: Inputs<S['data'], 'input'>
-    inputs: Inputs<S['inputs'], 'input'>
-  }) => JSX.Element
-  next?: (props: {
-    data: Inputs<S['data'], 'input'>
-    inputs: Inputs<S['inputs'], 'input'>
+    data: Inputs<S['data'], 'output'>
+    inputs: Inputs<S['inputs'], 'output'>
+    correct: boolean
+    Route?: (props: {
+      data: Inputs<S['data'], 'output'>
+      inputs: Inputs<S['inputs'], 'output'>
+      correct: boolean
+    }) => JSX.Element
   }) => JSX.Element
 }
 
@@ -210,78 +213,15 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
   )
 
   return (
-    <FeedbackContext
-      value={{
-        get correct() {
-          return correct()
-        },
-      }}
-    >
-      <Loading fallback={<p>Chargement du prompt...</p>}>
-        <Errored
-          fallback={(err) => (
-            <details open>
-              <summary>Erreur</summary>
-              {String(err())}
-            </details>
-          )}
-        >
-          <Dynamic
-            component={props.prompt}
-            data={step().data}
-            inputs={fields()}
-            state={
-              {
-                get saved() {
-                  return savedStep()?.state ?? {}
-                },
-                get current() {
-                  return step().state as Partial<Inputs<S['inputs'], 'input'>>
-                },
-                set: (key, value) => {
-                  setStep((prev) => ({
-                    ...prev,
-                    state: {
-                      ...prev.state,
-                      [key]: value instanceof Function ? value(prev.state[key]) : value,
-                    },
-                  }))
-                },
-                get correct() {
-                  return correct()
-                },
-              } satisfies ComponentProps<typeof props.prompt>['state']
-            }
-          />
-        </Errored>
-      </Loading>
-      <Show
-        when={step().submitted}
-        fallback={
-          <button
-            class="rounded-lg bg-green-800 px-3 py-2 text-green-100"
-            onClick={action(async function* () {
-              const transformed = v.parse(
-                StoredStep(props.schema.data as S['data'], props.schema.inputs as S['inputs']),
-                { ...step(), submitted: true },
-              )
-              const correct = await props.correct({
-                data: transformed.data,
-                inputs: transformed.state,
-              })
-              const newStep = { ...transformed, correct, submitted: true }
-              setSavedStep(newStep)
-              await exerciseContext.save(context.exerciseId, context.position, newStep)
-              yield
-              refresh(savedStep)
-              refresh(step)
-            })}
-          >
-            Soumettre
-          </button>
-        }
+    <div class={props.class}>
+      <FeedbackContext
+        value={{
+          get correct() {
+            return correct()
+          },
+        }}
       >
-        <StepContext value={nextContext()}>
+        <Loading fallback={<p>Chargement du prompt...</p>}>
           <Errored
             fallback={(err) => (
               <details open>
@@ -290,43 +230,106 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
               </details>
             )}
           >
-            <Loading fallback="Calcul du feedback">
-              <Dynamic
-                component={correct() ? props.next : props.children}
-                data={step().data}
-                inputs={step().state}
-              />
-            </Loading>
+            <Dynamic
+              component={props.prompt}
+              data={step().data}
+              inputs={fields()}
+              state={
+                {
+                  get saved() {
+                    return savedStep()?.state ?? {}
+                  },
+                  get current() {
+                    return step().state as Partial<Inputs<S['inputs'], 'input'>>
+                  },
+                  set: (key, value) => {
+                    setStep((prev) => ({
+                      ...prev,
+                      state: {
+                        ...prev.state,
+                        [key]: value instanceof Function ? value(prev.state[key]) : value,
+                      },
+                    }))
+                  },
+                  get correct() {
+                    return correct()
+                  },
+                } satisfies ComponentProps<typeof props.prompt>['state']
+              }
+            />
           </Errored>
-        </StepContext>
-      </Show>
-    </FeedbackContext>
+        </Loading>
+        <Show
+          when={step().submitted}
+          fallback={
+            <button
+              class="rounded-lg bg-green-800 px-3 py-2 text-green-100"
+              onClick={action(async function* () {
+                const transformed = v.parse(
+                  StoredStep(props.schema.data as S['data'], props.schema.inputs as S['inputs']),
+                  { ...step(), submitted: true },
+                )
+                const correct = await props.correct({
+                  data: transformed.data,
+                  inputs: transformed.state,
+                })
+                const newStep = { ...transformed, correct, submitted: true }
+                setSavedStep(newStep)
+                await exerciseContext.save(context.exerciseId, context.position, newStep)
+                yield
+                refresh(savedStep)
+                refresh(step)
+              })}
+            >
+              Soumettre
+            </button>
+          }
+        >
+          <StepContext value={nextContext()}>
+            <Errored
+              fallback={(err) => (
+                <details open>
+                  <summary>Erreur</summary>
+                  {String(err())}
+                </details>
+              )}
+            >
+              <Loading fallback="Calcul du feedback">
+                <Dynamic
+                  correct={step().correct === true}
+                  component={props.children}
+                  data={v.parse(Inputs(props.schema.data as S['data']), step().data)}
+                  inputs={v.parse(Inputs(props.schema.inputs as S['inputs']), step().state)}
+                />
+              </Loading>
+            </Errored>
+          </StepContext>
+        </Show>
+      </FeedbackContext>
+    </div>
   )
 }
 
 export function createStep<S extends StepSchema>(
   step: Omit<StepProps<S>, 'data'>,
 ): Component<
-  { id?: string } & Pick<StepProps<S>, 'next' | 'children'> &
+  { id?: string } & Pick<StepProps<S>, 'children'> &
     (Inputs<S['data'], 'input'> | { data: StepProps<S>['data'] })
 > {
   return (props) => {
-    const data = omit(props, 'id', 'data', 'next', 'children') as
-      | Inputs<S['data'], 'input'>
-      | undefined
+    const data = omit(props, 'id', 'data', 'children') as Inputs<S['data'], 'input'> | undefined
     return (
       <Step
         {...step}
         data={'data' in props ? props.data : data}
         id={props.id}
-        {...{
-          get next() {
-            return props.next
-          },
-          get children() {
-            return props.children
-          },
-        }}
+        children={(attrs) => (
+          <Dynamic
+            component={props.children ?? step.children}
+            {...attrs}
+            Route={props.children ? step.children : undefined}
+          />
+        )}
       />
     )
   }

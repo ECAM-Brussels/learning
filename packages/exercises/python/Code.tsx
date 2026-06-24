@@ -50,25 +50,23 @@ export const PythonCode = createStep({
       }))
     }, [])
     return (
-      <>
-        <details class="not-prose">
-          <summary>
-            {tests.filter((t) => t.passed).length} tests corrects sur {tests.length}
-            <CheckMark value={tests.every((t) => t.passed)} />
-          </summary>
-          <For each={tests}>
-            {(test) => (
-              <li>
-                <code>
-                  {test.desc ?? test.test} -&gt; {test.result}
-                  {test.stdout}
-                </code>
-                <CheckMark value={test.passed} />
-              </li>
-            )}
-          </For>
-        </details>
-      </>
+      <details class="not-prose">
+        <summary>
+          {tests.filter((t) => t.passed).length} tests corrects sur {tests.length}
+          <CheckMark value={tests.every((t) => t.passed)} />
+        </summary>
+        <For each={tests}>
+          {(test) => (
+            <li>
+              <code>
+                {test.desc ?? test.test} -&gt; {test.result}
+                {test.stdout}
+              </code>
+              <CheckMark value={test.passed} />
+            </li>
+          )}
+        </For>
+      </details>
     )
   },
 })

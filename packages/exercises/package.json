@@ -2,7 +2,7 @@
   "name": "@learning/exercises",
   "exports": {
     "./math/algebra/Factor": "./math/algebra/Factor.tsx",
-    "./python/code": "./python/code.tsx"
+    "./python/Code": "./python/Code.tsx"
   },
   "private": true,
   "devDependencies": {
