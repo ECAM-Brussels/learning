@@ -1,81 +1,74 @@
 import { CheckMark, Code } from '@learning/components'
-import { createStepComponent, omitFromJSON, Step } from '@learning/core'
-import { runPython } from '@learning/repl'
+import { createStep, omitFromJSON } from '@learning/core'
+import { python } from '@learning/repl'
 import type { JSX } from '@solidjs/web'
 import { mapAsync } from 'es-toolkit'
-import { createMemo, For, Show } from 'solid-js'
+import { For, createMemo, createProjection } from 'solid-js'
 import * as v from 'valibot'
 
-export const PythonExercise = createStepComponent(
-  {
-    prompt: omitFromJSON(v.custom<JSX.Element>(() => true)),
-    tests: v.optional(
-      v.array(v.object({ desc: v.optional(v.string()), test: v.string(), expected: v.string() })),
-      [],
-    ),
-    math: v.optional(v.boolean(), false),
+export const PythonCode = createStep({
+  name: 'python/code',
+  schema: {
+    data: {
+      prompt: omitFromJSON(v.custom<JSX.Element>(() => true)),
+      tests: omitFromJSON(
+        v.array(
+          v.object({
+            desc: v.optional(v.string()),
+            test: v.union([v.string(), v.null()]),
+            check: v.custom<Parameters<typeof python.test>[2]>(() => true),
+          }),
+        ),
+      ),
+      math: v.optional(v.boolean(), false),
+    },
+    inputs: { code: v.string() },
   },
-  (props) => (
-    <Step
-      id={props.id}
-      inputs={{ code: v.string() }}
-      feedback={async (inputs) => {
-        const tests = await mapAsync(props.tests, async (test) => ({
-          ...test,
-          ...(await checkTest(inputs.code, test.test, test.expected)),
-        }))
-        return {
-          correct: tests.every((t) => t.passed),
-          tests,
-        }
-      }}
-      prompt={(ctx) => {
-        const code = createMemo(() => ctx.savedState?.code ?? '')
-        return (
-          <>
-            {props.prompt}
-            <Code
-              lang="python"
-              onChange={(newValue) => ctx.setState('code', newValue)}
-              run
-              children={code()}
-            />
-          </>
-        )
-      }}
-    >
-      {(feedback) => (
+  correct: async (ctx) => {
+    const res = await mapAsync(ctx.data.tests, (t) => python.test(ctx.inputs.code, t.test, t.check))
+    return res.every((t) => t.passed)
+  },
+  prompt: (ctx) => {
+    const code = createMemo(() => ctx.state.saved?.code ?? '')
+    return (
+      <>
+        {ctx.data.prompt}
+        <Code
+          lang="python"
+          onChange={(newValue) => ctx.state.set('code', newValue)}
+          run
+          children={code()}
+        />
+      </>
+    )
+  },
+  children: (ctx) => {
+    const tests = createProjection(() => {
+      return mapAsync(ctx.data.tests, async (t) => ({
+        ...t,
+        ...(await python.test(ctx.inputs.code, t.test, t.check)),
+      }))
+    }, [])
+    return (
+      <>
         <details class="not-prose">
           <summary>
-            {feedback.tests.filter((t) => t.passed).length} tests corrects sur{' '}
-            {feedback.tests.length}
-            <CheckMark value={feedback.tests.every((t) => t.passed)} />
+            {tests.filter((t) => t.passed).length} tests corrects sur {tests.length}
+            <CheckMark value={tests.every((t) => t.passed)} />
           </summary>
-          <For each={feedback.tests}>
-            {(test, i) => (
+          <For each={tests}>
+            {(test) => (
               <li>
                 <code>
                   {test.desc ?? test.test} -&gt; {test.result}
+                  {test.stdout}
                 </code>
                 <CheckMark value={test.passed} />
-                <Show when={!test.passed}>
-                  <p>Résultat attendu: {test.expected}</p>
-                </Show>
               </li>
             )}
           </For>
         </details>
-      )}
-    </Step>
-  ),
-)
-
-async function checkTest(code: string, test: string, expected: string) {
-  for await (const chunk of runPython(`${code}\nprint(${test})`)) {
-    if (!chunk.status) {
-      const result = `${chunk.result}${chunk.stdout}`
-      return { result, passed: result.trim() === expected.trim() }
-    }
-  }
-  throw new Error('Python test did not return a result')
-}
+      </>
+    )
+  },
+})

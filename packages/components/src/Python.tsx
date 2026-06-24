@@ -1,10 +1,10 @@
-import { runPython } from '@learning/repl'
+import { python } from '@learning/repl'
 import type { JSX } from '@solidjs/web'
 import { createMemo, Loading, Match, Show, Switch } from 'solid-js'
 import { Latex } from './Latex'
 
 export function Python(props: { class?: string; value: string; math?: boolean }): JSX.Element {
-  const output = createMemo(() => runPython(props.value, { math: props.math ?? false }))
+  const output = createMemo(() => python.run(props.value, { math: props.math ?? false }))
   const empty = createMemo(
     () => `${output().error ?? ''}${output().stdout ?? ''}${output().result ?? ''}`.trim() === '',
   )

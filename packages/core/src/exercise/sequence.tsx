@@ -91,11 +91,6 @@ export function Sequence<T extends object>(props: Props<T>) {
               refresh(keys)
               refresh(progress)
             },
-            reset: () => {
-              localStorage.removeItem(key(i))
-              refresh(keys)
-              refresh(progress)
-            },
           }}
         >
           {'children' in props ? (

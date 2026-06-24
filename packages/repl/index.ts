@@ -1,6 +1,13 @@
 import { EventIterator } from 'event-iterator'
 const worker = new Worker(new URL('./python/worker.ts', import.meta.url), { type: 'module' })
 
+type FinalOutput = {
+  format: 'text' | 'latex' | 'image'
+  result?: string
+  stdout?: string
+  error?: string
+}
+
 export type Output =
   | {
       id: string
@@ -29,7 +36,7 @@ export type Input = {
   options?: Options
 }
 
-export async function* runPython(code: string, options?: { math: boolean }) {
+async function* run(code: string, options?: { math: boolean }) {
   const promiseId = crypto.randomUUID()
   const iterator = new EventIterator<Output>(({ push, stop }) => {
     const listener = (event: MessageEvent<Output>) => {
@@ -44,4 +51,28 @@ export async function* runPython(code: string, options?: { math: boolean }) {
   for await (const status of iterator) {
     yield status
   }
+}
+
+async function output(code: string): Promise<FinalOutput> {
+  for await (const chunk of run(code)) {
+    if (!chunk.status) {
+      return chunk as FinalOutput
+    }
+  }
+  throw new Error('No output received')
+}
+
+async function test(
+  code: string,
+  test: string | null,
+  check: (output: FinalOutput) => boolean,
+): Promise<FinalOutput & { passed: boolean }> {
+  const out = await output(`${code}${test ? `\n${test}` : ''}`)
+  return { ...out, passed: check(out) }
+}
+
+export const python = {
+  run,
+  test,
+  output,
 }
