@@ -10,7 +10,7 @@ import {
   createSignal,
   Errored,
   Loading,
-  merge,
+  omit,
   refresh,
   Show,
   useContext,
@@ -137,12 +137,12 @@ type StepProps<S extends StepSchema> = {
     }
   }) => JSX.Element
   children?: (props: {
-    data: Inputs<S['data'], 'output'>
-    inputs: Inputs<S['inputs'], 'output'>
+    data: Inputs<S['data'], 'input'>
+    inputs: Inputs<S['inputs'], 'input'>
   }) => JSX.Element
   next?: (props: {
-    data: Inputs<S['data'], 'output'>
-    inputs: Inputs<S['inputs'], 'output'>
+    data: Inputs<S['data'], 'input'>
+    inputs: Inputs<S['inputs'], 'input'>
   }) => JSX.Element
 }
 
@@ -304,11 +304,30 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
   )
 }
 
-export function createStep<S extends StepSchema, P extends keyof StepProps<S>>(
-  step: { schema: S } & { [K in P]: StepProps<S>[K] },
-): Component<Prettify<Omit<StepProps<S>, P> & Partial<Pick<StepProps<S>, P>> & { id?: string }>> {
+export function createStep<S extends StepSchema>(
+  step: Omit<StepProps<S>, 'data'>,
+): Component<
+  { id?: string } & Pick<StepProps<S>, 'next' | 'children'> &
+    (Inputs<S['data'], 'input'> | { data: StepProps<S>['data'] })
+> {
   return (props) => {
-    const merged = merge(step, props) as unknown as StepProps<S> & { id?: string }
-    return <Step {...merged} />
+    const data = omit(props, 'id', 'data', 'next', 'children') as
+      | Inputs<S['data'], 'input'>
+      | undefined
+    return (
+      <Step
+        {...step}
+        data={'data' in props ? props.data : data}
+        id={props.id}
+        {...{
+          get next() {
+            return props.next
+          },
+          get children() {
+            return props.children
+          },
+        }}
+      />
+    )
   }
 }
