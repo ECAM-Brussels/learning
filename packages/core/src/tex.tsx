@@ -1,6 +1,7 @@
 import { Latex } from '@learning/components'
 import { mapAsync } from 'es-toolkit'
 import { createMemo, Errored } from 'solid-js'
+import { expr } from './expr'
 
 type MaybePromise<T> = T | Promise<T>
 
@@ -24,6 +25,7 @@ export const tex = Object.assign(
       | string
       | number
       | { rawInput: string }
+      | { json: Extract<Parameters<typeof expr>[0], { json: any }>['json'] }
       | { latex: () => MaybePromise<string> }
     >[]
   ) => {
@@ -33,6 +35,8 @@ export const tex = Object.assign(
         if (!value) return ''
         if (typeof value === 'object' && 'rawInput' in value && typeof value.rawInput === 'string')
           return value.rawInput
+        if (typeof value === 'object' && 'json' in value && typeof value.json === 'object')
+          return expr({ json: value.json }).latex()
         if (typeof value === 'object' && 'latex' in value && typeof value.latex === 'function')
           return value.latex()
         return String(value).replace(/e\+?(\d+)/, '\\cdot 10^{ $1 }')

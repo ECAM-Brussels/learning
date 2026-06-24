@@ -148,7 +148,7 @@ function expression(input: Math) {
       return expression({ json: ce.expr(json, { form: 'raw' }).subs(substitutions).json })
     },
     toString: () => (typeof input === 'string' ? input : stringify(json)),
-    toJSON: () => input,
+    toJSON: () => (typeof input === 'string' ? input : { json }),
     unit: (unit: Unit) => quantity({ json }, unit),
   }
 }
