@@ -1,6 +1,7 @@
 import { Attempt } from '@learning/components'
 import { createStep, tex } from '@learning/core'
 import { allKeyed } from 'es-toolkit'
+import { Match, Switch } from 'solid-js'
 import { Root } from './Root'
 
 export const Factor = createStep({
@@ -26,7 +27,15 @@ export const Factor = createStep({
       </Attempt>
     </>
   ),
-  children: (ctx) => (
-    <Root expr={ctx.data.expr} next={() => <Factor expr={ctx.data.expr} next={ctx.next} />} />
+  children: (factor) => (
+    <Switch>
+      <Match when={factor.correct}>{factor.next}</Match>
+      <Match when={!factor.correct}>
+        <Root
+          expr={factor.data.expr}
+          next={<Factor expr={factor.data.expr} next={factor.next} />}
+        />
+      </Match>
+    </Switch>
   ),
 })

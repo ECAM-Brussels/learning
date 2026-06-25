@@ -140,19 +140,15 @@ type StepProps<S extends StepSchema> = {
   children?: (props: {
     data: Inputs<S['data'], 'output'>
     inputs: Inputs<S['inputs'], 'output'>
-    next?: (props: {
-      data: Inputs<S['data'], 'output'>
-      inputs: Inputs<S['inputs'], 'output'>
-    }) => JSX.Element
+    correct: boolean
+    next: JSX.Element
   }) => JSX.Element
-  next?: (props: {
-    data: Inputs<S['data'], 'output'>
-    inputs: Inputs<S['inputs'], 'output'>
-    next?: (props: {
-      data: Inputs<S['data'], 'output'>
-      inputs: Inputs<S['inputs'], 'output'>
-    }) => JSX.Element
-  }) => JSX.Element
+  next?:
+    | JSX.Element
+    | ((props: {
+        data: Inputs<S['data'], 'output'>
+        inputs: Inputs<S['inputs'], 'output'>
+      }) => JSX.Element)
 }
 
 export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }) {
@@ -301,11 +297,39 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
               )}
             >
               <Loading fallback="Calcul du feedback">
-                <Dynamic
-                  component={correct() ? props.next : props.children}
-                  data={v.parse(Inputs(props.schema.data as S['data']), step().data)}
-                  inputs={v.parse(Inputs(props.schema.inputs as S['inputs']), step().state)}
-                />
+                <Show
+                  when={props.children}
+                  fallback={
+                    typeof props.next === 'function' ? (
+                      <Dynamic
+                        component={props.next}
+                        data={v.parse(Inputs(props.schema.data as S['data']), step().data)}
+                        inputs={v.parse(Inputs(props.schema.inputs as S['inputs']), step().state)}
+                      />
+                    ) : (
+                      props.next
+                    )
+                  }
+                >
+                  {/* Go to next */}
+                  <Dynamic
+                    component={props.children}
+                    data={v.parse(Inputs(props.schema.data as S['data']), step().data)}
+                    inputs={v.parse(Inputs(props.schema.inputs as S['inputs']), step().state)}
+                    correct={step().correct ?? false}
+                    next={
+                      typeof props.next === 'function' ? (
+                        <Dynamic
+                          component={props.next}
+                          data={v.parse(Inputs(props.schema.data as S['data']), step().data)}
+                          inputs={v.parse(Inputs(props.schema.inputs as S['inputs']), step().state)}
+                        />
+                      ) : (
+                        props.next
+                      )
+                    }
+                  />
+                </Show>
               </Loading>
             </Errored>
           </StepContext>
