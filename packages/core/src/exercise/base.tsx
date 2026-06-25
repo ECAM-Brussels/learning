@@ -62,7 +62,7 @@ type Inputs<
   T extends Record<string, v.BaseSchema<any, any, any> | keyof CustomSchemas>,
   U extends 'input' | 'output' = 'input',
 > =
-  ReturnType<typeof Inputs<T>> extends v.ObjectSchema<any, any>
+  ReturnType<typeof Inputs<T>> extends v.ObjectSchema<{ [K in keyof T]: ResolveSchema<T[K]> }, any>
     ? U extends 'output'
       ? v.InferOutput<ReturnType<typeof Inputs<T>>>
       : v.InferInput<ReturnType<typeof Inputs<T>>>
@@ -227,15 +227,15 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
           },
         }}
       >
-        <Loading fallback={<p>Chargement du prompt...</p>}>
-          <Errored
-            fallback={(err) => (
-              <details open>
-                <summary>Erreur</summary>
-                {String(err())}
-              </details>
-            )}
-          >
+        <Errored
+          fallback={(err) => (
+            <details open>
+              <summary>Erreur</summary>
+              {String(err())}
+            </details>
+          )}
+        >
+          <Loading fallback={<p>Chargement du prompt...</p>}>
             <Dynamic
               component={props.prompt}
               data={step().data}
@@ -263,8 +263,8 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
                 } satisfies ComponentProps<typeof props.prompt>['state']
               }
             />
-          </Errored>
-        </Loading>
+          </Loading>
+        </Errored>
         <Show
           when={step().submitted}
           fallback={
@@ -305,7 +305,6 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
                   component={correct() ? props.next : props.children}
                   data={v.parse(Inputs(props.schema.data as S['data']), step().data)}
                   inputs={v.parse(Inputs(props.schema.inputs as S['inputs']), step().state)}
-                  next={props.next}
                 />
               </Loading>
             </Errored>
@@ -324,6 +323,6 @@ export function createStep<S extends StepSchema>(
 > {
   return (props) => {
     const data = omit(props, 'id', 'data', 'children') as Inputs<S['data'], 'input'> | undefined
-    return <Step {...step} {...props} data={'data' in props ? props.data : data} />
+    return <Step {...step} {...props} data={('data' in props ? props.data : data)!} />
   }
 }
