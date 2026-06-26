@@ -214,6 +214,18 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
     }),
   )
 
+  function Next() {
+    return typeof props.next === 'function' ? (
+      <Dynamic
+        component={props.next}
+        data={v.parse(Inputs(props.schema.data as S['data']), step().data)}
+        inputs={v.parse(Inputs(props.schema.inputs as S['inputs']), step().state)}
+      />
+    ) : (
+      props.next
+    )
+  }
+
   return (
     <div class={props.class}>
       <FeedbackContext
@@ -297,37 +309,13 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
               )}
             >
               <Loading fallback="Calcul du feedback">
-                <Show
-                  when={props.children}
-                  fallback={
-                    typeof props.next === 'function' ? (
-                      <Dynamic
-                        component={props.next}
-                        data={v.parse(Inputs(props.schema.data as S['data']), step().data)}
-                        inputs={v.parse(Inputs(props.schema.inputs as S['inputs']), step().state)}
-                      />
-                    ) : (
-                      props.next
-                    )
-                  }
-                >
-                  {/* Go to next */}
+                <Show when={props.children} fallback={<Next />}>
                   <Dynamic
                     component={props.children}
                     data={v.parse(Inputs(props.schema.data as S['data']), step().data)}
                     inputs={v.parse(Inputs(props.schema.inputs as S['inputs']), step().state)}
                     correct={step().correct ?? false}
-                    next={
-                      typeof props.next === 'function' ? (
-                        <Dynamic
-                          component={props.next}
-                          data={v.parse(Inputs(props.schema.data as S['data']), step().data)}
-                          inputs={v.parse(Inputs(props.schema.inputs as S['inputs']), step().state)}
-                        />
-                      ) : (
-                        props.next
-                      )
-                    }
+                    next={<Next />}
                   />
                 </Show>
               </Loading>
