@@ -141,6 +141,7 @@ type StepProps<S extends StepSchema> = {
     data: Inputs<S['data'], 'output'>
     inputs: Inputs<S['inputs'], 'output'>
     correct: boolean
+    Self: Component<Partial<StepProps<S>>>
     next: JSX.Element
   }) => JSX.Element
   next?:
@@ -214,17 +215,21 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
     }),
   )
 
-  function Next() {
-    return typeof props.next === 'function' ? (
-      <Dynamic
-        component={props.next}
-        data={v.parse(Inputs(props.schema.data as S['data']), step().data)}
-        inputs={v.parse(Inputs(props.schema.inputs as S['inputs']), step().state)}
-      />
-    ) : (
-      props.next
-    )
-  }
+  const parsedData = createMemo(() => v.parse(Inputs(props.schema.data as S['data']), step().data))
+
+  const Self = (attrs: Partial<StepProps<S>>) => <Step {...props} data={step().data} {...attrs} />
+
+  const Next = () => (
+    <Show when={typeof props.next === 'function' && props.next} fallback={<>{props.next}</>}>
+      {(next) => (
+        <Dynamic
+          component={next()}
+          data={parsedData()}
+          inputs={v.parse(Inputs(props.schema.inputs as S['inputs']), step().state)}
+        />
+      )}
+    </Show>
+  )
 
   return (
     <div class={props.class}>
@@ -246,7 +251,7 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
           <Loading fallback={<p>Chargement du prompt...</p>}>
             <Dynamic
               component={props.prompt}
-              data={step().data}
+              data={parsedData()}
               inputs={fields()}
               state={
                 {
@@ -284,7 +289,7 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
                   { ...step(), submitted: true },
                 )
                 const correct = await props.correct({
-                  data: transformed.data,
+                  data: parsedData(),
                   inputs: transformed.state,
                 })
                 const newStep = { ...transformed, correct, submitted: true }
@@ -312,9 +317,10 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
                 <Show when={props.children} fallback={<Next />}>
                   <Dynamic
                     component={props.children}
-                    data={v.parse(Inputs(props.schema.data as S['data']), step().data)}
+                    data={parsedData()}
                     inputs={v.parse(Inputs(props.schema.inputs as S['inputs']), step().state)}
                     correct={step().correct ?? false}
+                    Self={Self}
                     next={<Next />}
                   />
                 </Show>
