@@ -163,7 +163,6 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
     }),
     { exerciseId: '', position: 0 },
   )
-  const nextContext = createMemo(() => ({ ...context, position: context.position + 1 }))
 
   const [savedStep, setSavedStep] = createOptimistic<StoredStep<S['data'], S['inputs']>>(
     () => exerciseContext.fetch(context.exerciseId, context.position) as any,
@@ -306,7 +305,16 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
             </button>
           }
         >
-          <StepContext value={nextContext()}>
+          <StepContext
+            value={{
+              get exerciseId() {
+                return context.exerciseId
+              },
+              get position() {
+                return context.position + 1
+              },
+            }}
+          >
             <Errored
               fallback={(err) => (
                 <details open>
@@ -345,6 +353,13 @@ export function createStep<S extends StepSchema>(
     const data = omit(props, 'id', 'data', 'children') as
       | ObjectSchema<S['data'], 'input'>
       | undefined
-    return <Step {...step} {...props} data={('data' in props ? props.data : data)!} />
+    return (
+      <Step
+        {...step}
+        id={props.id}
+        children={props.children ?? step.children}
+        data={('data' in props ? props.data : data)!}
+      />
+    )
   }
 }

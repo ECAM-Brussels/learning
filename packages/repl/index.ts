@@ -19,7 +19,7 @@ export type Output =
     }
   | {
       id: string
-      status: 'loading' | 'importing' | 'executing' | 'ready'
+      status: 'loading' | 'importing' | 'executing'
       error?: never
       result?: never
       stdout?: never
@@ -42,7 +42,6 @@ async function* run(code: string, options?: { math: boolean }) {
     const listener = (event: MessageEvent<Output>) => {
       if (event.data?.id !== promiseId) return
       push(event.data)
-      if (event.data.status === 'ready') stop()
     }
     worker.addEventListener('message', listener)
     return () => worker.removeEventListener('message', listener)

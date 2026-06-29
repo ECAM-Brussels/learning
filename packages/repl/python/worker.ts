@@ -63,6 +63,5 @@ self.onmessage = async (event: MessageEvent<Input>) => {
     output.error = (error as any).message
   } finally {
     self.postMessage(output)
-    self.postMessage({ id: event.data.id, status: 'ready' })
   }
 }

@@ -2,12 +2,17 @@ import { Attempt, Code, Page } from '@learning/components'
 import { expr, Step } from '@learning/core'
 import { Factor } from '@learning/exercises/math/algebra/Factor'
 import { PythonCode } from '@learning/exercises/python/Code'
+import dedent from 'dedent'
 import { sample } from 'es-toolkit'
 
 export default () => (
   <Page title="Tests">
     <Code lang="python" run math>
-      x^2
+      {dedent /* python */ `
+        from sympy import *
+        x = symbols("x")
+        expand((x - 2) * (x - 3))
+      `}
     </Code>
     <Factor
       id="test2"
