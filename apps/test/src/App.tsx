@@ -3,7 +3,7 @@ import { expr, Step } from '@learning/core'
 import { Factor } from '@learning/exercises/math/algebra/Factor'
 import { PythonCode } from '@learning/exercises/python/Code'
 import dedent from 'dedent'
-import { sample } from 'es-toolkit'
+import { allKeyed, sample } from 'es-toolkit'
 
 export default () => (
   <Page title="Tests">
@@ -16,11 +16,15 @@ export default () => (
     </Code>
     <Factor
       id="test2"
-      data={() => ({
-        expr: expr('(x - a) (x - b)')
-          .subs({ a: sample([1, 2, 3]), b: sample([1, 2, 3]) })
-          .expand(),
-      })}
+      data={() =>
+        allKeyed({
+          expr: expr('(x - a) (x - b)')
+            .subs({ a: sample([1, 2, 3]), b: sample([1, 2, 3]) })
+            .expand()
+            .latex(),
+        })
+      }
+      next={<Factor expr="x^2 - 4" />}
     />
     <PythonCode
       prompt="Écris un programme qui affiche le carré d'un nombre."

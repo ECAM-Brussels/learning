@@ -346,17 +346,19 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
 export function createStep<S extends StepSchema>(
   step: Omit<StepProps<S>, 'data'>,
 ): Component<
-  { id?: string } & Pick<StepProps<S>, 'next' | 'children'> &
+  { id?: string } & Pick<StepProps<S>, 'class' | 'next' | 'children'> &
     (ObjectSchema<S['data'], 'input'> | { data: StepProps<S>['data'] })
 > {
   return (props) => {
-    const data = omit(props, 'id', 'data', 'children') as
+    const data = omit(props, 'id', 'class', 'next', 'data', 'children') as
       | ObjectSchema<S['data'], 'input'>
       | undefined
     return (
       <Step
         {...step}
-        id={props.id}
+        id={props.id ?? step.id}
+        class={props.class ?? step.class}
+        next={props.next ?? step.next}
         children={props.children ?? step.children}
         data={('data' in props ? props.data : data)!}
       />
