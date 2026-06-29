@@ -297,7 +297,7 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
                 setSavedStep(newStep)
                 await exerciseContext.save(context.exerciseId, context.position, newStep)
                 yield
-                // refresh(savedStep)
+                refresh(savedStep)
                 refresh(step)
               })}
             >
