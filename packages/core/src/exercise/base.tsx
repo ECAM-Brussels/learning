@@ -18,12 +18,18 @@ import {
   type ComponentProps,
 } from 'solid-js'
 import * as v from 'valibot'
-import { Expression } from '../expr'
+import { expr, Expression } from '../expr'
 
 type MaybeAsync<T> = T | Promise<T>
 
 const CustomSchemas = {
-  expr: Expression,
+  expr: v.union([
+    v.pipe(
+      v.string(),
+      v.transform((latex) => expr(latex)),
+    ),
+    Expression,
+  ]),
 } as const
 type CustomSchemas = typeof CustomSchemas
 
@@ -285,14 +291,14 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
                   { ...step(), submitted: true },
                 )
                 const correct = await props.correct({
-                  data: parsedData(),
+                  data: v.parse(ObjectSchema(props.schema.data as S['data']), step().data),
                   inputs: transformed.state,
                 })
                 const newStep = { ...transformed, correct, submitted: true }
                 setSavedStep(newStep)
                 await exerciseContext.save(context.exerciseId, context.position, newStep)
                 yield
-                refresh(savedStep)
+                // refresh(savedStep)
                 refresh(step)
               })}
             >
