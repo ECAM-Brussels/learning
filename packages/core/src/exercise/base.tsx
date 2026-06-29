@@ -18,21 +18,12 @@ import {
   type ComponentProps,
 } from 'solid-js'
 import * as v from 'valibot'
-import { expr, Expression } from '../expr'
+import { Expression } from '../expr'
 
-type Prettify<T> = {
-  [K in keyof T]: T[K]
-} & {}
 type MaybeAsync<T> = T | Promise<T>
 
 const CustomSchemas = {
-  expr: v.union([
-    v.pipe(
-      v.string(),
-      v.transform((s) => expr(s)),
-    ),
-    Expression,
-  ]),
+  expr: Expression,
 } as const
 type CustomSchemas = typeof CustomSchemas
 
@@ -45,8 +36,8 @@ type ResolveSchema<T> =
         : never
       : never
 
-type StepInputs = Record<string, v.BaseSchema<any, any, any> | keyof CustomSchemas>
-function Inputs<T extends StepInputs>(rawSchema: T) {
+type RawShape = Record<string, v.BaseSchema<any, any, any> | keyof CustomSchemas>
+function ObjectSchema<T extends RawShape>(rawSchema: T) {
   const transformed = Object.fromEntries(
     Object.entries(rawSchema).map(([key, value]) => [
       key,
@@ -58,29 +49,32 @@ function Inputs<T extends StepInputs>(rawSchema: T) {
   return v.object(transformed)
 }
 
-type Inputs<
+type ObjectSchema<
   T extends Record<string, v.BaseSchema<any, any, any> | keyof CustomSchemas>,
   U extends 'input' | 'output' = 'input',
 > =
-  ReturnType<typeof Inputs<T>> extends v.ObjectSchema<{ [K in keyof T]: ResolveSchema<T[K]> }, any>
+  ReturnType<typeof ObjectSchema<T>> extends v.ObjectSchema<
+    { [K in keyof T]: ResolveSchema<T[K]> },
+    any
+  >
     ? U extends 'output'
-      ? v.InferOutput<ReturnType<typeof Inputs<T>>>
-      : v.InferInput<ReturnType<typeof Inputs<T>>>
+      ? v.InferOutput<ReturnType<typeof ObjectSchema<T>>>
+      : v.InferInput<ReturnType<typeof ObjectSchema<T>>>
     : never
 
-function StoredStep<D extends StepInputs, I extends StepInputs>(data: D, inputs: I) {
+function StoredStep<D extends RawShape, I extends RawShape>(data: D, inputs: I) {
   return v.object({
     name: v.optional(v.string()),
-    data: Inputs(data),
-    state: v.partial(Inputs(inputs)),
+    data: ObjectSchema(data),
+    state: v.partial(ObjectSchema(inputs)),
     submitted: v.optional(v.boolean(), false),
     correct: v.optional(v.boolean()),
   })
 }
 
 type StoredStep<
-  D extends StepInputs = Record<string, v.UnknownSchema>,
-  I extends StepInputs = Record<string, v.UnknownSchema>,
+  D extends RawShape = Record<string, v.UnknownSchema>,
+  I extends RawShape = Record<string, v.UnknownSchema>,
   U extends 'input' | 'output' = 'input',
 > = U extends 'output'
   ? v.InferOutput<ReturnType<typeof StoredStep<D, I>>>
@@ -110,36 +104,36 @@ type StepContext = {
 }
 const StepContext = createContext<StepContext | null>(null)
 
-type StepSchema = { inputs: StepInputs; data: StepInputs }
+type StepSchema = { inputs: RawShape; data: RawShape }
 type StepProps<S extends StepSchema> = {
   name?: string
   schema: S
   class?: string
-  data: Inputs<S['data'], 'input'> | (() => MaybeAsync<Inputs<S['data'], 'input'>>)
+  data: ObjectSchema<S['data'], 'input'> | (() => MaybeAsync<ObjectSchema<S['data'], 'input'>>)
   correct: (ctx: {
-    data: Inputs<S['data'], 'output'>
-    inputs: Inputs<S['inputs'], 'output'>
+    data: ObjectSchema<S['data'], 'output'>
+    inputs: ObjectSchema<S['inputs'], 'output'>
   }) => MaybeAsync<boolean>
   prompt: (props: {
-    data: Inputs<S['data'], 'output'>
+    data: ObjectSchema<S['data'], 'output'>
     inputs: { [K in keyof S['inputs']]: JSX.Element }
     state: {
-      saved?: Inputs<S['inputs'], 'input'>
-      current: Partial<Inputs<S['inputs'], 'input'>>
+      saved?: ObjectSchema<S['inputs'], 'input'>
+      current: Partial<ObjectSchema<S['inputs'], 'input'>>
       set: <K extends keyof S['inputs']>(
         key: K,
         value:
-          | Inputs<S['inputs'], 'input'>[K]
+          | ObjectSchema<S['inputs'], 'input'>[K]
           | ((
-              prev: Inputs<S['inputs'], 'input'>[K] | undefined,
-            ) => Inputs<S['inputs'], 'input'>[K]),
+              prev: ObjectSchema<S['inputs'], 'input'>[K] | undefined,
+            ) => ObjectSchema<S['inputs'], 'input'>[K]),
       ) => void
       correct?: boolean
     }
   }) => JSX.Element
   children?: (props: {
-    data: Inputs<S['data'], 'output'>
-    inputs: Inputs<S['inputs'], 'output'>
+    data: ObjectSchema<S['data'], 'output'>
+    inputs: ObjectSchema<S['inputs'], 'output'>
     correct: boolean
     Self: Component<Partial<StepProps<S>>>
     next: JSX.Element
@@ -147,8 +141,8 @@ type StepProps<S extends StepSchema> = {
   next?:
     | JSX.Element
     | ((props: {
-        data: Inputs<S['data'], 'output'>
-        inputs: Inputs<S['inputs'], 'output'>
+        data: ObjectSchema<S['data'], 'output'>
+        inputs: ObjectSchema<S['inputs'], 'output'>
       }) => JSX.Element)
 }
 
@@ -183,8 +177,8 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
   const correct = createMemo(() =>
     step().submitted
       ? props.correct({
-          data: v.parse(Inputs(props.schema.data as S['data']), step().data),
-          inputs: v.parse(Inputs(props.schema.inputs as S['inputs']), step().state),
+          data: v.parse(ObjectSchema(props.schema.data as S['data']), step().data),
+          inputs: v.parse(ObjectSchema(props.schema.inputs as S['inputs']), step().state),
         })
       : undefined,
   )
@@ -215,7 +209,9 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
     }),
   )
 
-  const parsedData = createMemo(() => v.parse(Inputs(props.schema.data as S['data']), step().data))
+  const parsedData = createMemo(() =>
+    v.parse(ObjectSchema(props.schema.data as S['data']), step().data),
+  )
 
   const Self = (attrs: Partial<StepProps<S>>) => <Step {...props} data={step().data} {...attrs} />
 
@@ -225,7 +221,7 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
         <Dynamic
           component={next()}
           data={parsedData()}
-          inputs={v.parse(Inputs(props.schema.inputs as S['inputs']), step().state)}
+          inputs={v.parse(ObjectSchema(props.schema.inputs as S['inputs']), step().state)}
         />
       )}
     </Show>
@@ -259,7 +255,7 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
                     return savedStep()?.state ?? {}
                   },
                   get current() {
-                    return step().state as Partial<Inputs<S['inputs'], 'input'>>
+                    return step().state as Partial<ObjectSchema<S['inputs'], 'input'>>
                   },
                   set: (key, value) => {
                     setStep((prev) => ({
@@ -318,7 +314,7 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
                   <Dynamic
                     component={props.children}
                     data={parsedData()}
-                    inputs={v.parse(Inputs(props.schema.inputs as S['inputs']), step().state)}
+                    inputs={v.parse(ObjectSchema(props.schema.inputs as S['inputs']), step().state)}
                     correct={step().correct ?? false}
                     Self={Self}
                     next={<Next />}
@@ -337,10 +333,12 @@ export function createStep<S extends StepSchema>(
   step: Omit<StepProps<S>, 'data'>,
 ): Component<
   { id?: string } & Pick<StepProps<S>, 'next' | 'children'> &
-    (Inputs<S['data'], 'input'> | { data: StepProps<S>['data'] })
+    (ObjectSchema<S['data'], 'input'> | { data: StepProps<S>['data'] })
 > {
   return (props) => {
-    const data = omit(props, 'id', 'data', 'children') as Inputs<S['data'], 'input'> | undefined
+    const data = omit(props, 'id', 'data', 'children') as
+      | ObjectSchema<S['data'], 'input'>
+      | undefined
     return <Step {...step} {...props} data={('data' in props ? props.data : data)!} />
   }
 }
