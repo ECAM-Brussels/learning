@@ -356,7 +356,7 @@ export function createStep<S extends StepSchema>(
     return (
       <Step
         {...step}
-        id={props.id ?? step.id}
+        id={props.id}
         class={props.class ?? step.class}
         next={props.next ?? step.next}
         children={props.children ?? step.children}
