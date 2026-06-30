@@ -1,6 +1,6 @@
 import { Attempt } from '@learning/components'
 import { createStep, tex } from '@learning/core'
-import { Match, Switch } from 'solid-js'
+import { Show } from 'solid-js'
 
 export const Root = createStep({
   name: 'math/algebra/root',
@@ -17,11 +17,9 @@ export const Root = createStep({
       </Attempt>
     </>
   ),
-  children: (root) => {
-    return (
-      <Switch>
-        <Match when={root.correct}>{root.next}</Match>
-      </Switch>
-    )
-  },
+  feedback: (root) => (
+    <Show when={!root.correct} fallback={root.next}>
+      <root.Self />
+    </Show>
+  ),
 })

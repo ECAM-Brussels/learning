@@ -42,7 +42,7 @@ export const PythonCode = createStep({
       </>
     )
   },
-  children: (ctx) => {
+  feedback: (ctx) => {
     const tests = createProjection(() => {
       return mapAsync(ctx.data.tests, async (t) => ({
         ...t,

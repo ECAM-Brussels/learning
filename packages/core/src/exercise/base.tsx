@@ -139,14 +139,14 @@ type StepProps<S extends StepSchema> = {
       correct?: boolean
     }
   }) => JSX.Element
-  children?: (props: {
+  feedback?: (props: {
     data: ObjectSchema<NoInfer<S>['data'], 'output'>
     inputs: ObjectSchema<NoInfer<S>['inputs'], 'output'>
     correct: boolean
     Self: Component<Partial<StepProps<S>>>
     next: JSX.Element
   }) => JSX.Element
-  next?:
+  children?:
     | JSX.Element
     | ((props: {
         data: ObjectSchema<S['data'], 'output'>
@@ -222,8 +222,11 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
 
   const Self = (attrs: Partial<StepProps<S>>) => <Step {...props} data={step().data} {...attrs} />
 
-  const Next = () => (
-    <Show when={typeof props.next === 'function' && props.next} fallback={<>{props.next}</>}>
+  const Next = (attrs: { children: typeof props.children }) => (
+    <Show
+      when={typeof attrs.children === 'function' && attrs.children}
+      fallback={<>{attrs.children}</>}
+    >
       {(next) => (
         <Dynamic
           component={next()}
@@ -326,14 +329,14 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
               )}
             >
               <Loading fallback="Calcul du feedback">
-                <Show when={props.children} fallback={<Next />}>
+                <Show when={props.feedback} fallback={<Next>{props.children}</Next>}>
                   <Dynamic
-                    component={props.children}
+                    component={props.feedback}
                     data={parsedData()}
                     inputs={v.parse(ObjectSchema(props.schema.inputs as S['inputs']), step().state)}
                     correct={step().correct ?? false}
                     Self={Self}
-                    next={<Next />}
+                    next={<Next>{props.children}</Next>}
                   />
                 </Show>
               </Loading>
@@ -348,11 +351,11 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
 export function createStep<S extends StepSchema>(
   step: Omit<StepProps<S>, 'data'>,
 ): Component<
-  { id?: string } & Pick<StepProps<S>, 'class' | 'next' | 'children'> &
+  { id?: string } & Pick<StepProps<S>, 'class' | 'feedback' | 'children'> &
     (ObjectSchema<S['data'], 'input'> | { data: StepProps<S>['data'] })
 > {
   return (props) => {
-    const data = omit(props, 'id', 'class', 'next', 'data', 'children') as
+    const data = omit(props, 'id', 'class', 'feedback', 'data', 'children') as
       | ObjectSchema<S['data'], 'input'>
       | undefined
     return (
@@ -360,7 +363,7 @@ export function createStep<S extends StepSchema>(
         {...step}
         id={props.id}
         class={props.class ?? step.class}
-        next={props.next ?? step.next}
+        feedback={props.feedback ?? step.feedback}
         children={props.children ?? step.children}
         data={('data' in props ? props.data : data)!}
       />

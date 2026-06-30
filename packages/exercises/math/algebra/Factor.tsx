@@ -1,7 +1,7 @@
 import { Attempt } from '@learning/components'
-import { createStep, tex } from '@learning/core'
+import { createStep, expr, tex } from '@learning/core'
 import { allKeyed } from 'es-toolkit'
-import { Match, Switch } from 'solid-js'
+import { Match, Show, Switch } from 'solid-js'
 import { Root } from './Root'
 
 export const Factor = createStep({
@@ -27,15 +27,51 @@ export const Factor = createStep({
       </Attempt>
     </>
   ),
-  children: (factor) => (
+  feedback: (ctx) => (
     <Switch>
-      <Match when={factor.correct}>{factor.next}</Match>
-      <Match when={!factor.correct}>
-        <Root
-          expr={factor.data.expr}
-          next={<Factor expr={factor.data.expr} next={factor.next} />}
-        />
+      <Match when={ctx.correct}>{ctx.next}</Match>
+      <Match when={!ctx.correct}>
+        <Root expr={ctx.data.expr}>
+          {(rootCtx) => (
+            <FactorFromRoot root={rootCtx.inputs.root}>
+              <ctx.Self />
+            </FactorFromRoot>
+          )}
+        </Root>
       </Match>
     </Switch>
+  ),
+})
+
+const FactorFromRoot = createStep({
+  name: 'math/algebra/factor-from-root',
+  schema: {
+    data: { root: 'expr' },
+    inputs: { factor: 'expr' },
+  },
+  correct: (ctx) => ctx.inputs.factor.isEqual(expr(`x - a`).subs({ a: ctx.data.root })),
+  prompt: (ctx) => (
+    <>
+      <p>
+        Quel facteur est associé à la racine <strong>{tex`${ctx.data.root}`}</strong> ?
+      </p>
+      <Attempt>
+        {tex`y =`} {ctx.inputs.factor}
+      </Attempt>
+    </>
+  ),
+  feedback: (ctx) => (
+    <Show when={!ctx.correct} fallback={ctx.next}>
+      <p>
+        N'oubliez pas que le facteur {tex`${ctx.inputs.factor}`} doit également avoir comme racine{' '}
+        {tex`${ctx.data.root}`}. Cependant, dans ce cas-ci, on a
+      </p>
+      {tex`
+        ${ctx.inputs.factor}
+        = ${ctx.inputs.factor.subs({ x: ctx.data.root })}
+        = ${ctx.inputs.factor.subs({ x: ctx.data.root }).simplify()}
+      `}
+      <ctx.Self />
+    </Show>
   ),
 })
