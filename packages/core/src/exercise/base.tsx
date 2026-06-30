@@ -115,31 +115,33 @@ type StepProps<S extends StepSchema> = {
   name?: string
   schema: S
   class?: string
-  data: ObjectSchema<S['data'], 'input'> | (() => MaybeAsync<ObjectSchema<S['data'], 'input'>>)
+  data:
+    | ObjectSchema<NoInfer<S>['data'], 'input'>
+    | (() => MaybeAsync<ObjectSchema<NoInfer<S>['data'], 'input'>>)
   correct: (ctx: {
-    data: ObjectSchema<S['data'], 'output'>
-    inputs: ObjectSchema<S['inputs'], 'output'>
+    data: ObjectSchema<NoInfer<S>['data'], 'output'>
+    inputs: ObjectSchema<NoInfer<S>['inputs'], 'output'>
   }) => MaybeAsync<boolean>
   prompt: (props: {
-    data: ObjectSchema<S['data'], 'output'>
+    data: ObjectSchema<NoInfer<S>['data'], 'output'>
     inputs: { [K in keyof S['inputs']]: JSX.Element }
     state: {
-      saved?: ObjectSchema<S['inputs'], 'input'>
-      current: Partial<ObjectSchema<S['inputs'], 'input'>>
+      saved?: ObjectSchema<NoInfer<S>['inputs'], 'input'>
+      current: Partial<ObjectSchema<NoInfer<S>['inputs'], 'input'>>
       set: <K extends keyof S['inputs']>(
         key: K,
         value:
-          | ObjectSchema<S['inputs'], 'input'>[K]
+          | ObjectSchema<NoInfer<S>['inputs'], 'input'>[K]
           | ((
-              prev: ObjectSchema<S['inputs'], 'input'>[K] | undefined,
-            ) => ObjectSchema<S['inputs'], 'input'>[K]),
+              prev: ObjectSchema<NoInfer<S>['inputs'], 'input'>[K] | undefined,
+            ) => ObjectSchema<NoInfer<S>['inputs'], 'input'>[K]),
       ) => void
       correct?: boolean
     }
   }) => JSX.Element
   children?: (props: {
-    data: ObjectSchema<S['data'], 'output'>
-    inputs: ObjectSchema<S['inputs'], 'output'>
+    data: ObjectSchema<NoInfer<S>['data'], 'output'>
+    inputs: ObjectSchema<NoInfer<S>['inputs'], 'output'>
     correct: boolean
     Self: Component<Partial<StepProps<S>>>
     next: JSX.Element
