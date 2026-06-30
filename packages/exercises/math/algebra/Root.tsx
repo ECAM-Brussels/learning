@@ -18,7 +18,7 @@ export const Root = createStep({
     </>
   ),
   feedback: (root) => (
-    <Show when={!root.correct} fallback={root.next}>
+    <Show when={!root.correct}>
       <root.Self />
     </Show>
   ),

@@ -29,7 +29,6 @@ export const Factor = createStep({
   ),
   feedback: (ctx) => (
     <Switch>
-      <Match when={ctx.correct}>{ctx.next}</Match>
       <Match when={!ctx.correct}>
         <Root expr={ctx.data.expr}>
           {(rootCtx) => (
@@ -61,7 +60,7 @@ const FactorFromRoot = createStep({
     </>
   ),
   feedback: (ctx) => (
-    <Show when={!ctx.correct} fallback={ctx.next}>
+    <Show when={!ctx.correct}>
       <p>
         N'oubliez pas que le facteur {tex`${ctx.inputs.factor}`} doit également avoir comme racine{' '}
         {tex`${ctx.data.root}`}. Cependant, dans ce cas-ci, on a

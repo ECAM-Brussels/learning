@@ -329,7 +329,7 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
               )}
             >
               <Loading fallback="Calcul du feedback">
-                <Show when={props.feedback} fallback={<Next>{props.children}</Next>}>
+                <Show when={props.feedback}>
                   <Dynamic
                     component={props.feedback}
                     data={parsedData()}
@@ -338,6 +338,9 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
                     Self={Self}
                     next={<Next>{props.children}</Next>}
                   />
+                </Show>
+                <Show when={step().correct}>
+                  <Next>{props.children}</Next>
                 </Show>
               </Loading>
             </Errored>
