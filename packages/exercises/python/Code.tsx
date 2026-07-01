@@ -2,8 +2,8 @@ import { CheckMark, Code } from '@learning/components'
 import { createStep, omitFromJSON } from '@learning/core'
 import { python } from '@learning/repl'
 import type { JSX } from '@solidjs/web'
-import { mapAsync } from 'es-toolkit'
-import { For, createProjection } from 'solid-js'
+import { allKeyed, mapAsync } from 'es-toolkit'
+import { createMemo, createProjection, For, Show } from 'solid-js'
 import * as v from 'valibot'
 
 export const PythonCode = createStep({
@@ -20,13 +20,19 @@ export const PythonCode = createStep({
           }),
         ),
       ),
+      check: omitFromJSON(
+        v.optional(v.custom<(code: string) => boolean | Promise<boolean>>(() => true)),
+      ),
       math: v.optional(v.boolean(), false),
     },
     inputs: { code: v.string() },
   },
   correct: async (ctx) => {
-    const res = await mapAsync(ctx.data.tests, (t) => python.test(ctx.inputs.code, t.test, t.check))
-    return res.every((t) => t.passed)
+    const { tests, codeCheck } = await allKeyed({
+      tests: mapAsync(ctx.data.tests, (t) => python.test(ctx.inputs.code, t.test, t.check)),
+      codeCheck: ctx.data.check?.(ctx.inputs.code),
+    })
+    return tests.every((t) => t.passed) && codeCheck !== false
   },
   prompt: (ctx) => (
     <>
@@ -40,17 +46,20 @@ export const PythonCode = createStep({
     </>
   ),
   feedback: (ctx) => {
-    const tests = createProjection(() => {
-      return mapAsync(ctx.data.tests, async (t) => ({
-        ...t,
-        ...(await python.test(ctx.inputs.code, t.test, t.check)),
-      }))
-    }, [])
+    const tests = createProjection(
+      () =>
+        mapAsync(ctx.data.tests, async (t) => ({
+          ...t,
+          ...(await python.test(ctx.inputs.code, t.test, t.check)),
+        })),
+      [],
+    )
+    const valid = createMemo(() => ctx.data.check?.(ctx.inputs.code))
     return (
       <details class="not-prose">
         <summary>
           {tests.filter((t) => t.passed).length} tests corrects sur {tests.length}
-          <CheckMark value={tests.every((t) => t.passed)} />
+          <CheckMark value={tests.every((t) => t.passed) && valid() !== false} />
         </summary>
         <For each={tests}>
           {(test) => (
@@ -63,6 +72,13 @@ export const PythonCode = createStep({
             </li>
           )}
         </For>
+        <Show when={valid() !== undefined}>
+          {
+            <li>
+              Le code est valide <CheckMark value={valid()} />
+            </li>
+          }
+        </Show>
       </details>
     )
   },
