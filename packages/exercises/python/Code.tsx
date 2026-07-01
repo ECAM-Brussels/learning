@@ -24,6 +24,7 @@ export const PythonCode = createStep({
         v.optional(v.custom<(code: string) => boolean | Promise<boolean>>(() => true)),
       ),
       math: v.optional(v.boolean(), false),
+      initialCode: v.optional(v.string(), ''),
     },
     inputs: { code: v.string() },
   },
@@ -39,8 +40,9 @@ export const PythonCode = createStep({
       {ctx.data.prompt}
       <Code
         lang="python"
-        children={ctx.state.current.code ?? ''}
+        children={ctx.state.current.code ?? ctx.data.initialCode}
         onChange={ctx.state.set.bind(null, 'code')}
+        math={ctx.data.math}
         run
       />
     </>
