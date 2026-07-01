@@ -3,7 +3,7 @@ import { createStep, omitFromJSON } from '@learning/core'
 import { python } from '@learning/repl'
 import type { JSX } from '@solidjs/web'
 import { mapAsync } from 'es-toolkit'
-import { For, createMemo, createProjection } from 'solid-js'
+import { For, createProjection } from 'solid-js'
 import * as v from 'valibot'
 
 export const PythonCode = createStep({
@@ -28,20 +28,17 @@ export const PythonCode = createStep({
     const res = await mapAsync(ctx.data.tests, (t) => python.test(ctx.inputs.code, t.test, t.check))
     return res.every((t) => t.passed)
   },
-  prompt: (ctx) => {
-    const code = createMemo(() => ctx.state.saved?.code ?? '')
-    return (
-      <>
-        {ctx.data.prompt}
-        <Code
-          lang="python"
-          onChange={(newValue) => ctx.state.set('code', newValue)}
-          run
-          children={code()}
-        />
-      </>
-    )
-  },
+  prompt: (ctx) => (
+    <>
+      {ctx.data.prompt}
+      <Code
+        lang="python"
+        children={ctx.state.current.code ?? ''}
+        onChange={ctx.state.set.bind(null, 'code')}
+        run
+      />
+    </>
+  ),
   feedback: (ctx) => {
     const tests = createProjection(() => {
       return mapAsync(ctx.data.tests, async (t) => ({
