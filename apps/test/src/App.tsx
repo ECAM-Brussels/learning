@@ -24,8 +24,9 @@ export default () => (
             .latex(),
         })
       }
-      next={<Factor expr="x^2 - 4" />}
-    />
+    >
+      <Factor expr="x^2 - 4" />
+    </Factor>
     <PythonCode
       prompt="Écris un programme qui affiche le carré d'un nombre."
       tests={[1, 2, 3].map((n) => ({
