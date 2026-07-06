@@ -1,7 +1,7 @@
 import { primaryKey } from 'drizzle-orm/cockroach-core/primary-keys'
-import { boolean, integer, jsonb, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
+import { boolean, integer, jsonb, snakeCase, text, timestamp } from 'drizzle-orm/pg-core'
 
-export const steps = pgTable(
+export const steps = snakeCase.table(
   'steps',
   {
     userEmail: text().notNull(),

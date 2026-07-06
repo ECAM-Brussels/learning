@@ -1,19 +1,16 @@
 {
-  "name": "@learning/db",
+  "name": "api",
   "module": "index.ts",
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@types/bun": "latest",
-    "@types/pg": "^8.20.0",
-    "drizzle-kit": "^1.0.0-rc.4"
+    "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
   "dependencies": {
-    "drizzle-orm": "^1.0.0-rc.4",
-    "pg": "^8.22.0",
+    "@learning/db": "workspace:*",
     "valibot": "^1.4.2"
   }
 }
