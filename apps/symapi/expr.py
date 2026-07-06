@@ -66,6 +66,17 @@ def equivalent(input: TwoExpressions) -> bool:
     return quotient.is_constant() and quotient != 0
 
 
+@router.post("/isExpanded")
+def is_expanded(input: OneExpression) -> bool:
+    expr = input.expr.expr
+    if expr.func != sympy.Add:
+        expr = sympy.Add(0, expr, evaluate=False)
+    for term in args(expr):
+        if sympy.expand(term).func == sympy.Add:
+            return False
+    return True
+
+
 @router.post("/isFactored")
 def is_factored(input: OneExpression) -> bool:
     expr = input.expr.expr

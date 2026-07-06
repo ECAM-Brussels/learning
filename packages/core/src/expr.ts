@@ -124,6 +124,7 @@ function expression(input: Math) {
     },
     isEquivalent: async (other: MaybeAsync<Math>) =>
       symapi.expr.equivalent({ expr1: json, expr2: v.parse(Math, await other).json }),
+    isExpanded: () => symapi.expr.isExpanded({ expr: json }),
     isTrue: () => symapi.expr.isTrue({ expr: json }),
     isFactored: () => symapi.expr.isFactored({ expr: json }),
     isPartialFractionDecomposition: () =>
