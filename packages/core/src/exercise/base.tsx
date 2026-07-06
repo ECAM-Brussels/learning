@@ -1,4 +1,4 @@
-import { FeedbackContext, MathField } from '@learning/components'
+import { Boundary, FeedbackContext, MathField } from '@learning/components'
 import { Dynamic, type JSX } from '@solidjs/web'
 import { mapValues } from 'es-toolkit'
 import {
@@ -8,8 +8,6 @@ import {
   createOptimistic,
   createProjection,
   createSignal,
-  Errored,
-  Loading,
   omit,
   refresh,
   Show,
@@ -96,10 +94,10 @@ export const ExerciseContext = createContext<ExerciseContext>({
     const stored = JSON.parse(localStorage.getItem(id) ?? '[]')
     return stored[position] ?? null
   },
-  save: (id, position, exercise) => {
+  save: (id, position, step) => {
     const stored = JSON.parse(localStorage.getItem(id) ?? '[]')
-    if (position >= stored.length) stored.push(exercise)
-    else stored[position] = exercise
+    if (position >= stored.length) stored.push(step)
+    else stored[position] = step
     localStorage.setItem(id, JSON.stringify(stored))
   },
 })
@@ -181,14 +179,14 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
     }
   })
 
-  const correct = createMemo(() =>
-    step().submitted
-      ? props.correct({
-          data: v.parse(ObjectSchema(props.schema.data as S['data']), step().data),
-          inputs: v.parse(ObjectSchema(props.schema.inputs as S['inputs']), step().state),
-        })
-      : undefined,
-  )
+  const schemas = createMemo(() => ({
+    data: ObjectSchema(props.schema.data as S['data']),
+    inputs: ObjectSchema(props.schema.inputs as S['inputs']),
+  }))
+  const parsedData = createMemo(() => v.parse(schemas().data, step().data))
+  const parsedInputs = createMemo(() => v.parse(schemas().inputs, step().state))
+  const parsed = createMemo(() => ({ data: parsedData(), inputs: parsedInputs() }))
+  const correct = createMemo(() => (step().submitted ? props.correct(parsed()) : undefined))
 
   const fields = createMemo(() =>
     mapValues(props.schema.inputs as S['inputs'], (_schema, name) => {
@@ -216,10 +214,6 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
     }),
   )
 
-  const parsedData = createMemo(() =>
-    v.parse(ObjectSchema(props.schema.data as S['data']), step().data),
-  )
-
   const Self = (attrs: Partial<StepProps<S>>) => <Step {...props} data={step().data} {...attrs} />
 
   const Next = (attrs: { children: typeof props.children }) => (
@@ -227,13 +221,7 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
       when={typeof attrs.children === 'function' && attrs.children}
       fallback={<>{attrs.children}</>}
     >
-      {(next) => (
-        <Dynamic
-          component={next()}
-          data={parsedData()}
-          inputs={v.parse(ObjectSchema(props.schema.inputs as S['inputs']), step().state)}
-        />
-      )}
+      {(next) => <Dynamic component={next()} {...parsed()} />}
     </Show>
   )
 
@@ -246,59 +234,43 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
           },
         }}
       >
-        <Errored
-          fallback={(err) => (
-            <details open>
-              <summary>Erreur</summary>
-              {String(err())}
-            </details>
-          )}
-        >
-          <Loading fallback={<p>Chargement du prompt...</p>}>
-            <Dynamic
-              component={props.prompt}
-              data={parsedData()}
-              inputs={fields()}
-              state={
-                {
-                  get saved() {
-                    return savedStep()?.state ?? {}
-                  },
-                  get current() {
-                    return step().state as Partial<ObjectSchema<S['inputs'], 'input'>>
-                  },
-                  set: (key, value) => {
-                    setStep((prev) => ({
-                      ...prev,
-                      state: {
-                        ...prev.state,
-                        [key]: value instanceof Function ? value(prev.state[key]) : value,
-                      },
-                    }))
-                  },
-                  get correct() {
-                    return correct()
-                  },
-                } satisfies ComponentProps<typeof props.prompt>['state']
-              }
-            />
-          </Loading>
-        </Errored>
+        <Boundary fallback="Chargement du prompt...">
+          <Dynamic
+            component={props.prompt}
+            data={parsedData()}
+            inputs={fields()}
+            state={
+              {
+                get saved() {
+                  return savedStep()?.state ?? {}
+                },
+                get current() {
+                  return step().state as Partial<ObjectSchema<S['inputs'], 'input'>>
+                },
+                set: (key, value) => {
+                  setStep((prev) => ({
+                    ...prev,
+                    state: {
+                      ...prev.state,
+                      [key]: value instanceof Function ? value(prev.state[key]) : value,
+                    },
+                  }))
+                },
+                get correct() {
+                  return correct()
+                },
+              } satisfies ComponentProps<typeof props.prompt>['state']
+            }
+          />
+        </Boundary>
         <Show
           when={step().submitted}
           fallback={
             <button
               class="rounded-lg bg-green-800 px-3 py-2 text-green-100"
               onClick={action(async function* () {
-                const transformed = v.parse(
-                  StoredStep(props.schema.data as S['data'], props.schema.inputs as S['inputs']),
-                  { ...step(), submitted: true },
-                )
-                const correct = await props.correct({
-                  data: v.parse(ObjectSchema(props.schema.data as S['data']), step().data),
-                  inputs: transformed.state,
-                })
-                const newStep = { ...transformed, correct, submitted: true }
+                const correct = await props.correct(parsed())
+                const newStep = { ...step(), correct, submitted: true }
                 setSavedStep(newStep)
                 await exerciseContext.save(context.exerciseId, context.position, newStep)
                 yield
@@ -320,30 +292,20 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
               },
             }}
           >
-            <Errored
-              fallback={(err) => (
-                <details open>
-                  <summary>Erreur</summary>
-                  {String(err())}
-                </details>
-              )}
-            >
-              <Loading fallback="Calcul du feedback">
-                <Show when={props.feedback}>
-                  <Dynamic
-                    component={props.feedback}
-                    data={parsedData()}
-                    inputs={v.parse(ObjectSchema(props.schema.inputs as S['inputs']), step().state)}
-                    correct={step().correct ?? false}
-                    Self={Self}
-                    next={<Next>{props.children}</Next>}
-                  />
-                </Show>
-                <Show when={step().correct}>
-                  <Next>{props.children}</Next>
-                </Show>
-              </Loading>
-            </Errored>
+            <Boundary fallback="Chargement du feedback...">
+              <Show when={props.feedback}>
+                <Dynamic
+                  component={props.feedback}
+                  {...parsed()}
+                  correct={step().correct ?? false}
+                  Self={Self}
+                  next={<Next>{props.children}</Next>}
+                />
+              </Show>
+              <Show when={step().correct}>
+                <Next>{props.children}</Next>
+              </Show>
+            </Boundary>
           </StepContext>
         </Show>
       </FeedbackContext>
@@ -359,8 +321,7 @@ export function createStep<S extends StepSchema>(
 > {
   return (props) => {
     const data = omit(props, 'id', 'class', 'feedback', 'data', 'children') as
-      | ObjectSchema<S['data'], 'input'>
-      | undefined
+      ObjectSchema<S['data'], 'input'> | undefined
     return (
       <Step
         {...step}
