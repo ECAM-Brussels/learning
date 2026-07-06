@@ -54,10 +54,15 @@ def parse_expr(expr: MathJSON) -> sympy.Expr:
                 return sympy.Mul(*args, evaluate=False)
             case "Negate":
                 return -args[0]
+            case "Normal":
+                return args[0].removeO()
             case "Power":
                 return sympy.Pow(*args, evaluate=False)
             case "Rational":
                 return sympy.Rational(*args)
+            case "Series":
+                args[3] = args[3] + 1
+                return sympy.series(*args)
             case "Simplify":
                 return sympy.simplify(args[0])
             case "Subtract":

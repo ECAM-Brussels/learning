@@ -148,6 +148,10 @@ function expression(input: Math) {
       )
       return expression({ json: ce.expr(json, { form: 'raw' }).subs(substitutions).json })
     },
+    taylor: (x: Math, a: Math, n: number) =>
+      expression({
+        json: ['Normal', ['Series', json, v.parse(Math, x).json, v.parse(Math, a).json, n]],
+      }),
     toString: () => (typeof input === 'string' ? input : stringify(json)),
     toJSON: () => (typeof input === 'string' ? input : { json }),
     unit: (unit: Unit) => quantity({ json }, unit),
