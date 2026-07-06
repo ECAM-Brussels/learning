@@ -1,5 +1,6 @@
 export * from './src/Attempt'
 export * from './src/Board'
+export * from './src/Boundary'
 export * from './src/CheckMark'
 export * from './src/Code'
 export * from './src/Environment'
