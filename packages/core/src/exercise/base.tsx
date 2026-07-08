@@ -7,10 +7,11 @@ import {
   createMemo,
   createOptimistic,
   createProjection,
-  createSignal,
+  createStore,
   omit,
   refresh,
   Show,
+  snapshot,
   useContext,
   type Component,
   type ComponentProps,
@@ -168,25 +169,29 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
     () => exerciseContext.fetch(context.exerciseId, context.position) as any,
   )
 
-  const [step, setStep] = createSignal<StoredStep<S['data'], S['inputs']>>(async () => {
-    const data = typeof props.data === 'function' ? await props.data() : props.data
-    return {
-      name: props.name,
-      submitted: false,
-      ...savedStep(),
-      state: savedStep()?.state ?? {},
-      data: { ...data, ...savedStep()?.data },
-    }
-  })
+  const [step, setStep] = createStore(
+    async () => {
+      const saved = savedStep()
+      const data = typeof props.data === 'function' ? await props.data() : props.data
+      return {
+        name: props.name,
+        submitted: false,
+        ...saved,
+        state: saved?.state ?? {},
+        data: { ...data, ...saved?.data },
+      } as StoredStep<S['data'], S['inputs']>
+    },
+    { submitted: false, state: savedStep()?.state ?? {}, data: { ...savedStep()?.data } },
+  )
 
   const schemas = createMemo(() => ({
     data: ObjectSchema(props.schema.data as S['data']),
     inputs: ObjectSchema(props.schema.inputs as S['inputs']),
   }))
-  const parsedData = createMemo(() => v.parse(schemas().data, step().data))
-  const parsedInputs = createMemo(() => v.parse(schemas().inputs, step().state))
+  const parsedData = createMemo(() => v.parse(schemas().data, step.data))
+  const parsedInputs = createMemo(() => v.parse(schemas().inputs, step.state))
   const parsed = createMemo(() => ({ data: parsedData(), inputs: parsedInputs() }))
-  const correct = createMemo(() => (step().submitted ? props.correct(parsed()) : undefined))
+  const correct = createMemo(() => (step.submitted ? props.correct(parsed()) : undefined))
 
   const fields = createMemo(() =>
     mapValues(props.schema.inputs as S['inputs'], (_schema, name) => {
@@ -198,23 +203,19 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
         <Dynamic
           class="rounded border border-gray-200"
           component={component()}
-          value={step().state[name] ?? ''}
+          value={step.state[name] ?? ''}
           onChange={(e: Event & { target: HTMLInputElement }) => {
-            setStep((prev) => ({
-              ...prev,
-              state: {
-                ...prev.state,
-                [name]: e.target.value,
-              },
-            }))
+            setStep((s) => {
+              s.state[name] = e.target.value as any
+            })
           }}
-          readonly={step().submitted}
+          readonly={step.submitted}
         />
       )
     }),
   )
 
-  const Self = (attrs: Partial<StepProps<S>>) => <Step {...props} data={step().data} {...attrs} />
+  const Self = (attrs: Partial<StepProps<S>>) => <Step {...props} data={step.data} {...attrs} />
 
   const Next = (attrs: { children: typeof props.children }) => (
     <Show
@@ -244,17 +245,11 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
                 get saved() {
                   return savedStep()?.state ?? {}
                 },
-                get current() {
-                  return step().state as Partial<ObjectSchema<S['inputs'], 'input'>>
-                },
+                current: step.state,
                 set: (key, value) => {
-                  setStep((prev) => ({
-                    ...prev,
-                    state: {
-                      ...prev.state,
-                      [key]: value instanceof Function ? value(prev.state[key]) : value,
-                    },
-                  }))
+                  setStep((s) => {
+                    s.state[key] = value instanceof Function ? value(s.state[key]) : value
+                  })
                 },
                 get correct() {
                   return correct()
@@ -264,13 +259,17 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
           />
         </Boundary>
         <Show
-          when={step().submitted}
+          when={step.submitted}
           fallback={
             <button
               class="rounded-lg bg-green-800 px-3 py-2 text-green-100"
               onClick={action(async function* () {
                 const correct = await props.correct(parsed())
-                const newStep = { ...step(), correct, submitted: true }
+                setStep((s) => {
+                  s.correct = correct
+                  s.submitted = true
+                })
+                const newStep = snapshot(step)
                 setSavedStep(newStep)
                 await exerciseContext.save(context.exerciseId, context.position, newStep)
                 yield
@@ -297,12 +296,12 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
                 <Dynamic
                   component={props.feedback}
                   {...parsed()}
-                  correct={step().correct ?? false}
+                  correct={step.correct ?? false}
                   Self={Self}
                   next={<Next>{props.children}</Next>}
                 />
               </Show>
-              <Show when={step().correct}>
+              <Show when={step.correct}>
                 <Next>{props.children}</Next>
               </Show>
             </Boundary>
