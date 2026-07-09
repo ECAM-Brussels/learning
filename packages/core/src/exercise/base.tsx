@@ -152,7 +152,7 @@ type StepProps<S extends StepSchema> = {
       }) => JSX.Element)
 }
 
-function useStepContext<S extends StepSchema>(id: () => string) {
+function useStepContext<S extends StepSchema>(id: () => string | undefined) {
   const exerciseContext = useContext(ExerciseContext)
   const stepContext = useContext(StepContext)
 
@@ -169,7 +169,7 @@ function useStepContext<S extends StepSchema>(id: () => string) {
     () => exerciseContext.fetch(context.exerciseId, context.position) as any,
   )
 
-  const saveStep = async (newStep: StoredStep<S['data'], S['inputs']>) =>
+  const saveStep = (newStep: StoredStep<S['data'], S['inputs']>) =>
     exerciseContext.save(context.exerciseId, context.position, newStep)
 
   const StepBoundary = (props: {
@@ -204,9 +204,7 @@ function useStepContext<S extends StepSchema>(id: () => string) {
 }
 
 export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }) {
-  const { StepBoundary, saveStep, savedStep, setSavedStep } = useStepContext<S>(
-    () => props.id ?? '',
-  )
+  const { StepBoundary, saveStep, savedStep, setSavedStep } = useStepContext<S>(() => props.id)
   const [step, setStep] = createStore(
     async () => {
       const saved = savedStep()
