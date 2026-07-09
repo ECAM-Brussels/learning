@@ -247,6 +247,37 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
     )),
   )
 
+  const promptState = {
+    get saved() {
+      return savedStep()?.state ?? {}
+    },
+    get current() {
+      return step.state
+    },
+    set: (key, value) => {
+      setStep((s) => {
+        s.state[key] = value instanceof Function ? value(s.state[key]) : value
+      })
+    },
+    get correct() {
+      return correct()
+    },
+  } satisfies ComponentProps<typeof props.prompt>['state']
+
+  const submit = action(async function* () {
+    const correct = await props.correct(parsed())
+    setStep((s) => {
+      s.correct = correct
+      s.submitted = true
+    })
+    const newStep = snapshot(step)
+    setSavedStep(newStep)
+    await saveStep(newStep)
+    yield
+    refresh(savedStep)
+    refresh(step)
+  })
+
   const Self = (attrs: Partial<StepProps<S>>) => <Step {...props} data={step.data} {...attrs} />
 
   const Next = (attrs: { children: typeof props.children }) => (
@@ -265,57 +296,25 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
           component={props.prompt}
           data={parsedData()}
           inputs={fields()}
-          state={
-            {
-              get saved() {
-                return savedStep()?.state ?? {}
-              },
-              current: step.state,
-              set: (key, value) => {
-                setStep((s) => {
-                  s.state[key] = value instanceof Function ? value(s.state[key]) : value
-                })
-              },
-              get correct() {
-                return correct()
-              },
-            } satisfies ComponentProps<typeof props.prompt>['state']
-          }
+          state={promptState}
         />
       </StepBoundary>
       <Show
         when={step.submitted}
         fallback={
-          <button
-            class="rounded-lg bg-green-800 px-3 py-2 text-green-100"
-            onClick={action(async function* () {
-              const correct = await props.correct(parsed())
-              setStep((s) => {
-                s.correct = correct
-                s.submitted = true
-              })
-              const newStep = snapshot(step)
-              setSavedStep(newStep)
-              await saveStep(newStep)
-              yield
-              refresh(savedStep)
-              refresh(step)
-            })}
-          >
+          <button class="block rounded-lg bg-green-800 px-3 py-2 text-green-100" onClick={submit}>
             Soumettre
           </button>
         }
       >
         <StepBoundary correct={correct} fallback="Chargement du feedback..." offset={1}>
-          <Show when={props.feedback}>
-            <Dynamic
-              component={props.feedback}
-              {...parsed()}
-              correct={step.correct ?? false}
-              Self={Self}
-              next={<Next>{props.children}</Next>}
-            />
-          </Show>
+          <Dynamic
+            component={props.feedback}
+            {...parsed()}
+            correct={step.correct ?? false}
+            Self={Self}
+            next={<Next>{props.children}</Next>}
+          />
           <Show when={step.correct}>
             <Next>{props.children}</Next>
           </Show>
