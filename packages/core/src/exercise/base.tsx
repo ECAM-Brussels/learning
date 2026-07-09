@@ -6,7 +6,6 @@ import {
   createContext,
   createMemo,
   createOptimistic,
-  createProjection,
   createStore,
   omit,
   refresh,
@@ -153,22 +152,61 @@ type StepProps<S extends StepSchema> = {
       }) => JSX.Element)
 }
 
-export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }) {
+function useStepContext<S extends StepSchema>(id: () => string) {
   const exerciseContext = useContext(ExerciseContext)
   const stepContext = useContext(StepContext)
 
-  const context: StepContext = createProjection(
-    () => ({
-      exerciseId: props.id ?? stepContext?.exerciseId ?? '',
-      position: stepContext?.position ?? 0,
-    }),
-    { exerciseId: '', position: 0 },
-  )
+  const context: StepContext = {
+    get exerciseId() {
+      return id() ?? stepContext?.exerciseId ?? ''
+    },
+    get position() {
+      return stepContext?.position ?? 0
+    },
+  }
 
   const [savedStep, setSavedStep] = createOptimistic<StoredStep<S['data'], S['inputs']>>(
     () => exerciseContext.fetch(context.exerciseId, context.position) as any,
   )
 
+  const saveStep = async (newStep: StoredStep<S['data'], S['inputs']>) =>
+    exerciseContext.save(context.exerciseId, context.position, newStep)
+
+  const StepBoundary = (props: {
+    correct: () => boolean | undefined
+    fallback?: JSX.Element
+    children?: JSX.Element
+    offset?: number
+  }) => (
+    <StepContext
+      value={{
+        get exerciseId() {
+          return context.exerciseId
+        },
+        get position() {
+          return context.position + (props.offset ?? 0)
+        },
+      }}
+    >
+      <FeedbackContext
+        value={{
+          get correct() {
+            return props.correct()
+          },
+        }}
+      >
+        <Boundary fallback={props.fallback}>{props.children}</Boundary>
+      </FeedbackContext>
+    </StepContext>
+  )
+
+  return { StepBoundary, saveStep, savedStep, setSavedStep }
+}
+
+export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }) {
+  const { StepBoundary, saveStep, savedStep, setSavedStep } = useStepContext<S>(
+    () => props.id ?? '',
+  )
   const [step, setStep] = createStore(
     async () => {
       const saved = savedStep()
@@ -194,25 +232,19 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
   const correct = createMemo(() => (step.submitted ? props.correct(parsed()) : undefined))
 
   const fields = createMemo(() =>
-    mapValues(props.schema.inputs as S['inputs'], (_schema, name) => {
-      const component = createMemo(() => {
-        if (_schema === 'expr') return MathField
-        return 'input'
-      })
-      return (
-        <Dynamic
-          class="rounded border border-gray-200"
-          component={component()}
-          value={step.state[name] ?? ''}
-          onChange={(e: Event & { target: HTMLInputElement }) => {
-            setStep((s) => {
-              s.state[name] = e.target.value as any
-            })
-          }}
-          readonly={step.submitted}
-        />
-      )
-    }),
+    mapValues(props.schema.inputs as S['inputs'], (schema, name) => (
+      <Dynamic
+        class="rounded border border-gray-200"
+        component={schema === 'expr' ? MathField : 'input'}
+        value={step.state[name] ?? ''}
+        onChange={(e: Event & { target: HTMLInputElement }) => {
+          setStep((s) => {
+            s.state[name] = e.target.value as any
+          })
+        }}
+        readonly={step.submitted}
+      />
+    )),
   )
 
   const Self = (attrs: Partial<StepProps<S>>) => <Step {...props} data={step.data} {...attrs} />
@@ -226,32 +258,9 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
     </Show>
   )
 
-  const Context = (props: { fallback?: JSX.Element; children?: JSX.Element; offset?: number }) => (
-    <StepContext
-      value={{
-        get exerciseId() {
-          return context.exerciseId
-        },
-        get position() {
-          return context.position + (props.offset ?? 0)
-        },
-      }}
-    >
-      <FeedbackContext
-        value={{
-          get correct() {
-            return correct()
-          },
-        }}
-      >
-        <Boundary fallback={props.fallback}>{props.children}</Boundary>
-      </FeedbackContext>
-    </StepContext>
-  )
-
   return (
     <div class={props.class}>
-      <Context fallback="Chargement de l'exercice...">
+      <StepBoundary correct={correct} fallback="Chargement de l'exercice...">
         <Dynamic
           component={props.prompt}
           data={parsedData()}
@@ -273,7 +282,7 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
             } satisfies ComponentProps<typeof props.prompt>['state']
           }
         />
-      </Context>
+      </StepBoundary>
       <Show
         when={step.submitted}
         fallback={
@@ -287,7 +296,7 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
               })
               const newStep = snapshot(step)
               setSavedStep(newStep)
-              await exerciseContext.save(context.exerciseId, context.position, newStep)
+              await saveStep(newStep)
               yield
               refresh(savedStep)
               refresh(step)
@@ -297,7 +306,7 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
           </button>
         }
       >
-        <Context fallback="Chargement du feedback..." offset={1}>
+        <StepBoundary correct={correct} fallback="Chargement du feedback..." offset={1}>
           <Show when={props.feedback}>
             <Dynamic
               component={props.feedback}
@@ -310,7 +319,7 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
           <Show when={step.correct}>
             <Next>{props.children}</Next>
           </Show>
-        </Context>
+        </StepBoundary>
       </Show>
     </div>
   )
