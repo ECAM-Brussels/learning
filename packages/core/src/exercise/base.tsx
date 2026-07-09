@@ -156,21 +156,15 @@ function useStepContext<S extends StepSchema>(id: () => string | undefined) {
   const exerciseContext = useContext(ExerciseContext)
   const stepContext = useContext(StepContext)
 
-  const context: StepContext = {
-    get exerciseId() {
-      return id() ?? stepContext?.exerciseId ?? ''
-    },
-    get position() {
-      return stepContext?.position ?? 0
-    },
-  }
+  const exerciseId = createMemo(() => id() ?? stepContext?.exerciseId ?? '')
+  const position = createMemo(() => stepContext?.position ?? 0)
 
   const [savedStep, setSavedStep] = createOptimistic<StoredStep<S['data'], S['inputs']>>(
-    () => exerciseContext.fetch(context.exerciseId, context.position) as any,
+    () => exerciseContext.fetch(exerciseId(), position()) as any,
   )
 
   const saveStep = (newStep: StoredStep<S['data'], S['inputs']>) =>
-    exerciseContext.save(context.exerciseId, context.position, newStep)
+    exerciseContext.save(exerciseId(), position(), newStep)
 
   const StepBoundary = (props: {
     correct: () => boolean | undefined
@@ -178,16 +172,7 @@ function useStepContext<S extends StepSchema>(id: () => string | undefined) {
     children?: JSX.Element
     offset?: number
   }) => (
-    <StepContext
-      value={{
-        get exerciseId() {
-          return context.exerciseId
-        },
-        get position() {
-          return context.position + (props.offset ?? 0)
-        },
-      }}
-    >
+    <StepContext value={{ exerciseId: exerciseId(), position: position() + (props.offset ?? 0) }}>
       <FeedbackContext
         value={{
           get correct() {
