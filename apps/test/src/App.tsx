@@ -11,7 +11,7 @@ export default () => (
       id="automatic-differentiation"
       schema={{ data: { expr: 'expr' }, inputs: { attempt: 'expr' } }}
       data={{ expr: tex.raw`(x + \epsilon)^2` }}
-      correct={(ctx) => ctx.inputs.attempt.isEqual(ctx.data.expr)}
+      grade={(ctx) => ctx.inputs.attempt.isEqual(ctx.data.expr)}
       prompt={(ctx) => (
         <>
           <p>Développez l'expression {tex`${ctx.data.expr}`}</p>
@@ -31,7 +31,7 @@ export default () => (
           <Exercise
             schema={{ data: { expr: 'expr' }, inputs: { attempt: 'expr' } }}
             data={ctx.data}
-            correct={(ctx) => ctx.inputs.attempt.isEqual(ctx.data.expr.taylor('\\epsilon', 0, 1))}
+            grade={(ctx) => ctx.inputs.attempt.isEqual(ctx.data.expr.taylor('\\epsilon', 0, 1))}
             prompt={(ctx) => (
               <>
                 <Attempt>
@@ -47,7 +47,7 @@ export default () => (
               {tex`\epsilon = 0`}:
             </p>
             {tex`
-              \underbrace{${ctx.data.expr}}_{f(x + \epsilon)}
+              ${ctx.data.expr}
               = \underbrace{${ctx.data.expr.subs({ epsilon: 0 }).simplify()}}_{f(x)}
               + \underbrace{${ctx.data.expr.diff().subs({ epsilon: 0 }).simplify()}}_{f'(x)} \epsilon
             `}
@@ -90,7 +90,7 @@ export default () => (
       id="standalone"
       schema={{ data: {}, inputs: { attempt: 'expr' } }}
       data={{}}
-      correct={(ctx) => ctx.inputs.attempt.isEqual(4)}
+      grade={(ctx) => ctx.inputs.attempt.isEqual(4)}
       prompt={(ctx) => <Attempt>2 + 2 = {ctx.inputs.attempt}</Attempt>}
     >
       {(ctx) => <p>{JSON.stringify(ctx, null, 2)}</p>}

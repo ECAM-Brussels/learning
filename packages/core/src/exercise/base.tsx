@@ -19,6 +19,21 @@ import * as v from 'valibot'
 import { expr, Expression } from '../expr'
 
 type MaybeAsync<T> = T | Promise<T>
+type Json = string | number | boolean | null | { [key: string]: Json } | Json[]
+
+const Json: v.GenericSchema<Json> = v.lazy(() =>
+  v.union([
+    v.string(),
+    v.number(),
+    v.boolean(),
+    v.null(),
+    v.record(v.string(), Json),
+    v.array(Json),
+  ]),
+)
+
+const JsonObject = v.record(v.string(), Json)
+type JsonObject = v.InferInput<typeof JsonObject>
 
 const CustomSchemas = {
   expr: v.union([
@@ -73,6 +88,7 @@ function StoredStep<D extends RawShape, I extends RawShape>(data: D, inputs: I) 
     state: v.partial(ObjectSchema(inputs)),
     submitted: v.optional(v.boolean(), false),
     correct: v.optional(v.boolean()),
+    feedback: v.optional(v.object({}), {}),
   })
 }
 
@@ -109,17 +125,17 @@ type StepContext = {
 const StepContext = createContext<StepContext | null>(null)
 
 type StepSchema = { inputs: RawShape; data: RawShape }
-type StepProps<S extends StepSchema> = {
+type StepProps<S extends StepSchema, F extends JsonObject> = {
   name?: string
   schema: S
   class?: string
   data:
     | ObjectSchema<NoInfer<S>['data'], 'input'>
     | (() => MaybeAsync<ObjectSchema<NoInfer<S>['data'], 'input'>>)
-  correct: (ctx: {
+  grade: (ctx: {
     data: ObjectSchema<NoInfer<S>['data'], 'output'>
     inputs: ObjectSchema<NoInfer<S>['inputs'], 'output'>
-  }) => MaybeAsync<boolean>
+  }) => MaybeAsync<boolean | [boolean, F]>
   prompt: (props: {
     data: ObjectSchema<NoInfer<S>['data'], 'output'>
     inputs: { [K in keyof S['inputs']]: JSX.Element }
@@ -140,8 +156,9 @@ type StepProps<S extends StepSchema> = {
   feedback?: (props: {
     data: ObjectSchema<NoInfer<S>['data'], 'output'>
     inputs: ObjectSchema<NoInfer<S>['inputs'], 'output'>
+    feedback: F
     correct: boolean
-    Self: Component<Partial<StepProps<S>>>
+    Self: Component<Partial<StepProps<S, F>>>
     next: JSX.Element
   }) => JSX.Element
   children?:
@@ -188,7 +205,9 @@ function useStepContext<S extends StepSchema>(id: () => string | undefined) {
   return { StepBoundary, saveStep, savedStep, setSavedStep }
 }
 
-export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }) {
+export function Step<S extends StepSchema, F extends JsonObject>(
+  props: StepProps<S, F> & { id?: string },
+) {
   const { StepBoundary, saveStep, savedStep, setSavedStep } = useStepContext<S>(() => props.id)
   const [step, setStep] = createStore(
     async () => {
@@ -212,7 +231,6 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
   const parsedData = createMemo(() => v.parse(schemas().data, step.data))
   const parsedInputs = createMemo(() => v.parse(schemas().inputs, step.state))
   const parsed = createMemo(() => ({ data: parsedData(), inputs: parsedInputs() }))
-  const correct = createMemo(() => (step.submitted ? props.correct(parsed()) : undefined))
 
   const fields = createMemo(() =>
     mapValues(props.schema.inputs as S['inputs'], (schema, name) => (
@@ -243,15 +261,16 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
       })
     },
     get correct() {
-      return correct()
+      return step.correct
     },
   } satisfies ComponentProps<typeof props.prompt>['state']
 
   const submit = action(async function* () {
-    const correct = await props.correct(parsed())
+    const [correct, feedback] = normalizeGrade(await props.grade(parsed()))
     setStep((s) => {
       s.correct = correct
       s.submitted = true
+      s.feedback = feedback
     })
     const newStep = snapshot(step)
     setSavedStep(newStep)
@@ -261,7 +280,7 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
     refresh(step)
   })
 
-  const Self = (attrs: Partial<StepProps<S>>) => <Step {...props} data={step.data} {...attrs} />
+  const Self = (attrs: Partial<StepProps<S, F>>) => <Step {...props} data={step.data} {...attrs} />
 
   const Next = (attrs: { children: typeof props.children }) => (
     <Show
@@ -274,7 +293,7 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
 
   return (
     <div class={props.class}>
-      <StepBoundary correct={correct} fallback="Chargement de l'exercice...">
+      <StepBoundary correct={() => step.correct} fallback="Chargement de l'exercice...">
         <Dynamic
           component={props.prompt}
           data={parsedData()}
@@ -290,11 +309,12 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
           </button>
         }
       >
-        <StepBoundary correct={correct} fallback="Chargement du feedback..." offset={1}>
+        <StepBoundary correct={() => step.correct} fallback="Chargement du feedback..." offset={1}>
           <Dynamic
             component={props.feedback}
             {...parsed()}
             correct={step.correct ?? false}
+            feedback={step.feedback as F}
             Self={Self}
             next={<Next>{props.children}</Next>}
           />
@@ -307,11 +327,11 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
   )
 }
 
-export function createStep<S extends StepSchema>(
-  step: Omit<StepProps<S>, 'data'>,
+export function createStep<S extends StepSchema, F extends JsonObject>(
+  step: Omit<StepProps<S, F>, 'data'>,
 ): Component<
-  { id?: string } & Pick<StepProps<S>, 'class' | 'feedback' | 'children'> &
-    (ObjectSchema<S['data'], 'input'> | { data: StepProps<S>['data'] })
+  { id?: string } & Pick<StepProps<S, F>, 'class' | 'feedback' | 'children'> &
+    (ObjectSchema<S['data'], 'input'> | { data: StepProps<S, F>['data'] })
 > {
   return (props) => {
     const data = omit(props, 'id', 'class', 'feedback', 'data', 'children') as
@@ -327,4 +347,13 @@ export function createStep<S extends StepSchema>(
       />
     )
   }
+}
+
+function normalizeGrade<T extends boolean | [boolean, JsonObject]>(
+  result: T,
+): T extends boolean ? [boolean, {}] : T {
+  if (typeof result === 'boolean') {
+    return [result, {}] as any
+  }
+  return result as any
 }

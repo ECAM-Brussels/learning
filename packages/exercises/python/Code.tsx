@@ -28,7 +28,7 @@ export const PythonCode = createStep({
     },
     inputs: { code: v.string() },
   },
-  correct: async (ctx) => {
+  grade: async (ctx) => {
     const { tests, codeCheck } = await allKeyed({
       tests: mapAsync(ctx.data.tests, (t) => python.test(ctx.inputs.code, t.test, t.check)),
       codeCheck: ctx.data.check?.(ctx.inputs.code),
