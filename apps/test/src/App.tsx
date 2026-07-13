@@ -25,8 +25,8 @@ export default () => (
       {(ctx) => (
         <>
           <p>
-            Correct! Maintenant, imaginons que nous sommes dans un monde où {tex`\epsilon > 0`} mais{' '}
-            {tex`\epsilon^2 = 0`}. Simplifiez votre expression en utilisant cette hypothèse.
+            Correct! Maintenant, imaginons que nous sommes dans un monde où {tex`\epsilon \neq 0`}{' '}
+            mais {tex`\epsilon^2 = 0`}. Simplifiez votre expression en utilisant cette hypothèse.
           </p>
           <Exercise
             schema={{ data: { expr: 'expr' }, inputs: { attempt: 'expr' } }}
