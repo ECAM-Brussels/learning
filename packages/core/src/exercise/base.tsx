@@ -5,7 +5,7 @@ import {
   action,
   createContext,
   createMemo,
-  createOptimistic,
+  createOptimisticStore,
   createStore,
   omit,
   refresh,
@@ -169,22 +169,37 @@ type StepProps<S extends StepSchema, F extends JsonObject> = {
       }) => JSX.Element)
 }
 
-function useStepContext<S extends StepSchema>(id: () => string | undefined) {
+function useStepContext<S extends StepSchema>(
+  id: () => string | undefined,
+  data: () => StepProps<S, any>['data'],
+) {
   const exerciseContext = useContext(ExerciseContext)
   const stepContext = useContext(StepContext)
 
   const exerciseId = createMemo(() => id() ?? stepContext?.exerciseId ?? '')
   const position = createMemo(() => stepContext?.position ?? 0)
 
-  const [savedStep, setSavedStep] = createOptimistic<StoredStep<S['data'], S['inputs']>>(
-    () => exerciseContext.fetch(exerciseId(), position()) as any,
+  const [step, setStep] = createOptimisticStore<StoredStep<S['data'], S['inputs']>>(
+    async () => {
+      const saved = await exerciseContext.fetch(exerciseId(), position())
+      const dataValue = data()
+      return {
+        submitted: false,
+        state: {},
+        ...saved,
+        data: {
+          ...(typeof dataValue === 'function' ? await dataValue() : dataValue),
+          ...saved?.data,
+        },
+      } as StoredStep<S['data'], S['inputs']>
+    },
+    { submitted: false, state: {}, data: {} } as any,
   )
 
   const saveStep = (newStep: StoredStep<S['data'], S['inputs']>) =>
     exerciseContext.save(exerciseId(), position(), newStep)
 
   const StepBoundary = (props: {
-    correct: () => boolean | undefined
     fallback?: JSX.Element
     children?: JSX.Element
     offset?: number
@@ -193,7 +208,7 @@ function useStepContext<S extends StepSchema>(id: () => string | undefined) {
       <FeedbackContext
         value={{
           get correct() {
-            return props.correct()
+            return step.correct
           },
         }}
       >
@@ -202,26 +217,20 @@ function useStepContext<S extends StepSchema>(id: () => string | undefined) {
     </StepContext>
   )
 
-  return { StepBoundary, saveStep, savedStep, setSavedStep }
+  return { StepBoundary, saveStep, step, setStep }
 }
 
 export function Step<S extends StepSchema, F extends JsonObject>(
   props: StepProps<S, F> & { id?: string },
 ) {
-  const { StepBoundary, saveStep, savedStep, setSavedStep } = useStepContext<S>(() => props.id)
-  const [step, setStep] = createStore(
-    async () => {
-      const saved = savedStep()
-      const data = typeof props.data === 'function' ? await props.data() : props.data
-      return {
-        name: props.name,
-        submitted: false,
-        ...saved,
-        state: saved?.state ?? {},
-        data: { ...data, ...saved?.data },
-      } as StoredStep<S['data'], S['inputs']>
-    },
-    { submitted: false, state: savedStep()?.state ?? {}, data: { ...savedStep()?.data } },
+  const { StepBoundary, saveStep, step, setStep } = useStepContext<S>(
+    () => props.id,
+    () => props.data,
+  )
+
+  const [state, setState] = createStore<Partial<ObjectSchema<S['inputs'], 'input'>>>(
+    () => step.state,
+    {} as any,
   )
 
   const schemas = createMemo(() => ({
@@ -229,7 +238,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     inputs: ObjectSchema(props.schema.inputs as S['inputs']),
   }))
   const parsedData = createMemo(() => v.parse(schemas().data, step.data))
-  const parsedInputs = createMemo(() => v.parse(schemas().inputs, step.state))
+  const parsedInputs = createMemo(() => v.parse(schemas().inputs, state))
   const parsed = createMemo(() => ({ data: parsedData(), inputs: parsedInputs() }))
 
   const fields = createMemo(() =>
@@ -239,8 +248,8 @@ export function Step<S extends StepSchema, F extends JsonObject>(
         component={schema === 'expr' ? MathField : 'input'}
         value={step.state[name] ?? ''}
         onChange={(e: Event & { target: HTMLInputElement }) => {
-          setStep((s) => {
-            s.state[name] = e.target.value as any
+          setState((s) => {
+            s[name] = e.target.value as any
           })
         }}
         readonly={step.submitted}
@@ -250,14 +259,14 @@ export function Step<S extends StepSchema, F extends JsonObject>(
 
   const promptState = {
     get saved() {
-      return savedStep()?.state ?? {}
-    },
-    get current() {
       return step.state
     },
+    get current() {
+      return state
+    },
     set: (key, value) => {
-      setStep((s) => {
-        s.state[key] = value instanceof Function ? value(s.state[key]) : value
+      setState((s) => {
+        s[key] = value instanceof Function ? value(s[key]) : value
       })
     },
     get correct() {
@@ -266,17 +275,18 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   } satisfies ComponentProps<typeof props.prompt>['state']
 
   const submit = action(async function* () {
+    setStep((s) => {
+      s.state = state as ObjectSchema<S['inputs'], 'input'>
+      s.submitted = true
+    })
     const [correct, feedback] = normalizeGrade(await props.grade(parsed()))
     setStep((s) => {
       s.correct = correct
-      s.submitted = true
       s.feedback = feedback
     })
     const newStep = snapshot(step)
-    setSavedStep(newStep)
     await saveStep(newStep)
     yield
-    refresh(savedStep)
     refresh(step)
   })
 
@@ -293,7 +303,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
 
   return (
     <div class={props.class}>
-      <StepBoundary correct={() => step.correct} fallback="Chargement de l'exercice...">
+      <StepBoundary fallback="Chargement de l'exercice...">
         <Dynamic
           component={props.prompt}
           data={parsedData()}
@@ -309,7 +319,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
           </button>
         }
       >
-        <StepBoundary correct={() => step.correct} fallback="Chargement du feedback..." offset={1}>
+        <StepBoundary fallback="Chargement du feedback..." offset={1}>
           <Dynamic
             component={props.feedback}
             {...parsed()}
