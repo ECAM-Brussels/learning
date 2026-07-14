@@ -1,4 +1,5 @@
 import { Pagination, Scope } from '@learning/components'
+import { useLocation } from '@solidjs/router'
 import { Dynamic, type JSX } from '@solidjs/web'
 import { range } from 'es-toolkit'
 import { createMemo, refresh, type Component } from 'solid-js'
@@ -65,8 +66,8 @@ type Props<T extends object> = {
  * />
  */
 export function Sequence<T extends object>(props: Props<T>) {
-  const prefix = () =>
-    `sequence:${window.location.pathname}:${window.location.search}:${props.id ?? ''}:`
+  const location = useLocation()
+  const prefix = () => `sequence:${location.pathname}:${location.search}:${props.id}:`
   const key = (i: number) => `${prefix()}:${i}`
   const keys = createMemo(() => Object.keys(localStorage).filter((k) => k.startsWith(prefix())))
   const length = createMemo(() => ('children' in props ? props.children.length : keys().length + 1))
@@ -85,9 +86,15 @@ export function Sequence<T extends object>(props: Props<T>) {
       {range(length()).map((i) => () => (
         <ExerciseContext
           value={{
-            fetch: () => JSON.parse(localStorage.getItem(key(i)) ?? 'null'),
-            save: (_id, exercise) => {
-              localStorage.setItem(key(i), JSON.stringify(exercise))
+            fetch: (_id, position) => {
+              const exercise = JSON.parse(localStorage.getItem(key(i)) ?? '[]')
+              return exercise[position] ?? null
+            },
+            save: (_id, position, step) => {
+              const stored = JSON.parse(localStorage.getItem(key(i)) ?? '[]')
+              if (position >= stored.length) stored.push(step)
+              else stored[position] = step
+              localStorage.setItem(key(i), JSON.stringify(stored))
               refresh(keys)
               refresh(progress)
             },

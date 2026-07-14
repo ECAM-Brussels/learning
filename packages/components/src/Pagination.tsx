@@ -28,15 +28,15 @@ export function Pagination(props: {
               class={[
                 'cursor-pointer border-gray-50 px-3 py-1 shadow',
                 {
-                  'border border-sky-700 font-bold text-sky-700': current() === i() + 1,
-                  'text-gray-400': current() !== i() + 1,
-                  'bg-green-100': props.progress?.[i()] === true,
-                  'bg-red-100': props.progress?.[i()] === false,
+                  'border border-sky-700 font-bold text-sky-700': current() === i + 1,
+                  'text-gray-400': current() !== i + 1,
+                  'bg-green-100': props.progress?.[i] === true,
+                  'bg-red-100': props.progress?.[i] === false,
                 },
               ]}
-              onClick={() => setCurrent(i() + 1)}
+              onClick={() => setCurrent(i + 1)}
             >
-              {i() + 1}
+              {i + 1}
             </button>
           )}
         </For>

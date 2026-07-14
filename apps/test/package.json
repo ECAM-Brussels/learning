@@ -20,6 +20,7 @@
     "@learning/components": "workspace:*",
     "@learning/core": "workspace:*",
     "@learning/exercises": "workspace:*",
+    "@solidjs/router": "catalog:",
     "@solidjs/web": "catalog:",
     "@tailwindcss/vite": "^4.2.2",
     "dedent": "^1.7.2",
