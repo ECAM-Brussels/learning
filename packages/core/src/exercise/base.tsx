@@ -196,7 +196,7 @@ function useStepContext<S extends StepSchema>(
     { submitted: false, state: {}, data: {} } as any,
   )
 
-  const saveStep = (newStep: StoredStep<S['data'], S['inputs']>) =>
+  const saveStep = (newStep: StoredStep<S['data'], S['inputs'], 'output'>) =>
     exerciseContext.save(exerciseId(), position(), newStep)
 
   const StepBoundary = (props: {
@@ -284,8 +284,13 @@ export function Step<S extends StepSchema, F extends JsonObject>(
       s.correct = correct
       s.feedback = feedback
     })
-    const newStep = snapshot(step)
-    await saveStep(newStep)
+    await saveStep(
+      // Parsing is important here to ensure the schemas decide how to be serialized
+      v.parse(
+        StoredStep(props.schema.data as S['data'], props.schema.inputs as S['inputs']),
+        snapshot(step),
+      ),
+    )
     yield
     refresh(step)
   })
