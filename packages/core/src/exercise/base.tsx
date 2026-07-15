@@ -293,6 +293,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     )
     yield
     refresh(step)
+    refresh(state)
   })
 
   const Self = (attrs: Partial<StepProps<S, F>>) => <Step {...props} data={step.data} {...attrs} />
