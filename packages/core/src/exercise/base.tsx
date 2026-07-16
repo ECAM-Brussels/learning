@@ -125,49 +125,58 @@ type StepContext = {
 const StepContext = createContext<StepContext | null>(null)
 
 type StepSchema = { inputs: RawShape; data: RawShape }
-type StepProps<S extends StepSchema, F extends JsonObject> = {
+
+type Infer<T, U extends 'input' | 'output' = 'input'> =
+  T extends v.BaseSchema<any, any, any>
+    ? U extends 'output'
+      ? v.InferOutput<T>
+      : v.InferInput<T>
+    : T
+
+type StepBaseProps<D, I extends v.ObjectSchema<any, any>, F extends JsonObject> = {
   name?: string
-  schema: S
   class?: string
-  data:
-    | ObjectSchema<NoInfer<S>['data'], 'input'>
-    | (() => MaybeAsync<ObjectSchema<NoInfer<S>['data'], 'input'>>)
+  data: Infer<D, 'input'> | (() => MaybeAsync<Infer<D, 'input'>>)
   grade: (ctx: {
-    data: ObjectSchema<NoInfer<S>['data'], 'output'>
-    inputs: ObjectSchema<NoInfer<S>['inputs'], 'output'>
+    data: Infer<NoInfer<D>, 'output'>
+    inputs: v.InferOutput<NoInfer<I>>
   }) => MaybeAsync<boolean | [boolean, F]>
   prompt: (props: {
-    data: ObjectSchema<NoInfer<S>['data'], 'output'>
-    inputs: { [K in keyof S['inputs']]: JSX.Element }
+    data: Infer<NoInfer<D>, 'output'>
+    inputs: { [K in keyof NoInfer<I>['entries']]: JSX.Element }
     state: {
-      saved?: ObjectSchema<NoInfer<S>['inputs'], 'input'>
-      current: Partial<ObjectSchema<NoInfer<S>['inputs'], 'input'>>
-      set: <K extends keyof S['inputs']>(
+      saved?: v.InferInput<NoInfer<I>>
+      current: Partial<v.InferInput<NoInfer<I>>>
+      set: <K extends keyof NoInfer<I>['entries']>(
         key: K,
         value:
-          | ObjectSchema<NoInfer<S>['inputs'], 'input'>[K]
-          | ((
-              prev: ObjectSchema<NoInfer<S>['inputs'], 'input'>[K] | undefined,
-            ) => ObjectSchema<NoInfer<S>['inputs'], 'input'>[K]),
+          | v.InferInput<NoInfer<I>>[K]
+          | ((prev: v.InferInput<NoInfer<I>>[K] | undefined) => v.InferInput<NoInfer<I>>[K]),
       ) => void
       correct?: boolean
     }
   }) => JSX.Element
   feedback?: (props: {
-    data: ObjectSchema<NoInfer<S>['data'], 'output'>
-    inputs: ObjectSchema<NoInfer<S>['inputs'], 'output'>
+    data: Infer<NoInfer<D>, 'output'>
+    inputs: v.InferOutput<NoInfer<I>>
     feedback: F
     correct: boolean
-    Self: Component<Partial<StepProps<S, F>>>
+    Self: Component<Partial<StepBaseProps<NoInfer<D>, I, F>>>
     next: JSX.Element
   }) => JSX.Element
   children?:
     | JSX.Element
     | ((props: {
-        data: ObjectSchema<S['data'], 'output'>
-        inputs: ObjectSchema<S['inputs'], 'output'>
+        data: Infer<NoInfer<D>, 'output'>
+        inputs: v.InferOutput<NoInfer<I>>
       }) => JSX.Element)
 }
+
+type StepProps<S extends StepSchema, F extends JsonObject> = StepBaseProps<
+  ReturnType<typeof ObjectSchema<NoInfer<S>['data']>>,
+  ReturnType<typeof ObjectSchema<NoInfer<S>['inputs']>>,
+  F
+> & { schema: S }
 
 function useStepContext<S extends StepSchema>(
   id: () => string | undefined,
