@@ -31,5 +31,8 @@
     "paths": {
       "@learning/exercises/*": ["packages/exercises/*"]
     }
+  },
+  "mdx": {
+    "checkMdx": true
   }
 }

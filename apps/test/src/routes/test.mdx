@@ -1,0 +1,47 @@
+import { Factor } from '@learning/exercises/math/algebra/Factor'
+import { Attempt, Page } from '@learning/components'
+import { expr, tex, Exercise } from '@learning/core'
+import { Show } from 'solid-js'
+import { Dynamic } from '@solidjs/web'
+export default Page
+
+# Hello
+
+**bonjour**
+
+How are you?
+
+<Factor expr="x^2 - 1" />
+
+```python
+from sympy import *
+```
+
+$x$
+
+{tex`${expr('x^2').diff()}`}
+
+<Exercise
+  id="example-question"
+  schema={{ data: { question: 'expr' }, inputs: { attempt: 'expr' } }}
+  data={{ question: '2 + 2' }}
+  prompt={(ctx) => (
+    <Attempt>
+      {tex`${ctx.data.question} =`} {ctx.inputs.attempt}
+    </Attempt>
+  )}
+  grade={(ctx) => ctx.inputs.attempt.isEqual(4)}
+  feedback={(ctx) => (
+    <Show
+      when={ctx.correct}
+      fallback={
+        <>
+          <p>Essayez encore!</p>
+          <Dynamic component={ctx.Self} />
+        </>
+      }
+    >
+      <p>Bravo! La réponse est correcte.</p>
+    </Show>
+  )}
+/>

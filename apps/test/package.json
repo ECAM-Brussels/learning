@@ -12,14 +12,17 @@
   "license": "MIT",
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.19",
+    "satteri": "^0.9.5",
     "typescript": "^5.7.2",
     "vite": "^8.0.2",
+    "vite-plugin-satteri": "^0.2.15",
     "vite-plugin-solid": "catalog:"
   },
   "dependencies": {
     "@learning/components": "workspace:*",
     "@learning/core": "workspace:*",
     "@learning/exercises": "workspace:*",
+    "@learning/mdx": "workspace:*",
     "@solidjs/router": "catalog:",
     "@solidjs/web": "catalog:",
     "@tailwindcss/vite": "^4.2.2",

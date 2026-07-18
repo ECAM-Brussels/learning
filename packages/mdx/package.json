@@ -1,0 +1,19 @@
+{
+  "name": "@learning/mdx",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@solidjs/web": "catalog:",
+    "solid-js": "catalog:"
+  },
+  "exports": {
+    "./jsx-dev-runtime": "./index.ts"
+  }
+}

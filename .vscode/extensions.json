@@ -3,6 +3,8 @@
     "bierner.comment-tagged-templates",
     "bradlc.vscode-tailwindcss",
     "esbenp.prettier-vscode",
-    "ms-python.black-formatter"
+    "ms-python.black-formatter",
+    "unifiedjs.vscode-mdx",
+    "hipstersmoothie-public.mdx-tsc-vscode"
   ]
 }

@@ -11,6 +11,7 @@ render(
     <Boundary>
       <Router>
         <Route path="/" component={lazy(() => import('./routes/index'))} />
+        <Route path="/test" component={lazy(() => import('./routes/test.mdx'))} />
         <Route path="/numerical" component={lazy(() => import('./routes/numerical/index'))} />
         <Route
           path="/numerical/01-python"
