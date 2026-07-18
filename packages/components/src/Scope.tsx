@@ -1,5 +1,5 @@
+import type { JSX } from '@solidjs/web'
 import { Loading } from '@solidjs/web'
-import type { JSX } from 'solid-js/jsx-runtime'
 
 /**
  * Provide a way to set up signals closer to their respective accessors in JSX.
