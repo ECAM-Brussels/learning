@@ -29,7 +29,8 @@
 
     "baseUrl": ".",
     "paths": {
-      "@learning/exercises/*": ["packages/exercises/*"]
+      "@learning/exercises/*": ["packages/exercises/*"],
+      "@learning/mdx/*": ["packages/mdx/*"]
     }
   },
   "mdx": {

@@ -10,7 +10,9 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@learning/mdx": "workspace:*",
     "@learning/repl": "workspace:*",
+    "@solidjs/router": "catalog:",
     "@solidjs/web": "catalog:",
     "dedent": "^1.7.2",
     "es-toolkit": "catalog:",

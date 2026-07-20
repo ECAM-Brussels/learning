@@ -14,6 +14,7 @@
     "solid-js": "catalog:"
   },
   "exports": {
-    "./jsx-dev-runtime": "./index.ts"
+    ".": "./index.tsx",
+    "./jsx-dev-runtime": "./index.tsx"
   }
 }

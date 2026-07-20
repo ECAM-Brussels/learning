@@ -5,7 +5,10 @@ import solidPlugin from 'vite-plugin-solid'
 
 export default defineConfig({
   plugins: [
-    satteri({ features: { math: true }, mdx: { jsxImportSource: '@learning/mdx' } }),
+    satteri({
+      features: { math: true },
+      mdx: { jsxImportSource: '@learning/mdx', providerImportSource: '@learning/mdx' },
+    }),
     solidPlugin(),
     tailwindcss(),
   ],

@@ -1,11 +1,10 @@
 import { Dynamic, type JSX } from '@solidjs/web'
 import { debounce } from 'es-toolkit'
 import { createEffect, createSignal, onSettled } from 'solid-js'
-import { useTableOfContents } from './Page'
+import { setToc } from './Page'
 
 export function Heading(props: { children: JSX.Element; level: 1 | 2 | 3 | 4 | 5 | 6 }) {
   const [id, setId] = createSignal<string | undefined>()
-  const [toc, setToc] = useTableOfContents()!
   const [element, setElement] = createSignal<HTMLElement | null>(null)
 
   createEffect(

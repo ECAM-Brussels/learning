@@ -8,6 +8,9 @@ export default function Home() {
         <li>
           <a href="/numerical">Analyse Numérique</a>
         </li>
+        <li>
+          <a href="/test">Test</a>
+        </li>
       </ul>
     </Page>
   )
