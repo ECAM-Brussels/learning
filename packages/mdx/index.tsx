@@ -1,7 +1,7 @@
 import { Dynamic, type JSX } from '@solidjs/web'
 import { createContext, useContext, type ParentComponent, type ParentProps } from 'solid-js'
 
-type Components = Record<string, ParentComponent>
+type Components = Record<string, ParentComponent<{ className?: string }>>
 
 export const MDXContext = createContext<Components>({})
 
