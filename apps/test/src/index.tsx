@@ -28,9 +28,9 @@ render(
         }}
       >
         <Router>
-          <Route path="/" component={lazy(() => import('./routes/index'))} />
-          <Route path="/test" component={lazy(() => import('./routes/test.mdx'))} />
-          <Route path="/numerical" component={lazy(() => import('./routes/numerical/index'))} />
+          <Route path="/" component={lazy(() => import('./routes/index.mdx'))} />
+          <Route path="/doc" component={lazy(() => import('./routes/doc/index.mdx'))} />
+          <Route path="/numerical" component={lazy(() => import('./routes/numerical/index.mdx'))} />
           <Route
             path="/numerical/01-python"
             component={lazy(() => import('./routes/numerical/01-python.mdx'))}
