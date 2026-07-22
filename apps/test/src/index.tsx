@@ -2,7 +2,7 @@
 import { Route, Router } from '@solidjs/router'
 import { render } from '@solidjs/web'
 
-import { Boundary, Code, Heading, Latex } from '@learning/components'
+import { Boundary, Code, Example, Heading, Latex } from '@learning/components'
 import { MDXProvider } from '@learning/mdx'
 import { lazy, Match, Switch } from 'solid-js'
 import './style.css'
@@ -16,6 +16,13 @@ render(
           h2: (props) => <Heading level={2}>{props.children}</Heading>,
           h3: (props) => <Heading level={3}>{props.children}</Heading>,
           h4: (props) => <Heading level={4}>{props.children}</Heading>,
+          div: (props) => (
+            <Switch fallback={<div>{props.children}</div>}>
+              <Match when={'class' in props && String(props.class).includes('example')}>
+                <Example>{props.children}</Example>
+              </Match>
+            </Switch>
+          ),
           code: (props) => (
             <Switch fallback={<code>{props.children}</code>}>
               <Match when={props.className?.includes('language-python')}>
@@ -44,7 +51,7 @@ render(
           <Route path="/numerical" component={lazy(() => import('./routes/numerical/index'))} />
           <Route
             path="/numerical/01-python"
-            component={lazy(() => import('./routes/numerical/01-python'))}
+            component={lazy(() => import('./routes/numerical/01-python.mdx'))}
           />
         </Router>
       </MDXProvider>

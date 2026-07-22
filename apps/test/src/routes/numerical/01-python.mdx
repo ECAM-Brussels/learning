@@ -1,0 +1,48 @@
+import { Attempt, Page } from '@learning/components'
+import { Exercise, Sequence, tex } from '@learning/core'
+import { PythonCode } from '@learning/exercises/python/Code'
+export default Page
+
+# Premiers pas
+
+L'objectif de cette activité est de vous guider dans vos premiers pas en programmation.
+
+```python run
+print("Bonjour tout le monde!")
+```
+
+# Python comme calculatrice
+
+- Pour les opérations arithmétiques,
+
+  - `+` correspond à l'_addition_
+  - `-` correspond à la _soustraction_
+  - `*` correspond à la _multiplication_
+  - `/` correspond à la _division_
+
+- On utilise le point `.` comme **séparateur décimal**
+  (au lieu de la virgule).
+
+:::example
+Example!
+
+```python
+3 + 5
+```
+
+:::
+
+<PythonCode
+  prompt={<p>Utilisez Python pour calculer {tex`0.1 \times 0.1`}</p>}
+  tests={[
+    {
+      test: null,
+      check: ({ result }) => result === '0.010000000000000002',
+      desc: 'Le résultat doit être proche, mais pas égal à 0.01',
+    },
+  ]}
+/>
+
+## Opérations de base: $x^2$
+
+## La librairie `math`
