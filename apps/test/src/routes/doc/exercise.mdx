@@ -1,0 +1,31 @@
+import { Page } from '@learning/components'
+import { paths } from '../../router'
+export default Page
+
+# Créer un exercice
+
+```mdx
+import { Exercise, expr, tex } from '@learning/core'
+import { Attempt } from '@learning/components'
+
+<Exercise
+  id="adding-two-numbers"
+  schema={{ data: { a: 'expr', b: 'expr' }, inputs: { attempt: 'expr' } }}
+  data={{ a: 1, b: 4 }}
+  prompt={(ctx) => (
+    <>
+      <p>Que vaut {tex`${ctx.data.a} + ${ctx.data.b}`} ?</p>
+      <Attempt>
+        {tex`${ctx.data.a} + ${ctx.data.b} =`}
+        {ctx.inputs.attempt}
+      </Attempt>
+    </>
+  )}
+  grade={(ctx) =>
+    expr(`a + b = c`)
+      .subs({ ...ctx.data, c: ctx.inputs.attempt })
+      .isTrue()
+  }
+  feedback={(ctx) => <p>Feedback ici</p>}
+/>
+```

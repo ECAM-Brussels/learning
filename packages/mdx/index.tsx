@@ -14,6 +14,8 @@ type Components = Partial<{
   h4: ParentComponent
   h5: ParentComponent
   h6: ParentComponent
+  code: Component<{ children?: string }>
+  pre: ParentComponent
   Code: Component<{ lang: 'python'; children: string; run?: boolean; math?: boolean }>
   div: ParentComponent<{ 'data-type'?: string }>
   Latex: Component<{ value: string; displayMode?: boolean }>

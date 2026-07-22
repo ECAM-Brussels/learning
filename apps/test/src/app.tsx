@@ -2,12 +2,13 @@
 import { render } from '@solidjs/web'
 import { paths, Router } from './router'
 
-import { Boundary, Code, Example, Heading, Latex } from '@learning/components'
+import { Boundary, Code, Example, Heading, Highlight, Latex } from '@learning/components'
 import { MDXProvider } from '@learning/mdx'
+import type { PathEnd } from '@solidjs/router'
 import { Match, Switch, type ParentComponent } from 'solid-js'
 import './style.css'
 
-const NavLink: ParentComponent<{ class?: string; href: typeof paths.doc | string }> = (props) => (
+const NavLink: ParentComponent<{ class?: string; href: PathEnd | string }> = (props) => (
   <a
     href={props.href}
     class={['block p-4 text-gray-500 hover:bg-sky-50 hover:text-sky-800', props.class]}
@@ -54,6 +55,8 @@ render(
                     </Match>
                   </Switch>
                 ),
+                code: (props) => <Highlight code={props.children ?? ''} />,
+                pre: (props) => props.children,
                 Code,
                 Latex,
               }}
