@@ -11,7 +11,10 @@ import './style.css'
 const NavLink: ParentComponent<{ class?: string; href: PathEnd | string }> = (props) => (
   <a
     href={props.href}
-    class={['block p-4 text-gray-500 hover:bg-sky-50 hover:text-sky-800', props.class]}
+    class={[
+      'block p-4 text-gray-400 hover:bg-sky-50 hover:text-sky-800 data-active:bg-gray-100 data-active:text-gray-600',
+      props.class,
+    ]}
   >
     {props.children}
   </a>
