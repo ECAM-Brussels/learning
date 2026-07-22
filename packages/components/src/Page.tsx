@@ -35,14 +35,14 @@ export const Page: ParentComponent<{ title?: JSX.Element }> = (props) => {
 
   return (
     <Loading>
-      <div class="flex max-h-screen w-screen justify-center overflow-hidden print:max-h-none">
-        <main class="prose container max-w-270 overflow-auto scroll-smooth bg-white p-8 pb-200 shadow-md">
+      <div class="container mx-auto flex max-h-screen w-screen overflow-hidden pb-1 print:max-h-none">
+        <main class="prose max-w-270 grow overflow-auto scroll-smooth rounded-b-xl bg-white p-8 pb-200 shadow-sm">
           <Show when={props.title}>
             <h1 class="text-center text-5xl font-bold text-cyan-900">{props.title}</h1>
           </Show>
           {props.children}
         </main>
-        <aside class="max-h-screen max-w-96 overflow-y-auto bg-slate-50 p-4 text-slate-600 shadow print:hidden">
+        <aside class="max-h-screen max-w-96 overflow-y-auto p-4 text-slate-600 print:hidden">
           <h1 class="my-4 text-2xl font-bold">Table des matières</h1>
           <For each={toc}>
             {(node, i) => (
