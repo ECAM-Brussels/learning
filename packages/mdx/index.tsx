@@ -1,7 +1,23 @@
 import { Dynamic, type JSX } from '@solidjs/web'
-import { createContext, useContext, type ParentComponent, type ParentProps } from 'solid-js'
+import {
+  createContext,
+  useContext,
+  type Component,
+  type ParentComponent,
+  type ParentProps,
+} from 'solid-js'
 
-type Components = Record<string, ParentComponent<{ className?: string }>>
+type Components = Partial<{
+  h1: ParentComponent
+  h2: ParentComponent
+  h3: ParentComponent
+  h4: ParentComponent
+  h5: ParentComponent
+  h6: ParentComponent
+  Code: Component<{ lang: 'python'; children: string; run?: boolean; math?: boolean }>
+  div: ParentComponent<{ 'data-type'?: string }>
+  Latex: Component<{ value: string; displayMode?: boolean }>
+}>
 
 export const MDXContext = createContext<Components>({})
 

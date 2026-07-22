@@ -143,6 +143,7 @@
       "name": "@learning/mdx",
       "dependencies": {
         "@solidjs/web": "catalog:",
+        "satteri": "^0.9.5",
         "solid-js": "catalog:",
       },
       "devDependencies": {
@@ -874,6 +875,10 @@
 
     "@learning/exercises/solid-js": ["solid-js@2.0.0-beta.19", "", { "dependencies": { "@solidjs/signals": "^2.0.0-beta.19", "csstype": "^3.1.0", "seroval": "~1.5.4", "seroval-plugins": "~1.5.4" } }, "sha512-5tXzw0dIHlILGpERt7ALSveALvKwyRrJPYwZuv2TVWKCMTI2p/P1LkdaW7bfa9pIF//F+Y9XG/75h/1HpIxxXA=="],
 
+    "@learning/mdx/@solidjs/web": ["@solidjs/web@2.0.0-beta.22", "", { "dependencies": { "seroval": "~1.5.4", "seroval-plugins": "~1.5.4" }, "peerDependencies": { "solid-js": "^2.0.0-beta.22" } }, "sha512-I+6YlkYWmQat9iVHEdygQV+bL4jIwIHsSJ7DQOQvcoTCbLH/L0WUtnTO0r3Am/M0/OJKV0ZqRTF7jp9t2h9BMg=="],
+
+    "@learning/mdx/solid-js": ["solid-js@2.0.0-beta.22", "", { "dependencies": { "@solidjs/signals": "^2.0.0-beta.22", "csstype": "^3.1.0", "seroval": "~1.5.4", "seroval-plugins": "~1.5.4" } }, "sha512-u/LP32SmfJoKA5VfVNeV8MeIjTxxsQ2lWaDRSR9ZQYrv/8eHclVYBjMYU/aohbhMwnzBxVkBRaiOERPZDIzcLQ=="],
+
     "@tailwindcss/oxide-wasm32-wasi/@emnapi/core": ["@emnapi/core@1.11.2", "", { "dependencies": { "@emnapi/wasi-threads": "1.2.2", "tslib": "^2.4.0" }, "bundled": true }, "sha512-TC8MkTuZUtcTSiFeuC0ksCh9QIJ5+F21MvZ4Wn4ORfYaFJ/0dsiudv5tVkejgwZlwQ39jL9WWDe2lz8x0WglOA=="],
 
     "@tailwindcss/oxide-wasm32-wasi/@emnapi/runtime": ["@emnapi/runtime@1.11.2", "", { "dependencies": { "tslib": "^2.4.0" }, "bundled": true }, "sha512-kyOl3X0DuTiT1h2ft8r2fYO8JYtU9a9Xis/zBSiGArNaagCOWx90N1k2wxp18czFDH+OgcWGb5ZP/XMt3dcyPA=="],
@@ -895,6 +900,8 @@
     "@learning/core/solid-js/@solidjs/signals": ["@solidjs/signals@2.0.0-beta.19", "", {}, "sha512-ZPyJF9CJLwMZIsi45RwkXDJD0cHASjIgnjHvkQLwqA8aIJSmgilCCQksk2U/bonu6jFkP8qppfHt35NycJ5zLg=="],
 
     "@learning/exercises/solid-js/@solidjs/signals": ["@solidjs/signals@2.0.0-beta.19", "", {}, "sha512-ZPyJF9CJLwMZIsi45RwkXDJD0cHASjIgnjHvkQLwqA8aIJSmgilCCQksk2U/bonu6jFkP8qppfHt35NycJ5zLg=="],
+
+    "@learning/mdx/solid-js/@solidjs/signals": ["@solidjs/signals@2.0.0-beta.22", "", {}, "sha512-2kVihih1sjRjwdAybIOmR8tNEttD59jCF7tBINW7+4DHv5ZSNRJ8DpLGf9S0ndx6lQgQqUz8VoMfKUuKBcbh7Q=="],
 
     "mathlive/@cortex-js/compute-engine/@arnog/colors": ["@arnog/colors@0.3.0", "", {}, "sha512-CDZFMVWeE3HqcrzvacY2Y8257RS9c0f8+D+MWjbjmb5IWpOZPPeJSqWyxkVcFleCjA+x5aq6foc57cVaP+AMQg=="],
 

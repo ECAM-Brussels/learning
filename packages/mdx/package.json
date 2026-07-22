@@ -11,10 +11,12 @@
   },
   "dependencies": {
     "@solidjs/web": "catalog:",
+    "satteri": "^0.9.5",
     "solid-js": "catalog:"
   },
   "exports": {
     ".": "./index.tsx",
-    "./jsx-dev-runtime": "./index.tsx"
+    "./jsx-dev-runtime": "./index.tsx",
+    "./config": "./config.ts"
   }
 }

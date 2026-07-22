@@ -12,7 +12,7 @@ const config = {
  * (e.g. examples, definitions, exercises, etc.)
  */
 export function Environment(props: {
-  children: JSX.Element
+  children?: JSX.Element
   title?: JSX.Element
   type: keyof typeof config
 }) {

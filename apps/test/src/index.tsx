@@ -18,31 +18,13 @@ render(
           h4: (props) => <Heading level={4}>{props.children}</Heading>,
           div: (props) => (
             <Switch fallback={<div>{props.children}</div>}>
-              <Match when={'class' in props && String(props.class).includes('example')}>
-                <Example>{props.children}</Example>
+              <Match when={props['data-type'] === 'example'}>
+                <Example {...props} />
               </Match>
             </Switch>
           ),
-          code: (props) => (
-            <Switch fallback={<code>{props.children}</code>}>
-              <Match when={props.className?.includes('language-python')}>
-                <Code
-                  lang="python"
-                  math={'data-meta' in props && String(props['data-meta'] ?? '').includes('math')}
-                  run={'data-meta' in props && String(props['data-meta'] ?? '').includes('run')}
-                >
-                  {String(props.children).trim()}
-                </Code>
-              </Match>
-              <Match when={props.className?.includes('language-math')}>
-                <Latex
-                  value={String(props.children)}
-                  displayMode={props.className?.includes('math-display')}
-                />
-              </Match>
-            </Switch>
-          ),
-          pre: (props) => <>{props.children}</>,
+          Code,
+          Latex,
         }}
       >
         <Router>
