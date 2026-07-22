@@ -36,7 +36,7 @@ export const Page: ParentComponent<{ title?: JSX.Element }> = (props) => {
   return (
     <Loading>
       <div class="container mx-auto flex max-h-screen w-screen overflow-hidden pb-1 print:max-h-none">
-        <main class="prose max-w-270 grow overflow-auto scroll-smooth rounded-b-xl bg-white p-8 pb-200 shadow-sm">
+        <main class="prose prose-code:before:content-none prose-code:after:content-none max-w-270 grow overflow-auto scroll-smooth rounded-b-xl bg-white p-8 pb-200 shadow-sm">
           <Show when={props.title}>
             <h1 class="text-center text-5xl font-bold text-cyan-900">{props.title}</h1>
           </Show>
