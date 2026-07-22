@@ -8,16 +8,15 @@ import {
 } from 'solid-js'
 
 type Components = Partial<{
+  div: ParentComponent<{ 'data-type'?: string }>
   h1: ParentComponent
   h2: ParentComponent
   h3: ParentComponent
   h4: ParentComponent
   h5: ParentComponent
   h6: ParentComponent
-  code: Component<{ children?: string }>
-  pre: ParentComponent
   Code: Component<{ lang: 'python'; children: string; run?: boolean; math?: boolean }>
-  div: ParentComponent<{ 'data-type'?: string }>
+  Highlight: Component<{ lang?: string; code: string }>
   Latex: Component<{ value: string; displayMode?: boolean }>
 }>
 

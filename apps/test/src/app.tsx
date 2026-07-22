@@ -55,9 +55,8 @@ render(
                     </Match>
                   </Switch>
                 ),
-                code: (props) => <Highlight code={props.children ?? ''} />,
-                pre: (props) => props.children,
                 Code,
+                Highlight,
                 Latex,
               }}
             >

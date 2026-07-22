@@ -31,6 +31,15 @@ const code = defineMdastPlugin({
         children: [],
       }
     }
+    return {
+      type: 'mdxJsxFlowElement',
+      name: 'Highlight',
+      attributes: [
+        { type: 'mdxJsxAttribute', name: 'lang', value: node.lang === 'mdx' ? 'jsx' : node.lang },
+        { type: 'mdxJsxAttribute', name: 'code', value: node.value },
+      ],
+      children: [],
+    }
   },
 })
 
