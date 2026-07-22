@@ -17,7 +17,7 @@ const NavLink: ParentComponent<{ class?: string; href: typeof paths.doc | string
 )
 
 const Navbar = () => (
-  <nav class="sticky bg-white shadow-sm">
+  <nav class="sticky bg-white opacity-80 shadow-sm">
     <ul class="container mx-auto flex">
       <li>
         <NavLink class="font-bold text-sky-800" href={paths()}>
