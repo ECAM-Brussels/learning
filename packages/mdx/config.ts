@@ -16,8 +16,8 @@ const directives = defineMdastPlugin({
 const code = defineMdastPlugin({
   name: 'code-meta',
   code(node) {
-    if (node.lang === 'python') {
-      const run = node.meta?.includes('run') ?? false
+    const run = node.meta?.includes('run') ?? false
+    if (node.lang === 'python' && run) {
       const math = node.meta?.includes('math') ?? false
       return {
         type: 'mdxJsxFlowElement',
