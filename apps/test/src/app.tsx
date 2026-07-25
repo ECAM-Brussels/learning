@@ -21,20 +21,21 @@ const NavLink: ParentComponent<{ class?: string; href: PathEnd | string }> = (pr
 )
 
 const Navbar = () => (
-  <nav class="sticky top-0 z-10 bg-white shadow-sm">
-    <ul class="container mx-auto flex">
-      <li>
-        <NavLink class="font-bold text-sky-800" href={paths()}>
-          learning
-        </NavLink>
-      </li>
-      <li>
-        <NavLink href={paths.doc}>Documentation</NavLink>
-      </li>
-      <li>
-        <NavLink href={paths.numerical}>Analyse numérique</NavLink>
-      </li>
-    </ul>
+  <nav class="sticky top-0 z-10 mx-auto bg-white shadow-sm">
+    <div class="container mx-auto flex items-center gap-8">
+      <NavLink class="text-xl font-bold text-sky-800" href={paths()}>
+        learning
+      </NavLink>
+      <ul class="flex">
+        <li></li>
+        <li>
+          <NavLink href={paths.doc}>Documentation</NavLink>
+        </li>
+        <li>
+          <NavLink href={paths.numerical}>Analyse numérique</NavLink>
+        </li>
+      </ul>
+    </div>
   </nav>
 )
 
