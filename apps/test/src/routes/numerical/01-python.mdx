@@ -1,17 +1,66 @@
 import { Page } from '@learning/components'
-import { tex } from '@learning/core'
+import { Sequence, tex } from '@learning/core'
 import { PythonCode } from '@learning/exercises/python/Code'
 export default Page
 
-# Premiers pas
-
 L'objectif de cette activité est de vous guider dans vos premiers pas en programmation.
+N'ayez pas peur si vous n'avez jamais programmé auparavant,
+nous commencerons de zéro.
+
+Programmer,
+c'est _écrire des instructions à un ordinateur_ (le _code_)
+dans un langage qu'il peut comprendre.
+L'ordinateur se chargera ensuite d'exécuter ces instructions pour nous,
+et nous informera du résultat éventuel.
+Dans cette activité, nous utiliserons le langage de programmation Python,
+qui est très populaire et utilisé dans de nombreux domaines scientifiques.
+
+Notre premier programme sera très simple,
+il se contentera d'afficher un message.
+Changez-le pour afficher votre prénom.
+
+:::example
 
 ```python run
-print("Bonjour tout le monde!")
+print("Bonjour ???")
 ```
 
-# Python comme calculatrice
+:::
+
+Pour vérifier votre compréhension,
+nous vous inviterons souvent à résoudre de petits exercices,
+comme celui-ci.
+
+:::exercise
+
+<PythonCode
+  id="first-exercise"
+  prompt={
+    <p>
+      Écrivez un programme Python qui affiche <code>Vive Python!</code>
+    </p>
+  }
+  tests={[
+    { test: null, check: ({ stdout }) => stdout?.toLowerCase().includes('vive python') === true },
+  ]}
+/>
+:::
+
+## Python comme calculatrice
+
+La première chose que nous vous apprendrons est d'_utiliser Python comme une calculatrice scientifique_.
+La syntaxe est relativement similaire à ce que vous entreriez sur votre calculatrice,
+comme le montre l'exemple suivant:
+
+:::example
+
+```python run
+(3 + 5) * 2
+```
+
+:::
+
+Nous vous encourageons à modifier l'exemple ci-dessus pour vous familiariser avec la syntaxe.
 
 - Pour les opérations arithmétiques,
 
@@ -19,30 +68,140 @@ print("Bonjour tout le monde!")
   - `-` correspond à la _soustraction_
   - `*` correspond à la _multiplication_
   - `/` correspond à la _division_
+  - `**` correspond à l'_exponentiation_. Par exemple, `2 ** 3` correspond à $2^3 = 8$.
 
 - On utilise le point `.` comme **séparateur décimal**
   (au lieu de la virgule).
 
-:::example
-Example!
+- Pour un nombre complexe, on utilise `j` pour représenter l'unité imaginaire.
+  Par exemple, `1 + 2j` correspond à $1 + 2i$.
+  Le `j` doit absolument suivre un nombre sans espace,
+  ce qui signifie que $i$ est `1j` en Python.
 
-```python
-3 + 5
+Nous vous invitons maintenant à résoudre les exercices suivants.
+Vous verrez que les réponses de Python sont parfois surprenantes.
+
+<Sequence id="python-as-calculator">
+  <PythonCode
+    prompt={<p>Utilisez Python pour calculer {tex`0.1 \times 0.1`}</p>}
+    tests={[
+      {
+        test: null,
+        check: ({ result }) => result === '0.010000000000000002',
+        desc: 'Le résultat doit être proche, mais pas égal à 0.01',
+      },
+    ]}
+  />
+  <PythonCode
+    prompt={<p>Utilisez Python pour calculer {tex`1.1 + 2.2`}</p>}
+    tests={[
+      {
+        test: null,
+        check: ({ result }) => result === '3.3000000000000003',
+        desc: 'Le résultat doit être proche, mais pas égal à 3.3',
+      },
+    ]}
+  />
+  <PythonCode
+    prompt={<p>Utilisez Python pour calculer {tex`0.1 + 0.1 + 0.1 - 0.3`}</p>}
+    tests={[
+      {
+        test: null,
+        check: ({ result }) => result === '5.551115123125783e-17',
+        desc: 'Le résultat doit être proche, mais pas égal à 0',
+      },
+    ]}
+  />
+  <PythonCode
+    prompt={<p>Utilisez Python pour calculer {tex`(3 + 2 i)^5`}</p>}
+    tests={[{ test: null, check: ({ result }) => result === '(-597+122j)' }]}
+  />
+  <PythonCode
+    prompt={<p>Utilisez Python pour calculer {tex`\sqrt[3]{5}`}</p>}
+    tests={[{ test: null, check: ({ result }) => result === '1.7099759466766968' }]}
+  />
+</Sequence>
+
+## La bibliothèque `math`
+
+Qu'en est-il de la racine carré, des fonctions trigonométriques, exponentielles et logarithmiques?
+Nous allons pour cela utiliser la bibliothèque `math` de Python,
+qui contient de nombreuses fonctions mathématiques utiles,
+telles que:
+
+- `sqrt` (la racine carrée ou _**sq**uare **r**oo**t**_)
+- `sin`, `cos`, `tan`
+- `exp`, `log`
+
+Comme en mathématiques,
+une fonction est appliquée à un _argument_ entre parenthèses.
+
+{tex`%
+\underbrace{\mathrm{sqrt}}_{\text{fonction}}(67) \rightarrow \sqrt{67}
+`}
+
+```python run
+# On importe la fonction sqrt de la bibliothèque math
+from math import sqrt
+
+# On l'utilise ensuite pour notre calcul
+sqrt(2)
+```
+
+Par défaut, `log` est le logarithme népérien (base $e$),
+mais il est possible de calculer le logarithme d'une autre base en utilisant un second argument.
+
+:::example
+
+Pour calculer $\log_{10}(67)$,
+on procède comme suit:
+
+```python run
+from math import log
+log(67, 10)
 ```
 
 :::
 
-<PythonCode
-  prompt={<p>Utilisez Python pour calculer {tex`0.1 \times 0.1`}</p>}
-  tests={[
-    {
-      test: null,
-      check: ({ result }) => result === '0.010000000000000002',
-      desc: 'Le résultat doit être proche, mais pas égal à 0.01',
-    },
-  ]}
-/>
+:::remark
+Pour importer plusieurs fonctions d'une bibliothèque, on peut les séparer par des virgules:
 
-## Opérations de base: $x^2$
+```python run
+from math import sqrt, log
+log(sqrt(73))
+```
 
-## La librairie `math`
+Il est également possible d'importer toute la bibliothèque
+
+```python run
+from math import *
+log(sqrt(73))
+```
+
+:::
+
+<Sequence id="math-library">
+  <PythonCode
+    prompt={<p>Utilisez Python pour calculer {tex`\sqrt{67}`}</p>}
+    tests={[{ test: null, check: ({ result }) => result === '8.18535277187245' }]}
+  />
+  <PythonCode
+    prompt={<p>Utilisez Python pour calculer {tex`\log_{10}(100)`}</p>}
+    tests={[{ test: null, check: ({ result }) => result === '2' }]}
+  />
+</Sequence>
+
+## Listes de nombres
+
+## Fonctions à une variable
+
+:::example
+
+Pour définir la fonction $f(x) = x^2$ en Python, on procède comme suit:
+
+```python
+def f(x):
+    return x**2
+```
+
+:::
