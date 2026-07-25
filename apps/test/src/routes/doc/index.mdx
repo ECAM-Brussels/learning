@@ -2,6 +2,36 @@ import { Page } from '@learning/components'
 import { paths } from '../../router'
 export default Page
 
+import { Factor } from '@learning/exercises/math/algebra/Factor'
+
 # Documentation
 
-- <a href={paths.doc.exercise}>Créer un exercice de base</a>
+## Aperçu
+
+_Learning_ est un projet libre visant à faciliter la création de ressources pédagogiques interactives,
+en particulier pour les _mathématiques_ et les _sciences_.
+Son intérêt est de mettre à disposition un _moteur d'exercices_ basé sur le _calcul formel_
+pour _générer_ des exercices, les _corriger_,
+et de fournir un retour riche et immédiat aux étudiant.es.
+
+:::example
+
+<Factor id="example" expr="x^2 - 5x + 6" />
+:::
+
+L'objectif est de donner un **contrôle total** aux enseignant.es
+pour que leurs ressources soient exactement telles que ils ou elles le souhaitent,
+et répondent exactement à leurs besoins pédagogiques.
+La syntaxe est expressive,
+et les possibilités pour le feedback sont puissantes.
+Il est par exemple possible de guider un.e étudiant.e à travers autant d'étapes que nécessaire pour arriver à la solution,
+même si les prérequis ne sont pas encore maîtrisés.
+
+---
+
+## Se former
+
+1. Installer _learning_
+2. Manipuler des expressions mathématiques
+3. <a href={paths.doc.exercise}>Créer un exercice</a>
+4. Feedback à l'étudiant.e
