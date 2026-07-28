@@ -2,9 +2,9 @@ import type { JSX } from '@solidjs/web'
 import { Show, type ComponentProps } from 'solid-js'
 
 const config = {
-  example: { label: 'Exemple', class: 'text-cyan-900' },
-  remark: { label: 'Remarque', class: 'text-amber-900' },
-  exercise: { label: 'Exercice', class: 'text-green-800' },
+  example: { label: 'Exemple', class: 'bg-sky-100 text-sky-900' },
+  remark: { label: 'Remarque', class: 'bg-amber-100 text-amber-900' },
+  exercise: { label: 'Exercice', class: 'bg-green-100 text-green-900' },
 } as const satisfies Record<string, { label: string; class: string }>
 
 /**
@@ -17,13 +17,12 @@ export function Environment(props: {
   type: keyof typeof config
 }) {
   return (
-    <div class="mx-8 my-4 rounded-xl border border-gray-200 print:break-inside-avoid">
-      <h3 class={['not-prose px-4 py-2 font-bold', config[props.type].class]}>
+    <div class="mx-8 my-4 rounded-lg border border-gray-200 shadow-sm print:break-inside-avoid">
+      <h3 class={['not-prose rounded-t-lg px-4 py-1 font-semibold', config[props.type].class]}>
         {config[props.type].label}
         <Show when={props.title}>
           <span class="font-light"> ({props.title})</span>
         </Show>
-        .
       </h3>
       <div class="my-4 p-4">{props.children}</div>
     </div>
