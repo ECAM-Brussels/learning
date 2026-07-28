@@ -5,9 +5,6 @@ import { Latex } from './Latex'
 
 export function Python(props: { class?: string; value: string; math?: boolean }): JSX.Element {
   const output = createMemo(() => python.run(props.value, { math: props.math ?? false }))
-  const empty = createMemo(
-    () => `${output().error ?? ''}${output().stdout ?? ''}${output().result ?? ''}`.trim() === '',
-  )
   return (
     <Loading>
       <pre class="not-prose my-2 text-xs">
@@ -17,23 +14,17 @@ export function Python(props: { class?: string; value: string; math?: boolean })
           <Match when={output().status === 'executing'}>Exécution du code...</Match>
         </Switch>
       </pre>
-      <Show when={!empty()}>
-        <pre
-          class={[
-            'not-prose my-8',
-            { 'bg-red-50 text-xs': output().error !== undefined },
-            props.class ?? 'rounded-xl p-4 shadow-sm',
-          ]}
-        >
-          <Switch
-            fallback={
-              <>
-                {output().error}
-                {output().stdout}
-                {output().result}
-              </>
-            }
-          >
+      <Show when={output().error !== undefined}>
+        <Output type="Erreur" class="bg-red-50 text-xs">
+          {output().error}
+        </Output>
+      </Show>
+      <Show when={output().stdout !== undefined && output().stdout !== ''}>
+        <Output type="stdout">{output().stdout}</Output>
+      </Show>
+      <Show when={output().result !== '' && output().result !== undefined}>
+        <Output type="Résultat">
+          <Switch fallback={output().result}>
             <Match when={output().format == 'latex'}>
               <Latex value={output().result ?? ''} />
             </Match>
@@ -45,8 +36,19 @@ export function Python(props: { class?: string; value: string; math?: boolean })
               />
             </Match>
           </Switch>
-        </pre>
+        </Output>
       </Show>
     </Loading>
+  )
+}
+
+function Output(props: { class?: string; type: string; children: JSX.Element }) {
+  return (
+    <div class="not-prose flex items-center gap-2">
+      <pre class="py-2 text-xs text-slate-700">{props.type}:</pre>
+      <pre class={['grow rounded-xs border border-gray-200 p-2 shadow-xs', props.class]}>
+        {props.children}
+      </pre>
+    </div>
   )
 }

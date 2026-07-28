@@ -88,11 +88,11 @@ export default function Code(props: Props) {
     return () => editor?.dispose()
   })
   return (
-    <>
-      <div ref={container!} id="container" class={props.class ?? 'shadow'} />
+    <div class="flex flex-col gap-0">
+      <div ref={container!} id="container" class={props.class ?? 'my-0 shadow'} />
       <Show when={props.lang === 'python' && props.run}>
-        <Python value={value()} math={props.math} />
+        <Python class="my-0 py-0" value={value()} math={props.math} />
       </Show>
-    </>
+    </div>
   )
 }
