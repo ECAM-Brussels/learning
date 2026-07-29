@@ -1,6 +1,6 @@
 export * from './src/chemistry'
 export { Encrypted, decrypt, encrypt } from './src/crypto'
-export { Step as Exercise, ExerciseContext, Step, createStep } from './src/exercise/base'
+export { Step as Exercise, Step, createStep } from './src/exercise/base'
 export { Sequence } from './src/exercise/sequence'
 export { Expression, expr, type Quantity } from './src/expr'
 export * from './src/py'

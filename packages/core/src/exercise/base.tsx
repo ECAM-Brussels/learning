@@ -4,7 +4,6 @@ import { Dynamic, type JSX } from '@solidjs/web'
 import { mapValues } from 'es-toolkit'
 import {
   action,
-  createContext,
   createMemo,
   createOptimisticStore,
   createStore,
@@ -13,12 +12,12 @@ import {
   Show,
   snapshot,
   useContext,
-  type Accessor,
   type Component,
   type ComponentProps,
 } from 'solid-js'
 import * as v from 'valibot'
 import { expr, Expression } from '../expr'
+import { ExerciseContext, StepContext } from './context'
 
 type MaybeAsync<T> = T | Promise<T>
 type Json = string | number | boolean | null | { [key: string]: Json } | Json[]
@@ -94,50 +93,13 @@ function StoredStep<D extends RawShape, I extends RawShape>(data: D, inputs: I) 
   })
 }
 
-type StoredStep<
+export type StoredStep<
   D extends RawShape = Record<string, v.UnknownSchema>,
   I extends RawShape = Record<string, v.UnknownSchema>,
   U extends 'input' | 'output' = 'input',
 > = U extends 'output'
   ? v.InferOutput<ReturnType<typeof StoredStep<D, I>>>
   : v.InferInput<ReturnType<typeof StoredStep<D, I>>>
-
-export type StepContext = {
-  url: string
-  sequenceId: string
-  sequencePosition: number
-  position: number
-}
-export const StepContext = createContext<Accessor<StepContext> | null>(null)
-export type ExerciseContext = {
-  fetchStep: (ctx: StepContext) => MaybeAsync<StoredStep | null>
-  getProgress: (ctx: StepContext) => MaybeAsync<(boolean | null)[]>
-  saveStep: (ctx: StepContext, step: StoredStep) => MaybeAsync<void>
-}
-const getStorageId = (ctx: StepContext) => `${ctx.url}:${ctx.sequenceId}:${ctx.sequencePosition}`
-export const ExerciseContext = createContext<ExerciseContext>({
-  fetchStep: (ctx) => {
-    const id = getStorageId(ctx)
-    const stored = JSON.parse(localStorage.getItem(id) ?? '[]')
-    return stored[ctx.position] ?? null
-  },
-  getProgress: (ctx) => {
-    const prefix = `${ctx.url}:${ctx.sequenceId}:`
-    return Object.keys(localStorage)
-      .filter((k) => k.startsWith(prefix))
-      .map((k) => {
-        const exercise = JSON.parse(localStorage.getItem(k) ?? '[]')
-        return exercise.every((part: StoredStep) => part.correct)
-      })
-  },
-  saveStep: (ctx, step) => {
-    const id = getStorageId(ctx)
-    const stored = JSON.parse(localStorage.getItem(id) ?? '[]')
-    if (ctx.position >= stored.length) stored.push(step)
-    else stored[ctx.position] = step
-    localStorage.setItem(id, JSON.stringify(stored))
-  },
-})
 
 type StepSchema = { inputs: RawShape; data: RawShape }
 

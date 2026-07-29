@@ -2,7 +2,7 @@ import { Pagination, Scope } from '@learning/components'
 import { Dynamic, type JSX } from '@solidjs/web'
 import { range } from 'es-toolkit'
 import { createMemo, useContext, type Component } from 'solid-js'
-import { ExerciseContext, StepContext } from './base'
+import { ExerciseContext, StepContext } from './context'
 
 type Props<T extends object> = {
   id: string
