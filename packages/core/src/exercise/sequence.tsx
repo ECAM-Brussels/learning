@@ -1,9 +1,8 @@
 import { Pagination, Scope } from '@learning/components'
-import { useLocation } from '@solidjs/router'
 import { Dynamic, type JSX } from '@solidjs/web'
 import { range } from 'es-toolkit'
-import { createMemo, refresh, type Component } from 'solid-js'
-import { ExerciseContext } from './base'
+import { createMemo, useContext, type Component } from 'solid-js'
+import { ExerciseContext, StepContext } from './base'
 
 type Props<T extends object> = {
   id: string
@@ -66,40 +65,21 @@ type Props<T extends object> = {
  * />
  */
 export function Sequence<T extends object>(props: Props<T>) {
-  const location = useLocation()
-  const prefix = () => `sequence:${location.pathname}:${location.search}:${props.id}:`
-  const key = (i: number) => `${prefix()}:${i}`
-  const keys = createMemo(() => Object.keys(localStorage).filter((k) => k.startsWith(prefix())))
-  const length = createMemo(() => ('children' in props ? props.children.length : keys().length + 1))
-  const progress = createMemo(() => {
-    return range(length()).map((k) => {
-      try {
-        const exercise = JSON.parse(localStorage.getItem(key(k)) ?? 'null')
-        return exercise.every((part: any) => part.correct)
-      } catch {
-        return null
-      }
-    })
+  const exerciseContext = useContext(ExerciseContext)
+  const stepContext = (sequencePosition = 0) => ({
+    url: '/',
+    sequenceId: props.id,
+    sequencePosition,
+    position: 0,
   })
+  const progress = createMemo(() => exerciseContext.getProgress(stepContext()))
+  const length = createMemo(() =>
+    'children' in props ? props.children.length : progress().length + 1,
+  )
   return (
     <Pagination progress={progress()}>
       {range(length()).map((i) => () => (
-        <ExerciseContext
-          value={{
-            fetch: (_id, position) => {
-              const exercise = JSON.parse(localStorage.getItem(key(i)) ?? '[]')
-              return exercise[position] ?? null
-            },
-            save: (_id, position, step) => {
-              const stored = JSON.parse(localStorage.getItem(key(i)) ?? '[]')
-              if (position >= stored.length) stored.push(step)
-              else stored[position] = step
-              localStorage.setItem(key(i), JSON.stringify(stored))
-              refresh(keys)
-              refresh(progress)
-            },
-          }}
-        >
+        <StepContext value={() => stepContext(i)}>
           {'children' in props ? (
             props.children[i]
           ) : 'exercise' in props ? (
@@ -112,7 +92,7 @@ export function Sequence<T extends object>(props: Props<T>) {
           ) : (
             <Dynamic component={props.next} position={i} progress={progress()} />
           )}
-        </ExerciseContext>
+        </StepContext>
       ))}
     </Pagination>
   )

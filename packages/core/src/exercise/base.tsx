@@ -1,4 +1,5 @@
 import { Boundary, FeedbackContext, MathField } from '@learning/components'
+import { useLocation } from '@solidjs/router'
 import { Dynamic, type JSX } from '@solidjs/web'
 import { mapValues } from 'es-toolkit'
 import {
@@ -12,6 +13,7 @@ import {
   Show,
   snapshot,
   useContext,
+  type Accessor,
   type Component,
   type ComponentProps,
 } from 'solid-js'
@@ -100,29 +102,42 @@ type StoredStep<
   ? v.InferOutput<ReturnType<typeof StoredStep<D, I>>>
   : v.InferInput<ReturnType<typeof StoredStep<D, I>>>
 
-type ExerciseContext = {
-  fetch: (id: string, position: number) => MaybeAsync<StoredStep | null>
-  save: (id: string, position: number, step: StoredStep) => MaybeAsync<void>
+export type StepContext = {
+  url: string
+  sequenceId: string
+  sequencePosition: number
+  position: number
 }
-
+export const StepContext = createContext<Accessor<StepContext> | null>(null)
+export type ExerciseContext = {
+  fetchStep: (ctx: StepContext) => MaybeAsync<StoredStep | null>
+  getProgress: (ctx: StepContext) => MaybeAsync<(boolean | null)[]>
+  saveStep: (ctx: StepContext, step: StoredStep) => MaybeAsync<void>
+}
+const getStorageId = (ctx: StepContext) => `${ctx.url}:${ctx.sequenceId}:${ctx.sequencePosition}`
 export const ExerciseContext = createContext<ExerciseContext>({
-  fetch: (id, position) => {
+  fetchStep: (ctx) => {
+    const id = getStorageId(ctx)
     const stored = JSON.parse(localStorage.getItem(id) ?? '[]')
-    return stored[position] ?? null
+    return stored[ctx.position] ?? null
   },
-  save: (id, position, step) => {
+  getProgress: (ctx) => {
+    const prefix = `${ctx.url}:${ctx.sequenceId}:`
+    return Object.keys(localStorage)
+      .filter((k) => k.startsWith(prefix))
+      .map((k) => {
+        const exercise = JSON.parse(localStorage.getItem(k) ?? '[]')
+        return exercise.every((part: StoredStep) => part.correct)
+      })
+  },
+  saveStep: (ctx, step) => {
+    const id = getStorageId(ctx)
     const stored = JSON.parse(localStorage.getItem(id) ?? '[]')
-    if (position >= stored.length) stored.push(step)
-    else stored[position] = step
+    if (ctx.position >= stored.length) stored.push(step)
+    else stored[ctx.position] = step
     localStorage.setItem(id, JSON.stringify(stored))
   },
 })
-
-type StepContext = {
-  exerciseId: string
-  position: number
-}
-const StepContext = createContext<StepContext | null>(null)
 
 type StepSchema = { inputs: RawShape; data: RawShape }
 
@@ -183,14 +198,17 @@ function useStepContext<S extends StepSchema>(
   data: () => StepProps<S, any>['data'],
 ) {
   const exerciseContext = useContext(ExerciseContext)
-  const stepContext = useContext(StepContext)
-
-  const exerciseId = createMemo(() => id() ?? stepContext?.exerciseId ?? '')
-  const position = createMemo(() => stepContext?.position ?? 0)
+  const inherited = useContext(StepContext)
+  const stepContext = createMemo(() => ({
+    url: useLocation().pathname,
+    sequenceId: id() ?? inherited?.().sequenceId ?? '',
+    sequencePosition: inherited?.().sequencePosition ?? 0,
+    position: inherited?.().position ?? 0,
+  }))
 
   const [step, setStep] = createOptimisticStore<StoredStep<S['data'], S['inputs']>>(
     async () => {
-      const saved = await exerciseContext.fetch(exerciseId(), position())
+      const saved = await exerciseContext.fetchStep(stepContext())
       const dataValue = data()
       return {
         submitted: false,
@@ -206,14 +224,16 @@ function useStepContext<S extends StepSchema>(
   )
 
   const saveStep = (newStep: StoredStep<S['data'], S['inputs'], 'output'>) =>
-    exerciseContext.save(exerciseId(), position(), newStep)
+    exerciseContext.saveStep(stepContext(), newStep)
 
   const StepBoundary = (props: {
     fallback?: JSX.Element
     children?: JSX.Element
     offset?: number
   }) => (
-    <StepContext value={{ exerciseId: exerciseId(), position: position() + (props.offset ?? 0) }}>
+    <StepContext
+      value={() => ({ ...stepContext(), position: stepContext().position + (props.offset ?? 0) })}
+    >
       <FeedbackContext
         value={{
           get correct() {
