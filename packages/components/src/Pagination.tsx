@@ -14,7 +14,7 @@ export function Pagination(props: {
     }
   })
   return (
-    <>
+    <div class="rounded-xl border border-gray-200 p-4 py-8 shadow-xs">
       <div class="flex justify-center">
         <button
           class="cursor-pointer px-3 py-1 text-gray-400 shadow"
@@ -48,7 +48,7 @@ export function Pagination(props: {
         </button>
       </div>
       <Dynamic component={props.children[current() - 1]} />
-    </>
+    </div>
   )
 }
 
