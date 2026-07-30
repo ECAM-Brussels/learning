@@ -16,7 +16,6 @@
   },
   "exports": {
     ".": "./index.tsx",
-    "./jsx-dev-runtime": "./index.tsx",
     "./config": "./config.ts"
   }
 }

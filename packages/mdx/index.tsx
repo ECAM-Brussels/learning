@@ -1,11 +1,4 @@
-import { Dynamic, type JSX } from '@solidjs/web'
-import {
-  createContext,
-  useContext,
-  type Component,
-  type ParentComponent,
-  type ParentProps,
-} from 'solid-js'
+import { createContext, useContext, type Component, type ParentComponent } from 'solid-js'
 
 type LowercaseKey = `${Lowercase<string>}${string}`
 type Components = Partial<
@@ -55,25 +48,12 @@ export const MDXContext = createContext<Components>({
   em: (props) => <em {...props} />,
 })
 
-export const MDXProvider = (props: ParentProps<{ components: Components }>): JSX.Element => {
+export const MDXProvider: ParentComponent<{ components: Components }> = (props) => {
   const context = useContext(MDXContext)
   return <MDXContext value={{ ...context, ...props.components }}>{props.children}</MDXContext>
 }
 
 export const useMDXComponents = (components: Components) => {
-  const contextComponents = useContext(MDXContext)
-  return { ...contextComponents, ...components }
+  const context = useContext(MDXContext)
+  return { ...context, ...components }
 }
-
-export const Fragment: ParentComponent = (props) => props.children
-
-export const jsx = (type: string | ParentComponent, props: ParentProps): JSX.Element =>
-  typeof type === 'function' && type.name === 'Fragment' ? (
-    <>{props.children}</>
-  ) : (
-    <Dynamic component={type} {...props} />
-  )
-
-export const jsxs = jsx
-
-export const jsxDEV = jsx
