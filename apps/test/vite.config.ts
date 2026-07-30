@@ -5,7 +5,14 @@ import satteri from 'vite-plugin-satteri'
 import solidPlugin from 'vite-plugin-solid'
 
 export default defineConfig({
-  plugins: [satteri(saterriConfig), solidPlugin(), tailwindcss()],
+  plugins: [
+    satteri(saterriConfig),
+    solidPlugin({
+      compiler: 'babel',
+      extensions: ['.mdx'],
+    }),
+    tailwindcss(),
+  ],
   server: {
     port: 3000,
   },

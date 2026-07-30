@@ -64,6 +64,6 @@ const math = defineMdastPlugin({
 
 export default {
   features: { math: true, directive: true },
-  mdx: { jsxImportSource: '@learning/mdx', providerImportSource: '@learning/mdx' },
+  mdx: { jsx: true, providerImportSource: '@learning/mdx' },
   mdastPlugins: [code, directives, math],
 }
