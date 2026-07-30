@@ -2,16 +2,7 @@
 import { render } from '@solidjs/web'
 import { paths, Router } from './router'
 
-import {
-  Boundary,
-  Code,
-  Example,
-  Exercise,
-  Heading,
-  Highlight,
-  Latex,
-  Remark,
-} from '@learning/components'
+import { Boundary, Code, Example, Exercise, Highlight, Latex, Remark } from '@learning/components'
 import { MDXProvider } from '@learning/mdx'
 import type { PathEnd } from '@solidjs/router'
 import { Match, Switch, type ParentComponent } from 'solid-js'
@@ -50,41 +41,37 @@ const Navbar = () => (
 
 render(
   () => (
-    <Boundary>
-      <Router>
-        {(props) => (
-          <>
-            <Navbar />
-            <MDXProvider
-              components={{
-                h1: (props) => <Heading level={1}>{props.children}</Heading>,
-                h2: (props) => <Heading level={2}>{props.children}</Heading>,
-                h3: (props) => <Heading level={3}>{props.children}</Heading>,
-                h4: (props) => <Heading level={4}>{props.children}</Heading>,
-                div: (props) => (
-                  <Switch fallback={<div>{props.children}</div>}>
-                    <Match when={props['data-type'] === 'example'}>
-                      <Example {...props} />
-                    </Match>
-                    <Match when={props['data-type'] === 'exercise'}>
-                      <Exercise {...props} />
-                    </Match>
-                    <Match when={props['data-type'] === 'remark'}>
-                      <Remark {...props} />
-                    </Match>
-                  </Switch>
-                ),
-                Code,
-                Highlight,
-                Latex,
-              }}
-            >
+    <MDXProvider
+      components={{
+        div: (props) => (
+          <Switch fallback={<div>{props.children}</div>}>
+            <Match when={props['data-type'] === 'example'}>
+              <Example {...props} />
+            </Match>
+            <Match when={props['data-type'] === 'exercise'}>
+              <Exercise {...props} />
+            </Match>
+            <Match when={props['data-type'] === 'remark'}>
+              <Remark {...props} />
+            </Match>
+          </Switch>
+        ),
+        Code,
+        Highlight,
+        Latex,
+      }}
+    >
+      <Boundary>
+        <Router>
+          {(props) => (
+            <>
+              <Navbar />
               {props.children}
-            </MDXProvider>
-          </>
-        )}
-      </Router>
-    </Boundary>
+            </>
+          )}
+        </Router>
+      </Boundary>
+    </MDXProvider>
   ),
   document.getElementById('root')!,
 )

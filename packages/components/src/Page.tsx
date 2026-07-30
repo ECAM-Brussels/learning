@@ -1,3 +1,4 @@
+import { MDXProvider } from '@learning/mdx'
 import type { JSX } from '@solidjs/web'
 import {
   type ParentComponent,
@@ -8,6 +9,7 @@ import {
   onSettled,
   Show,
 } from 'solid-js'
+import { Heading } from './Heading'
 
 type Node = {
   title: JSX.Element
@@ -40,7 +42,16 @@ export const Page: ParentComponent<{ title?: JSX.Element }> = (props) => {
           <Show when={props.title}>
             <h1 class="text-center text-5xl font-bold text-cyan-900">{props.title}</h1>
           </Show>
-          {props.children}
+          <MDXProvider
+            components={{
+              h1: (props) => <Heading level={1}>{props.children}</Heading>,
+              h2: (props) => <Heading level={2}>{props.children}</Heading>,
+              h3: (props) => <Heading level={3}>{props.children}</Heading>,
+              h4: (props) => <Heading level={4}>{props.children}</Heading>,
+            }}
+          >
+            {props.children}
+          </MDXProvider>
         </main>
         <aside class="sticky top-0 max-h-screen max-w-96 overflow-y-auto p-4 text-slate-600 print:hidden">
           <h1 class="my-4 text-2xl font-bold">Table des matières</h1>
