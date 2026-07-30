@@ -1,14 +1,12 @@
 import { Boundary, FeedbackContext, MathField } from '@learning/components'
-import { useLocation } from '@solidjs/router'
+import { action, useLocation } from '@solidjs/router'
 import { Dynamic, type JSX } from '@solidjs/web'
 import { mapValues } from 'es-toolkit'
 import {
-  action,
   createMemo,
   createOptimisticStore,
   createStore,
   omit,
-  refresh,
   Show,
   snapshot,
   useContext,
@@ -265,26 +263,23 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     },
   } satisfies ComponentProps<typeof props.prompt>['state']
 
-  const submit = action(async function* () {
-    setStep((s) => {
-      s.state = state as ObjectSchema<S['inputs'], 'input'>
-      s.submitted = true
-    })
-    const [correct, feedback] = normalizeGrade(await props.grade(parsed()))
-    setStep((s) => {
-      s.correct = correct
-      s.feedback = feedback
-    })
+  const submit = action(async (newState: typeof state) => {
+    const payload = {
+      ...snapshot(step),
+      state: newState,
+      submitted: true,
+    }
+    const parsed = v.parse(v.object(schemas()), { data: payload.data, inputs: payload.state })
+    const [correct, feedback] = normalizeGrade(await props.grade(parsed))
+    payload.correct = correct
+    payload.feedback = feedback
     await saveStep(
       // Parsing is important here to ensure the schemas decide how to be serialized
       v.parse(
         StoredStep(props.schema.data as S['data'], props.schema.inputs as S['inputs']),
-        snapshot(step),
+        payload,
       ),
     )
-    yield
-    refresh(step)
-    refresh(state)
   })
 
   const Self = (attrs: Partial<StepProps<S, F>>) => <Step {...props} data={step.data} {...attrs} />
@@ -301,21 +296,21 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   return (
     <div class={props.class}>
       <StepBoundary fallback="Chargement de l'exercice...">
-        <Dynamic
-          component={props.prompt}
-          data={parsedData()}
-          inputs={fields()}
-          state={promptState}
-        />
+        <form method="post" action={submit.with(state)}>
+          <Dynamic
+            component={props.prompt}
+            data={parsedData()}
+            inputs={fields()}
+            state={promptState}
+          />
+          <Show when={!step.submitted}>
+            <button class="block rounded-lg bg-green-800 px-3 py-2 text-green-100">
+              Soumettre
+            </button>
+          </Show>
+        </form>
       </StepBoundary>
-      <Show
-        when={step.submitted}
-        fallback={
-          <button class="block rounded-lg bg-green-800 px-3 py-2 text-green-100" onClick={submit}>
-            Soumettre
-          </button>
-        }
-      >
+      <Show when={step.submitted}>
         <StepBoundary fallback="Chargement du feedback..." offset={1}>
           <Dynamic
             component={props.feedback}
