@@ -5,6 +5,7 @@
     "esbenp.prettier-vscode",
     "ms-python.black-formatter",
     "unifiedjs.vscode-mdx",
-    "hipstersmoothie-public.mdx-tsc-vscode"
+    "hipstersmoothie-public.mdx-tsc-vscode",
+    "darkriszty.markdown-table-prettify"
   ]
 }
