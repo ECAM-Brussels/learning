@@ -1,13 +1,14 @@
 import { MDXProvider } from '@learning/mdx'
 import type { JSX } from '@solidjs/web'
 import {
-  type ParentComponent,
+  createContext,
   createMemo,
   createStore,
   For,
   Loading,
-  onSettled,
   Show,
+  type ParentComponent,
+  type StoreSetter,
 } from 'solid-js'
 import { Heading } from './Heading'
 
@@ -18,7 +19,7 @@ type Node = {
   level: 1 | 2 | 3 | 4 | 5 | 6
 }
 
-export const [toc, setToc] = createStore<Node[]>([])
+export const TOCContext = createContext<StoreSetter<Node[]>>()
 
 export const Page: ParentComponent<{ title?: JSX.Element }> = (props) => {
   const active = createMemo(() => {
@@ -29,11 +30,7 @@ export const Page: ParentComponent<{ title?: JSX.Element }> = (props) => {
     return index
   })
 
-  onSettled(() => {
-    return () => {
-      setToc(() => [])
-    }
-  })
+  const [toc, setToc] = createStore<Node[]>([])
 
   return (
     <Loading>
@@ -50,7 +47,7 @@ export const Page: ParentComponent<{ title?: JSX.Element }> = (props) => {
               h4: (props) => <Heading level={4}>{props.children}</Heading>,
             }}
           >
-            {props.children}
+            <TOCContext value={setToc}>{props.children}</TOCContext>
           </MDXProvider>
         </main>
         <aside class="sticky top-0 max-h-screen max-w-96 overflow-y-auto p-4 text-slate-600 print:hidden">

@@ -1,11 +1,12 @@
 import { Dynamic, type JSX } from '@solidjs/web'
 import { debounce } from 'es-toolkit'
-import { createEffect, createSignal, onSettled } from 'solid-js'
-import { setToc } from './Page'
+import { createEffect, createSignal, onSettled, useContext } from 'solid-js'
+import { TOCContext } from './Page'
 
 export function Heading(props: { children: JSX.Element; level: 1 | 2 | 3 | 4 | 5 | 6 }) {
   const [id, setId] = createSignal<string | undefined>()
   const [element, setElement] = createSignal<HTMLElement | null>(null)
+  const setToc = useContext(TOCContext)
 
   createEffect(
     () => props.children,
