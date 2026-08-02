@@ -24,6 +24,11 @@ type Components = Partial<
 >
 
 export const MDXContext = createContext<Components>({
+  a: (props) => <a {...props} />,
+  blockquote: (props) => <blockquote {...props} />,
+  code: (props) => <code {...props} />,
+  div: (props) => <div {...props} />,
+  em: (props) => <em {...props} />,
   h1: (props) => <h1 {...props} />,
   h2: (props) => <h2 {...props} />,
   h3: (props) => <h3 {...props} />,
@@ -31,21 +36,17 @@ export const MDXContext = createContext<Components>({
   h5: (props) => <h5 {...props} />,
   h6: (props) => <h6 {...props} />,
   hr: (props) => <hr {...props} />,
-  div: (props) => <div {...props} />,
-  p: (props) => <p {...props} />,
-  a: (props) => <a {...props} />,
-  ul: (props) => <ul {...props} />,
-  ol: (props) => <ol {...props} />,
-  li: (props) => <li {...props} />,
-  blockquote: (props) => <blockquote {...props} />,
-  code: (props) => <code {...props} />,
-  pre: (props) => <pre {...props} />,
   img: (props) => <img {...props} />,
-  table: (props) => <table {...props} />,
-  th: (props) => <th {...props} />,
-  td: (props) => <td {...props} />,
+  label: (props) => <label {...props} />,
+  li: (props) => <li {...props} />,
+  ol: (props) => <ol {...props} />,
+  p: (props) => <p {...props} />,
+  pre: (props) => <pre {...props} />,
   strong: (props) => <strong {...props} />,
-  em: (props) => <em {...props} />,
+  table: (props) => <table {...props} />,
+  td: (props) => <td {...props} />,
+  th: (props) => <th {...props} />,
+  ul: (props) => <ul {...props} />,
 })
 
 export const MDXProvider: ParentComponent<{ components: Components }> = (props) => {
