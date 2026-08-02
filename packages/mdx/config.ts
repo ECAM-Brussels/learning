@@ -1,5 +1,10 @@
 import { defineMdastPlugin } from 'satteri'
 
+const asJsStringLiteral = (value: string) => ({
+  type: 'mdxJsxAttributeValueExpression' as const,
+  value: JSON.stringify(value),
+})
+
 const directives = defineMdastPlugin({
   name: 'directives',
   containerDirective(node, ctx) {
@@ -24,7 +29,7 @@ const code = defineMdastPlugin({
         name: 'Code',
         attributes: [
           { type: 'mdxJsxAttribute', name: 'lang', value: node.lang },
-          { type: 'mdxJsxAttribute', name: 'children', value: node.value },
+          { type: 'mdxJsxAttribute', name: 'children', value: asJsStringLiteral(node.value) },
           ...(run ? [{ type: 'mdxJsxAttribute' as const, name: 'run', value: null }] : []),
           ...(math ? [{ type: 'mdxJsxAttribute' as const, name: 'math', value: null }] : []),
         ],
@@ -36,7 +41,7 @@ const code = defineMdastPlugin({
       name: 'Highlight',
       attributes: [
         { type: 'mdxJsxAttribute', name: 'lang', value: node.lang === 'mdx' ? 'jsx' : node.lang },
-        { type: 'mdxJsxAttribute', name: 'code', value: node.value },
+        { type: 'mdxJsxAttribute', name: 'code', value: asJsStringLiteral(node.value) },
       ],
       children: [],
     }

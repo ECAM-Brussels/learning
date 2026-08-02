@@ -1,0 +1,46 @@
+import { createMemo, createSignal, Show } from 'solid-js'
+import { paths } from '../../router'
+import { Page } from '@learning/components'
+export default Page
+
+export const [os, setOs] = createSignal(() => {
+  const ua = navigator.userAgent.toLowerCase()
+  if (ua.includes('mac')) return 'macos'
+  if (ua.includes('linux')) return 'linux'
+  return /** @type {string} */ ('windows')
+})
+
+<label class="flex gap-4">
+  Système d'exploitation:
+  <select value={os()} onChange={(e) => setOs(e.currentTarget.value)}>
+    <option value="windows">Windows</option>
+    <option value="linux">Linux</option>
+    <option value="macos">MacOS</option>
+  </select>
+</label>
+
+## Prérequis
+
+export const bun = createMemo(() =>
+  os() === 'windows'
+    ? 'powershell -c "irm bun.sh/install.ps1 | iex"'
+    : 'curl -fsSL https://bun.sh/install | bash',
+)
+export const uv = createMemo(() =>
+  os() === 'windows'
+    ? 'powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"'
+    : 'curl -LsSf https://astral.sh/uv/install.sh | sh',
+)
+
+1. Installer [Bun](https://bun.sh/)
+   pour que votre machine comprenne le TypeScript.
+
+   <pre>{bun()}</pre>
+
+2. Installer [uv](https://docs.astral.sh/uv/)
+   pour que votre machine comprenne le Python.
+
+   <pre>{uv()}</pre>
+
+3. Installer [Visual Studio Code](https://code.visualstudio.com/)
+   ou un autre éditeur de texte de votre choix.

@@ -6,6 +6,7 @@ export const Router = createRouter({
     { path: '/', component: lazy(() => import('./routes/index.mdx')) },
     { path: '/doc', component: lazy(() => import('./routes/doc/index.mdx')) },
     { path: '/doc/exercise', component: lazy(() => import('./routes/doc/exercise.mdx')) },
+    { path: '/doc/setup', component: lazy(() => import('./routes/doc/setup.mdx')) },
     { path: '/numerical', component: lazy(() => import('./routes/numerical/index.mdx')) },
     {
       path: '/numerical/01-python',
