@@ -1,9 +1,22 @@
 import { defineMdastPlugin } from 'satteri'
 
-const asJsStringLiteral = (value: string) => ({
-  type: 'mdxJsxAttributeValueExpression' as const,
-  value: JSON.stringify(value),
-})
+function component(name: string, attributes: Record<string, unknown>) {
+  return {
+    type: 'mdxJsxFlowElement' as const,
+    name,
+    attributes: Object.entries(attributes)
+      .filter(([, value]) => value !== false && value != null)
+      .map(([name, value]) => ({
+        type: 'mdxJsxAttribute' as const,
+        name,
+        value:
+          value === true
+            ? null
+            : { type: 'mdxJsxAttributeValueExpression' as const, value: JSON.stringify(value) },
+      })),
+    children: [],
+  }
+}
 
 const directives = defineMdastPlugin({
   name: 'directives',
@@ -24,47 +37,19 @@ const code = defineMdastPlugin({
     const run = node.meta?.includes('run') ?? false
     if (node.lang === 'python' && run) {
       const math = node.meta?.includes('math') ?? false
-      return {
-        type: 'mdxJsxFlowElement',
-        name: 'Code',
-        attributes: [
-          { type: 'mdxJsxAttribute', name: 'lang', value: node.lang },
-          { type: 'mdxJsxAttribute', name: 'children', value: asJsStringLiteral(node.value) },
-          ...(run ? [{ type: 'mdxJsxAttribute' as const, name: 'run', value: null }] : []),
-          ...(math ? [{ type: 'mdxJsxAttribute' as const, name: 'math', value: null }] : []),
-        ],
-        children: [],
-      }
+      return component('Code', { lang: node.lang, children: node.value, run, math })
     }
-    return {
-      type: 'mdxJsxFlowElement',
-      name: 'Highlight',
-      attributes: [
-        { type: 'mdxJsxAttribute', name: 'lang', value: node.lang === 'mdx' ? 'jsx' : node.lang },
-        { type: 'mdxJsxAttribute', name: 'code', value: asJsStringLiteral(node.value) },
-      ],
-      children: [],
-    }
+    return component('Highlight', {
+      lang: node.lang === 'mdx' ? 'jsx' : node.lang,
+      code: node.value,
+    })
   },
 })
 
 const math = defineMdastPlugin({
   name: 'math',
-  inlineMath: (node) => ({
-    type: 'mdxJsxTextElement',
-    name: 'Latex',
-    attributes: [{ type: 'mdxJsxAttribute', name: 'value', value: node.value }],
-    children: [],
-  }),
-  math: (node) => ({
-    type: 'mdxJsxFlowElement',
-    name: 'Latex',
-    attributes: [
-      { type: 'mdxJsxAttribute', name: 'value', value: node.value },
-      { type: 'mdxJsxAttribute', name: 'displayMode', value: null },
-    ],
-    children: [],
-  }),
+  inlineMath: (node) => component('Latex', { value: node.value }),
+  math: (node) => component('Latex', { value: node.value, displayMode: true }),
 })
 
 export default {
