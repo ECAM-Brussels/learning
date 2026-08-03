@@ -5,7 +5,7 @@ export function Pagination(props: {
   current?: number
   children: (() => JSX.Element)[]
   onChange?: (page: number) => void
-  progress?: (boolean | null | undefined)[]
+  progress?: Record<number, boolean | null | undefined>
 }) {
   const [current, setCurrent] = createSignal(() => props.current ?? 1)
   createEffect(current, (current) => {

@@ -12,11 +12,11 @@ type Props<T extends object> = {
       exercise: Component<T>
       next: (props: {
         position: number
-        progress: (boolean | null | undefined)[]
+        progress: Record<number, boolean | null | undefined>
       }) => Promise<T> | T
     }
   | {
-      next: Component<{ position: number; progress: (boolean | null | undefined)[] }>
+      next: Component<{ position: number; progress: Record<number, boolean | null | undefined> }>
     }
   | {
       children: JSX.Element[]
@@ -75,7 +75,7 @@ export function Sequence<T extends object>(props: Props<T>) {
   })
   const progress = createMemo(() => exerciseContext.getProgress(stepContext()))
   const length = createMemo(() =>
-    'children' in props ? props.children.length : progress().length + 1,
+    'children' in props ? props.children.length : Object.keys(progress()).length + 1,
   )
   return (
     <Pagination progress={progress()}>

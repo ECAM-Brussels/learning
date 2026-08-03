@@ -13,28 +13,33 @@ export const StepContext = createContext<Accessor<StepContext> | null>(null)
 
 export type ExerciseContext = {
   fetchStep: (ctx: StepContext) => Promise<StoredStep | null>
-  getProgress: (ctx: StepContext) => Promise<(boolean | null)[]>
+  getProgress: (ctx: StepContext) => Promise<Record<number, boolean | null | undefined>>
   saveStep: (ctx: StepContext, step: StoredStep) => Promise<void>
 }
 
 const getStorageId = (ctx: StepContext) => `${ctx.url}:${ctx.sequenceId}:${ctx.sequencePosition}`
 
 export const ExerciseContext = createContext<ExerciseContext>({
-  fetchStep: query(async (ctx) => {
+  fetchStep: query(async (ctx: StepContext) => {
     const id = getStorageId(ctx)
     const stored = JSON.parse(localStorage.getItem(id) ?? '[]')
     return stored[ctx.position] ?? null
   }, 'fetchStep'),
-  getProgress: query(async (ctx) => {
+  getProgress: query(async (ctx: StepContext) => {
     const prefix = `${ctx.url}:${ctx.sequenceId}:`
-    return Object.keys(localStorage)
-      .filter((k) => k.startsWith(prefix))
-      .map((k) => {
-        const exercise = JSON.parse(localStorage.getItem(k) ?? '[]')
-        return exercise.every((part: StoredStep) => part.correct)
-      })
+    return Object.fromEntries(
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith(prefix))
+        .map((k) => {
+          const exercise = JSON.parse(localStorage.getItem(k) ?? '[]')
+          return [
+            parseInt(k.split(':').at(-1)!),
+            exercise.every((part: StoredStep) => part.correct),
+          ]
+        }),
+    )
   }, 'getProgress'),
-  saveStep: async (ctx, step) => {
+  saveStep: async (ctx: StepContext, step: StoredStep) => {
     const id = getStorageId(ctx)
     const stored = JSON.parse(localStorage.getItem(id) ?? '[]')
     if (ctx.position >= stored.length) stored.push(step)
