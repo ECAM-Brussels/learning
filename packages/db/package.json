@@ -12,7 +12,7 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "drizzle-orm": "^1.0.0-rc.4",
+    "drizzle-orm": "catalog:",
     "pg": "^8.22.0",
     "valibot": "^1.4.2"
   }

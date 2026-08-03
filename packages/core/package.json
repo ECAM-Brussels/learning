@@ -20,8 +20,10 @@
   "dependencies": {
     "@cortex-js/compute-engine": "catalog:",
     "@learning/components": "workspace:",
+    "@learning/db": "workspace:*",
     "@solidjs/router": "catalog:",
     "dedent": "^1.7.2",
+    "drizzle-orm": "catalog:",
     "es-toolkit": "catalog:",
     "safe-stable-stringify": "^2.5.0",
     "valibot": "catalog:"

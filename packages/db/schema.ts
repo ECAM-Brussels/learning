@@ -13,7 +13,8 @@ export const steps = snakeCase.table(
     name: text(),
     data: jsonb().notNull(),
     state: jsonb().notNull(),
-    correct: boolean().notNull(),
+    correct: boolean(),
+    feedback: jsonb().default({}),
 
     created: timestamp().defaultNow().notNull(),
   },
