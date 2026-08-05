@@ -1,5 +1,6 @@
 import saterriConfig from '@learning/mdx/config'
 import tailwindcss from '@tailwindcss/vite'
+import { fileRoutes } from 'filesystem-routing/vite'
 import { defineConfig } from 'vite'
 import satteri from 'vite-plugin-satteri'
 import solidPlugin from 'vite-plugin-solid'
@@ -11,6 +12,7 @@ export default defineConfig({
       compiler: 'babel',
       extensions: ['.mdx'],
     }),
+    fileRoutes({ types: true, extensions: ['mdx'] }) as any,
     tailwindcss(),
   ],
   server: {
