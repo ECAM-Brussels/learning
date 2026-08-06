@@ -12,7 +12,7 @@ export default defineConfig({
       compiler: 'babel',
       extensions: ['.mdx'],
     }),
-    fileRoutes({ types: true, extensions: ['mdx'] }) as any,
+    fileRoutes({ types: true, extensions: ['mdx', 'tsx'] }) as any,
     tailwindcss(),
   ],
   server: {

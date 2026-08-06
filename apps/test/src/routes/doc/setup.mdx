@@ -1,7 +1,5 @@
 import { createMemo, createSignal, Show } from 'solid-js'
 import { paths } from '../../router'
-import { Page } from '@learning/components'
-export default Page
 
 export const [os, setOs] = createSignal(() => {
   const ua = navigator.userAgent.toLowerCase()
