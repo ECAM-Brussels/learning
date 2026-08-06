@@ -1,4 +1,5 @@
 import { MDXProvider } from '@learning/mdx'
+import { useBeforeLeave } from '@solidjs/router'
 import type { JSX } from '@solidjs/web'
 import {
   createContext,
@@ -28,6 +29,10 @@ export const Page: ParentComponent<{ title?: JSX.Element }> = (props) => {
       index = toc.map((n) => n.position).findIndex((p) => p > 0) - 1
     }
     return index
+  })
+
+  useBeforeLeave(() => {
+    setToc((s) => [])
   })
 
   const [toc, setToc] = createStore<Node[]>([])
