@@ -126,19 +126,43 @@ Vous verrez que les réponses de Python sont parfois surprenantes.
 
 Qu'en est-il de la racine carré, des fonctions trigonométriques, exponentielles et logarithmiques?
 Nous allons pour cela utiliser la bibliothèque `math` de Python,
-qui contient de nombreuses fonctions mathématiques utiles,
+qui contient de nombreux outils mathématiques utiles,
 telles que:
 
-- `sqrt` (la racine carrée ou _**sq**uare **r**oo**t**_)
-- `sin`, `cos`, `tan`
-- `exp`, `log`
+- les fonctions:
+  - racine carrée (`sqrt`)
+  - trigonométriques `sin`, `cos`, `tan`
+  - cyclométriques $\arcsin$ (`asin`), $\arccos$ (`acos`), $\arctan$ (`atan`)
+  - exponentielles (`exp`) et logarithmes (`log`)
+- les constantes $\pi$ (`pi`) et $e$ (`e`).
 
-Comme en mathématiques,
-une fonction est appliquée à un _argument_ entre parenthèses.
+Par défaut, ces fonctions ne sont **pas disponibles** dans l'environnement Python.
+Nous devons les **importer**,
+et il existe plusieurs façons de le faire.
 
-{tex`%
-\underbrace{\mathrm{sqrt}}_{\text{fonction}}(67) \rightarrow \sqrt{67}
-`}
+:::example
+
+Supposons que vous souhaitiez calculer la racine carrée de $2$ et la valeur de $\pi$.
+
+|                      | Import simple  | Import spécifique           | Import étoile        |
+| -------------------- | -------------- | --------------------------- | -------------------- |
+| Import               | `import math`  | `from math import sqrt, pi` | `from math import *` |
+| Calcul de $\sqrt{2}$ | `math.sqrt(2)` | `sqrt(2)`                   | `sqrt(2)`            |
+| Valeur de $\pi$      | `math.pi`      | `pi`                        | `pi`                 |
+
+:::
+
+:::remark
+L'import simple est le plus _explicite_ et est préféré dans les codes professionels.
+L'import étoilé est le plus concis,
+peut porter à confusion,
+mais est acceptable pour des calculs rapides et simples.
+
+À titre d'exemple,
+il existe plusieurs implémentations de la fonction racine carrée:
+`sympy.sqrt`, `numpy.sqrt`, `math.sqrt`, etc.
+Avec l'import simple, le choix est _délibéré_ et _explicite_ à chaque appel.
+:::
 
 ```python run
 # On importe la fonction sqrt de la bibliothèque math
@@ -163,23 +187,6 @@ log(67, 10)
 
 :::
 
-:::remark
-Pour importer plusieurs fonctions d'une bibliothèque, on peut les séparer par des virgules:
-
-```python run
-from math import sqrt, log
-log(sqrt(73))
-```
-
-Il est également possible d'importer toute la bibliothèque
-
-```python run
-from math import *
-log(sqrt(73))
-```
-
-:::
-
 ---
 
 ## Exercices
@@ -197,7 +204,37 @@ log(sqrt(73))
 
 ---
 
+## Variables
+
+Les variables permettent de stocker des valeurs pour les réutiliser plus tard.
+Elles jouent un rôle important pour rendre le code plus lisible et plus facile à maintenir.
+
+:::example
+Calculez la surface d'un cylindre de rayon $2$ et de hauteur $3$,
+
+```python run
+from math import pi
+
+r = 2
+h = 3
+S = 2 * pi * r**2 + 2 * pi * r * h
+S
+```
+
+L'avantage de l'utilisation de variables
+est qu'il est possible de modifier les valeurs de `r` et `h`
+pour calculer la surface avec d'autres données,
+sans avoir à réécrire tout le calcul.
+:::
+
 ## Listes de nombres
+
+Pour créer une liste de nombres,
+on procède comme suit:
+
+```python
+[1, 2, 3, 4, 5]
+```
 
 ## Fonctions à une variable
 
