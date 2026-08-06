@@ -3,6 +3,7 @@
   "module": "./index.ts",
   "private": true,
   "devDependencies": {
+    "@fortawesome/fontawesome-common-types": "catalog:",
     "@types/bun": "latest",
     "shiki": "^4.1.0"
   },

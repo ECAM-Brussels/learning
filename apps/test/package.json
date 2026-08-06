@@ -19,6 +19,8 @@
     "vite-plugin-solid": "catalog:"
   },
   "dependencies": {
+    "@fortawesome/free-brands-svg-icons": "catalog:",
+    "@fortawesome/free-solid-svg-icons": "catalog:",
     "@learning/components": "workspace:*",
     "@learning/core": "workspace:*",
     "@learning/exercises": "workspace:*",
