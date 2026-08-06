@@ -1,4 +1,9 @@
-@import "tailwindcss";
-@plugin "@tailwindcss/typography";
+@import '@fontsource/fira-sans/300.css';
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
 
 @source '../../../';
+
+@theme {
+  --font-sans: 'Fira Sans', sans-serif;
+}
