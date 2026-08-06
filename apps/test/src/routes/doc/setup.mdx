@@ -12,7 +12,7 @@ export const [os, setOs] = createSignal(() => {
 
 <label class="flex gap-4">
   Système d'exploitation:
-  <select value={os()} onChange={(e) => setOs(e.currentTarget.value)}>
+  <select class="rounded-lg" value={os()} onChange={(e) => setOs(e.currentTarget.value)}>
     <option value="windows">Windows</option>
     <option value="linux">Linux</option>
     <option value="macos">MacOS</option>
@@ -32,15 +32,30 @@ export const uv = createMemo(() =>
     : 'curl -LsSf https://astral.sh/uv/install.sh | sh',
 )
 
-1. Installer [Bun](https://bun.sh/)
-   pour que votre machine comprenne le TypeScript.
+1. Installez [Git](https://git-scm.com/),
+   un logiciel de contrôle de version.
+
+2. Installer [Bun](https://bun.sh/)
+   pour que votre machine comprenne le _TypeScript_.
 
    <pre>{bun()}</pre>
 
-2. Installer [uv](https://docs.astral.sh/uv/)
-   pour que votre machine comprenne le Python.
+3. Installer [uv](https://docs.astral.sh/uv/)
+   pour que votre machine comprenne le _Python_.
 
    <pre>{uv()}</pre>
 
-3. Installer [Visual Studio Code](https://code.visualstudio.com/)
+4. Installer [Visual Studio Code](https://code.visualstudio.com/)
    ou un autre éditeur de texte de votre choix.
+
+## Lancer le projet
+
+1. Clonez le projet depuis GitHub:
+
+   ```bash
+   git clone https://github.com/ECAM-Brussels/learning.git
+   ```
+
+1. `bun install`
+
+1. `bun dev`
