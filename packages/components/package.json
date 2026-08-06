@@ -13,6 +13,7 @@
   "dependencies": {
     "@learning/mdx": "workspace:*",
     "@learning/repl": "workspace:*",
+    "@solidjs/meta": "catalog:",
     "@solidjs/router": "catalog:",
     "@solidjs/web": "catalog:",
     "dedent": "^1.7.2",

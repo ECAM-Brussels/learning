@@ -1,4 +1,5 @@
 import { faChevronRight } from '@fortawesome/free-solid-svg-icons'
+import { Title } from '@solidjs/meta'
 import { type JSX } from '@solidjs/web'
 import {
   createContext,
@@ -19,7 +20,7 @@ export const BreadCrumbsContext = createContext(setCrumbs)
 
 export function BreadCrumbs() {
   return (
-    <ul class="not-prose my-4 flex list-none gap-2 p-0 text-sm text-gray-600">
+    <ul class="not-prose mb-4 flex list-none gap-2 p-0 text-sm text-gray-400">
       <For each={crumbs}>
         {(crumb, i) => (
           <>
@@ -55,5 +56,10 @@ export function Crumb(props: Crumb & { children: JSX.Element }) {
     }
   })
 
-  return props.children
+  return (
+    <>
+      <Title>{props.title}</Title>
+      {props.children}
+    </>
+  )
 }

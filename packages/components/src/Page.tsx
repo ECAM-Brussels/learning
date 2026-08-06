@@ -11,7 +11,7 @@ import {
   type ParentComponent,
   type StoreSetter,
 } from 'solid-js'
-import { BreadCrumbs, Crumb } from './Breadcrumbs'
+import { BreadCrumbs } from './Breadcrumbs'
 import { Heading } from './Heading'
 
 type Node = {
@@ -57,9 +57,7 @@ export const Page: ParentComponent<{ title?: JSX.Element }> = (props) => {
               h4: (props) => <Heading level={4}>{props.children}</Heading>,
             }}
           >
-            <Crumb href="/" title="learning">
-              <TOCContext value={setToc}>{props.children}</TOCContext>
-            </Crumb>
+            <TOCContext value={setToc}>{props.children}</TOCContext>
           </MDXProvider>
         </main>
         <aside class="sticky top-0 max-h-screen max-w-96 overflow-y-auto p-4 text-slate-600 print:hidden">
