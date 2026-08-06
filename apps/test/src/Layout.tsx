@@ -20,7 +20,7 @@ const NavLink: ParentComponent<{ class?: string; href: PathEnd | string }> = (pr
 )
 
 const Navbar = () => (
-  <nav class="sticky top-0 z-10 mx-auto bg-white shadow-sm">
+  <nav class="mx-auto mb-0.5 bg-white shadow-sm">
     <div class="container mx-auto flex items-center justify-between gap-8">
       <NavLink class="text-xl font-bold text-sky-800" href={paths()}>
         learning

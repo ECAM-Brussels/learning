@@ -31,8 +31,11 @@ export const Page: ParentComponent<{ title?: JSX.Element }> = (props) => {
     return index
   })
 
-  useBeforeLeave(() => {
-    setToc((s) => [])
+  useBeforeLeave((event) => {
+    if (typeof event.to === 'string') {
+      const url = new URL(event.to, 'http://localhost').pathname
+      if (url !== event.from.pathname) setToc((s) => [])
+    }
   })
 
   const [toc, setToc] = createStore<Node[]>([])
@@ -60,6 +63,7 @@ export const Page: ParentComponent<{ title?: JSX.Element }> = (props) => {
           <For each={toc}>
             {(node, i) => (
               <a
+                replace
                 href={`#${i()}`}
                 class={[
                   'font-lg block border-l-4 py-2',
