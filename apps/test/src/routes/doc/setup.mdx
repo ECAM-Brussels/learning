@@ -1,5 +1,10 @@
 import { createMemo, createSignal, Show } from 'solid-js'
+import { defineMeta } from '@learning/components'
 import { paths } from '../../router'
+
+export default defineMeta({
+  title: 'Setup',
+})
 
 export const [os, setOs] = createSignal(() => {
   const ua = navigator.userAgent.toLowerCase()
