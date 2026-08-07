@@ -7,11 +7,9 @@ import {
   createStore,
   For,
   Loading,
-  Show,
   type ParentComponent,
   type StoreSetter,
 } from 'solid-js'
-import { BreadCrumbs } from './Breadcrumbs'
 import { Heading } from './Heading'
 
 type Node = {
@@ -45,10 +43,6 @@ export const Page: ParentComponent<{ title?: JSX.Element }> = (props) => {
     <Loading>
       <div class="relative container mx-auto flex w-screen pb-1">
         <main class="prose prose-code:before:content-none prose-code:after:content-none max-w-270 grow overflow-auto scroll-smooth rounded-b-xl bg-white p-8 pb-200 shadow-sm">
-          <BreadCrumbs />
-          <Show when={props.title}>
-            <h1 class="text-center text-5xl font-bold text-cyan-900">{props.title}</h1>
-          </Show>
           <MDXProvider
             components={{
               h1: (props) => <Heading level={1}>{props.children}</Heading>,

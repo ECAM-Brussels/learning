@@ -1,6 +1,6 @@
 import { faGithub } from '@fortawesome/free-brands-svg-icons'
 import { faBook } from '@fortawesome/free-solid-svg-icons'
-import { Crumb, Fa, Page } from '@learning/components'
+import { BreadCrumbs, Crumb, Fa, Page } from '@learning/components'
 import type { PathEnd } from '@solidjs/router'
 import type { JSX } from '@solidjs/web'
 import { type ParentComponent } from 'solid-js'
@@ -50,9 +50,12 @@ export default function Layout(props: { children: JSX.Element }) {
   return (
     <>
       <Navbar />
-      <Crumb href={paths()} title="learning">
-        <Page>{props.children}</Page>
-      </Crumb>
+      <Page>
+        <Crumb href="/" title="Accueil">
+          <BreadCrumbs />
+          {props.children}
+        </Crumb>
+      </Page>
     </>
   )
 }
