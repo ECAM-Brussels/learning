@@ -1,5 +1,10 @@
 import { Sequence, tex } from '@learning/core'
+import { defineMeta } from '@learning/components'
 import { PythonCode } from '@learning/exercises/python/Code'
+
+export default defineMeta({
+  title: 'Session 1: Python',
+})
 
 L'objectif de cette activité est de vous guider dans vos premiers pas en programmation.
 N'ayez pas peur si vous n'avez jamais programmé auparavant,
@@ -263,6 +268,13 @@ Notez la présence du `:` à la fin de la première ligne
 
 :::
 
-## Pour aller plus loin
+## Vecteurs avec `numpy`
 
-### Installer Python sur votre ordinateur
+### Produit scalaire
+
+```python run
+import numpy as np
+a = np.array([1, 2, 3])
+b = np.array([4, 5, 6])
+a.dot(b)
+```
