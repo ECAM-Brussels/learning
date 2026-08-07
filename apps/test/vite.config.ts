@@ -1,5 +1,6 @@
 import saterriConfig from '@learning/mdx/config'
 import tailwindcss from '@tailwindcss/vite'
+import { routePathFromFile } from 'filesystem-routing'
 import { fileRoutes } from 'filesystem-routing/vite'
 import { defineConfig } from 'vite'
 import satteri from 'vite-plugin-satteri'
@@ -16,7 +17,7 @@ export default defineConfig({
       types: true,
       extensions: ['mdx', 'tsx'],
       toPath: (file) => {
-        return file.replace(/index/, '').replace(/\/_layout/, '')
+        return routePathFromFile(file).replace(/\/_layout$/, '')
       },
     }) as any,
     tailwindcss(),
