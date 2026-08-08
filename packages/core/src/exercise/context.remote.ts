@@ -1,19 +1,18 @@
 import { db, tables } from '@learning/db'
-import { query } from '@solidjs/router'
 import { and, eq, sql } from 'drizzle-orm'
 import type { StoredStep } from './base'
 import type { StepContext } from './context'
 
-export const fetchStep = query(async (ctx: StepContext) => {
+export const fetchStep = async (ctx: StepContext) => {
   'use server'
   const res = await db.query.steps.findFirst({
     columns: { name: true, data: true, state: true, correct: true, feedback: true },
     where: { userEmail: 'ngy@ecam.be', ...ctx },
   })
   return (res as StoredStep) ?? null
-}, 'fetchStep')
+}
 
-export const getProgress = query(async (ctx: StepContext) => {
+export const getProgress = async (ctx: StepContext) => {
   'use server'
   const { sequencePosition, position, ...sequence } = ctx
   const rows = await db
@@ -37,7 +36,7 @@ export const getProgress = query(async (ctx: StepContext) => {
     .groupBy(tables.steps.sequencePosition)
     .orderBy(tables.steps.sequencePosition)
   return Object.fromEntries(rows.map((r) => [r.i, r.progress] as const))
-}, 'getProgress')
+}
 
 export const saveStep = async (ctx: StepContext, step: StoredStep) => {
   'use server'

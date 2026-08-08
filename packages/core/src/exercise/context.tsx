@@ -1,6 +1,7 @@
 import { query } from '@solidjs/router'
 import { createContext, type Accessor } from 'solid-js'
 import type { StoredStep } from './base'
+import * as remote from './context.remote'
 
 export type StepContext = {
   url: string
@@ -21,29 +22,42 @@ const getStorageId = (ctx: StepContext) => `${ctx.url}:${ctx.sequenceId}:${ctx.s
 
 export const ExerciseContext = createContext<ExerciseContext>({
   fetchStep: query(async (ctx: StepContext) => {
-    const id = getStorageId(ctx)
-    const stored = JSON.parse(localStorage.getItem(id) ?? '[]')
-    return stored[ctx.position] ?? null
+    try {
+      return await remote.fetchStep(ctx)
+    } catch {
+      const id = getStorageId(ctx)
+      const stored = JSON.parse(localStorage.getItem(id) ?? '[]')
+      return stored[ctx.position] ?? null
+    }
   }, 'fetchStep'),
   getProgress: query(async (ctx: StepContext) => {
-    const prefix = `${ctx.url}:${ctx.sequenceId}:`
-    return Object.fromEntries(
-      Object.keys(localStorage)
-        .filter((k) => k.startsWith(prefix))
-        .map((k) => {
-          const exercise = JSON.parse(localStorage.getItem(k) ?? '[]')
-          return [
-            parseInt(k.split(':').at(-1)!),
-            exercise.every((part: StoredStep) => part.correct),
-          ]
-        }),
-    )
+    try {
+      return await remote.getProgress(ctx)
+    } catch {
+      const prefix = `${ctx.url}:${ctx.sequenceId}:`
+      return Object.fromEntries(
+        Object.keys(localStorage)
+          .filter((k) => k.startsWith(prefix))
+          .map((k) => {
+            const exercise = JSON.parse(localStorage.getItem(k) ?? '[]')
+            return [
+              parseInt(k.split(':').at(-1)!),
+              exercise.every((part: StoredStep) => part.correct),
+            ]
+          }),
+      )
+    }
   }, 'getProgress'),
   saveStep: async (ctx: StepContext, step: StoredStep) => {
-    const id = getStorageId(ctx)
-    const stored = JSON.parse(localStorage.getItem(id) ?? '[]')
-    if (ctx.position >= stored.length) stored.push(step)
-    else stored[ctx.position] = step
-    localStorage.setItem(id, JSON.stringify(stored))
+    try {
+      await remote.saveStep(ctx, step)
+    } catch {
+      return
+      const id = getStorageId(ctx)
+      const stored = JSON.parse(localStorage.getItem(id) ?? '[]')
+      if (ctx.position >= stored.length) stored.push(step)
+      else stored[ctx.position] = step
+      localStorage.setItem(id, JSON.stringify(stored))
+    }
   },
 })

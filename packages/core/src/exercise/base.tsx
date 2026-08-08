@@ -171,7 +171,7 @@ function useStepContext<S extends StepSchema>(
       const saved = await exerciseContext.fetchStep(stepContext())
       const dataValue = data()
       return {
-        submitted: false,
+        submitted: saved ? true : false,
         state: {},
         ...saved,
         data: {
@@ -273,13 +273,11 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     const [correct, feedback] = normalizeGrade(await props.grade(parsed))
     payload.correct = correct
     payload.feedback = feedback
-    await saveStep(
-      // Parsing is important here to ensure the schemas decide how to be serialized
-      v.parse(
-        StoredStep(props.schema.data as S['data'], props.schema.inputs as S['inputs']),
-        payload,
-      ),
+    const parsedPayload = v.parse(
+      StoredStep(props.schema.data as S['data'], props.schema.inputs as S['inputs']),
+      payload,
     )
+    await saveStep(JSON.parse(JSON.stringify(parsedPayload)))
   })
 
   const Self = (attrs: Partial<StepProps<S, F>>) => <Step {...props} data={step.data} {...attrs} />
