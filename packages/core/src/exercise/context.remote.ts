@@ -1,19 +1,24 @@
 import { db, tables } from '@learning/db'
 import { and, eq, sql } from 'drizzle-orm'
+import { getUser } from '../auth'
 import type { StoredStep } from './base'
 import type { StepContext } from './context'
 
 export const fetchStep = async (ctx: StepContext) => {
   'use server'
+  const user = await getUser()
+  if (!user) throw new Error('User not logged in')
   const res = await db.query.steps.findFirst({
     columns: { name: true, data: true, state: true, correct: true, feedback: true },
-    where: { userEmail: 'ngy@ecam.be', ...ctx },
+    where: { userEmail: user.email, ...ctx },
   })
   return (res as StoredStep) ?? null
 }
 
 export const getProgress = async (ctx: StepContext) => {
   'use server'
+  const user = await getUser()
+  if (!user) throw new Error('User not logged in')
   const { sequencePosition, position, ...sequence } = ctx
   const rows = await db
     .select({
@@ -28,7 +33,7 @@ export const getProgress = async (ctx: StepContext) => {
     .from(tables.steps)
     .where(
       and(
-        eq(tables.steps.userEmail, 'ngy@ecam.be'),
+        eq(tables.steps.userEmail, user.email),
         eq(tables.steps.url, sequence.url),
         eq(tables.steps.sequenceId, sequence.sequenceId),
       ),
@@ -40,5 +45,7 @@ export const getProgress = async (ctx: StepContext) => {
 
 export const saveStep = async (ctx: StepContext, step: StoredStep) => {
   'use server'
-  await db.insert(tables.steps).values({ userEmail: 'ngy@ecam.be', ...ctx, ...step })
+  const user = await getUser()
+  if (!user) throw new Error('User not logged in')
+  await db.insert(tables.steps).values({ userEmail: user.email, ...ctx, ...step })
 }

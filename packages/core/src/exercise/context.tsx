@@ -52,7 +52,6 @@ export const ExerciseContext = createContext<ExerciseContext>({
     try {
       await remote.saveStep(ctx, step)
     } catch {
-      return
       const id = getStorageId(ctx)
       const stored = JSON.parse(localStorage.getItem(id) ?? '[]')
       if (ctx.position >= stored.length) stored.push(step)
