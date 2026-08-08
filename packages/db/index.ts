@@ -26,4 +26,7 @@ export namespace Step {
 }
 export type Step = v.InferOutput<typeof Step.Schema>
 
-export const db = drizzle(process.env.DATABASE_URL!, { relations })
+export const db = drizzle(
+  process.env.DATABASE_URL ?? 'postgresql://root:password@localhost:5432/learning',
+  { relations },
+)
