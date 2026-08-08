@@ -15,11 +15,10 @@ export const fetchStep = async (ctx: StepContext) => {
   return (res as StoredStep) ?? null
 }
 
-export const getProgress = async (ctx: StepContext) => {
+export const getProgress = async (sequence: Omit<StepContext, 'position' | 'sequencePosition'>) => {
   'use server'
   const user = await getUser()
   if (!user) throw new Error('User not logged in')
-  const { sequencePosition, position, ...sequence } = ctx
   const rows = await db
     .select({
       i: tables.steps.sequencePosition,
@@ -48,4 +47,21 @@ export const saveStep = async (ctx: StepContext, step: StoredStep) => {
   const user = await getUser()
   if (!user) throw new Error('User not logged in')
   await db.insert(tables.steps).values({ userEmail: user.email, ...ctx, ...step })
+}
+
+export const reset = async (ctx: Omit<StepContext, 'position'>) => {
+  'use server'
+  const user = await getUser()
+  if (!user) throw new Error('User not logged in')
+  await db
+    .delete(tables.steps)
+    .where(
+      and(
+        eq(tables.steps.userEmail, user.email),
+        eq(tables.steps.url, ctx.url),
+        eq(tables.steps.sequenceId, ctx.sequenceId),
+        eq(tables.steps.sequencePosition, ctx.sequencePosition),
+      ),
+    )
+  return { success: true }
 }

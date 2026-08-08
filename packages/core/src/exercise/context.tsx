@@ -14,11 +14,15 @@ export const StepContext = createContext<Accessor<StepContext> | null>(null)
 
 export type ExerciseContext = {
   fetchStep: (ctx: StepContext) => Promise<StoredStep | null>
-  getProgress: (ctx: StepContext) => Promise<Record<number, boolean | null | undefined>>
+  getProgress: (
+    ctx: Omit<StepContext, 'position' | 'sequencePosition'>,
+  ) => Promise<Record<number, boolean | null | undefined>>
   saveStep: (ctx: StepContext, step: StoredStep) => Promise<void>
+  reset: (ctx: Omit<StepContext, 'position'>) => Promise<void>
 }
 
-const getStorageId = (ctx: StepContext) => `${ctx.url}:${ctx.sequenceId}:${ctx.sequencePosition}`
+const getStorageId = (ctx: Omit<StepContext, 'position'>) =>
+  `${ctx.url}:${ctx.sequenceId}:${ctx.sequencePosition}`
 
 export const ExerciseContext = createContext<ExerciseContext>({
   fetchStep: query(async (ctx: StepContext) => {
@@ -30,7 +34,7 @@ export const ExerciseContext = createContext<ExerciseContext>({
       return stored[ctx.position] ?? null
     }
   }, 'fetchStep'),
-  getProgress: query(async (ctx: StepContext) => {
+  getProgress: query(async (ctx: Omit<StepContext, 'position' | 'sequencePosition'>) => {
     try {
       return await remote.getProgress(ctx)
     } catch {
@@ -57,6 +61,14 @@ export const ExerciseContext = createContext<ExerciseContext>({
       if (ctx.position >= stored.length) stored.push(step)
       else stored[ctx.position] = step
       localStorage.setItem(id, JSON.stringify(stored))
+    }
+  },
+  reset: async (ctx: Omit<StepContext, 'position'>) => {
+    try {
+      await remote.reset(ctx)
+    } catch {
+      const id = getStorageId(ctx)
+      localStorage.removeItem(id)
     }
   },
 })

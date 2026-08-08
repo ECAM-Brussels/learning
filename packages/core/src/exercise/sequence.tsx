@@ -67,13 +67,9 @@ type Props<T extends object> = {
  */
 export function Sequence<T extends object>(props: Props<T>) {
   const exerciseContext = useContext(ExerciseContext)
-  const stepContext = (sequencePosition = 0) => ({
-    url: useLocation().pathname,
-    sequenceId: props.id,
-    sequencePosition,
-    position: 0,
-  })
-  const progress = createMemo(() => exerciseContext.getProgress(stepContext()))
+  const sequence = createMemo(() => ({ url: useLocation().pathname, sequenceId: props.id }))
+  const stepContext = (sequencePosition = 0) => ({ ...sequence(), sequencePosition, position: 0 })
+  const progress = createMemo(() => exerciseContext.getProgress(sequence()))
   const length = createMemo(() =>
     'children' in props ? props.children.length : Object.keys(progress()).length + 1,
   )

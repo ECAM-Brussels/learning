@@ -186,6 +186,11 @@ function useStepContext<S extends StepSchema>(
   const saveStep = (newStep: StoredStep<S['data'], S['inputs'], 'output'>) =>
     exerciseContext.saveStep(stepContext(), newStep)
 
+  const reset = action(async () => {
+    const { position, ...ctx } = stepContext()
+    await exerciseContext.reset(ctx)
+  })
+
   const StepBoundary = (props: {
     fallback?: JSX.Element
     children?: JSX.Element
@@ -206,13 +211,13 @@ function useStepContext<S extends StepSchema>(
     </StepContext>
   )
 
-  return { StepBoundary, saveStep, step, setStep }
+  return { ctx: stepContext, StepBoundary, saveStep, step, setStep, reset }
 }
 
 export function Step<S extends StepSchema, F extends JsonObject>(
   props: StepProps<S, F> & { id?: string },
 ) {
-  const { StepBoundary, saveStep, step, setStep } = useStepContext<S>(
+  const { ctx, StepBoundary, saveStep, step, reset } = useStepContext<S>(
     () => props.id,
     () => props.data,
   )
@@ -322,6 +327,11 @@ export function Step<S extends StepSchema, F extends JsonObject>(
             <Next>{props.children}</Next>
           </Show>
         </StepBoundary>
+        <Show when={ctx().position === 0}>
+          <form method="post" action={reset}>
+            <button class="text-sm text-gray-500">Recommencer l'exercice</button>
+          </form>
+        </Show>
       </Show>
     </div>
   )
