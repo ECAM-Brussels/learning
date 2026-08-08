@@ -12,6 +12,17 @@ export default defineConfig({
     solidPlugin({
       compiler: 'babel',
       extensions: ['.mdx'],
+      serverFunctions: {
+        filter: {
+          include: [
+            'src/**/*.ts',
+            'src/**/*.tsx',
+            '../../packages/**/*.ts',
+            '../../packages/**/*.tsx',
+          ],
+          exclude: ['**/node_modules/**'],
+        },
+      },
     }),
     fileRoutes({
       types: true,
