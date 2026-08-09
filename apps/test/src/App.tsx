@@ -1,3 +1,4 @@
+/* @refresh reload */
 import { faGithub } from '@fortawesome/free-brands-svg-icons'
 import { faBook } from '@fortawesome/free-solid-svg-icons'
 import {
@@ -14,9 +15,9 @@ import {
   Remark,
 } from '@learning/components'
 import { MDXProvider } from '@learning/mdx'
-import type { PathEnd } from '@solidjs/router'
+import type { PathEnd, RouteSectionProps } from '@solidjs/router'
 import { Match, Switch, type ParentComponent } from 'solid-js'
-import { paths } from './router'
+import { paths, Router } from './router'
 import './style.css'
 
 const NavLink: ParentComponent<{ class?: string; href: PathEnd | string }> = (props) => (
@@ -58,7 +59,21 @@ const Navbar = () => (
   </nav>
 )
 
-export const Layout: ParentComponent = (props) => (
+export const Layout: ParentComponent<RouteSectionProps> = (props) => (
+  <>
+    <Navbar />
+    <Page>
+      <Boundary>
+        <Crumb href="/" title="Accueil">
+          <BreadCrumbs />
+          {props.children}
+        </Crumb>
+      </Boundary>
+    </Page>
+  </>
+)
+
+export default () => (
   <MDXProvider
     components={{
       div: (attrs) => (
@@ -79,14 +94,6 @@ export const Layout: ParentComponent = (props) => (
       Latex,
     }}
   >
-    <Navbar />
-    <Page>
-      <Boundary>
-        <Crumb href="/" title="Accueil">
-          <BreadCrumbs />
-          {props.children}
-        </Crumb>
-      </Boundary>
-    </Page>
+    <Router>{(props) => <Layout {...props} />}</Router>
   </MDXProvider>
 )
