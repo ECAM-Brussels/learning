@@ -1,7 +1,8 @@
+import { clientOnly } from '@solidjs/web'
 import dedent from 'dedent'
-import { createMemo, lazy, Loading, type Component, type ComponentProps } from 'solid-js'
+import { createMemo, Loading, type Component, type ComponentProps } from 'solid-js'
 
-const _Code = lazy(() => import('./CodeImplementation'))
+const _Code = clientOnly(() => import('./CodeImplementation'))
 
 export const Code: Component<ComponentProps<typeof _Code>> = (props) => (
   <Loading fallback={<p>Chargement de l'éditeur...</p>}>

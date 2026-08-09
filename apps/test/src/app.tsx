@@ -1,39 +1,37 @@
 /* @refresh reload */
-import { render } from '@solidjs/web'
-import { Router } from './router'
-
-import { Boundary, Code, Example, Exercise, Highlight, Latex, Remark } from '@learning/components'
+import { Boundary, Code, Example, Exercise, Latex, Remark } from '@learning/components'
 import { MDXProvider } from '@learning/mdx'
 import { Match, Switch } from 'solid-js'
 import Layout from './Layout'
-import './style.css'
+import { Router } from './router'
 
-render(
-  () => (
-    <MDXProvider
-      components={{
-        div: (props) => (
-          <Switch fallback={<div>{props.children}</div>}>
-            <Match when={props['data-type'] === 'example'}>
-              <Example {...props} />
-            </Match>
-            <Match when={props['data-type'] === 'exercise'}>
-              <Exercise {...props} />
-            </Match>
-            <Match when={props['data-type'] === 'remark'}>
-              <Remark {...props} />
-            </Match>
-          </Switch>
-        ),
-        Code,
-        Highlight,
-        Latex,
-      }}
-    >
+export default () => (
+  <Router>
+    {(props) => (
       <Boundary>
-        <Router>{(props) => <Layout>{props.children}</Layout>}</Router>
+        <MDXProvider
+          components={{
+            div: (props) => (
+              <Switch fallback={<div>{props.children}</div>}>
+                <Match when={props['data-type'] === 'example'}>
+                  <Example {...props} />
+                </Match>
+                <Match when={props['data-type'] === 'exercise'}>
+                  <Exercise {...props} />
+                </Match>
+                <Match when={props['data-type'] === 'remark'}>
+                  <Remark {...props} />
+                </Match>
+              </Switch>
+            ),
+            Code,
+            Highlight: (props) => <code {...props} />,
+            Latex,
+          }}
+        >
+          <Layout>{props.children}</Layout>
+        </MDXProvider>
       </Boundary>
-    </MDXProvider>
-  ),
-  document.getElementById('root')!,
+    )}
+  </Router>
 )

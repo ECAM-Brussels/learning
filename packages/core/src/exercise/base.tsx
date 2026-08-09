@@ -166,23 +166,25 @@ function useStepContext<S extends StepSchema>(
     position: inherited?.().position ?? 0,
   }))
 
-  const step = createProjection<StoredStep<S['data'], S['inputs']>>(
+  const fetched = createMemo(
     async () => {
       const dataValue = data()
-      const saved = await exerciseContext.fetchStep(stepContext())
-      return {
-        submitted: saved !== null,
-        state: {},
-        ...saved,
-        data: {
-          ...(typeof dataValue === 'function' ? await dataValue() : dataValue),
-          ...saved?.data,
-        },
-      } as StoredStep<S['data'], S['inputs']>
+      return Promise.all([
+        exerciseContext.fetchStep(stepContext()),
+        typeof dataValue === 'function' ? dataValue() : dataValue,
+      ] as const)
     },
-    {},
     { ssrSource: 'client' },
   )
+  const step = createProjection<StoredStep<S['data'], S['inputs']>>(async () => {
+    const [saved, data] = fetched() ?? [null, {}]
+    return {
+      submitted: saved !== null,
+      state: {},
+      ...saved,
+      data: { ...data, ...saved?.data },
+    } as StoredStep<S['data'], S['inputs']>
+  }, {})
 
   const saveStep = (newStep: StoredStep<S['data'], S['inputs'], 'output'>) =>
     exerciseContext.saveStep(stepContext(), newStep)

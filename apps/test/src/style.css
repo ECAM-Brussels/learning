@@ -7,3 +7,7 @@
 @theme {
   --font-sans: 'Fira Sans', sans-serif;
 }
+
+body {
+  @apply bg-slate-50;
+}
