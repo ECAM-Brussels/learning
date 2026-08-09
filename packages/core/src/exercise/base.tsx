@@ -4,7 +4,7 @@ import { Dynamic, type JSX } from '@solidjs/web'
 import { mapValues } from 'es-toolkit'
 import {
   createMemo,
-  createOptimisticStore,
+  createProjection,
   createStore,
   omit,
   Show,
@@ -166,12 +166,12 @@ function useStepContext<S extends StepSchema>(
     position: inherited?.().position ?? 0,
   }))
 
-  const [step, setStep] = createOptimisticStore<StoredStep<S['data'], S['inputs']>>(
+  const step = createProjection<StoredStep<S['data'], S['inputs']>>(
     async () => {
-      const saved = await exerciseContext.fetchStep(stepContext())
       const dataValue = data()
+      const saved = await exerciseContext.fetchStep(stepContext())
       return {
-        submitted: saved ? true : false,
+        submitted: saved !== null,
         state: {},
         ...saved,
         data: {
@@ -180,7 +180,8 @@ function useStepContext<S extends StepSchema>(
         },
       } as StoredStep<S['data'], S['inputs']>
     },
-    { submitted: false, state: {}, data: {} } as any,
+    {},
+    { ssrSource: 'client' },
   )
 
   const saveStep = (newStep: StoredStep<S['data'], S['inputs'], 'output'>) =>
@@ -211,7 +212,7 @@ function useStepContext<S extends StepSchema>(
     </StepContext>
   )
 
-  return { ctx: stepContext, StepBoundary, saveStep, step, setStep, reset }
+  return { ctx: stepContext, StepBoundary, saveStep, step, reset }
 }
 
 export function Step<S extends StepSchema, F extends JsonObject>(
