@@ -45,10 +45,10 @@ export const Page: ParentComponent<{ title?: JSX.Element }> = (props) => {
         <main class="prose prose-code:before:content-none prose-code:after:content-none max-w-270 grow overflow-auto scroll-smooth rounded-b-xl bg-white p-8 pb-200 shadow-sm">
           <MDXProvider
             components={{
-              h1: (props) => <Heading level={1}>{props.children}</Heading>,
-              h2: (props) => <Heading level={2}>{props.children}</Heading>,
-              h3: (props) => <Heading level={3}>{props.children}</Heading>,
-              h4: (props) => <Heading level={4}>{props.children}</Heading>,
+              h1: (attrs) => <Heading level={1}>{attrs.children}</Heading>,
+              h2: (attrs) => <Heading level={2}>{attrs.children}</Heading>,
+              h3: (attrs) => <Heading level={3}>{attrs.children}</Heading>,
+              h4: (attrs) => <Heading level={4}>{attrs.children}</Heading>,
             }}
           >
             <TOCContext value={setToc}>{props.children}</TOCContext>

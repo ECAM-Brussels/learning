@@ -8,6 +8,7 @@ import {
   Example,
   Exercise,
   Fa,
+  Highlight,
   Latex,
   Page,
   Remark,
@@ -60,21 +61,21 @@ const Navbar = () => (
 export const Layout: ParentComponent = (props) => (
   <MDXProvider
     components={{
-      div: (props) => (
-        <Switch fallback={<div>{props.children}</div>}>
-          <Match when={props['data-type'] === 'example'}>
-            <Example {...props} />
+      div: (attrs) => (
+        <Switch fallback={<div>{attrs.children}</div>}>
+          <Match when={attrs['data-type'] === 'example'}>
+            <Example {...attrs} />
           </Match>
-          <Match when={props['data-type'] === 'exercise'}>
-            <Exercise {...props} />
+          <Match when={attrs['data-type'] === 'exercise'}>
+            <Exercise {...attrs} />
           </Match>
-          <Match when={props['data-type'] === 'remark'}>
-            <Remark {...props} />
+          <Match when={attrs['data-type'] === 'remark'}>
+            <Remark {...attrs} />
           </Match>
         </Switch>
       ),
       Code,
-      Highlight: (props) => <code {...props} />,
+      Highlight,
       Latex,
     }}
   >
