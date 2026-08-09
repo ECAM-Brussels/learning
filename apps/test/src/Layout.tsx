@@ -1,9 +1,20 @@
 import { faGithub } from '@fortawesome/free-brands-svg-icons'
 import { faBook } from '@fortawesome/free-solid-svg-icons'
-import { BreadCrumbs, Crumb, Fa, Page } from '@learning/components'
+import {
+  Boundary,
+  BreadCrumbs,
+  Code,
+  Crumb,
+  Example,
+  Exercise,
+  Fa,
+  Latex,
+  Page,
+  Remark,
+} from '@learning/components'
+import { MDXProvider } from '@learning/mdx'
 import type { PathEnd } from '@solidjs/router'
-import type { JSX } from '@solidjs/web'
-import { type ParentComponent } from 'solid-js'
+import { Match, Switch, type ParentComponent } from 'solid-js'
 import { paths } from './router'
 import './style.css'
 
@@ -46,16 +57,35 @@ const Navbar = () => (
   </nav>
 )
 
-export default function Layout(props: { children: JSX.Element }) {
-  return (
-    <>
-      <Navbar />
-      <Page>
+export const Layout: ParentComponent = (props) => (
+  <MDXProvider
+    components={{
+      div: (props) => (
+        <Switch fallback={<div>{props.children}</div>}>
+          <Match when={props['data-type'] === 'example'}>
+            <Example {...props} />
+          </Match>
+          <Match when={props['data-type'] === 'exercise'}>
+            <Exercise {...props} />
+          </Match>
+          <Match when={props['data-type'] === 'remark'}>
+            <Remark {...props} />
+          </Match>
+        </Switch>
+      ),
+      Code,
+      Highlight: (props) => <code {...props} />,
+      Latex,
+    }}
+  >
+    <Navbar />
+    <Page>
+      <Boundary>
         <Crumb href="/" title="Accueil">
           <BreadCrumbs />
           {props.children}
         </Crumb>
-      </Page>
-    </>
-  )
-}
+      </Boundary>
+    </Page>
+  </MDXProvider>
+)
