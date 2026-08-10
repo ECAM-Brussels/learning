@@ -1,3 +1,5 @@
+/// <reference path="../file-routes.d.ts" />
+
 import { createRouter } from '@solidjs/router'
 import { fileRoutes } from '@solidjs/router/fs'
 import { pageRoutes } from 'virtual:file-routes'
