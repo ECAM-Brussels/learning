@@ -11,6 +11,7 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@fortawesome/free-solid-svg-icons": "catalog:",
     "@learning/mdx": "workspace:*",
     "@learning/repl": "workspace:*",
     "@solidjs/meta": "catalog:",
