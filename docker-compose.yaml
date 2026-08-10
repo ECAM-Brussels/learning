@@ -1,0 +1,42 @@
+services:
+  postgres:
+    image: postgres:latest
+    env_file:
+      - .env.development
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-postgres}']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - ./db-data/:/var/lib/postgresql
+  seed:
+    build:
+      context: .
+      dockerfile: apps/test/Dockerfile
+    env_file:
+      - .env.development
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ['bun', 'run', '--filter', '@learning/db', 'db:push']
+    restart: 'no'
+  symapi:
+    build:
+      context: apps/symapi
+      dockerfile: Dockerfile
+    env_file:
+      - .env.development
+    restart: unless-stopped
+  learning:
+    build:
+      context: .
+      dockerfile: apps/test/Dockerfile
+    env_file:
+      - .env.development
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    ports:
+      - '3000:3000'
+    restart: unless-stopped
