@@ -22,10 +22,21 @@ services:
         condition: service_healthy
     command: ['bun', 'run', '--filter', '@learning/db', 'db:push']
     restart: 'no'
-  symapi:
+  symapi-dev:
+    profiles: [dev]
     build:
       context: apps/symapi
       dockerfile: Dockerfile
+      target: dev
+    env_file:
+      - .env
+    restart: unless-stopped
+  symapi:
+    profiles: [prod]
+    build:
+      context: apps/symapi
+      dockerfile: Dockerfile
+      target: prod
     env_file:
       - .env
     restart: unless-stopped
