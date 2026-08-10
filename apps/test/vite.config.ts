@@ -28,9 +28,7 @@ export default defineConfig({
     fileRoutes({
       types: true,
       extensions: ['mdx', 'tsx'],
-      toPath: (file) => {
-        return routePathFromFile(file).replace(/\/_layout$/, '')
-      },
+      toPath: (file) => routePathFromFile(file).replace(/\/_layout$/, ''),
     }) as any,
     tailwindcss(),
   ],
