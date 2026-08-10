@@ -12,7 +12,7 @@ export default defineConfig({
     solidPlugin({
       compiler: 'babel',
       extensions: ['.mdx'],
-      ssr: {},
+      // ssr: {},
       serverFunctions: {
         filter: {
           include: [
