@@ -12,7 +12,9 @@ export default defineConfig({
     solidPlugin({
       compiler: 'babel',
       extensions: ['.mdx'],
-      start: true,
+      start: {
+        middleware: 'src/middleware.ts',
+      },
       serverFunctions: {
         filter: {
           include: [
@@ -26,8 +28,9 @@ export default defineConfig({
       },
     }),
     fileRoutes({
+      httpMethods: true,
       types: true,
-      extensions: ['mdx', 'tsx'],
+      extensions: ['mdx', 'tsx', 'ts'],
       toPath: (file) => routePathFromFile(file).replace(/\/_layout$/, ''),
     }) as any,
     tailwindcss(),
