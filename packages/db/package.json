@@ -12,6 +12,7 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@learning/auth": "workspace:*",
     "drizzle-orm": "catalog:",
     "pg": "^8.22.0",
     "valibot": "^1.4.2"

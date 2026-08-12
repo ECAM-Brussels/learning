@@ -1,11 +1,11 @@
-import { defineRelations } from 'drizzle-orm'
+import * as authSchema from '@learning/auth/schema'
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { createInsertSchema, createSelectSchema } from 'drizzle-orm/valibot'
 import * as v from 'valibot'
 import * as tables from './schema'
 export * as tables from './schema'
 
-export const relations = defineRelations(tables, () => ({}))
+const { relations, ...authTables } = authSchema
 
 export namespace Step {
   const pk = ['userEmail', 'url', 'sequenceId', 'sequencePosition', 'position'] as const
@@ -30,3 +30,8 @@ export const db = drizzle(
   process.env.DATABASE_URL ?? 'postgresql://root:password@localhost:5432/learning',
   { relations },
 )
+
+export const schema = {
+  ...tables,
+  ...authTables,
+}

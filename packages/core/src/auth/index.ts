@@ -1,6 +1,14 @@
-import { query } from '@solidjs/router'
+import { authClient } from '@learning/auth/client'
+import { action, query } from '@solidjs/router'
 
-export const getUser = query(async (): Promise<{ email: string } | null> => {
-  'use server'
-  return { email: 'ngy@ecam.be' }
+export const getUser = query(async () => {
+  const { data: session, error } = await authClient.getSession()
+  if (error || !session) return null
+  return session.user
 }, 'getUser')
+
+export const login = authClient.signIn.social
+
+export const logout = action(async () => {
+  await authClient.signOut()
+})

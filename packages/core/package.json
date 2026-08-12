@@ -19,9 +19,11 @@
   },
   "dependencies": {
     "@cortex-js/compute-engine": "catalog:",
+    "@learning/auth": "workspace:*",
     "@learning/components": "workspace:",
     "@learning/db": "workspace:*",
     "@solidjs/router": "catalog:",
+    "better-auth": "catalog:",
     "dedent": "^1.7.2",
     "drizzle-orm": "catalog:",
     "es-toolkit": "catalog:",

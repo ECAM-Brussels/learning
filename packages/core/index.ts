@@ -1,3 +1,4 @@
+export * from './src/auth'
 export * from './src/chemistry'
 export { Encrypted, decrypt, encrypt } from './src/crypto'
 export { Step as Exercise, Step, createStep } from './src/exercise/base'

@@ -1,0 +1,22 @@
+{
+  "name": "@learning/auth",
+  "module": "auth.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@learning/db": "workspace:*",
+    "better-auth": "^1.6.26",
+    "drizzle-orm": "catalog:"
+  },
+  "exports": {
+    ".": "./auth.ts",
+    "./schema": "./schema.ts",
+    "./client": "./client.ts"
+  }
+}

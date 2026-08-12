@@ -13,9 +13,10 @@ import {
   Page,
   Remark,
 } from '@learning/components'
+import { getUser, login, logout } from '@learning/core'
 import { MDXProvider } from '@learning/mdx'
 import type { PathEnd } from '@solidjs/router'
-import { Match, Switch, type ParentComponent } from 'solid-js'
+import { createMemo, Match, Show, Switch, type ParentComponent } from 'solid-js'
 import { paths } from './router'
 
 const NavLink: ParentComponent<{ class?: string; href: PathEnd | string }> = (props) => (
@@ -30,32 +31,58 @@ const NavLink: ParentComponent<{ class?: string; href: PathEnd | string }> = (pr
   </a>
 )
 
-const Navbar = () => (
-  <nav class="mx-auto mb-0.5 bg-white shadow-sm">
-    <div class="container mx-auto flex items-center justify-between gap-8">
-      <NavLink class="text-xl font-bold text-sky-800" href={paths()}>
-        learning
-      </NavLink>
-      <ul class="flex">
-        <li>
-          <NavLink href={paths.numerical}>Analyse numérique</NavLink>
-        </li>
-      </ul>
-      <ul class="flex">
-        <li>
-          <NavLink href={paths.doc}>
-            <Fa icon={faBook} />
-          </NavLink>
-        </li>
-        <li>
-          <NavLink href="https://github.com/ECAM-Brussels/learning">
-            <Fa icon={faGithub} />
-          </NavLink>
-        </li>
-      </ul>
-    </div>
-  </nav>
-)
+function Navbar() {
+  const user = createMemo(() => getUser())
+  return (
+    <nav class="mx-auto mb-0.5 bg-white shadow-sm">
+      <div class="container mx-auto flex items-center justify-between gap-8">
+        <NavLink class="text-xl font-bold text-sky-800" href={paths()}>
+          learning
+        </NavLink>
+        <ul class="flex">
+          <li>
+            <NavLink href={paths.numerical}>Analyse numérique</NavLink>
+          </li>
+        </ul>
+        <ul class="flex items-center gap-4 text-gray-500">
+          <Boundary>
+            <Show
+              when={user()}
+              fallback={
+                <li>
+                  <button
+                    onClick={async () => {
+                      await login({ provider: 'microsoft' })
+                    }}
+                  >
+                    Login
+                  </button>
+                </li>
+              }
+            >
+              <li>{user()?.name}</li>
+              <li>
+                <form action={logout} method="post">
+                  <button class="cursor-pointer">Logout</button>
+                </form>
+              </li>
+            </Show>
+          </Boundary>
+          <li>
+            <NavLink href={paths.doc}>
+              <Fa icon={faBook} />
+            </NavLink>
+          </li>
+          <li>
+            <NavLink href="https://github.com/ECAM-Brussels/learning">
+              <Fa icon={faGithub} />
+            </NavLink>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  )
+}
 
 export const Layout: ParentComponent = (props) => (
   <MDXProvider
