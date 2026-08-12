@@ -1,10 +1,10 @@
 import saterriConfig from '@learning/mdx/config'
+import solidPlugin from '@solidjs/vite-plugin'
 import tailwindcss from '@tailwindcss/vite'
 import { routePathFromFile } from 'filesystem-routing'
 import { fileRoutes } from 'filesystem-routing/vite'
 import { defineConfig } from 'vite'
 import satteri from 'vite-plugin-satteri'
-import solidPlugin from 'vite-plugin-solid'
 
 export default defineConfig({
   plugins: [
