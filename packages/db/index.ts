@@ -1,5 +1,6 @@
 import * as authSchema from '@learning/auth/schema'
 import { drizzle } from 'drizzle-orm/node-postgres'
+import { defineRelations } from 'drizzle-orm/relations'
 import { createInsertSchema, createSelectSchema } from 'drizzle-orm/valibot'
 import * as v from 'valibot'
 import * as tables from './schema'
@@ -24,14 +25,15 @@ export namespace Step {
   )
   export type Payload = v.InferInput<typeof Payload>
 }
-export type Step = v.InferOutput<typeof Step.Schema>
 
-export const db = drizzle(
-  process.env.DATABASE_URL ?? 'postgresql://root:password@localhost:5432/learning',
-  { relations },
-)
+export type Step = v.InferOutput<typeof Step.Schema>
 
 export const schema = {
   ...tables,
   ...authTables,
 }
+
+export const db = drizzle(
+  process.env.DATABASE_URL ?? 'postgresql://root:password@localhost:5432/learning',
+  { relations: { ...defineRelations(schema, () => ({})), ...relations } },
+)
