@@ -5,7 +5,7 @@ type Options = Parameters<typeof codeToHtml>[1]
 
 export default function Highlight(props: { code: string; class?: string } & Partial<Options>) {
   const options = merge({ lang: 'js', theme: 'github-light' }, omit(props, 'code', 'class'))
-  const html = createMemo(() => codeToHtml(props.code, options), { ssrSource: 'client' })
+  const html = createMemo(() => codeToHtml(props.code, options))
   return (
     <pre
       class={[

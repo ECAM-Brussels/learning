@@ -174,7 +174,7 @@ function useStepContext<S extends StepSchema>(
         typeof dataValue === 'function' ? dataValue() : dataValue,
       ] as const)
     },
-    { ssrSource: 'client' },
+    { ssrSource: 'client', loadingValue: [null, {} as any] },
   )
   const step = createProjection<StoredStep<S['data'], S['inputs']>>(async () => {
     const [saved, data] = fetched() ?? [null, {}]
