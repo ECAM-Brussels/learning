@@ -13,6 +13,7 @@
   "devDependencies": {
     "@solidjs/vite-plugin": "catalog:",
     "@tailwindcss/typography": "^0.5.19",
+    "nitro": "^3.0.260610-beta",
     "satteri": "^0.9.5",
     "typescript": "^5.7.2",
     "vite": "^8.0.2",
