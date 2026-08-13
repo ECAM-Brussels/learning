@@ -2,9 +2,10 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "learning",
   "compatibility_date": "2026-08-13",
-  "main": "virtual:solid-ssr-handler",
+  "main": "./dist/server/index.js",
   "assets": {
     "directory": "./dist/client",
+    "not_found_handling": "single-page-application",
     "binding": "ASSETS",
   },
 }
