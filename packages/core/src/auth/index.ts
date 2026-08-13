@@ -1,10 +1,10 @@
 import { authClient } from '@learning/auth/client'
 import { action, query } from '@solidjs/router'
+import { getRequestEvent } from '@solidjs/web'
 
 export const getUser = query(async () => {
-  const { data: session, error } = await authClient.getSession()
-  if (error || !session) return null
-  return session.user
+  'use server'
+  return getRequestEvent()!.locals.user
 }, 'getUser')
 
 export const login = authClient.signIn.social

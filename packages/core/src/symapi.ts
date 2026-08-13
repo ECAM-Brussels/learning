@@ -1,7 +1,7 @@
 import { query } from '@solidjs/router'
 import type { paths } from './symapi.d'
 
-const BASE_URL = process.env.SYMAPI_URL ?? 'http://localhost:8088'
+const BASE_URL = import.meta.env.VITE_SYMAPI_URL || 'http://localhost:8088'
 
 type Folders<Prefix extends string> = keyof paths extends infer K
   ? K extends `${Prefix}/${infer First}/${string}`
@@ -31,7 +31,6 @@ type ApiTree<P extends string> = {
 }
 
 const symapiRequest = query(async ({ path, body }: { path: string; body: string }) => {
-  'use server'
   const res = await fetch(`${BASE_URL}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
