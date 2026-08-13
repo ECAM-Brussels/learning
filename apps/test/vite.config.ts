@@ -10,7 +10,6 @@ export default defineConfig({
   plugins: [
     satteri(saterriConfig),
     solidPlugin({
-      compiler: 'babel',
       extensions: ['.mdx'],
       start: {
         middleware: 'src/middleware.ts',
