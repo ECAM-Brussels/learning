@@ -10,7 +10,6 @@ export default function Python(props: {
 }): JSX.Element {
   const output = createMemo(() => python.run(props.value, { math: props.math ?? false }), {
     ssrSource: 'client',
-    loadingValue: { id: '' },
   })
   return (
     <Loading>
