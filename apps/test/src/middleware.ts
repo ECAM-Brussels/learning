@@ -1,15 +1,19 @@
-/// <reference path="../file-routes.d.ts" />
-
-import { auth } from '@learning/auth'
+import { getAuth } from '@learning/auth'
 import { composeMiddleware, getRequestEvent } from '@solidjs/web'
-import { createAPIHandler } from 'filesystem-routing/api'
-import routes from 'virtual:file-routes'
 
 export default composeMiddleware([
-  createAPIHandler(routes),
   async (request, next) => {
+    const url = new URL(request.url)
+    if (url.pathname.startsWith('/api/auth')) return getAuth().handler(request)
+
+    const cookie = request.headers.get('cookie')
+    if (!cookie) {
+      getRequestEvent()!.locals.user = null
+      return next(request)
+    }
+
     getRequestEvent()!.locals.user =
-      (await auth.api.getSession({ headers: request.headers }))?.user ?? null
+      (await getAuth().api.getSession({ headers: request.headers }))?.user ?? null
     return next(request)
   },
 ])

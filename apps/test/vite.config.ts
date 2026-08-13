@@ -27,7 +27,6 @@ export default defineConfig({
       },
     }),
     fileRoutes({
-      httpMethods: true,
       types: true,
       extensions: ['mdx', 'tsx', 'ts'],
       toPath: (file) => routePathFromFile(file).replace(/\/_layout$/, ''),
