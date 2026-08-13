@@ -7,5 +7,6 @@
   "assets": {
     "directory": "./dist/client",
     "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
   },
 }
