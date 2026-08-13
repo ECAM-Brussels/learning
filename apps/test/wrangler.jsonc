@@ -3,7 +3,7 @@
   "name": "learning",
   "compatibility_date": "2026-08-13",
   "compatibility_flags": ["nodejs_compat"],
-  "main": "virtual:solid-ssr-handler",
+  "main": "./dist/learning/index.js",
   "assets": {
     "directory": "./dist/client",
     "binding": "ASSETS",
