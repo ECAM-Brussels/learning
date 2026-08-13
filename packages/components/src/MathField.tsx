@@ -18,3 +18,5 @@ declare module 'solid-js' {
 export function MathField(props: Partial<MathfieldElementAttributes>) {
   return <math-field {...props} placeholder={`\\text{${props.placeholder ?? ''}`} />
 }
+
+export default MathField

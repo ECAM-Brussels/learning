@@ -269,3 +269,5 @@ function Element<T extends JXG.GeometryElement>(props: {
 
   return <Show when={el()}>{props.children?.(el()!)}</Show>
 }
+
+export default Board

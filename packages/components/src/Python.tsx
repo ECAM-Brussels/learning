@@ -3,8 +3,15 @@ import type { JSX } from '@solidjs/web'
 import { createMemo, Loading, Match, Show, Switch } from 'solid-js'
 import { Latex } from './Latex'
 
-export function Python(props: { class?: string; value: string; math?: boolean }): JSX.Element {
-  const output = createMemo(() => python.run(props.value, { math: props.math ?? false }))
+export default function Python(props: {
+  class?: string
+  value: string
+  math?: boolean
+}): JSX.Element {
+  const output = createMemo(() => python.run(props.value, { math: props.math ?? false }), {
+    ssrSource: 'client',
+    loadingValue: { id: '' },
+  })
   return (
     <Loading>
       <pre class="not-prose my-2 text-xs">
