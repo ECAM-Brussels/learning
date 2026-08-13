@@ -10,7 +10,7 @@ import satteri from 'vite-plugin-satteri'
 export default defineConfig({
   plugins: [
     satteri(saterriConfig),
-    cloudflare({ viteEnvironment: { name: 'ssr' } }),
+    cloudflare(),
     solidPlugin({
       extensions: ['.mdx'],
       start: {
