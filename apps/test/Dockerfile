@@ -1,23 +1,28 @@
-FROM oven/bun AS base
+FROM oven/bun:1.3.5 AS deps
 WORKDIR /app
 COPY package.json bun.lock ./
 COPY --parents apps/*/package.json packages/*/package.json ./
 RUN bun install --frozen-lockfile --filter '@learning/test'
+
+
+FROM deps AS dev
 COPY tsconfig.json ./
 COPY packages/ packages/
 COPY apps/test/ apps/test/
-
-FROM base AS dev
 CMD ["bun", "run", "--filter", "@learning/test", "dev", "--host"]
 
-FROM base AS build
-RUN bun run --filter @learning/test build
 
-FROM oven/bun AS prod
-WORKDIR /app
-COPY --from=build /app/package.json /app/bun.lock ./
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/apps/test/package.json ./apps/test/package.json
+FROM deps AS build
+COPY tsconfig.json ./
+COPY packages/ packages/
+COPY apps/test/ apps/test/
+RUN bun run --filter '@learning/test' build
+
+
+FROM deps AS prod
+COPY --from=build /app/apps/test/server.ts ./apps/test/server.ts
 COPY --from=build /app/apps/test/dist ./apps/test/dist
+COPY --from=build /app/packages ./packages
 WORKDIR /app/apps/test
-CMD ["bunx", "vite", "preview", "--host", "0.0.0.0", "--port", "3000"]
+
+CMD ["bun", "run", "server.ts"]

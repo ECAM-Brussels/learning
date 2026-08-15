@@ -11,14 +11,12 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.52.0",
     "@solidjs/vite-plugin": "catalog:",
     "@tailwindcss/typography": "^0.5.19",
     "satteri": "^0.9.5",
     "typescript": "^5.7.2",
     "vite": "^8.0.2",
-    "vite-plugin-satteri": "^0.2.15",
-    "wrangler": "^4.122.0"
+    "vite-plugin-satteri": "^0.2.15"
   },
   "dependencies": {
     "@fontsource/fira-sans": "^5.3.0",

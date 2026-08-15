@@ -32,6 +32,8 @@
   "scripts": {
     "codegen": "turbo run codegen",
     "dev": "turbo run dev",
+    "docker": "docker compose --profile prod up --build",
+    "docker:dev": "docker compose --profile dev up --build",
     "lint": "turbo run lint && prettier . --write",
     "lint:check": "turbo run lint:check && bun run prettier . --check",
     "test": "turbo run test",

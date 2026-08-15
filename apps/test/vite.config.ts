@@ -1,4 +1,3 @@
-import { cloudflare } from '@cloudflare/vite-plugin'
 import saterriConfig from '@learning/mdx/config'
 import solidPlugin from '@solidjs/vite-plugin'
 import tailwindcss from '@tailwindcss/vite'
@@ -10,7 +9,6 @@ import satteri from 'vite-plugin-satteri'
 export default defineConfig({
   plugins: [
     satteri(saterriConfig),
-    cloudflare(),
     solidPlugin({
       extensions: ['.mdx'],
       start: {
