@@ -14,8 +14,11 @@ import {
   type ComponentProps,
 } from 'solid-js'
 import * as v from 'valibot'
+import { getUser } from '../auth'
 import { expr, Expression } from '../expr'
-import { ExerciseContext, StepContext } from './context'
+import { StepContext } from './context'
+import local from './context.local'
+import remote from './context.remote'
 
 type MaybeAsync<T> = T | Promise<T>
 type Json = string | number | boolean | null | { [key: string]: Json } | Json[]
@@ -153,12 +156,19 @@ type StepProps<S extends StepSchema, F extends JsonObject> = StepBaseProps<
   F
 > & { schema: S }
 
+export function useExerciseContext() {
+  return createMemo(async () => {
+    const user = await getUser()
+    return user ? remote : local
+  }, {})
+}
+
 function useStepContext<S extends StepSchema>(
   id: () => string | undefined,
   data: () => StepProps<S, any>['data'],
 ) {
-  const exerciseContext = useContext(ExerciseContext)
   const inherited = useContext(StepContext)
+  const exerciseContext = useExerciseContext()
   const stepContext = createMemo(() => ({
     url: useLocation().pathname,
     sequenceId: id() ?? inherited?.().sequenceId ?? '',
@@ -170,9 +180,7 @@ function useStepContext<S extends StepSchema>(
     const dataValue = data()
     return typeof dataValue === 'function' ? dataValue() : dataValue
   })
-  const fetched = createMemo(async () => exerciseContext.fetchStep(stepContext()), {
-    ssrSource: 'client',
-  })
+  const fetched = createMemo(() => exerciseContext().fetchStep(stepContext()))
   const step = createProjection<StoredStep<S['data'], S['inputs']>>(async () => {
     const [saved, data] = [fetched(), exerciseData()]
     return {
@@ -184,11 +192,11 @@ function useStepContext<S extends StepSchema>(
   }, {})
 
   const saveStep = (newStep: StoredStep<S['data'], S['inputs'], 'output'>) =>
-    exerciseContext.saveStep(stepContext(), newStep)
+    exerciseContext().saveStep(stepContext(), newStep)
 
   const reset = action(async () => {
     const { position, ...ctx } = stepContext()
-    await exerciseContext.reset(ctx)
+    await exerciseContext().reset(ctx)
   })
 
   const StepBoundary = (props: {
