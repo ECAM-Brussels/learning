@@ -1,6 +1,7 @@
 import { user } from '@learning/auth/schema'
 import { primaryKey } from 'drizzle-orm/cockroach-core/primary-keys'
 import { boolean, integer, jsonb, snakeCase, text, timestamp } from 'drizzle-orm/pg-core'
+import 'server-only'
 export * from '@learning/auth/schema'
 
 export const steps = snakeCase.table(
