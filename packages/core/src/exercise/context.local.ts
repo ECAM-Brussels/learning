@@ -1,3 +1,4 @@
+import { query } from '@solidjs/router'
 import type { StoredStep } from './base'
 import type { ExerciseContext, StepContext } from './context'
 
@@ -5,12 +6,12 @@ const getStorageId = (ctx: Omit<StepContext, 'position'>) =>
   `${ctx.url}:${ctx.sequenceId}:${ctx.sequencePosition}`
 
 export default {
-  fetchStep: async (ctx: StepContext) => {
+  fetchStep: query(async (ctx: StepContext) => {
     const id = getStorageId(ctx)
     const stored = JSON.parse(localStorage.getItem(id) ?? '[]')
     return stored[ctx.position] ?? null
-  },
-  getProgress: async (ctx: Omit<StepContext, 'position' | 'sequencePosition'>) => {
+  }, 'fetchStep'),
+  getProgress: query(async (ctx: Omit<StepContext, 'position' | 'sequencePosition'>) => {
     const prefix = `${ctx.url}:${ctx.sequenceId}:`
     return Object.fromEntries(
       Object.keys(localStorage)
@@ -23,7 +24,7 @@ export default {
           ]
         }),
     )
-  },
+  }, 'getProgress'),
   saveStep: async (ctx: StepContext, step: StoredStep) => {
     const id = getStorageId(ctx)
     const stored = JSON.parse(localStorage.getItem(id) ?? '[]')
