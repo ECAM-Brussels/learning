@@ -3,6 +3,7 @@ import { defineRelations } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { createInsertSchema, createSelectSchema } from 'drizzle-orm/valibot'
 import * as v from 'valibot'
+import { env } from 'virtual:env/server'
 import * as tables from './schema'
 export * as tables from './schema'
 
@@ -48,4 +49,4 @@ export const relations = defineRelations(schema, (r) => ({
   },
 }))
 
-export const db = drizzle(process.env.DATABASE_URL!, { relations })
+export const db = drizzle(env.DATABASE_URL, { relations })

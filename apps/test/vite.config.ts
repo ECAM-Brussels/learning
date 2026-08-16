@@ -12,6 +12,7 @@ export default defineConfig({
     solidPlugin({
       extensions: ['.mdx'],
       start: {
+        env: './env.ts',
         middleware: 'src/middleware.ts',
       },
       serverFunctions: {

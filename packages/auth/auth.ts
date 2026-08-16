@@ -1,6 +1,7 @@
 import { db, schema } from '@learning/db'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { betterAuth } from 'better-auth/minimal'
+import { env } from 'virtual:env/server'
 
 const createAuth = () =>
   betterAuth({
@@ -11,13 +12,13 @@ const createAuth = () =>
     emailAndPassword: { enabled: false },
     socialProviders: {
       microsoft: {
-        clientId: process.env.MICROSOFT_CLIENT_ID as string,
-        clientSecret: process.env.MICROSOFT_CLIENT_SECRET as string,
-        tenantId: process.env.MICROSOFT_TENANT_ID as string,
+        clientId: env.MICROSOFT_CLIENT_ID,
+        clientSecret: env.MICROSOFT_CLIENT_SECRET,
+        tenantId: env.MICROSOFT_TENANT_ID,
       },
     },
-    baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
-    secret: process.env.BETTER_AUTH_SECRET,
+    baseURL: env.BETTER_AUTH_URL,
+    secret: env.BETTER_AUTH_SECRET,
   })
 
 let authSingleton: ReturnType<typeof createAuth> | undefined
