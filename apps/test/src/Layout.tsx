@@ -2,7 +2,6 @@ import { faGithub } from '@fortawesome/free-brands-svg-icons'
 import { faBook } from '@fortawesome/free-solid-svg-icons'
 import {
   Boundary,
-  BreadCrumbs,
   Code,
   Crumb,
   Example,
@@ -10,7 +9,6 @@ import {
   Fa,
   Highlight,
   Latex,
-  Page,
   Remark,
 } from '@learning/components'
 import { getUser, login, logout } from '@learning/core'
@@ -39,11 +37,6 @@ function Navbar() {
         <NavLink class="text-xl font-bold text-sky-800" href={paths()}>
           learning
         </NavLink>
-        <ul class="flex">
-          <li>
-            <NavLink href={paths.numerical}>Analyse numérique</NavLink>
-          </li>
-        </ul>
         <ul class="flex items-center gap-4 text-gray-500">
           <Boundary>
             <Show
@@ -106,13 +99,12 @@ export const Layout: ParentComponent = (props) => (
     }}
   >
     <Navbar />
-    <Page>
+    <div class="container mx-auto">
       <Boundary>
         <Crumb href="/" title="Accueil">
-          <BreadCrumbs />
           {props.children}
         </Crumb>
       </Boundary>
-    </Page>
+    </div>
   </MDXProvider>
 )

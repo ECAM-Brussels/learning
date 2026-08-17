@@ -1,6 +1,9 @@
+import { Card } from '@learning/components'
 import { paths } from '../router'
+import numericalAnalysis from './numerical/banner.jpg'
 
-# Bienvenue
-
-- <a href={paths.numerical}>Analyse numérique</a>
-- <a href={paths.doc}>Documentation</a>
+<div class="mt-8 gap-8 lg:grid lg:grid-cols-2">
+  <Card image={numericalAnalysis} href={paths.numerical}>
+    Analyse numérique
+  </Card>
+</div>
