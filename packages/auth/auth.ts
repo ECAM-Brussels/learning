@@ -14,7 +14,6 @@ const createAuth = () =>
       microsoft: {
         clientId: env.MICROSOFT_CLIENT_ID,
         clientSecret: env.MICROSOFT_CLIENT_SECRET,
-        tenantId: env.MICROSOFT_TENANT_ID,
       },
     },
     baseURL: env.BETTER_AUTH_URL,
