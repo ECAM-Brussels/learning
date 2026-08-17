@@ -28,3 +28,4 @@ gitignore
 Thumbs.db
 
 file-routes.d.ts
+solid-env.d.ts

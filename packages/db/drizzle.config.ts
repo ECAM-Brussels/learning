@@ -1,4 +1,5 @@
 import { defineConfig } from 'drizzle-kit'
+import 'server-only'
 import { env } from 'virtual:env/server'
 
 export default defineConfig({
