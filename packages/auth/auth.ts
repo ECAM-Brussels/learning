@@ -1,7 +1,6 @@
 import { db, schema } from '@learning/db'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { betterAuth } from 'better-auth/minimal'
-import 'server-only'
 import { env } from 'virtual:env/server'
 
 const createAuth = () =>
