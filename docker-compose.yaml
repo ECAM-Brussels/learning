@@ -50,7 +50,7 @@ services:
       seed:
         condition: service_completed_successfully
     ports:
-      - '3000:3000'
+      - '${APP_PORT:-3000}:3000'
     restart: unless-stopped
   learning:
     profiles: [prod]
@@ -64,5 +64,5 @@ services:
       seed:
         condition: service_completed_successfully
     ports:
-      - '3000:3000'
+      - '${APP_PORT:-3000}:3000'
     restart: unless-stopped
