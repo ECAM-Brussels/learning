@@ -16,6 +16,7 @@ jobs:
           host: learning.ecam.be
           username: khoi
           key: ${{ secrets.SSH_KEY }}
+          port: 8022
           script: |
             set -e
             cd git/learning
