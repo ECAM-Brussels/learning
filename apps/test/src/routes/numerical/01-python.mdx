@@ -1,6 +1,7 @@
 import { Sequence, tex } from '@learning/core'
 import { defineMeta } from '@learning/components'
 import { PythonCode } from '@learning/exercises/python/Code'
+import { Calculator, Print } from './01-python.exercises'
 
 export default defineMeta({
   title: 'Session 1: Introduction à Python',
@@ -22,38 +23,20 @@ qui est très populaire et utilisé dans de nombreux domaines scientifiques.
 
 Notre premier programme sera très simple,
 il se contentera d'afficher un message.
-Changez-le pour afficher votre prénom.
-
-:::example
-
-```python run
-print("Bonjour ???")
-```
-
-:::
-
-Pour vérifier votre compréhension,
-nous vous inviterons souvent à résoudre de petits exercices,
-comme celui-ci.
+Nous vous ferons souvent apprendre en modifiant un code existant,
+comme l'exercice ci-dessous:
 
 :::exercise
 
-<PythonCode
-  id="first-exercise"
-  prompt={
-    <p>
-      Écrivez un programme Python qui affiche <code>Vive Python!</code>
-    </p>
-  }
-  tests={[
-    { test: null, check: ({ stdout }) => stdout?.toLowerCase().includes('vive python') === true },
-  ]}
-/>
+<Print id="hello-world" message="Vive Python" initialCode="print('Hello world')">
+  Modifiez le code pour afficher le message `Vive Python` à la place de `Hello world`.
+</Print>
+
 :::
 
-## Python comme calculatrice
+## Python comme une calculatrice
 
-La première chose que nous vous apprendrons est d'_utiliser Python comme une calculatrice scientifique_.
+La première chose que nous apprendrons est d'_utiliser Python comme une simple calculatrice_.
 La syntaxe est relativement similaire à ce que vous entreriez sur votre calculatrice,
 comme le montre l'exemple suivant:
 
@@ -64,6 +47,8 @@ comme le montre l'exemple suivant:
 ```
 
 :::
+
+Voici un tableau récapitulatif des opérations de base en Python:
 
 | Concept            | Exemple mathématique | Code Python |
 | ------------------ | -------------------- | ----------- |
@@ -76,9 +61,8 @@ comme le montre l'exemple suivant:
 | Nombre complexe    | $3 + 4i$             | `3 + 4j`    |
 
 Nous vous invitons maintenant à résoudre les exercices suivants.
-Vous verrez que les réponses de Python sont parfois surprenantes.
 
-import { Calculator } from './01-python.exercises'
+:::exercise
 
 <Sequence id="python-as-calculator">
   <Calculator prompt="0.1 \times 0.1" answer={0.1 * 0.1} inexact={['0.1']} />
@@ -90,9 +74,12 @@ import { Calculator } from './01-python.exercises'
   />
   <Calculator prompt="(3 + 2i)^5" answer="(-597+122j)" />
   <Calculator prompt="\sqrt[3]{5}" answer={5 ** (1 / 3)} />
+  <Calculator prompt="4^3" answer={4 ** 3} />
 </Sequence>
 
-## La bibliothèque `math`
+:::
+
+## Python comme calculatrice scientifique
 
 Qu'en est-il de la racine carré, des fonctions trigonométriques, exponentielles et logarithmiques?
 Nous allons pour cela utiliser la bibliothèque `math` de Python,
@@ -157,9 +144,17 @@ log(67, 10)
 
 :::
 
----
-
-## Exercices
+| Opération            | Exemple        | Code Python       |
+| -------------------- | -------------- | ----------------- |
+| Racine carrée        | $\sqrt{7}$     | `math.sqrt(7)`    |
+| Racine cubique       | $\sqrt[3]{7}$  | `7 ** (1 / 3)`    |
+| Sinus                | $\sin(7)$      | `math.sin(7)`     |
+| Cosinus              | $\cos(7)$      | `math.cos(7)`     |
+| Tangente             | $\tan(7)$      | `math.tan(7)`     |
+| Arcsinus             | $\arcsin(1)$   | `math.asin(1)`    |
+| Arccosinus           | $\arccos(1)$   | `math.acos(1)`    |
+| Logarithme népérien  | $\ln(7)$       | `math.log(7)`     |
+| Logarithme base $10$ | $\log_{10}(7)$ | `math.log(7, 10)` |
 
 <Sequence id="math-library">
   <PythonCode
@@ -172,8 +167,6 @@ log(67, 10)
   />
 </Sequence>
 
----
-
 ## Variables
 
 Les variables permettent de stocker des valeurs pour les réutiliser plus tard.
@@ -181,6 +174,7 @@ Elles jouent un rôle important pour rendre le code plus lisible et plus facile 
 
 :::example
 Calculez la surface d'un cylindre de rayon $2$ et de hauteur $3$,
+en utilisant préalablement les variables `r` et `h` pour le rayon et la hauteur.
 
 ```python run
 from math import pi
@@ -197,45 +191,50 @@ pour calculer la surface avec d'autres données,
 sans avoir à réécrire tout le calcul.
 :::
 
-## Listes de nombres
+## Le calcul vectoriel avec `numpy`
+
+### Listes de nombres
 
 Pour créer une liste de nombres,
-on procède comme suit:
+on l'écrit entre crochets `[]`,
+et on sépare les éléments par des virgules `,`.
 
 ```python
 [1, 2, 3, 4, 5]
 ```
 
-## Fonctions à une variable
+### Vecteurs
 
-Pour définir une _fonction_,
-on utilise le mot clé `def`,
-suivi du _nom de la fonction_,
-de ses _paramètres_ éventuels entre parenthèses,
-et d'un `:` à la fin de la ligne.
-
-Les lignes suivantes doivent être indentées (décalées vers la droite) de 4 espaces
-pour indiquer qu'elles font partie de la fonction.
-
-```python
-def nom_de_la_function(x):
-    return x
-```
+Pour créer un vecteur,
+on peut utiliser la bibliothèque `numpy`,
+qui est spécalisée dans le calcul scientifique.
 
 :::example
+Pour créer le vecteur $\vec v = (1, 2, 3)$,
+on écrit:
 
-Pour définir la fonction $f(x) = x^2$ en Python, on procède comme suit:
-
-```python
-def f(x):
-    return x**2
+```python run
+import numpy as np
+v = np.array([1, 2, 3])
 ```
-
-Notez la présence du `:` à la fin de la première ligne
 
 :::
 
-## Vecteurs avec `numpy`
+Pour l'addition et la multiplication scalaire de vecteurs,
+il suffit d'utiliser les opérateurs `+` et `*` comme pour les nombres.
+
+:::example
+Si $\vec v = (1, 2, 3)$ et $\vec w = (4, 5, 6)$,
+calcule $2 \vec v + 3 \vec w$.
+
+```python run
+import numpy as np
+v = np.array([1, 2, 3])
+w = np.array([4, 5, 6])
+2 * v + 3 * w
+```
+
+:::
 
 ### Produit scalaire
 
@@ -243,5 +242,14 @@ Notez la présence du `:` à la fin de la première ligne
 import numpy as np
 a = np.array([1, 2, 3])
 b = np.array([4, 5, 6])
-a.dot(b)
+np.dot(a, b)
+```
+
+### Produit vectoriel
+
+```python run
+import numpy as np
+a = np.array([1, 2, 3])
+b = np.array([4, 5, 6])
+np.cross(a, b)
 ```

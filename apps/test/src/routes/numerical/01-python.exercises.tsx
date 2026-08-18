@@ -1,9 +1,66 @@
-import { Attempt, Question } from '@learning/components'
+import { Attempt, CheckMark, Highlight, Question } from '@learning/components'
 import { Exercise, expr, tex } from '@learning/core'
 import { PythonCode } from '@learning/exercises/python/Code'
 import { python } from '@learning/repl'
+import { type JSX } from '@solidjs/web'
 import { allKeyed } from 'es-toolkit'
-import { createMemo, createProjection, For, Show } from 'solid-js'
+import { createMemo, createProjection, createSignal, For, Show } from 'solid-js'
+
+export function Print(props: {
+  id?: string
+  initialCode?: string
+  message: string
+  children?: JSX.Element
+}) {
+  return (
+    <PythonCode
+      id={props.id}
+      prompt={
+        props.children ?? (
+          <p>
+            Écrivez un programme Python qui affiche <code>{props.message}</code>
+          </p>
+        )
+      }
+      initialCode={props.initialCode}
+      tests={[
+        {
+          test: null,
+          check: ({ stdout }) =>
+            stdout?.toLowerCase().includes(props.message.toLowerCase()) === true,
+        },
+      ]}
+      feedback={(ctx) => {
+        const [message, setMessage] = createSignal('message')
+        return (
+          <Show
+            when={!ctx.correct}
+            fallback={
+              <p>
+                Correct! <CheckMark value={true} />
+              </p>
+            }
+          >
+            <p>
+              Pour afficher le message{' '}
+              <input
+                class="border font-mono"
+                value={message()}
+                onInput={(e) => setMessage(e.target.value)}
+              />{' '}
+              en Python, tapez:
+            </p>
+            <Highlight lang="python" code={`print('${message().replace("'", "\\'")}')`} />
+            <details class="text-sm">
+              <summary>Prêt.e à réessayer l'exercice?</summary>
+              <ctx.Self />
+            </details>
+          </Show>
+        )
+      }}
+    />
+  )
+}
 
 async function getRep(number: string) {
   const code = `from decimal import Decimal\nDecimal(${number})`
@@ -84,8 +141,7 @@ export function Calculator(props: { prompt: string; answer: number | string; ine
                 </table>
                 <p>Ce qui fait que pour Python, le calcul devient en fait</p>
                 {tex`
-                ${props.prompt}
-                  \approx ${realCalc()}
+                  ${props.prompt} \approx ${realCalc()}
                 `}
               </>
             )

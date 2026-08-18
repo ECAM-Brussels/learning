@@ -6,6 +6,7 @@ const config = {
   remark: { label: 'Remarque', class: 'bg-amber-100 text-amber-900' },
   exercise: { label: 'Exercice', class: 'bg-green-100 text-green-900' },
   question: { label: 'Question', class: 'bg-blue-100 text-blue-900' },
+  info: { label: 'Info', class: 'bg-gray-100 text-gray-900' },
 } as const satisfies Record<string, { label: string; class: string }>
 
 /**
@@ -43,3 +44,4 @@ export const Example = makeEnvironment('example')
 export const Exercise = makeEnvironment('exercise')
 export const Remark = makeEnvironment('remark')
 export const Question = makeEnvironment('question')
+export const Info = makeEnvironment('info')

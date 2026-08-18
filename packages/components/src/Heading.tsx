@@ -12,7 +12,7 @@ export function Heading(props: { children: JSX.Element; level: 1 | 2 | 3 | 4 | 5
     () => props.children,
     (title) => {
       setToc((t) => {
-        if (props.level < 3) {
+        if (props.level <= 3) {
           setId(String(t.length))
           t.push({ title, level: props.level, visible: false, position: 0 })
         }
@@ -41,7 +41,11 @@ export function Heading(props: { children: JSX.Element; level: 1 | 2 | 3 | 4 | 5
       ref={setElement}
       class={[
         'print:break-after-avoid',
-        { 'text-cyan-900': props.level === 1, 'text-cyan-800': props.level === 2 },
+        {
+          'text-cyan-900': props.level === 1,
+          'text-cyan-800': props.level === 2,
+          'text-cyan-700': props.level === 3,
+        },
       ]}
       id={id()}
     >
