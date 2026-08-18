@@ -1,0 +1,27 @@
+name: Deploy to VPS
+on:
+  push:
+    branches:
+      - main
+concurrency:
+  group: production
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy
+        uses: appleboy/ssh-action@v1
+        with:
+          host: learning.ecam.be
+          username: khoi
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            set -e
+            cd git/learning
+            git fetch origin main
+            git reset --hard origin/main
+            docker compose up -d --build --remove-orphans
+            docker image prune -f
+            docker builder prune -f --filter "until=168h"
+            docker compose ps
