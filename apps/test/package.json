@@ -27,6 +27,7 @@
     "@learning/core": "workspace:*",
     "@learning/exercises": "workspace:*",
     "@learning/mdx": "workspace:*",
+    "@learning/repl": "workspace:*",
     "@solidjs/router": "catalog:",
     "@solidjs/web": "catalog:",
     "@tailwindcss/vite": "^4.2.2",

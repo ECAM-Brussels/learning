@@ -30,7 +30,10 @@ export default defineConfig({
     fileRoutes({
       types: true,
       extensions: ['mdx', 'tsx', 'ts'],
-      toPath: (file) => routePathFromFile(file).replace(/\/_layout$/, ''),
+      toPath: (file) => {
+        if (file.endsWith('.exercises')) return undefined
+        return routePathFromFile(file).replace(/\/_layout$/, '')
+      },
     }) as any,
     tailwindcss(),
   ],
