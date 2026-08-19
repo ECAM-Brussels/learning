@@ -56,11 +56,13 @@ export const PythonCode = createStep({
         })),
       [],
     )
+    const passed = createMemo(() => tests.filter((t) => t.passed).length)
     const valid = createMemo(() => ctx.data.check?.(ctx.inputs.code))
     return (
       <details class="not-prose">
         <summary>
-          {tests.filter((t) => t.passed).length} tests corrects sur {tests.length}
+          {passed()} test{passed() !== 1 ? 's' : ''} correct{passed() !== 1 ? 's' : ''} sur{' '}
+          {tests.length}
           <CheckMark value={tests.every((t) => t.passed) && valid() !== false} />
         </summary>
         <For each={tests}>

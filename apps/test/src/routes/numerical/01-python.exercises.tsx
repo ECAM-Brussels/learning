@@ -1,7 +1,7 @@
 import { Attempt, CheckMark, Highlight, Question } from '@learning/components'
 import { Exercise, expr, tex } from '@learning/core'
 import { PythonCode } from '@learning/exercises/python/Code'
-import { python } from '@learning/repl'
+import { python, type FinalOutput } from '@learning/repl'
 import { type JSX } from '@solidjs/web'
 import { allKeyed } from 'es-toolkit'
 import { createMemo, createProjection, createSignal, For, Show } from 'solid-js'
@@ -67,10 +67,15 @@ async function getRep(number: string) {
   return python.output(code).then((r) => r.result as string)
 }
 
-export function Calculator(props: { prompt: string; answer: number | string; inexact?: string[] }) {
+export function Calculator(props: {
+  children?: JSX.Element
+  prompt: string
+  answer: number | string
+  inexact?: string[]
+}) {
   return (
     <PythonCode
-      prompt={<p>Utilisez Python pour calculer {tex`${props.prompt}`}</p>}
+      prompt={props.children ?? <p>Utilisez Python pour calculer {tex`${props.prompt}`}</p>}
       tests={[
         {
           test: null,
@@ -149,5 +154,39 @@ export function Calculator(props: { prompt: string; answer: number | string; ine
         />
       </Show>
     </PythonCode>
+  )
+}
+
+export function Variables(props: {
+  answer: string | number
+  calculate: JSX.Element
+  vars: Record<string, number>
+}) {
+  const tests = createMemo(() => [
+    ...Object.entries(props.vars).map(([name, value]) => ({
+      test: name,
+      check: ({ result }: FinalOutput) => result === String(value),
+    })),
+    { test: null, check: ({ result }: FinalOutput) => result === String(props.answer) },
+  ])
+  return (
+    <PythonCode
+      prompt={
+        <>
+          <p>Définissez:</p>
+          <ul>
+            <For each={Object.entries(props.vars)}>
+              {([name, value]) => (
+                <li>
+                  la variable <code>{name}</code> avec comme valeur <code>{value}</code>
+                </li>
+              )}
+            </For>
+          </ul>
+          Ensuite, utilisez ces variables pour calculer {props.calculate}.
+        </>
+      }
+      tests={tests()}
+    />
   )
 }

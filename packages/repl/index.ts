@@ -1,7 +1,7 @@
 import { EventIterator } from 'event-iterator'
 const worker = new Worker(new URL('./python/worker.ts', import.meta.url), { type: 'module' })
 
-type FinalOutput = {
+export type FinalOutput = {
   format: 'text' | 'latex' | 'image'
   result?: string
   stdout?: string

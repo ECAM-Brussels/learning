@@ -1,7 +1,7 @@
 import { Sequence, tex } from '@learning/core'
 import { defineMeta } from '@learning/components'
 import { PythonCode } from '@learning/exercises/python/Code'
-import { Calculator, Print } from './01-python.exercises'
+import { Calculator, Print, Variables } from './01-python.exercises'
 
 export default defineMeta({
   title: 'Session 1: Introduction à Python',
@@ -10,21 +10,19 @@ export default defineMeta({
 # Introduction à Python
 
 L'objectif de cette activité est de vous guider dans vos premiers pas en programmation.
-N'ayez pas peur si vous n'avez jamais programmé auparavant,
-nous commencerons de zéro.
-
 Programmer,
 c'est _écrire des instructions à un ordinateur_ (le _code_)
 dans un langage qu'il peut comprendre.
-L'ordinateur se chargera ensuite d'exécuter ces instructions pour nous,
-et nous informera du résultat éventuel.
+L'ordinateur se chargera ensuite d'exécuter ces instructions pour vous,
+et vous informera du résultat éventuel.
 Dans cette activité, nous utiliserons le langage de programmation Python,
 qui est très populaire et utilisé dans de nombreux domaines scientifiques.
 
 Notre premier programme sera très simple,
 il se contentera d'afficher un message.
 Nous vous ferons souvent apprendre en modifiant un code existant,
-comme l'exercice ci-dessous:
+comme l'illustre l'exercice ci-dessous,
+que nous vous invitons à compléter.
 
 :::exercise
 
@@ -37,7 +35,7 @@ comme l'exercice ci-dessous:
 ## Python comme une calculatrice
 
 La première chose que nous apprendrons est d'_utiliser Python comme une simple calculatrice_.
-La syntaxe est relativement similaire à ce que vous entreriez sur votre calculatrice,
+La syntaxe est relativement intuitive,
 comme le montre l'exemple suivant:
 
 :::example
@@ -54,24 +52,33 @@ Voici un tableau récapitulatif des opérations de base en Python:
 | ------------------ | -------------------- | ----------- |
 | Addition           | $3 + 5$              | `3 + 5`     |
 | Soustraction       | $13 - 4$             | `13 - 4`    |
-| Multiplication     | $3 \times 4$         | `3 * 4`     |
+| Multiplication     | $3 \cdot 4$          | `3 * 4`     |
 | Division           | $\frac 3 4$          | `3 / 4`     |
 | Exponentiation     | $3^4$                | `3 ** 4`    |
 | Séparateur décimal | $3,14$               | `3.14`      |
 | Nombre complexe    | $3 + 4i$             | `3 + 4j`    |
 
-Nous vous invitons maintenant à résoudre les exercices suivants.
+Nous attirons votre attention sur les points suivants:
+
+- L'exponentiation est représentée par `**` et non par `^`.
+- Le séparateur décimal est le point `.` et non la virgule `,`.
+- Les nombres complexes sont représentés avec la lettre `j` et non `i`,
+  et doivent _suivre la partie imaginaire directement_, **sans espaces**.
+
+Nous vous invitons maintenant à résoudre les exercices suivants
+pour tester votre compréhension.
 
 :::exercise
 
 <Sequence id="python-as-calculator">
-  <Calculator prompt="0.1 \times 0.1" answer={0.1 * 0.1} inexact={['0.1']} />
+  <Calculator prompt="0.1 \cdot 0.1" answer={0.1 * 0.1} inexact={['0.1']} />
   <Calculator prompt="1.1 + 2.2" answer={1.1 + 2.2} inexact={['1.1', '2.2']} />
   <Calculator
     prompt="0.1 + 0.1 + 0.1 - 0.3"
     answer={0.1 + 0.1 + 0.1 - 0.3}
     inexact={['0.1', '0.3']}
   />
+  <Calculator prompt="i^2" answer="-1" />
   <Calculator prompt="(3 + 2i)^5" answer="(-597+122j)" />
   <Calculator prompt="\sqrt[3]{5}" answer={5 ** (1 / 3)} />
   <Calculator prompt="4^3" answer={4 ** 3} />
@@ -79,27 +86,112 @@ Nous vous invitons maintenant à résoudre les exercices suivants.
 
 :::
 
-## Python comme calculatrice scientifique
+:::question
+Pourquoi $\frac 1 {10}$ n'a pas de représentation exacte en Python?
+:::
 
-Qu'en est-il de la racine carré, des fonctions trigonométriques, exponentielles et logarithmiques?
-Nous allons pour cela utiliser la bibliothèque `math` de Python,
-qui contient de nombreux outils mathématiques utiles,
-telles que:
+Tout d'abord, remarquons qu'en base $10$, nous avons le problème avec $\frac 1 3$:
 
-- les fonctions:
-  - racine carrée (`sqrt`)
-  - trigonométriques `sin`, `cos`, `tan`
-  - cyclométriques $\arcsin$ (`asin`), $\arccos$ (`acos`), $\arctan$ (`atan`)
-  - exponentielles (`exp`) et logarithmes (`log`)
-- les constantes $\pi$ (`pi`) et $e$ (`e`).
+$$
+\frac 1 3 = {\color{red} 0.33333\ldots} = \frac {\color{red} 0} {10^0} + \frac {\color{red} 3} {10^{1}} + \frac {\color{red} 3} {10^{2}} + \frac {\color{red} 3} {10^{3}} + \ldots
+$$
 
-Par défaut, ces fonctions ne sont **pas disponibles** dans l'environnement Python.
-Nous devons les **importer**,
-et il existe plusieurs façons de le faire.
+L'ordinateur ne pouvant stocker un **nombre fini** de chiffres,
+$\frac 1 3$ se retrouverait arrondi.
+C'est exactement ce qui se passe avec $\frac 1 {10}$ en base $2$.
+
+Remarquons que
+
+$$
+\frac 1 {10} = \frac {\color{green} 0} {2^0} + \frac {\color{green} 0} {2^{1}} + \frac {\color{green} 0} {2^{2}} + \frac {\color{green} 0} {2^{3}} + \frac {\color{green} 1} {2^{4}} + \frac {\color{green} 1} {2^{5}} \ldots,
+$$
+
+ce qui fait qu'en binaire, $\frac 1 {10}$ est représenté par $\color{green} 0.00011001100110011\ldots$.
+Puisqu'on garde un nombre fini de chiffres, on perd en précision.
+
+La propagation des erreurs fait que l'arithmétique de l'ordinateur peut échouer assez spectaculairement
+pour des simples calculs de comptabilité.
+En pratique, il est recommandé d'utiliser des bibliothèques spécialisées pour les calculs financiers.
 
 :::example
 
-Supposons que vous souhaitiez calculer la racine carrée de $2$ et la valeur de $\pi$.
+<div class="lg:grid lg:grid-cols-2 lg:gap-8">
+
+```python run
+1.1 + 2.2
+```
+
+```python run
+from decimal import Decimal
+
+Decimal('1.1') + Decimal('2.2')
+```
+
+</div>
+:::
+
+## Python comme calculatrice scientifique
+
+Qu'en est-il de la racine carré, des fonctions trigonométriques, exponentielles et logarithmiques?
+Nous aurons besoin d'importer la bibliothèque `math` pour accéder à ces fonctions.
+
+```python
+import math
+```
+
+Les instructions `import` ne doivent être écrites qu'une seule fois,
+et se trouvent généralement au début du code,
+comme le montre l'exemple ci-dessous.
+
+:::example
+Pour calculer la racine carrée de $2$,
+on écrit:
+
+```python run
+import math
+
+math.sqrt(2)
+```
+
+:::
+
+Voici un tableau récapitulatif des fonctions mathématiques les plus courantes en Python:
+
+| Opération ou concept      | Exemple       | Code Python       |
+| ------------------------- | ------------- | ----------------- |
+| Racine carrée             | $\sqrt{7}$    | `math.sqrt(7)`    |
+| Racine cubique            | $\sqrt[3]{7}$ | `7 ** (1 / 3)`    |
+| Sinus                     | $\sin 7$      | `math.sin(7)`     |
+| Cosinus                   | $\cos 7$      | `math.cos(7)`     |
+| Tangente                  | $\tan 7$      | `math.tan(7)`     |
+| Arcsinus                  | $\arcsin 1$   | `math.asin(1)`    |
+| Arccosinus                | $\arccos 1$   | `math.acos(1)`    |
+| Arctangente               | $\arctan 1$   | `math.atan(1)`    |
+| Exponentielle en base $e$ | $e^7$         | `math.exp(7)`     |
+| Logarithme népérien       | $\ln 7$       | `math.log(7)`     |
+| Logarithme base $10$      | $\log_{10} 7$ | `math.log(7, 10)` |
+| Le nombre $\pi$           | $\pi$         | `math.pi`         |
+| Le nombre $e$             | $e$           | `math.e`          |
+
+:::exercice
+
+<Sequence id="math-library">
+  <Calculator prompt="\sqrt{67}" answer={Math.sqrt(67)} />
+  <Calculator prompt="-\log_{10} (1.05 \cdot 10^{-5})" answer={-Math.log10(1.05 * 10 ** -5)}>
+    Calculer le pH d'une solution de concentration $C = 1.05 \cdot 10^{-5}$ mol/L. Pour rappel, le
+    pH est défini par $\mathrm{pH} = -\log_{10} C$.
+  </Calculator>
+  <PythonCode
+    prompt={<p>Utilisez Python pour calculer {tex`\log_{10}(100)`}</p>}
+    tests={[{ test: null, check: ({ result }) => result === '2' }]}
+  />
+</Sequence>
+
+:::
+
+:::remark
+
+Il existe plusieurs manières d'importer les fonctions d'une bibliothèque en Python.
 
 |                      | Import simple  | Import spécifique           | Import étoile        |
 | -------------------- | -------------- | --------------------------- | -------------------- |
@@ -107,9 +199,6 @@ Supposons que vous souhaitiez calculer la racine carrée de $2$ et la valeur de 
 | Calcul de $\sqrt{2}$ | `math.sqrt(2)` | `sqrt(2)`                   | `sqrt(2)`            |
 | Valeur de $\pi$      | `math.pi`      | `pi`                        | `pi`                 |
 
-:::
-
-:::remark
 L'import simple est le plus _explicite_ et est préféré dans les codes professionels.
 L'import étoilé est le plus concis,
 peut porter à confusion,
@@ -119,53 +208,8 @@ mais est acceptable pour des calculs rapides et simples.
 il existe plusieurs implémentations de la fonction racine carrée:
 `sympy.sqrt`, `numpy.sqrt`, `math.sqrt`, etc.
 Avec l'import simple, le choix est _délibéré_ et _explicite_ à chaque appel.
-:::
-
-```python run
-# On importe la fonction sqrt de la bibliothèque math
-from math import sqrt
-
-# On l'utilise ensuite pour notre calcul
-sqrt(2)
-```
-
-Par défaut, `log` est le logarithme népérien (base $e$),
-mais il est possible de calculer le logarithme d'une autre base en utilisant un second argument.
-
-:::example
-
-Pour calculer $\log_{10}(67)$,
-on procède comme suit:
-
-```python run
-from math import log
-log(67, 10)
-```
 
 :::
-
-| Opération            | Exemple        | Code Python       |
-| -------------------- | -------------- | ----------------- |
-| Racine carrée        | $\sqrt{7}$     | `math.sqrt(7)`    |
-| Racine cubique       | $\sqrt[3]{7}$  | `7 ** (1 / 3)`    |
-| Sinus                | $\sin(7)$      | `math.sin(7)`     |
-| Cosinus              | $\cos(7)$      | `math.cos(7)`     |
-| Tangente             | $\tan(7)$      | `math.tan(7)`     |
-| Arcsinus             | $\arcsin(1)$   | `math.asin(1)`    |
-| Arccosinus           | $\arccos(1)$   | `math.acos(1)`    |
-| Logarithme népérien  | $\ln(7)$       | `math.log(7)`     |
-| Logarithme base $10$ | $\log_{10}(7)$ | `math.log(7, 10)` |
-
-<Sequence id="math-library">
-  <PythonCode
-    prompt={<p>Utilisez Python pour calculer {tex`\sqrt{67}`}</p>}
-    tests={[{ test: null, check: ({ result }) => result === '8.18535277187245' }]}
-  />
-  <PythonCode
-    prompt={<p>Utilisez Python pour calculer {tex`\log_{10}(100)`}</p>}
-    tests={[{ test: null, check: ({ result }) => result === '2' }]}
-  />
-</Sequence>
 
 ## Variables
 
@@ -174,22 +218,68 @@ Elles jouent un rôle important pour rendre le code plus lisible et plus facile 
 
 :::example
 Calculez la surface d'un cylindre de rayon $2$ et de hauteur $3$,
-en utilisant préalablement les variables `r` et `h` pour le rayon et la hauteur.
+en utilisant préalablement les variables `rayon` et `hauteur` pour le rayon et la hauteur.
 
 ```python run
-from math import pi
+# On importe math pour accéder à la valeur de pi
+import math
 
-r = 2
-h = 3
-S = 2 * pi * r**2 + 2 * pi * r * h
-S
+# On définit les variables rayon et hauteur
+rayon = 2
+hauteur = 3
+
+# On définit la variable S pour stocker la surface du cylindre
+Surface = 2 * math.pi * rayon**2 + 2 * math.pi * rayon * hauteur
+
+# On affiche la surface
+Surface
 ```
 
 L'avantage de l'utilisation de variables
-est qu'il est possible de modifier les valeurs de `r` et `h`
+est qu'il est possible de modifier les valeurs de `rayon` et `hauteur`
 pour calculer la surface avec d'autres données,
 sans avoir à réécrire tout le calcul.
 :::
+
+<Sequence id="variables">
+  <Variables
+    vars={{ c: 5 }}
+    answer={5 * 5}
+    calculate={
+      <>
+        l'aire du carré de côté <code>c</code>
+      </>
+    }
+  />
+  <Variables
+    vars={{ rayon: 7 }}
+    answer={Math.pi * 7 ** 2}
+    calculate={
+      <>
+        l'aire du disque de rayon <code>rayon</code>
+      </>
+    }
+  />
+  <Variables
+    vars={{ rayon: 4, hauteur: 10 }}
+    answer={Math.pi * 4 ** 2 * 10}
+    calculate={
+      <>
+        le volume du cylindre de rayon <code>rayon</code> et de hauteur <code>hauteur</code>
+      </>
+    }
+  />
+  <Variables
+    vars={{ x: 3, y: 4, z: 5 }}
+    answer={3 * 4 * 5}
+    calculate={
+      <>
+        le volume du parallélépipède rectangle de côtés <code>x</code>, <code>y</code> et{' '}
+        <code>z</code>
+      </>
+    }
+  />
+</Sequence>
 
 ## Le calcul vectoriel avec `numpy`
 
@@ -199,23 +289,40 @@ Pour créer une liste de nombres,
 on l'écrit entre crochets `[]`,
 et on sépare les éléments par des virgules `,`.
 
-```python
-[1, 2, 3, 4, 5]
+```python run
+# On crée une liste de nombres
+liste = [1, 2, 3, 4, 5]
+
+# On l'affiche
+liste
 ```
 
 ### Vecteurs
 
-Pour créer un vecteur,
+Pour le calcul vectoriel,
 on peut utiliser la bibliothèque `numpy`,
 qui est spécalisée dans le calcul scientifique.
+
+Pour créer un vecteur,
+on utilise la fonction `np.array`,
+en lui passant une liste
+qui contient les coordonnées du vecteur.
 
 :::example
 Pour créer le vecteur $\vec v = (1, 2, 3)$,
 on écrit:
 
 ```python run
+# On importe numpy pour pouvoir travailler avec les vecteurs
+# Puisque `numpy` est long, la convention est de l'abréger `np`
 import numpy as np
+
+# On définit un vecteur, en employant np.array
+# Ne pas oublier qu'il faut des parenthèses et des crochets
 v = np.array([1, 2, 3])
+
+# On affiche le vecteur
+v
 ```
 
 :::
@@ -229,27 +336,43 @@ calcule $2 \vec v + 3 \vec w$.
 
 ```python run
 import numpy as np
+
 v = np.array([1, 2, 3])
 w = np.array([4, 5, 6])
+
 2 * v + 3 * w
 ```
 
 :::
 
-### Produit scalaire
+### Produits scalaires et vectoriels
+
+Les produits scalaires et vectoriels se calculent avec les fonctions `np.dot` et `np.cross` respectivement.
+
+:::example
+
+<div class="lg:grid lg:grid-cols-2 lg:gap-8">
 
 ```python run
 import numpy as np
+
 a = np.array([1, 2, 3])
 b = np.array([4, 5, 6])
+
+# Produit scalaire entre a et b
 np.dot(a, b)
 ```
 
-### Produit vectoriel
-
 ```python run
 import numpy as np
+
 a = np.array([1, 2, 3])
 b = np.array([4, 5, 6])
+
+# Produit vectoriel entre a et b
 np.cross(a, b)
 ```
+
+</div>
+
+:::
