@@ -9,7 +9,7 @@ import type { ExerciseContext } from './context'
 function addEmail<T>(ctx: T) {
   const user = getRequestEvent()?.locals.user
   if (!user) throw new Error('User not logged in')
-  return { ...ctx, userEmail: user.email as string }
+  return { ...ctx, userEmail: user.email, deleted: false }
 }
 
 const RawSequence = v.object({
@@ -58,6 +58,7 @@ export const getProgress = query(async (rawSequence: SequenceContext) => {
         eq(tables.steps.userEmail, sequence.userEmail),
         eq(tables.steps.url, sequence.url),
         eq(tables.steps.sequenceId, sequence.sequenceId),
+        eq(tables.steps.deleted, false),
       ),
     )
     .groupBy(tables.steps.sequencePosition)
@@ -81,13 +82,15 @@ export const reset = async (rawCtx: Omit<StepContext, 'position'>) => {
     rawCtx,
   )
   await db
-    .delete(tables.steps)
+    .update(tables.steps)
+    .set({ deleted: true })
     .where(
       and(
         eq(tables.steps.userEmail, ctx.userEmail),
         eq(tables.steps.url, ctx.url),
         eq(tables.steps.sequenceId, ctx.sequenceId),
         eq(tables.steps.sequencePosition, ctx.sequencePosition),
+        eq(tables.steps.deleted, false),
       ),
     )
 }
