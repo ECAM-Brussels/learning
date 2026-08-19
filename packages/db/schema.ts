@@ -1,4 +1,3 @@
-import { user } from '@learning/auth/schema'
 import {
   boolean,
   integer,
@@ -9,7 +8,8 @@ import {
   unique,
   uuid,
 } from 'drizzle-orm/pg-core'
-export * from '@learning/auth/schema'
+import { user } from './auth'
+export * from './auth'
 
 export const steps = snakeCase.table(
   'steps',

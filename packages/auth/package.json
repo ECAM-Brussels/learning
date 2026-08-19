@@ -16,7 +16,6 @@
   },
   "exports": {
     ".": "./auth.ts",
-    "./schema": "./schema.ts",
     "./client": "./client.ts"
   }
 }
