@@ -8,5 +8,9 @@ export default {
     BETTER_AUTH_SECRET: v.pipe(v.string(), v.nonEmpty()),
     MICROSOFT_CLIENT_ID: v.pipe(v.string(), v.nonEmpty()),
     MICROSOFT_CLIENT_SECRET: v.pipe(v.string(), v.nonEmpty()),
+    ADMINS: v.pipe(
+      v.string(),
+      v.transform((s) => s.split(',')),
+    ),
   },
 }

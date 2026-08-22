@@ -3,6 +3,7 @@ import { query } from '@solidjs/router'
 import { getRequestEvent } from '@solidjs/web'
 import { and, eq, sql } from 'drizzle-orm'
 import * as v from 'valibot'
+import { ensurePermissions } from '../permissions'
 import type { StoredStep } from './base'
 import type { ExerciseContext } from './context'
 
@@ -32,6 +33,7 @@ type StepContext = v.InferInput<typeof StepContext>
 
 export const fetchStep = query(async (rawCtx: StepContext) => {
   'use server'
+  ensurePermissions(['exercise:readOwn'])
   const res = await db.query.steps.findFirst({
     columns: { name: true, data: true, state: true, correct: true, feedback: true },
     where: v.parse(StepContext, rawCtx),
@@ -41,6 +43,7 @@ export const fetchStep = query(async (rawCtx: StepContext) => {
 
 export const getProgress = query(async (rawSequence: SequenceContext) => {
   'use server'
+  ensurePermissions(['exercise:readOwn'])
   const sequence = v.parse(SequenceContext, rawSequence)
   const rows = await db
     .select({
@@ -68,12 +71,14 @@ export const getProgress = query(async (rawSequence: SequenceContext) => {
 
 export const saveStep = async (rawCtx: StepContext, step: StoredStep) => {
   'use server'
+  ensurePermissions(['exercise:answerOwn'])
   const ctx = v.parse(StepContext, rawCtx)
   await db.insert(tables.steps).values({ ...ctx, ...step })
 }
 
 export const reset = async (rawCtx: Omit<StepContext, 'position'>) => {
   'use server'
+  ensurePermissions(['exercise:deleteOwn'])
   const ctx = v.parse(
     v.pipe(
       v.object({ ...RawSequence.entries, sequencePosition: v.number() }),
