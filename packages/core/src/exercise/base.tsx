@@ -1,7 +1,7 @@
 import { Boundary, FeedbackContext, MathField } from '@learning/components'
 import { action, useLocation } from '@solidjs/router'
 import { Dynamic, type JSX } from '@solidjs/web'
-import { mapValues } from 'es-toolkit'
+import { allKeyed, mapValues } from 'es-toolkit'
 import {
   createMemo,
   createProjection,
@@ -16,6 +16,7 @@ import {
 import * as v from 'valibot'
 import { getUser } from '../auth'
 import { expr, Expression } from '../expr'
+import { hasPermissions } from '../permissions'
 import { StepContext } from './context'
 import local from './context.local'
 import remote from './context.remote'
@@ -304,6 +305,15 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     </Show>
   )
 
+  const canReset = createMemo(async () => {
+    const isFirstStep = ctx().position === 0
+    const { allowed, user } = await allKeyed({
+      allowed: hasPermissions(['exercise:deleteOwn']),
+      user: getUser(),
+    })
+    return isFirstStep && (allowed || user === null)
+  })
+
   return (
     <div class={props.class}>
       <StepBoundary fallback="Chargement de l'exercice...">
@@ -335,7 +345,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
             <Next>{props.children}</Next>
           </Show>
         </StepBoundary>
-        <Show when={ctx().position === 0}>
+        <Show when={canReset()}>
           <form method="post" action={reset}>
             <button class="text-sm text-gray-500">Recommencer l'exercice</button>
           </form>

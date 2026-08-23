@@ -46,27 +46,17 @@ export const getProgress = query(async (rawSequence: SequenceContext) => {
   await ensurePermissions(['exercise:readOwn'])
   const sequence = v.parse(SequenceContext, rawSequence)
   const rows = await db
-    .select({
-      i: tables.steps.sequencePosition,
-      progress: sql<boolean | null>`
-        case
-          when count(${tables.steps.correct}) = 0 then null
-          else bool_and(coalesce(${tables.steps.correct}, false))
-        end
-      `,
-    })
-    .from(tables.steps)
+    .select({ i: exercise.sequencePosition, correct: exercise.correct })
+    .from(exercise)
     .where(
       and(
-        eq(tables.steps.userEmail, sequence.userEmail),
-        eq(tables.steps.url, sequence.url),
-        eq(tables.steps.sequenceId, sequence.sequenceId),
-        eq(tables.steps.deleted, false),
+        eq(exercise.userEmail, sequence.userEmail),
+        eq(exercise.url, sequence.url),
+        eq(exercise.sequenceId, sequence.sequenceId),
       ),
     )
-    .groupBy(tables.steps.sequencePosition)
-    .orderBy(tables.steps.sequencePosition)
-  return Object.fromEntries(rows.map((r) => [r.i, r.progress] as const))
+    .orderBy(exercise.sequencePosition)
+  return Object.fromEntries(rows.map((r) => [r.i, r.correct] as const))
 }, 'getProgress')
 
 export const saveStep = async (rawCtx: StepContext, step: StoredStep) => {
@@ -100,4 +90,52 @@ export const reset = async (rawCtx: Omit<StepContext, 'position'>) => {
     )
 }
 
-export default { fetchStep, getProgress, saveStep, reset } satisfies ExerciseContext
+export const getStats = query(async (rawSequence: SequenceContext) => {
+  'use server'
+  await ensurePermissions(['exercise:read'])
+  const sequence = v.parse(SequenceContext, rawSequence)
+  return await db
+    .select({
+      email: exercise.userEmail,
+      name: tables.user.name,
+      progress: sql<{ i: number; correct: boolean | null }[]>`
+        json_agg(
+          json_build_object(
+            'i', ${exercise.sequencePosition},
+            'correct', ${exercise.correct}
+          )
+          order by ${exercise.sequencePosition}
+        )
+      `,
+    })
+    .from(exercise)
+    .innerJoin(tables.user, eq(tables.user.email, exercise.userEmail))
+    .where(and(eq(exercise.url, sequence.url), eq(exercise.sequenceId, sequence.sequenceId)))
+    .groupBy(exercise.userEmail, tables.user.name)
+}, 'getStats')
+
+const exercise = db
+  .select({
+    userEmail: tables.steps.userEmail,
+    url: tables.steps.url,
+    sequenceId: tables.steps.sequenceId,
+    sequencePosition: tables.steps.sequencePosition,
+    correct: sql<boolean | null>`
+      case
+        when bool_or(${tables.steps.correct} = false) then false
+        when bool_or(${tables.steps.correct} is null) then null
+        else true
+      end
+    `.as('correct'),
+  })
+  .from(tables.steps)
+  .where(eq(tables.steps.deleted, false))
+  .groupBy(
+    tables.steps.userEmail,
+    tables.steps.url,
+    tables.steps.sequenceId,
+    tables.steps.sequencePosition,
+  )
+  .as('exercise')
+
+export default { fetchStep, getProgress, saveStep, reset, getStats } satisfies ExerciseContext

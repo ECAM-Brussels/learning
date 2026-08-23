@@ -17,4 +17,7 @@ export type ExerciseContext = {
   ) => Promise<Record<number, boolean | null | undefined>>
   saveStep: (ctx: StepContext, step: StoredStep) => Promise<void>
   reset: (ctx: Omit<StepContext, 'position'>) => Promise<void>
+  getStats?: (
+    ctx: Omit<StepContext, 'position'>,
+  ) => Promise<{ email: string; name: string; progress: (boolean | null)[] }[]>
 }
