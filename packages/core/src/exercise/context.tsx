@@ -19,5 +19,7 @@ export type ExerciseContext = {
   reset: (ctx: Omit<StepContext, 'position'>) => Promise<void>
   getStats?: (
     ctx: Omit<StepContext, 'position'>,
-  ) => Promise<{ email: string; name: string; progress: (boolean | null)[] }[]>
+  ) => Promise<
+    { email: string; name: string; progress: { i: number; correct: boolean | null }[] }[]
+  >
 }
