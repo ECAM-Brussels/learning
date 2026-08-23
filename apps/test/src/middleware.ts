@@ -1,19 +1,21 @@
 import { getAuth } from '@learning/auth'
+import { getRole } from '@learning/core'
 import { composeMiddleware, getRequestEvent } from '@solidjs/web'
 
 export default composeMiddleware([
   async (request, next) => {
-    const url = new URL(request.url)
-    if (url.pathname.startsWith('/api/auth')) return getAuth().handler(request)
+    const pathname = new URL(request.url).pathname
+    const locals = getRequestEvent()!.locals
 
-    const cookie = request.headers.get('cookie')
-    if (!cookie) {
-      getRequestEvent()!.locals.user = null
+    if (pathname.startsWith('/api/auth')) return getAuth().handler(request)
+    if (!request.headers.get('cookie')) {
+      locals.user = null
+      locals.role = null
       return next(request)
     }
 
-    getRequestEvent()!.locals.user =
-      (await getAuth().api.getSession({ headers: request.headers }))?.user ?? null
+    locals.user = (await getAuth().api.getSession({ headers: request.headers }))?.user ?? null
+    locals.role = await getRole()
     return next(request)
   },
 ])
