@@ -1,7 +1,7 @@
 import { Boundary, FeedbackContext, MathField } from '@learning/components'
 import { action, useLocation } from '@solidjs/router'
 import { Dynamic, type JSX } from '@solidjs/web'
-import { allKeyed, mapValues } from 'es-toolkit'
+import { mapValues } from 'es-toolkit'
 import {
   createMemo,
   createProjection,
@@ -306,14 +306,9 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   )
 
   const canReset = createMemo(async () => {
-    const isFirstStep = ctx().position === 0
-    const { allowed, user } = await allKeyed({
-      allowed: hasPermissions(['exercise:deleteOwn']),
-      user: getUser(),
-    })
-    return isFirstStep && (allowed || user === null)
+    if (ctx().position !== 0) return false
+    return await hasPermissions(['exercise:deleteOwn'])
   })
-
   return (
     <div class={props.class}>
       <StepBoundary fallback="Chargement de l'exercice...">

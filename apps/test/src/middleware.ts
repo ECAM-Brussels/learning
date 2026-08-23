@@ -10,7 +10,7 @@ export default composeMiddleware([
     if (pathname.startsWith('/api/auth')) return getAuth().handler(request)
     if (!request.headers.get('cookie')) {
       locals.user = null
-      locals.role = null
+      locals.role = 'guest'
       return next(request)
     }
 

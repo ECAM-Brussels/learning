@@ -7,6 +7,9 @@ const permissions = {
 } as const satisfies Record<string, readonly string[]>
 
 const roles = {
+  guest: {
+    exercise: ['readOwn', 'answerOwn', 'deleteOwn'],
+  },
   student: {
     exercise: ['readOwn', 'answerOwn', 'deleteOwn'],
   },
@@ -23,7 +26,7 @@ type Permission<S extends Scope = Scope> = `${S}:${(typeof permissions)[S][numbe
 export const getRole = query(async () => {
   'use server'
   const user = getRequestEvent()?.locals?.user
-  if (!user) return null
+  if (!user) return 'guest'
   let role: keyof typeof roles = 'student'
   if (env.ADMINS.includes(user.email)) role = 'admin'
   else if (/^[a-zA-Z]$/.test(user.email) && user.email.endsWith('@ecam.be')) role = 'teacher'
