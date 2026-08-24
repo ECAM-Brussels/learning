@@ -36,4 +36,4 @@ export default {
     const id = getStorageId(ctx)
     localStorage.removeItem(id)
   },
-} satisfies ExerciseContext
+} as ExerciseContext

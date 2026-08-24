@@ -35,7 +35,14 @@ export const fetchStep = query(async (rawCtx: StepContext) => {
   'use server'
   await ensurePermissions(['exercise:readOwn'])
   const res = await db.query.steps.findFirst({
-    columns: { name: true, data: true, state: true, correct: true, feedback: true },
+    columns: {
+      name: true,
+      data: true,
+      state: true,
+      correct: true,
+      feedback: true,
+      submitted: true,
+    },
     where: v.parse(StepContext, rawCtx),
   })
   return (res as StoredStep) ?? null
@@ -63,7 +70,21 @@ export const saveStep = async (rawCtx: StepContext, step: StoredStep) => {
   'use server'
   await ensurePermissions(['exercise:answerOwn'])
   const ctx = v.parse(StepContext, rawCtx)
-  await db.insert(tables.steps).values({ ...ctx, ...step })
+  await db
+    .insert(tables.steps)
+    .values({ ...ctx, ...step })
+    .onConflictDoUpdate({
+      target: [
+        tables.steps.userEmail,
+        tables.steps.url,
+        tables.steps.sequenceId,
+        tables.steps.sequencePosition,
+        tables.steps.position,
+      ],
+      set: { ...step, deleted: false },
+      setWhere: sql`${tables.steps.submitted} = false`,
+      targetWhere: sql`${tables.steps.deleted} = false`,
+    })
 }
 
 export const reset = async (rawCtx: Omit<StepContext, 'position'>) => {
@@ -138,4 +159,4 @@ const exercise = db
   )
   .as('exercise')
 
-export default { fetchStep, getProgress, saveStep, reset, getStats } satisfies ExerciseContext
+export default { fetchStep, getProgress, saveStep, reset, getStats } as ExerciseContext
