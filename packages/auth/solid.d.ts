@@ -1,1 +1,1 @@
-/// <reference path="../../apps/test/solid.d.ts" />
+/// <reference path="../../apps/ecam/solid.d.ts" />

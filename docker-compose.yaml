@@ -42,7 +42,7 @@ services:
     profiles: [dev]
     build:
       context: .
-      dockerfile: apps/test/Dockerfile
+      dockerfile: apps/ecam/Dockerfile
       target: dev
     env_file:
       - .env
@@ -56,7 +56,7 @@ services:
     profiles: [prod]
     build:
       context: .
-      dockerfile: apps/test/Dockerfile
+      dockerfile: apps/ecam/Dockerfile
       target: prod
     env_file:
       - .env
