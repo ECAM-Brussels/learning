@@ -2,8 +2,8 @@
   "name": "@learning/symapi",
   "private": true,
   "scripts": {
-    "dev": "uv run fastapi dev main.py --port 8088",
-    "lint": "uv run black .",
-    "lint:check": "uv run black --check ."
+    "dev": "uv run python -m fastapi dev main.py --port 8088",
+    "lint": "uv run python -m black .",
+    "lint:check": "uv run python -m black --check ."
   }
 }
