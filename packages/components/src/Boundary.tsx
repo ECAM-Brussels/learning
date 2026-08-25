@@ -8,6 +8,7 @@ export function Boundary(props: { children: JSX.Element; fallback?: JSX.Element 
         <details open>
           <summary>Erreur</summary>
           {String(err())}
+          <pre>{JSON.stringify(err(), null, 2)}</pre>
         </details>
       )}
     >
