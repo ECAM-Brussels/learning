@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@learning/db": "workspace:*",
-    "better-auth": "^1.6.26",
+    "better-auth": "catalog:",
     "drizzle-orm": "catalog:"
   },
   "exports": {
