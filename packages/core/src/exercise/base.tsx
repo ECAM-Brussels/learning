@@ -3,8 +3,10 @@ import { action, useLocation } from '@solidjs/router'
 import { Dynamic, type JSX } from '@solidjs/web'
 import { mapValues } from 'es-toolkit'
 import {
+  affects,
   createMemo,
   createStore,
+  isPending,
   omit,
   Show,
   useContext,
@@ -275,6 +277,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   } satisfies ComponentProps<typeof props.prompt>['state']
 
   const submit = action(async (newState: typeof state) => {
+    affects(step)
     const payload = {
       ...step(),
       state: newState,
@@ -319,7 +322,10 @@ export function Step<S extends StepSchema, F extends JsonObject>(
             state={promptState}
           />
           <Show when={!step().submitted}>
-            <button class="block rounded-lg bg-green-800 px-3 py-2 text-green-100">
+            <button
+              class="block rounded-lg bg-green-800 px-3 py-2 text-green-100 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+              disabled={isPending(step)}
+            >
               Soumettre
             </button>
           </Show>
