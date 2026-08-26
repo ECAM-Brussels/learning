@@ -347,7 +347,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
         </StepBoundary>
         <Show when={canReset()}>
           <form method="post" action={reset}>
-            <button class="text-sm text-gray-500">Recommencer l'exercice</button>
+            <button class="cursor-pointer text-sm text-gray-500">Recommencer l'exercice</button>
           </form>
         </Show>
       </Show>
