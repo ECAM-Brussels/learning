@@ -4,11 +4,9 @@ import { Dynamic, type JSX } from '@solidjs/web'
 import { mapValues } from 'es-toolkit'
 import {
   createMemo,
-  createProjection,
   createStore,
   omit,
   Show,
-  snapshot,
   useContext,
   type Component,
   type ComponentProps,
@@ -182,15 +180,14 @@ function useStepContext<S extends StepSchema>(
     return typeof dataValue === 'function' ? dataValue() : dataValue
   })
   const fetched = createMemo(() => exerciseContext().fetchStep(stepContext()))
-  const step = createProjection<StoredStep<S['data'], S['inputs']>>(async () => {
+  const step = createMemo<StoredStep<S['data'], S['inputs']>>(async () => {
     const [saved, data] = [fetched(), exerciseData()]
     return {
-      submitted: saved !== null,
       state: {},
       ...(saved ?? {}),
       data: { ...data, ...saved?.data },
     } as StoredStep<S['data'], S['inputs']>
-  }, {})
+  })
 
   const saveStep = (newStep: StoredStep<S['data'], S['inputs'], 'output'>) =>
     exerciseContext().saveStep(stepContext(), newStep)
@@ -211,7 +208,7 @@ function useStepContext<S extends StepSchema>(
       <FeedbackContext
         value={{
           get correct() {
-            return step.correct
+            return step().correct
           },
         }}
       >
@@ -232,7 +229,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   )
 
   const [state, setState] = createStore<Partial<ObjectSchema<S['inputs'], 'input'>>>(
-    () => step.state,
+    () => step().state,
     {} as any,
   )
 
@@ -240,7 +237,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     data: ObjectSchema(props.schema.data as S['data']),
     inputs: ObjectSchema(props.schema.inputs as S['inputs']),
   }))
-  const parsedData = createMemo(() => v.parse(schemas().data, step.data))
+  const parsedData = createMemo(() => v.parse(schemas().data, step().data))
   const parsedInputs = createMemo(() => v.parse(schemas().inputs, state))
   const parsed = createMemo(() => ({ data: parsedData(), inputs: parsedInputs() }))
 
@@ -249,20 +246,20 @@ export function Step<S extends StepSchema, F extends JsonObject>(
       <Dynamic
         class="rounded border border-gray-200"
         component={schema === 'expr' ? MathField : 'input'}
-        value={step.state[name] ?? ''}
+        value={step().state[name] ?? ''}
         onChange={(e: Event & { target: HTMLInputElement }) => {
           setState((s) => {
             s[name] = e.target.value as any
           })
         }}
-        readonly={step.submitted}
+        readonly={step().submitted}
       />
     )),
   )
 
   const promptState = {
     get saved() {
-      return step.state
+      return step().state
     },
     get current() {
       return state
@@ -273,13 +270,13 @@ export function Step<S extends StepSchema, F extends JsonObject>(
       })
     },
     get correct() {
-      return step.correct
+      return step().correct
     },
   } satisfies ComponentProps<typeof props.prompt>['state']
 
   const submit = action(async (newState: typeof state) => {
     const payload = {
-      ...snapshot(step),
+      ...step(),
       state: newState,
       submitted: true,
     }
@@ -294,7 +291,9 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     await saveStep(JSON.parse(JSON.stringify(parsedPayload)))
   })
 
-  const Self = (attrs: Partial<StepProps<S, F>>) => <Step {...props} data={step.data} {...attrs} />
+  const Self = (attrs: Partial<StepProps<S, F>>) => (
+    <Step {...props} data={step().data} {...attrs} />
+  )
 
   const Next = (attrs: { children: typeof props.children }) => (
     <Show
@@ -319,24 +318,24 @@ export function Step<S extends StepSchema, F extends JsonObject>(
             inputs={fields()}
             state={promptState}
           />
-          <Show when={!step.submitted}>
+          <Show when={!step().submitted}>
             <button class="block rounded-lg bg-green-800 px-3 py-2 text-green-100">
               Soumettre
             </button>
           </Show>
         </form>
       </StepBoundary>
-      <Show when={step.submitted}>
+      <Show when={step().submitted}>
         <StepBoundary fallback="Chargement du feedback..." offset={1}>
           <Dynamic
             component={props.feedback}
             {...parsed()}
-            correct={step.correct ?? false}
-            feedback={step.feedback as F}
+            correct={step().correct ?? false}
+            feedback={step().feedback as F}
             Self={Self}
             next={<Next>{props.children}</Next>}
           />
-          <Show when={step.correct}>
+          <Show when={step().correct}>
             <Next>{props.children}</Next>
           </Show>
         </StepBoundary>
