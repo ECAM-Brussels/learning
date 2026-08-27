@@ -4,7 +4,97 @@ import { PythonCode } from '@learning/exercises/python/Code'
 import { python, type FinalOutput } from '@learning/repl'
 import { type JSX } from '@solidjs/web'
 import { allKeyed } from 'es-toolkit'
-import { createMemo, createProjection, createSignal, For, Show } from 'solid-js'
+import {
+  createMemo,
+  createProjection,
+  createSignal,
+  flush,
+  For,
+  merge,
+  Repeat,
+  Show,
+} from 'solid-js'
+
+export function Integer(rawProps: {
+  mode?: 'decimal' | 'base' | 'both'
+  base?: 2
+  value?: number
+  showCalculation?: boolean
+}) {
+  const props = merge({ mode: 'both', base: 2, value: 0 }, rawProps)
+  const [number, setNumber] = createSignal(() => props.value)
+
+  const bits = createMemo(() => {
+    const magnitude = Math.abs(number()).toString(props.base).split('').map(Number)
+    const padding = Array(Math.max(0, 8 - magnitude.length)).fill(0)
+    return [0, ...padding, ...magnitude]
+  })
+
+  function changeBit(index: number, value: number) {
+    const newBits = bits().slice()
+    newBits[index] = value
+    setNumber(parseInt(newBits.join(''), props.base))
+    flush()
+  }
+
+  return (
+    <div class="not-prose m-4 flex gap-8 rounded-xl p-4 shadow-sm">
+      <div class="text-right">
+        <h4 class="font-bold">Nombre:</h4>
+        <input
+          class="text-right"
+          type="number"
+          value={number()}
+          onInput={(e) => setNumber(Number(e.target.value))}
+          disabled={props.mode === 'base'}
+        />
+      </div>
+      <div>
+        <h4 class="font-bold">Représentation en base {props.base}:</h4>
+        <div class="grid auto-cols-fr grid-flow-col gap-2 divide-x divide-solid divide-gray-300">
+          <Repeat count={bits().length}>
+            {(i) => (
+              <div class="border-collapse text-center">
+                <div
+                  class="font-xs my-0 text-center text-gray-300"
+                  title={String(props.base ** (bits().length - i - 1))}
+                >{tex`\small ${props.base}^{${String(bits().length - i - 1)}}`}</div>
+                <input
+                  class={['font-mono']}
+                  type="number"
+                  onInput={(e) => changeBit(i, Number(e.target.value))}
+                  value={bits()[i] ?? 0}
+                  max={props.base - 1}
+                  min={0}
+                  disabled={props.mode === 'decimal'}
+                />
+              </div>
+            )}
+          </Repeat>
+        </div>
+      </div>
+      <Show when={props.showCalculation}>
+        <div>
+          <h4 class="font-bold">Calcul:</h4>
+          {tex`${bits()
+            .map((b, i) => [b, i])
+            .filter(([b]) => b !== 0)
+            .map(
+              ([b, i]) =>
+                `
+                  ${b}
+                  \\cdot
+                  \\underbrace{${props.base ** (bits().length - i - 1)}}_{${props.base}^{${String(bits().length - i - 1)}}}
+                `,
+            )
+            .join(' + ')}
+            = ${number() ?? '0'}
+          `}
+        </div>
+      </Show>
+    </div>
+  )
+}
 
 export function Print(props: {
   id?: string

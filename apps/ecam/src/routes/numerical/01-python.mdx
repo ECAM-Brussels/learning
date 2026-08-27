@@ -1,7 +1,7 @@
 import { Sequence, tex } from '@learning/core'
 import { defineMeta } from '@learning/components'
 import { PythonCode } from '@learning/exercises/python/Code'
-import { Calculator, Print, Variables } from './01-python.exercises'
+import { Calculator, Integer, Print, Variables } from './01-python.exercises'
 
 export default defineMeta({
   title: 'Session 1: Introduction à Python',
@@ -31,6 +31,38 @@ que nous vous invitons à compléter.
 </Print>
 
 :::
+
+## Le binaire
+
+### Les nombres entiers
+
+L'ordinateur garde en mémoire les nombres sous forme _binaire_,
+c'est-à-dire avec seulement des $0$ et des $1$.
+Comme cela aura des conséquences sur la précision des calculs,
+nous nous attarderons un peu sur la conversion en binaire.
+
+Pour rappel, nous utilisons la _base $10$_ pour représenter un nombre.
+Ceci signifie les choses suivantes:
+
+- Nous utilisons $10$ _chiffres_: $0$, $1$, $2$, $3$, $4$, $5$, $6$, $7$, $8$, $9$.
+- La valeur des chiffres dépend de la _position_ dans le nombre,
+  et est multipliée par une _puissance de $10$_.
+- Multiplier un nombre par $10$ revient à _décaler les chiffres d'une position vers la gauche_.
+
+<Integer mode="both" base={10} value={3674} showCalculation />
+
+En _binaire_ (base $2$), la situation est similaire
+
+- Nous utilisons $2$ _chiffres_: $0$, $1$.
+- La valeur des chiffres dépend de la _position_ dans le nombre,
+  et est multipliée par une _puissance de $2$_.
+- Multiplier un nombre par $2$ revient à _décaler les chiffres d'une position vers la gauche_.
+
+<Integer mode="both" showCalculation value={13} />
+
+Pour les nombres entiers, la base $10$ et la base $2$ sont essentiellement équivalentes,
+à la différence que la base $2$ nécessite plus de chiffres pour représenter un nombre.
+Nous verrons que la situation est plus complexe pour les nombres non entiers.
 
 ## Python comme une calculatrice
 
@@ -64,6 +96,8 @@ Nous attirons votre attention sur les points suivants:
 - Le séparateur décimal est le point `.` et non la virgule `,`.
 - Les nombres complexes sont représentés avec la lettre `j` et non `i`,
   et doivent _suivre la partie imaginaire directement_, **sans espaces**.
+  Le `j` doit obligatoirement suivre un nombre,
+  par exemple $i$ s'écrit `1j` et $-i$ s'écrit `-1j`.
 
 Nous vous invitons maintenant à résoudre les exercices suivants
 pour tester votre compréhension.
