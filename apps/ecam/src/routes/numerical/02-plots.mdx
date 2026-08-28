@@ -1,0 +1,158 @@
+import { defineMeta } from '@learning/components'
+
+export default defineMeta({
+  title: 'Session 2: Fonctions et graphiques',
+})
+
+# Fonctions et graphiques
+
+## Graphe d'une fonction
+
+Pour tracer un graphe passant par plusieurs points,
+on utilise la fonction `matplotlib.pyplot.plot`,
+qui prend en argument:
+
+- un vecteur `x` qui contient les _abscisses_ de vos points;
+- un vecteur `y` qui contient les _ordonnées_ de vos points.
+
+En général, `matplotlib.pyplot` est souvent importé sous le nom `plt`.
+
+:::example
+
+Pour tracer un graphe passant par $(2, 4)$, $(3, 1)$ et $(5, 0)$, on peut faire:
+
+```python run math
+# On importe la librairie `matplotlib.pyplot` sous le nom `plt`
+import matplotlib.pyplot as plt
+
+# On définit les vecteurs x et y
+# Lisez les coordonnées "verticalement"!
+x = [2, 3, 5]
+y = [4, 1, 0]
+
+# On trace le graphe
+plt.plot(x, y)
+```
+
+:::
+
+Pour tracer un graphe _courbe_,
+il faut juste **plus de points**,
+pour donner l'_illusion d'une courbe lisse_.
+
+## _"Multiplication"_ de vecteurs et _"addition scalaire"_
+
+Remarquons que `numpy` autorise la _multiplication de vecteurs_ de dimension égale,
+en appliquant la multiplication _composante par composante_.
+
+```python run
+import numpy as np
+
+x = np.array([1, 2, 3])
+y = np.array([2, -3, -1])
+
+# "Multiplions" ces vecteurs
+x * y
+```
+
+De la même manière,
+`numpy` vous autorise à additionner des nombres à des vecteurs,
+en appliquant l'addition _à chaque composante_.
+
+```python run
+import numpy as np
+
+v = np.array([1, 2, 3])
+
+# Ajoutons 5 à chaque composante
+v + 5
+```
+
+Si ces opérations vous feront perdre toute crédibilité à vos examens de mathématiques,
+elles sont néanmoins très pratique pour tracer des courbes.
+Par exemple, pour tracer le graphe de la fonction $f(x) = x^2 + 1$,
+nous pouvons procéder de la manière suivante:
+
+```python run math
+import matplotlib.pyplot as plt
+import numpy as np
+
+x = np.array([0, 0.1, 0.2, 0.3, 0.4, 0.5])
+y = x ** 2 + 1
+
+plt.plot(x, y)
+```
+
+La génération du vecteur `x` reste (pour l'instant) manuelle.
+
+## Graphes de polynômes
+
+La fonction `numpy.linspace` permet de générer un vecteur dont les composantes sont **uniformément espacées** sur un intervalle donné.
+
+$$
+\mathtt{numpy.linspace}(0, 1, 6)
+\quad \rightarrow \quad
+\begin{bmatrix}
+0.0\\ 0.2\\ 0.4\\ 0.6\\ 0.8\\ 1.0
+\end{bmatrix}
+$$
+
+```python run math
+import numpy as np
+
+x = np.linspace(0, 1, 11)
+x
+```
+
+:::example
+Tracez le graphe de la fonction $f(x) = x^2 + 1$ sur l'intervalle $[-1, 1]$
+
+```python run math
+import numpy as np
+import matplotlib.pyplot as plt
+
+x = np.linspace(-1, 1, 100)
+y = x ** 2 + 1
+
+plt.plot(x, y)
+```
+
+:::
+
+## Vectorisation
+
+Les fonctions dans la librairie `math`
+ont leur équivalent dans la librairie `numpy`.
+
+```python run
+import numpy as np
+
+np.sqrt(9)
+```
+
+:::question
+
+Quel est l'intérêt d'utiliser `numpy` plutôt que `math` si ces fonctions paraissent similaires?
+
+:::
+
+Comme vous le voyez, `numpy.sqrt` est **appliqué à chaque élément** d'un vecteur (ou d'une liste).
+
+```python run
+import numpy as np
+
+np.sqrt([1, 4, 9])
+```
+
+Ceci est très pratique pour calculer `matplotlib`,
+puisqu'on peut facilement calculer le vecteur `y`.
+
+```python
+import matplotlib.pyplot as plt
+import numpy as np
+
+x = [0.1, 0.2, 0.3, 0.4, 0.5]
+y = np.sqrt(x)
+
+plt.plot(x, y)
+```

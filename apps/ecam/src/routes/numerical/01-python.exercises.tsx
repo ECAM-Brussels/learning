@@ -4,93 +4,122 @@ import { PythonCode } from '@learning/exercises/python/Code'
 import { python, type FinalOutput } from '@learning/repl'
 import { type JSX } from '@solidjs/web'
 import { allKeyed } from 'es-toolkit'
-import {
-  createMemo,
-  createProjection,
-  createSignal,
-  flush,
-  For,
-  merge,
-  Repeat,
-  Show,
-} from 'solid-js'
+import { createMemo, createProjection, createSignal, For, merge, Show } from 'solid-js'
 
 export function Integer(rawProps: {
   mode?: 'decimal' | 'base' | 'both'
   base?: 2
   value?: number
   showCalculation?: boolean
+  precision?: number
 }) {
-  const props = merge({ mode: 'both', base: 2, value: 0 }, rawProps)
+  const props = merge({ mode: 'both', base: 2, value: 0, precision: 5 }, rawProps)
   const [number, setNumber] = createSignal(() => props.value)
+  const [precision, setPrecision] = createSignal(() => props.precision)
 
   const bits = createMemo(() => {
-    const magnitude = Math.abs(number()).toString(props.base).split('').map(Number)
-    const padding = Array(Math.max(0, 8 - magnitude.length)).fill(0)
-    return [0, ...padding, ...magnitude]
+    let bits: Record<number, number> = {}
+    const rep = number().toString(props.base)
+    let power = rep.indexOf('.') >= 0 ? rep.indexOf('.') - 1 : rep.length - 1
+    if (!rep.startsWith('0')) bits[power + 1] = 0
+    for (const char of rep) {
+      if (char === '.') continue
+      bits[power--] = parseInt(char, props.base)
+    }
+    return bits
   })
 
   function changeBit(index: number, value: number) {
-    const newBits = bits().slice()
+    const newBits = { ...bits() }
     newBits[index] = value
-    setNumber(parseInt(newBits.join(''), props.base))
-    flush()
+    setNumber(fromEntries(Object.entries(newBits)))
   }
 
+  function fromEntries(entries: [string, number][]) {
+    return entries.reduce(
+      (sum, [exponent, digit]) => sum + digit * props.base ** Number(exponent),
+      0,
+    )
+  }
+
+  const entries = createMemo(() =>
+    Object.entries(bits())
+      .sort(([a], [b]) => Number(b) - Number(a))
+      .filter(([power, bit]) => Number(power) >= -precision()),
+  )
+
+  const isApprox = createMemo(() => number() !== fromEntries(entries()))
+
   return (
-    <div class="not-prose m-4 flex gap-8 rounded-xl p-4 shadow-sm">
-      <div class="text-right">
+    <div class="not-prose m-4 rounded-xl p-4 shadow-sm">
+      <div class="flex items-center gap-4">
         <h4 class="font-bold">Nombre:</h4>
         <input
-          class="text-right"
+          class="rounded-xl border border-gray-200 px-2 text-right"
           type="number"
           value={number()}
           onInput={(e) => setNumber(Number(e.target.value))}
           disabled={props.mode === 'base'}
         />
+        <Show when={isApprox()}>
+          <label>Précision</label>
+          <input
+            class="rounded-xl border border-gray-200 px-2 text-right"
+            type="number"
+            value={precision()}
+            onInput={(e) => setPrecision(Number(e.target.value))}
+          />
+        </Show>
       </div>
-      <div>
-        <h4 class="font-bold">Représentation en base {props.base}:</h4>
-        <div class="grid auto-cols-fr grid-flow-col gap-2 divide-x divide-solid divide-gray-300">
-          <Repeat count={bits().length}>
-            {(i) => (
-              <div class="border-collapse text-center">
+      <div class="my-4">
+        <h4 class="font-bold">
+          Représentation en base {props.base}
+          <Show when={props.base !== 10}>
+            : <code>{number().toString(props.base)}</code>
+          </Show>
+        </h4>
+        <div class="flex justify-center gap-2 divide-x divide-solid divide-gray-300">
+          <For each={entries()}>
+            {([i, b], index) => (
+              <div class="text-center">
                 <div
                   class="font-xs my-0 text-center text-gray-300"
-                  title={String(props.base ** (bits().length - i - 1))}
-                >{tex`\small ${props.base}^{${String(bits().length - i - 1)}}`}</div>
-                <input
-                  class={['font-mono']}
-                  type="number"
-                  onInput={(e) => changeBit(i, Number(e.target.value))}
-                  value={bits()[i] ?? 0}
-                  max={props.base - 1}
-                  min={0}
-                  disabled={props.mode === 'decimal'}
-                />
+                  title={String(props.base ** Number(i))}
+                >{tex`\small ${props.base}^{${i}}`}</div>
+                <div class="flex justify-center">
+                  <input
+                    class="font-mono"
+                    type="number"
+                    onInput={(e) => changeBit(Number(i), Number(e.target.value))}
+                    value={bits()[Number(i)] ?? 0}
+                    max={props.base - 1}
+                    min={0}
+                    disabled={props.mode === 'decimal'}
+                  />
+                  <Show when={Number(i) === 0 && index() !== entries().length - 1}>
+                    <span class="font-bold">.</span>
+                  </Show>
+                </div>
               </div>
             )}
-          </Repeat>
+          </For>
         </div>
       </div>
       <Show when={props.showCalculation}>
-        <div>
-          <h4 class="font-bold">Calcul:</h4>
-          {tex`${bits()
-            .map((b, i) => [b, i])
-            .filter(([b]) => b !== 0)
-            .map(
-              ([b, i]) =>
-                `
-                  ${b}
-                  \\cdot
-                  \\underbrace{${props.base ** (bits().length - i - 1)}}_{${props.base}^{${String(bits().length - i - 1)}}}
-                `,
-            )
-            .join(' + ')}
-            = ${number() ?? '0'}
-          `}
-        </div>
+        {tex`${entries()
+          .filter(([i, b]) => b !== 0)
+          .map(
+            ([i, b]) =>
+              `
+                ${b}
+                \\cdot
+                \\underbrace{${props.base ** Number(i)}}_{${props.base}^{${i}}}
+              `,
+          )
+          .join(' + ')}
+          = ${fromEntries(entries())}
+          ${isApprox() ? `\\approx ${number()}` : ''}
+        `}
       </Show>
     </div>
   )
