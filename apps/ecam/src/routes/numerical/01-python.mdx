@@ -1,7 +1,8 @@
+import { createMemo, createSignal } from 'solid-js'
 import { Sequence, tex } from '@learning/core'
 import { defineMeta } from '@learning/components'
 import { PythonCode } from '@learning/exercises/python/Code'
-import { Calculator, Integer, Print, Variables } from './01-python.exercises'
+import { Calculator, getRep, Integer, Print, Variables } from './01-python.exercises'
 
 export default defineMeta({
   title: 'Session 1: Introduction à Python',
@@ -9,110 +10,19 @@ export default defineMeta({
 
 # Introduction à Python
 
-L'objectif de cette activité est de vous guider dans vos premiers pas en programmation.
-Programmer,
-c'est _écrire des instructions à un ordinateur_ (le _code_)
-dans un langage qu'il peut comprendre.
-L'ordinateur se chargera ensuite d'exécuter ces instructions pour vous,
-et vous informera du résultat éventuel.
-Dans cette activité, nous utiliserons le langage de programmation Python,
-qui est très populaire et utilisé dans de nombreux domaines scientifiques.
-
-Notre premier programme sera très simple,
-il se contentera d'afficher un message.
-Nous vous ferons souvent apprendre en modifiant un code existant,
-comme l'illustre l'exercice ci-dessous,
-que nous vous invitons à compléter.
+L'objectif de cette activité est de vous guider dans vos premiers pas en programmation en Python.
+Nous vous invitons à modifier les morceaux de code,
+et à **soumettre les exercices** pour vérifier vos réponses.
 
 :::exercise
+
+Pour votre premier exercice,
+nous allons commercer par afficher un message à l'écran.
 
 <Print id="hello-world" message="Vive Python" initialCode="print('Hello world')">
   Modifiez le code pour afficher le message `Vive Python` à la place de `Hello world`.
 </Print>
 
-:::
-
-## Le binaire
-
-L'ordinateur garde en mémoire les nombres sous forme _binaire_,
-c'est-à-dire avec seulement des $0$ et des $1$.
-Comme cela aura des conséquences sur la précision des calculs,
-nous nous attarderons un peu sur la conversion en binaire.
-
-### Conversion entre systèmes de numération
-
-Pour rappel, nous utilisons la _base $10$_ pour représenter un nombre.
-Ceci signifie les choses suivantes:
-
-- Nous utilisons $10$ _chiffres_: $0$, $1$, $2$, $3$, $4$, $5$, $6$, $7$, $8$, $9$.
-- La valeur des chiffres dépend de la _position_ dans le nombre,
-  et est multipliée par une _puissance de $10$_.
-- Multiplier un nombre par $10$ revient à _décaler les chiffres d'une position vers la gauche_.
-
-<Integer mode="both" base={10} value={3674.5} showCalculation />
-
-En _binaire_ (base $2$), la situation est similaire
-
-- Nous utilisons $2$ _chiffres_: $0$, $1$.
-- La valeur des chiffres dépend de la _position_ dans le nombre,
-  et est multipliée par une _puissance de $2$_.
-- Multiplier un nombre par $2$ revient à _décaler les chiffres d'une position vers la gauche_.
-
-<Integer mode="both" showCalculation value={13.75} />
-
-Pour les nombres entiers, la base $10$ et la base $2$ sont essentiellement équivalentes,
-à la différence que la base $2$ nécessite plus de chiffres pour représenter un nombre.
-Nous verrons que la situation est plus complexe pour les nombres non entiers.
-
-### Représentations finies et exactes
-
-L'ordinateur ne peut stocker qu'un nombre fini de **bits** ($0$ ou $1$).
-Par conséquent, le nombre
-
-{tex`
-
-0.1010101010101010...
-
-`}
-
-n'est **pas représentable** dans la mémoire de l'ordinateur,
-puisqu'il faudrait une **infinité de bits** pour le stocker.
-
-Quels nombres sont donc représentables ou non représentables exactement en binaire?
-Pour répondre à cette question,
-utilisons la base $10$ par analogie.
-En base $10$,
-tout nombre représentable avec un nombre fini de chiffre peut s'écrire comme une fraction d'entiers
-qui a comme dénominateur **une puissance de $10$**.
-
-:::example
-
-- Le nombre $67$ peut s'écrire comme la fraction $\displaystyle \frac{67}{10^0}$.
-
-- Le nombre $0.375$ peut s'écrire comme la fraction $\displaystyle \frac{375}{10^3}$.
-
-- Le nombre $45.1234$ peut s'écrire comme la fraction $\displaystyle \frac{451234}{10^4}$.
-
-- Le nombre $\displaystyle \frac 1 3 = 0.33333\ldots$ n'est **pas représentable**
-  puisqu'il faudrait une infinité de chiffres pour le stocker.
-
-:::
-
-Le même raisonnement s'applique à la base $2$:
-tout nombre représentable avec un nombre fini de bits peut s'écrire comme une fraction d'entiers
-qui a comme dénominateur **une puissance de $2$**
-
-:::example
-
-- Le nombre binaire $(10.11)_2$ peut s'écrire comme la fraction {tex`\displaystyle \frac{(1011)_2}{2^2}`}.
-
-- Le nombre binaire $(1101.101)_2$ peut s'écrire comme la fraction {tex`\displaystyle \frac{(1101101)_2}{2^3}`}.
-
-:::
-
-:::proposition
-Un nombre est représentable exactement en binaire si et seulement si
-son écriture fractionnelle simplifée a pour dénominateur une puissance de $2$.
 :::
 
 ## Python comme une calculatrice
@@ -138,7 +48,7 @@ Voici un tableau récapitulatif des opérations de base en Python:
 | Multiplication     | $3 \cdot 4$          | `3 * 4`     |
 | Division           | $\frac 3 4$          | `3 / 4`     |
 | Exponentiation     | $3^4$                | `3 ** 4`    |
-| Séparateur décimal | $3,14$               | `3.14`      |
+| Séparateur décimal | {tex`3{,}14`}        | `3.14`      |
 | Nombre complexe    | $3 + 4i$             | `3 + 4j`    |
 
 Nous attirons votre attention sur les points suivants:
@@ -150,8 +60,7 @@ Nous attirons votre attention sur les points suivants:
   Le `j` doit obligatoirement suivre un nombre,
   par exemple $i$ s'écrit `1j` et $-i$ s'écrit `-1j`.
 
-Nous vous invitons maintenant à résoudre les exercices suivants
-pour tester votre compréhension.
+Nous vous invitons maintenant à résoudre les exercices suivants:
 
 :::exercise
 
@@ -172,49 +81,80 @@ pour tester votre compréhension.
 :::
 
 :::question
-Pourquoi $\frac 1 {10}$ n'a pas de représentation exacte en Python?
+Pourquoi certains calculs, comme $0.1 \cdot 0.1$, donnent des résultats inattendus?
 :::
 
-Tout d'abord, remarquons qu'en base $10$, nous avons le problème avec $\frac 1 3$:
+La raison est que l'ordinateur utilise le **binaire** pour stocker les nombres.
+Voici quelques exemples de nombres décimaux et leur représentation binaire:
 
-{tex`\frac 1 3
-  = {\color{red} 0.33333\ldots}
-  = \frac {\color{red} 0} {10^0} + \frac {\color{red} 3} {10^{1}} + \frac {\color{red} 3} {10^{2}} + \frac {\color{red} 3} {10^{3}} + \ldots
-`}
+export const [number, setNumber] = createSignal(0.3)
+export const binary = () => number().toString(2)
+export const real = createMemo(() => getRep(number()))
+export const Input = () => (
+  <input
+    class="rounded border border-gray-500 p-2"
+    value={number()}
+    onInput={(e) => {
+      const newNumber = parseFloat(e.target.value)
+      if (!isNaN(newNumber)) {
+        setNumber(newNumber)
+      } else {
+        setNumber(0)
+      }
+    }}
+  />
+)
+export const BinaryRepresentation = () => {
+  return (
+    <code>
+      {binary()}
+      {(binary().split('.').at(1)?.length ?? 0) > 10 ? '...' : ''}
+    </code>
+  )
+}
 
-L'ordinateur ne pouvant stocker un **nombre fini** de chiffres,
-$\frac 1 3$ se retrouverait arrondi.
-C'est exactement ce qui se passe avec $\frac 1 {10}$ en base $2$.
+| Nombre décimal (base $10$) | Représentation binaire (base $2$)                             |
+| -------------------------: | :------------------------------------------------------------ |
+|                        $0$ | `0`                                                           |
+|                        $1$ | `1`                                                           |
+|                        $2$ | `10`                                                          |
+|                       $10$ | `1010`                                                        |
+|                      $0.5$ | `0.1`                                                         |
+|                      $0.1$ | `	0.010011001100110011001100110011001100110011001100110011...` |
+|                  <Input /> | <BinaryRepresentation />                                      |
 
-Remarquons que
+Nous verrons dans une prochaine section
+comment convertir en binaire.
+Comme vous le voyez,
+certains nombres comme $0.1$ nécessitent
+une **infinité de bits** ($0$ et $1$) pour être représentés exactement en binaire.
+En pratique,
+l'ordinateur **arrondit** et on perd en précision.
 
-{tex`\frac 1 {10}
-  = \frac {\color{green} 0} {2^0} + \frac {\color{green} 0} {2^{1}} + \frac {\color{green} 0} {2^{2}} + \frac {\color{green} 0} {2^{3}} + \frac {\color{green} 1} {2^{4}} + \frac {\color{green} 1} {2^{5}} \ldots,
-`}
+| Nombre entré | Nombre utilisé en pratique                                  |
+| ------------ | ----------------------------------------------------------- |
+| $0.1$        | `0.1000000000000000055511151231257827021181583404541015625` |
+| $0.5$        | `0.5`                                                       |
+| <Input />    | <code>{real()}</code>                                       |
 
-ce qui fait qu'en binaire, $\frac 1 {10}$ est représenté par $\color{green} 0.00011001100110011\ldots$.
-Puisqu'on garde un nombre fini de chiffres, on perd en précision.
-
-La propagation des erreurs fait que l'arithmétique de l'ordinateur peut échouer assez spectaculairement
-pour des simples calculs de comptabilité.
-En pratique, il est recommandé d'utiliser des bibliothèques spécialisées pour les calculs financiers.
-
-:::example
-
-<div class="lg:grid lg:grid-cols-2 lg:gap-8">
+Pour obtenir le nombre exact qui se cache derrière un nombre dans Python,
+vous pouvez utiliser le code suivant:
 
 ```python run
-1.1 + 2.2
+import decimal
+
+decimal.Decimal(0.1)
 ```
+
+Si jamais vous avez besoin de faire des calculs financiers,
+il est préférable de procéder de la manière suivante:
 
 ```python run
-from decimal import Decimal
+import decimal
 
-Decimal('1.1') + Decimal('2.2')
+# 0.1 * 0.1 avec une réponse exacte
+decimal.Decimal('0.1') * decimal.Decimal('0.1')
 ```
-
-</div>
-:::
 
 ## Python comme calculatrice scientifique
 
@@ -295,7 +235,7 @@ mais est acceptable pour des calculs rapides et simples.
 il existe plusieurs implémentations de la fonction racine carrée:
 `sympy.sqrt`, `numpy.sqrt`, `math.sqrt`, etc.
 Avec l'import simple, le choix est _délibéré_ et _explicite_ à chaque appel.
-
+Ceci facilite la lecture pour les humains et pour les agents.
 :::
 
 ## Variables
@@ -384,6 +324,29 @@ liste = [1, 2, 3, 4, 5]
 liste
 ```
 
+Pour accéder à un élément de la liste,
+on utilise _la position de l'élément_ entre crochets `[]`.
+Attention, la numérotation commence à $0$.
+
+```python run
+liste = [2, 4, 6, 8, 10]
+
+liste[0] # Premier élément
+```
+
+Par défaut,
+ces listes ne permettent pas les opérations vectorielles habituelles.
+
+```python run
+v = [1, 2, 3]
+w = [4, 5, 6]
+
+# Lie les listes au lieu d'additionner
+v + w
+```
+
+Nous allons devoir utiliser une _bibliothèque spécialisée_.
+
 ### Vecteurs
 
 Pour le calcul vectoriel,
@@ -391,7 +354,7 @@ on peut utiliser la bibliothèque `numpy`,
 qui est spécalisée dans le calcul scientifique.
 
 Pour créer un vecteur,
-on utilise la fonction `np.array`,
+on utilise la fonction `numpy.array`,
 en lui passant une liste
 qui contient les coordonnées du vecteur.
 
@@ -401,7 +364,7 @@ on écrit:
 
 ```python run
 # On importe numpy pour pouvoir travailler avec les vecteurs
-# Puisque `numpy` est long, la convention est de l'abréger `np`
+# La convention habituelle est d'abréger `numpy` en `np`
 import numpy as np
 
 # On définit un vecteur, en employant np.array
@@ -413,6 +376,9 @@ v
 ```
 
 :::
+
+À la différence des listes,
+les opérations vectorielles fonctionnent comme prévu avec `numpy.array`.
 
 #### Addition de vecteurs
 
@@ -458,8 +424,7 @@ v = np.array([1, 2, 3])
 
 #### Combinaisons linéaires
 
-Pour l'addition et la multiplication scalaire de vecteurs,
-il suffit d'utiliser les opérateurs `+` et `*` comme pour les nombres.
+On peut bien entendu combiner les deux opérations précédentes pour calculer des _combinaisons linéaires_ de vecteurs.
 
 :::example
 Si $\vec v = (1, 2, 3)$ et $\vec w = (4, 5, 6)$,
@@ -538,7 +503,7 @@ on peut calculer l'angle entre deux vecteurs $\vec a$ et $\vec b$ via:
 `}
 
 :::example
-Calculez l'angle entre les vecteurs $\vec a = (1, 2, 3)$ et $\vec b = (4, 5, 6)$.
+Calculez l'angle en degrés entre les vecteurs $\vec a = (1, 2, 3)$ et $\vec b = (4, 5, 6)$.
 
 ```python run
 import numpy as np
@@ -549,9 +514,98 @@ b = np.array([4, 5, 6])
 cos_theta = np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 theta = np.arccos(cos_theta)
 
-theta
+# Par défaut, arccos retourne l'angle en radians
+# il faut donc le convertir en degrés
+theta_deg = np.degrees(theta)
+
+theta_deg
 ```
 
+:::
+
+# Pour aller plus loin
+
+## Le binaire
+
+L'ordinateur garde en mémoire les nombres sous forme _binaire_,
+c'est-à-dire avec seulement des $0$ et des $1$.
+Comme cela aura des conséquences sur la précision des calculs,
+nous nous attarderons un peu sur la conversion en binaire.
+
+### Conversion entre systèmes de numération
+
+Pour rappel, nous utilisons la _base $10$_ pour représenter un nombre.
+Ceci signifie les choses suivantes:
+
+- Nous utilisons $10$ _chiffres_: $0$, $1$, $2$, $3$, $4$, $5$, $6$, $7$, $8$, $9$.
+- La valeur des chiffres dépend de la _position_ dans le nombre,
+  et est multipliée par une _puissance de $10$_.
+- Multiplier un nombre par $10$ revient à _décaler les chiffres d'une position vers la gauche_.
+
+<Integer mode="both" base={10} value={3674.5} showCalculation />
+
+En _binaire_ (base $2$), la situation est similaire
+
+- Nous utilisons $2$ _chiffres_: $0$, $1$.
+- La valeur des chiffres dépend de la _position_ dans le nombre,
+  et est multipliée par une _puissance de $2$_.
+- Multiplier un nombre par $2$ revient à _décaler les chiffres d'une position vers la gauche_.
+
+<Integer mode="both" showCalculation value={13.75} />
+
+Pour les nombres entiers, la base $10$ et la base $2$ sont essentiellement équivalentes,
+à la différence que la base $2$ nécessite plus de chiffres pour représenter un nombre.
+Nous verrons que la situation est plus complexe pour les nombres non entiers.
+
+### Représentations finies et exactes
+
+L'ordinateur ne peut stocker qu'un nombre fini de **bits** ($0$ ou $1$).
+Par conséquent, le nombre
+
+{tex`
+
+0.1010101010101010...
+
+`}
+
+n'est **pas représentable** dans la mémoire de l'ordinateur,
+puisqu'il faudrait une **infinité de bits** pour le stocker.
+
+Quels nombres sont donc représentables ou non représentables exactement en binaire?
+Pour répondre à cette question,
+utilisons la base $10$ par analogie.
+En base $10$,
+tout nombre représentable avec un nombre fini de chiffre peut s'écrire comme une fraction d'entiers
+qui a comme dénominateur **une puissance de $10$**.
+
+:::example
+
+- Le nombre $67$ peut s'écrire comme la fraction $\displaystyle \frac{67}{10^0}$.
+
+- Le nombre $0.375$ peut s'écrire comme la fraction $\displaystyle \frac{375}{10^3}$.
+
+- Le nombre $45.1234$ peut s'écrire comme la fraction $\displaystyle \frac{451234}{10^4}$.
+
+- Le nombre $\displaystyle \frac 1 3 = 0.33333\ldots$ n'est **pas représentable**
+  puisqu'il faudrait une infinité de chiffres pour le stocker.
+
+:::
+
+Le même raisonnement s'applique à la base $2$:
+tout nombre représentable avec un nombre fini de bits peut s'écrire comme une fraction d'entiers
+qui a comme dénominateur **une puissance de $2$**
+
+:::example
+
+- Le nombre binaire $(10.11)_2$ peut s'écrire comme la fraction {tex`\displaystyle \frac{(1011)_2}{2^2}`}.
+
+- Le nombre binaire $(1101.101)_2$ peut s'écrire comme la fraction {tex`\displaystyle \frac{(1101101)_2}{2^3}`}.
+
+:::
+
+:::proposition
+Un nombre est représentable exactement en binaire si et seulement si
+son écriture fractionnelle simplifée a pour dénominateur une puissance de $2$.
 :::
 
 ## Le calcul symbolique

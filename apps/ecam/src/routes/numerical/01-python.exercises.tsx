@@ -181,7 +181,7 @@ export function Print(props: {
   )
 }
 
-async function getRep(number: string) {
+export async function getRep(number: string) {
   const code = `from decimal import Decimal\nDecimal(${number})`
   return python.output(code).then((r) => r.result as string)
 }
