@@ -41,7 +41,7 @@ export const Page: ParentComponent<{ title?: JSX.Element }> = (props) => {
 
   return (
     <Loading>
-      <div class="relative container mx-auto flex w-screen pb-1">
+      <div class="relative container mx-auto w-screen pb-1 xl:flex">
         <main class="prose prose-code:before:content-none prose-code:after:content-none max-w-270 grow overflow-auto scroll-smooth rounded-b-xl bg-white p-8 pb-200 shadow-sm">
           <MDXProvider
             components={{
