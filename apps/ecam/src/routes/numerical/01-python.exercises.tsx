@@ -3,7 +3,7 @@ import { Exercise, expr, tex } from '@learning/core'
 import { PythonCode } from '@learning/exercises/python/Code'
 import { python, type FinalOutput } from '@learning/repl'
 import { type JSX } from '@solidjs/web'
-import { allKeyed } from 'es-toolkit'
+import { allKeyed, dedent } from 'es-toolkit'
 import { createMemo, createProjection, createSignal, For, merge, Show } from 'solid-js'
 
 export function Integer(rawProps: {
@@ -225,13 +225,6 @@ export function Calculator(props: {
               () => allKeyed(Object.fromEntries(props.inexact!.map((n) => [n, getRep(n)]))),
               {},
             )
-            const realCalc = createMemo(() => {
-              let str = props.prompt
-              for (const n of props.inexact!) {
-                str = str.replaceAll(n, reps[n]!)
-              }
-              return str
-            })
             return (
               <>
                 <Show when={!ctx.correct}>
@@ -240,14 +233,16 @@ export function Calculator(props: {
                 </Show>
                 <Question>Pourquoi la réponse de Python est-elle incorrecte?</Question>
                 <p>
-                  Puisque l'ordinateur utilise le <strong>binaire</strong>, les nombres suivants ne
-                  sont pas représentables exactement en Python:
+                  Puisque l'ordinateur utilise le <strong>binaire</strong>, certains des nombres du
+                  code ont été remplacés par des <strong>approximations</strong>. Dans ce cas-ci:
                 </p>
                 <table>
                   <thead>
                     <tr>
-                      <th class="text-right">Nombre exact</th>
-                      <th>Représentation Python</th>
+                      <th class="text-right">Nombre entré</th>
+                      <th>
+                        Nombre réellement utilisé par <code>Python</code>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -263,10 +258,10 @@ export function Calculator(props: {
                     </For>
                   </tbody>
                 </table>
-                <p>Ce qui fait que pour Python, le calcul devient en fait</p>
-                {tex`
-                  ${props.prompt} \approx ${realCalc()}
-                `}
+                <p>
+                  {props.inexact!.length > 0 ? 'Ces approximations' : 'Cette approximation'} se
+                  propage ensuite dans les calculs.
+                </p>
               </>
             )
           }}
@@ -306,6 +301,35 @@ export function Variables(props: {
         </>
       }
       tests={tests()}
+    />
+  )
+}
+
+export function LinearCombination(props: { c: [number, number]; v: [number[], number[]] }) {
+  return (
+    <PythonCode
+      prompt={
+        <>
+          <p>
+            Calculez la combinaison linéaire suivante avec <code>numpy</code>:
+          </p>
+          {tex`
+            ${props.c[0]} ${expr(props.v[0])} + ${props.c[1]} ${expr(props.v[1])}
+          `}
+        </>
+      }
+      tests={[
+        {
+          test: null,
+          check: async ({ result }) => {
+            const { result: answer } = await python.output(dedent /* python */ `
+              import numpy as np
+              (${props.c[0]}) * np.array([${props.v[0].join(',')}]) + (${props.c[1]}) * np.array([${props.v[1].join(',')}])
+            `)
+            return result === answer
+          },
+        },
+      ]}
     />
   )
 }

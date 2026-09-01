@@ -2,7 +2,14 @@ import { createMemo, createSignal } from 'solid-js'
 import { Sequence, tex } from '@learning/core'
 import { defineMeta } from '@learning/components'
 import { PythonCode } from '@learning/exercises/python/Code'
-import { Calculator, getRep, Integer, Print, Variables } from './01-python.exercises'
+import {
+  Calculator,
+  getRep,
+  Integer,
+  LinearCombination,
+  Print,
+  Variables,
+} from './01-python.exercises'
 
 export default defineMeta({
   title: 'Session 1: Introduction à Python',
@@ -12,7 +19,8 @@ export default defineMeta({
 
 L'objectif de cette activité est de vous guider dans vos premiers pas en programmation en Python.
 Nous vous invitons à modifier les morceaux de code,
-et à **soumettre les exercices** pour vérifier vos réponses.
+et à **soumettre les exercices**
+pour vérifier vos réponses et _sauvegarder votre progrès_.
 
 :::exercise
 
@@ -113,15 +121,15 @@ export const BinaryRepresentation = () => {
   )
 }
 
-| Nombre décimal (base $10$) | Représentation binaire (base $2$)                             |
-| -------------------------: | :------------------------------------------------------------ |
-|                        $0$ | `0`                                                           |
-|                        $1$ | `1`                                                           |
-|                        $2$ | `10`                                                          |
-|                       $10$ | `1010`                                                        |
-|                      $0.5$ | `0.1`                                                         |
-|                      $0.1$ | `	0.010011001100110011001100110011001100110011001100110011...` |
-|                  <Input /> | <BinaryRepresentation />                                      |
+| Nombre décimal (base $10$) | Représentation binaire (base $2$)                           |
+| -------------------------: | :---------------------------------------------------------- |
+|                        $0$ | `0`                                                         |
+|                        $1$ | `1`                                                         |
+|                        $2$ | `10`                                                        |
+|                       $10$ | `1010`                                                      |
+|                      $0.5$ | `0.1`                                                       |
+|                      $0.1$ | `0.0001100110011001100110011001100110011001100110011001101` |
+|                  <Input /> | <BinaryRepresentation />                                    |
 
 Nous verrons dans une prochaine section
 comment convertir en binaire.
@@ -183,35 +191,46 @@ math.sqrt(2)
 
 Voici un tableau récapitulatif des fonctions mathématiques les plus courantes en Python:
 
-| Opération ou concept      | Exemple             | Code Python        |
-| ------------------------- | ------------------- | ------------------ |
-| Racine carrée             | $\sqrt{7}$          | `math.sqrt(7)`     |
-| Racine cubique            | $\sqrt[3]{7}$       | `7 ** (1 / 3)`     |
-| Sinus                     | $\sin 7$            | `math.sin(7)`      |
-| Cosinus                   | $\cos 7$            | `math.cos(7)`      |
-| Tangente                  | $\tan 7$            | `math.tan(7)`      |
-| Arcsinus                  | $\arcsin 1$         | `math.asin(1)`     |
-| Arccosinus                | $\arccos 1$         | `math.acos(1)`     |
-| Arctangente               | $\arctan 1$         | `math.atan(1)`     |
-| Exponentielle en base $e$ | $e^7$               | `math.exp(7)`      |
-| Logarithme népérien       | $\ln 7$             | `math.log(7)`      |
-| Logarithme base $10$      | $\log_{10} 7$       | `math.log(7, 10)`  |
-| Le nombre $\pi$           | $\pi$               | `math.pi`          |
-| Le nombre $e$             | $e$                 | `math.e`           |
-| Notation scientifique     | $1.3 \cdot 10^{-9}$ | `1.3 * 10 ** (-9)` |
+| Opération ou concept      | Exemple                   | Code Python       |
+| ------------------------- | ------------------------- | ----------------- |
+| Racine carrée             | $\sqrt{7}$                | `math.sqrt(7)`    |
+| Racine cubique            | $\sqrt[3]{7}$             | `7 ** (1 / 3)`    |
+| Sinus                     | $\sin 7$                  | `math.sin(7)`     |
+| Cosinus                   | $\cos 7$                  | `math.cos(7)`     |
+| Tangente                  | $\tan 7$                  | `math.tan(7)`     |
+| Arcsinus                  | $\arcsin 1$               | `math.asin(1)`    |
+| Arccosinus                | $\arccos 1$               | `math.acos(1)`    |
+| Arctangente               | $\arctan 1$               | `math.atan(1)`    |
+| Convertir en degrés       | $7 \cdot \frac{180}{\pi}$ | `math.degrees(7)` |
+| Convertir en radians      | $7 \cdot \frac{\pi}{180}$ | `math.radians(7)` |
+| Exponentielle en base $e$ | $e^7$                     | `math.exp(7)`     |
+| Logarithme népérien       | $\ln 7$                   | `math.log(7)`     |
+| Logarithme base $10$      | $\log_{10} 7$             | `math.log(7, 10)` |
+| Le nombre $\pi$           | $\pi$                     | `math.pi`         |
+| Le nombre $e$             | $e$                       | `math.e`          |
+| Notation scientifique     | $1.3 \cdot 10^{-9}$       | `1.3e-9`          |
+
+:::remark
+Attention, les fonctions trigonométriques utilisent les **radians** par défaut.
+:::
+
+:::example
+
+Calculez le sinus de $30^\circ$.
+
+:::
 
 :::exercice
 
 <Sequence id="math-library">
   <Calculator prompt="\sqrt{67}" answer={Math.sqrt(67)} />
+  <Calculator prompt="\sin {1}" answer={Math.sin(1)} />
+  <Calculator prompt="\sin{\frac \pi 4}" answer={Math.sin(Math.PI / 4)} />
+  <Calculator prompt={`\log_{10}(85)`} answer={Math.log10(85)} />
   <Calculator prompt="-\log_{10} (1.05 \cdot 10^{-5})" answer={-Math.log10(1.05 * 10 ** -5)}>
     Calculer le pH d'une solution de concentration $C = 1.05 \cdot 10^{-5}$ mol/L. Pour rappel, le
     pH est défini par $\mathrm{pH} = -\log_{10} C$.
   </Calculator>
-  <PythonCode
-    prompt={<p>Utilisez Python pour calculer {tex`\log_{10}(100)`}</p>}
-    tests={[{ test: null, check: ({ result }) => result === '2' }]}
-  />
 </Sequence>
 
 :::
@@ -244,8 +263,8 @@ Les variables permettent de stocker des valeurs pour les réutiliser plus tard.
 Elles jouent un rôle important pour rendre le code plus lisible et plus facile à maintenir.
 
 :::example
-Calculez la surface d'un cylindre de rayon $2$ et de hauteur $3$,
-en utilisant préalablement les variables `rayon` et `hauteur` pour le rayon et la hauteur.
+Calculez le volume d'un cylindre de rayon $2$ et de hauteur $3$,
+en utilisant les variables `rayon` et `hauteur` pour le rayon et la hauteur.
 
 ```python run
 # On importe math pour accéder à la valeur de pi
@@ -255,17 +274,20 @@ import math
 rayon = 2
 hauteur = 3
 
-# On définit la variable S pour stocker la surface du cylindre
-Surface = 2 * math.pi * rayon**2 + 2 * math.pi * rayon * hauteur
+# On définit la variable V pour stocker le volume du cylindre
+Volume = math.pi * rayon**2 * hauteur
 
-# On affiche la surface
-Surface
+# On affiche le volume
+Volume
 ```
 
-L'avantage de l'utilisation de variables
-est qu'il est possible de modifier les valeurs de `rayon` et `hauteur`
-pour calculer la surface avec d'autres données,
-sans avoir à réécrire tout le calcul.
+Les avantages des variables sont les suivants:
+
+- il faut seulement modifier les valeurs de `rayon` et `hauteur`
+  pour calculer le volume avec d'autres données.
+
+- le code est plus lisible.
+
 :::
 
 <Sequence id="variables">
@@ -334,6 +356,19 @@ liste = [2, 4, 6, 8, 10]
 liste[0] # Premier élément
 ```
 
+:::example
+
+```python run
+v = [1, 2, 3]
+w = [4, 5, 6]
+
+produit_scalaire = v[0] * w[0] + v[1] * w[1] + v[2] * w[2]
+
+produit_scalaire
+```
+
+:::
+
 Par défaut,
 ces listes ne permettent pas les opérations vectorielles habituelles.
 
@@ -345,14 +380,29 @@ w = [4, 5, 6]
 v + w
 ```
 
-Nous allons devoir utiliser une _bibliothèque spécialisée_.
+Pour additioner deux vecteurs,
+il faudrait procéder de cette manière:
 
-### Vecteurs
+```python run
+v = [1, 2, 3]
+w = [4, 5, 6]
 
-Pour le calcul vectoriel,
-on peut utiliser la bibliothèque `numpy`,
-qui est spécalisée dans le calcul scientifique.
+# On définit une nouvelle liste, somme, sur plusieurs lignes
+somme = [
+  # La première composante est la somme des premières composantes de v et w
+  v[0] + w[0],
+  # La deuxième composante est la somme des deuxièmes composantes de v et w
+  v[1] + w[1],
+  # La troisième composante est la somme des troisièmes composantes de v et w
+  v[2] + w[2]
+]
 
+somme
+```
+
+### Vecteurs avec `numpy`
+
+Le calcul vectoriel peut être fait beaucoup plus naturellement avec la bibliothèque `numpy`.
 Pour créer un vecteur,
 on utilise la fonction `numpy.array`,
 en lui passant une liste
@@ -441,6 +491,44 @@ w = np.array([4, 5, 6])
 
 :::
 
+<Sequence id="linear-combination">
+  <LinearCombination
+    c={[2, 3]}
+    v={[
+      [1, 2, 3],
+      [4, 5, 6],
+    ]}
+  />
+  <LinearCombination
+    c={[1, -1]}
+    v={[
+      [1, 2],
+      [3, 4],
+    ]}
+  />
+  <LinearCombination
+    c={[0.5, 0.5]}
+    v={[
+      [1, 0],
+      [0, 1],
+    ]}
+  />
+  <LinearCombination
+    c={[1, 2]}
+    v={[
+      [1, 2, 3],
+      [4, 5, 6],
+    ]}
+  />
+  <LinearCombination
+    c={[3, -2]}
+    v={[
+      [1, 0, 0],
+      [0, 1, 0],
+    ]}
+  />
+</Sequence>
+
 ### Produits scalaires et vectoriels
 
 Les produits scalaires et vectoriels se calculent avec les fonctions `np.dot` et `np.cross` respectivement.
@@ -493,7 +581,30 @@ norme
 
 :::
 
-### Angle entre deux vecteurs, volumes, etc.
+### Vectorisation
+
+La bibliothèque `numpy` expose également toutes les fonctions de la bibliothèque `math`,
+qui évite de devoir importer les deux bibliothèques séparément.
+
+```python run
+import numpy as np
+
+# Racine carrée de 2 avec numpy au lieu de math
+np.sqrt(2)
+```
+
+La différence étant que `numpy` peut appliquer ces fonctions sur des listes ou vecteurs:
+
+```python run
+import numpy as np
+
+np.sin([0, np.pi/6, np.pi/4, np.pi/3, np.pi/2])
+```
+
+Calculer l'image de plusieurs points en une commande
+sera très utile pour tracer les graphes des fonctions.
+
+### Exemples récapitulatifs
 
 Pour rappel,
 on peut calculer l'angle entre deux vecteurs $\vec a$ et $\vec b$ via:

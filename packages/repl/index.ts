@@ -64,10 +64,10 @@ async function output(code: string): Promise<FinalOutput> {
 async function test(
   code: string,
   test: string | null,
-  check: (output: FinalOutput) => boolean,
+  check: (output: FinalOutput) => boolean | Promise<boolean>,
 ): Promise<FinalOutput & { passed: boolean }> {
   const out = await output(`${code}${test ? `\n${test}` : ''}`)
-  return { ...out, passed: check(out) }
+  return { ...out, passed: await check(out) }
 }
 
 export const python = {
