@@ -4,12 +4,10 @@ import { Dynamic, type JSX } from '@solidjs/web'
 import { mapValues } from 'es-toolkit'
 import {
   createMemo,
+  createOptimistic,
   createStore,
-  isPending,
-  latest,
   omit,
   Show,
-  snapshot,
   useContext,
   type Component,
   type ComponentProps,
@@ -264,10 +262,11 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     },
   } satisfies ComponentProps<typeof props.prompt>['state']
 
-  const submit = action(async () => {
+  const [submitting, setSubmitting] = createOptimistic(false)
+  const submit = action(async (newState: typeof state) => {
     const payload = {
-      ...latest(step),
-      state: snapshot(state),
+      ...step(),
+      state: newState,
       submitted: true,
     }
     const parsed = v.parse(v.object(schemas()), { data: payload.data, inputs: payload.state })
@@ -279,6 +278,8 @@ export function Step<S extends StepSchema, F extends JsonObject>(
       payload,
     )
     await saveStep(JSON.parse(JSON.stringify(parsedPayload)))
+  }).onSubmit(() => {
+    setSubmitting(true)
   })
 
   const Self = (attrs: Partial<StepProps<S, F>>) => (
@@ -301,7 +302,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   return (
     <div class={props.class}>
       <StepBoundary fallback="Chargement de l'exercice...">
-        <form method="post" action={submit}>
+        <form method="post" action={submit.with(state)}>
           <Dynamic
             component={props.prompt}
             data={parsedData()}
@@ -311,7 +312,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
           <Show when={!step().submitted}>
             <button
               class="block rounded-lg bg-green-800 px-3 py-2 text-green-100 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
-              disabled={isPending(step)}
+              disabled={submitting()}
             >
               Soumettre
             </button>
