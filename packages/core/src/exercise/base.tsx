@@ -3,12 +3,13 @@ import { action, useLocation } from '@solidjs/router'
 import { Dynamic, type JSX } from '@solidjs/web'
 import { mapValues } from 'es-toolkit'
 import {
-  affects,
   createMemo,
   createStore,
   isPending,
+  latest,
   omit,
   Show,
+  snapshot,
   useContext,
   type Component,
   type ComponentProps,
@@ -164,23 +165,21 @@ export function useExerciseContext() {
   }, {})
 }
 
-function useStepContext<S extends StepSchema>(
-  id: () => string | undefined,
-  data: () => StepProps<S, any>['data'],
+export function Step<S extends StepSchema, F extends JsonObject>(
+  props: StepProps<S, F> & { id?: string },
 ) {
   const inherited = useContext(StepContext)
   const exerciseContext = useExerciseContext()
   const stepContext = createMemo(() => ({
     url: useLocation().pathname,
-    sequenceId: id() ?? inherited?.().sequenceId ?? '',
+    sequenceId: props.id ?? inherited?.().sequenceId ?? '',
     sequencePosition: inherited?.().sequencePosition ?? 0,
     position: inherited?.().position ?? 0,
   }))
 
-  const exerciseData = createMemo(() => {
-    const dataValue = data()
-    return typeof dataValue === 'function' ? dataValue() : dataValue
-  })
+  const exerciseData = createMemo(() =>
+    typeof props.data === 'function' ? props.data() : props.data,
+  )
   const fetched = createMemo(() => exerciseContext().fetchStep(stepContext()))
   const step = createMemo<StoredStep<S['data'], S['inputs']>>(async () => {
     const [saved, data] = [fetched(), exerciseData()]
@@ -217,17 +216,6 @@ function useStepContext<S extends StepSchema>(
         <Boundary fallback={props.fallback}>{props.children}</Boundary>
       </FeedbackContext>
     </StepContext>
-  )
-
-  return { ctx: stepContext, StepBoundary, saveStep, step, reset }
-}
-
-export function Step<S extends StepSchema, F extends JsonObject>(
-  props: StepProps<S, F> & { id?: string },
-) {
-  const { ctx, StepBoundary, saveStep, step, reset } = useStepContext<S>(
-    () => props.id,
-    () => props.data,
   )
 
   const [state, setState] = createStore<Partial<ObjectSchema<S['inputs'], 'input'>>>(
@@ -276,11 +264,10 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     },
   } satisfies ComponentProps<typeof props.prompt>['state']
 
-  const submit = action(async (newState: typeof state) => {
-    affects(step)
+  const submit = action(async () => {
     const payload = {
-      ...step(),
-      state: newState,
+      ...latest(step),
+      state: snapshot(state),
       submitted: true,
     }
     const parsed = v.parse(v.object(schemas()), { data: payload.data, inputs: payload.state })
@@ -308,13 +295,13 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   )
 
   const canReset = createMemo(async () => {
-    if (ctx().position !== 0) return false
+    if (stepContext().position !== 0) return false
     return await hasPermissions(['exercise:deleteOwn'])
   })
   return (
     <div class={props.class}>
       <StepBoundary fallback="Chargement de l'exercice...">
-        <form method="post" action={submit.with(state)}>
+        <form method="post" action={submit}>
           <Dynamic
             component={props.prompt}
             data={parsedData()}
