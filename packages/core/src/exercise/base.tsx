@@ -312,12 +312,14 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   return (
     <div class={props.class}>
       <StepBoundary fallback="Chargement de l'exercice...">
-        <Dynamic
-          component={props.prompt}
-          data={parsedData()}
-          inputs={fields()}
-          state={promptState}
-        />
+        <Show when={!resetting()}>
+          <Dynamic
+            component={props.prompt}
+            data={parsedData()}
+            inputs={fields()}
+            state={promptState}
+          />
+        </Show>
         <Show when={!step().submitted}>
           <button
             class="block rounded-lg bg-green-800 px-3 py-2 text-green-100 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
