@@ -8,7 +8,11 @@ export type StepContext = {
   position: number
 }
 
-export const StepContext = createContext<Accessor<StepContext> | null>(null)
+export const StepContext = createContext<Accessor<
+  StepContext & {
+    onAction?: () => void
+  }
+> | null>(null)
 
 export type ExerciseContext = {
   fetchStep: (ctx: StepContext) => Promise<StoredStep | null>

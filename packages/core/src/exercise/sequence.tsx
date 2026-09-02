@@ -2,7 +2,7 @@ import { Pagination, Scope } from '@learning/components'
 import { useLocation } from '@solidjs/router'
 import { Dynamic, type JSX } from '@solidjs/web'
 import { range } from 'es-toolkit'
-import { createMemo, type Component } from 'solid-js'
+import { createMemo, refresh, type Component } from 'solid-js'
 import { useExerciseContext } from './base'
 import { StepContext } from './context'
 
@@ -69,8 +69,15 @@ type Props<T extends object> = {
 export function Sequence<T extends object>(props: Props<T>) {
   const exerciseContext = useExerciseContext()
   const sequence = createMemo(() => ({ url: useLocation().pathname, sequenceId: props.id }))
-  const stepContext = (sequencePosition = 0) => ({ ...sequence(), sequencePosition, position: 0 })
   const progress = createMemo(() => exerciseContext().getProgress(sequence()))
+  const stepContext = (sequencePosition = 0) => ({
+    ...sequence(),
+    sequencePosition,
+    position: 0,
+    onAction: () => {
+      refresh(progress)
+    },
+  })
   const length = createMemo(() =>
     'children' in props ? props.children.length : Object.keys(progress()).length + 1,
   )

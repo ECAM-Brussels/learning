@@ -1,12 +1,14 @@
 import { Boundary, FeedbackContext, MathField } from '@learning/components'
-import { action, useLocation } from '@solidjs/router'
+import { useLocation } from '@solidjs/router'
 import { Dynamic, type JSX } from '@solidjs/web'
 import { mapValues } from 'es-toolkit'
 import {
+  action,
   createMemo,
   createOptimistic,
   createStore,
   omit,
+  refresh,
   Show,
   useContext,
   type Component,
@@ -173,6 +175,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     sequenceId: props.id ?? inherited?.().sequenceId ?? '',
     sequencePosition: inherited?.().sequencePosition ?? 0,
     position: inherited?.().position ?? 0,
+    onAction: inherited?.().onAction,
   }))
 
   const exerciseData = createMemo(() =>
@@ -191,9 +194,12 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   const saveStep = (newStep: StoredStep<S['data'], S['inputs'], 'output'>) =>
     exerciseContext().saveStep(stepContext(), newStep)
 
-  const reset = action(async () => {
+  const reset = action(async function* () {
     const { position, ...ctx } = stepContext()
     await exerciseContext().reset(ctx)
+    yield
+    refresh(fetched)
+    ctx.onAction?.()
   })
 
   const StepBoundary = (props: {
@@ -263,7 +269,8 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   } satisfies ComponentProps<typeof props.prompt>['state']
 
   const [submitting, setSubmitting] = createOptimistic(false)
-  const submit = action(async (newState: typeof state) => {
+  const submit = action(async function* (newState: typeof state) {
+    setSubmitting(true)
     const payload = {
       ...step(),
       state: newState,
@@ -271,6 +278,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     }
     const parsed = v.parse(v.object(schemas()), { data: payload.data, inputs: payload.state })
     const [correct, feedback] = normalizeGrade(await props.grade(parsed))
+    yield
     payload.correct = correct
     payload.feedback = feedback
     const parsedPayload = v.parse(
@@ -278,8 +286,9 @@ export function Step<S extends StepSchema, F extends JsonObject>(
       payload,
     )
     await saveStep(JSON.parse(JSON.stringify(parsedPayload)))
-  }).onSubmit(() => {
-    setSubmitting(true)
+    yield
+    refresh(fetched)
+    stepContext().onAction?.()
   })
 
   const Self = (attrs: Partial<StepProps<S, F>>) => (
@@ -296,28 +305,28 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   )
 
   const canReset = createMemo(async () => {
+    return false // Temporarily disable reset
     if (stepContext().position !== 0) return false
     return await hasPermissions(['exercise:deleteOwn'])
   })
   return (
     <div class={props.class}>
       <StepBoundary fallback="Chargement de l'exercice...">
-        <form method="post" action={submit.with(state)}>
-          <Dynamic
-            component={props.prompt}
-            data={parsedData()}
-            inputs={fields()}
-            state={promptState}
-          />
-          <Show when={!step().submitted}>
-            <button
-              class="block rounded-lg bg-green-800 px-3 py-2 text-green-100 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
-              disabled={submitting()}
-            >
-              Soumettre
-            </button>
-          </Show>
-        </form>
+        <Dynamic
+          component={props.prompt}
+          data={parsedData()}
+          inputs={fields()}
+          state={promptState}
+        />
+        <Show when={!step().submitted}>
+          <button
+            class="block rounded-lg bg-green-800 px-3 py-2 text-green-100 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+            disabled={submitting()}
+            onClick={() => submit(state)}
+          >
+            Soumettre
+          </button>
+        </Show>
       </StepBoundary>
       <Show when={step().submitted}>
         <StepBoundary fallback="Chargement du feedback..." offset={1}>
@@ -334,9 +343,9 @@ export function Step<S extends StepSchema, F extends JsonObject>(
           </Show>
         </StepBoundary>
         <Show when={canReset()}>
-          <form method="post" action={reset}>
-            <button class="cursor-pointer text-sm text-gray-500">Recommencer l'exercice</button>
-          </form>
+          <button class="cursor-pointer text-sm text-gray-500" onClick={reset}>
+            Recommencer l'exercice
+          </button>
         </Show>
       </Show>
     </div>

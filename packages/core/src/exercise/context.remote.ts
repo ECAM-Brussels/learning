@@ -31,7 +31,7 @@ const StepContext = v.pipe(
 )
 type StepContext = v.InferInput<typeof StepContext>
 
-export const fetchStep = query(async (rawCtx: StepContext) => {
+export const fetchStep = async (rawCtx: StepContext) => {
   'use server'
   await ensurePermissions(['exercise:readOwn'])
   const res = await db.query.steps.findFirst({
@@ -46,9 +46,9 @@ export const fetchStep = query(async (rawCtx: StepContext) => {
     where: v.parse(StepContext, rawCtx),
   })
   return (res as StoredStep) ?? null
-}, 'fetchStep')
+}
 
-export const getProgress = query(async (rawSequence: SequenceContext) => {
+export const getProgress = async (rawSequence: SequenceContext) => {
   'use server'
   await ensurePermissions(['exercise:readOwn'])
   const sequence = v.parse(SequenceContext, rawSequence)
@@ -64,7 +64,7 @@ export const getProgress = query(async (rawSequence: SequenceContext) => {
     )
     .orderBy(exercise.sequencePosition)
   return Object.fromEntries(rows.map((r) => [r.i, r.correct] as const))
-}, 'getProgress')
+}
 
 export const saveStep = async (rawCtx: StepContext, step: StoredStep) => {
   'use server'
