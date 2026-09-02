@@ -1,4 +1,4 @@
-import { Pagination, Scope } from '@learning/components'
+import { Boundary, Pagination, Scope } from '@learning/components'
 import { useLocation } from '@solidjs/router'
 import { Dynamic, type JSX } from '@solidjs/web'
 import { range } from 'es-toolkit'
@@ -85,18 +85,20 @@ export function Sequence<T extends object>(props: Props<T>) {
     <Pagination progress={progress()}>
       {range(length()).map((i) => () => (
         <StepContext value={() => stepContext(i)}>
-          {'children' in props ? (
-            props.children[i]
-          ) : 'exercise' in props ? (
-            <Scope>
-              {() => {
-                const next = createMemo(() => props.next({ position: i, progress: progress() }))
-                return <Dynamic component={props.exercise} {...next()} />
-              }}
-            </Scope>
-          ) : (
-            <Dynamic component={props.next} position={i} progress={progress()} />
-          )}
+          <Boundary fallback="Chargement de l'exercice...">
+            {'children' in props ? (
+              props.children[i]
+            ) : 'exercise' in props ? (
+              <Scope>
+                {() => {
+                  const next = createMemo(() => props.next({ position: i, progress: progress() }))
+                  return <Dynamic component={props.exercise} {...next()} />
+                }}
+              </Scope>
+            ) : (
+              <Dynamic component={props.next} position={i} progress={progress()} />
+            )}
+          </Boundary>
         </StepContext>
       ))}
     </Pagination>

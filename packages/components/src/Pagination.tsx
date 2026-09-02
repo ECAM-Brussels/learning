@@ -1,5 +1,6 @@
 import { Dynamic, type JSX } from '@solidjs/web'
 import { createEffect, createSignal, For } from 'solid-js'
+import { Boundary } from './Boundary'
 
 export function Pagination(props: {
   current?: number
@@ -47,7 +48,9 @@ export function Pagination(props: {
           ›
         </button>
       </div>
-      <Dynamic component={props.children[current() - 1]} />
+      <Boundary>
+        <Dynamic component={props.children[current() - 1]} />
+      </Boundary>
     </div>
   )
 }
