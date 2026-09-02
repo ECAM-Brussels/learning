@@ -3,10 +3,12 @@ import { drizzle } from 'drizzle-orm/node-postgres'
 import { createInsertSchema, createSelectSchema } from 'drizzle-orm/valibot'
 import 'server-only'
 import * as v from 'valibot'
-import { env } from 'virtual:env/server'
+import { type env as serverEnv } from 'virtual:env/server'
 import * as authSchema from './auth'
 import * as tables from './schema'
 export * as tables from './schema'
+
+const env = process.env as unknown as typeof serverEnv
 
 export namespace Step {
   const pk = ['userEmail', 'url', 'sequenceId', 'sequencePosition', 'position'] as const
