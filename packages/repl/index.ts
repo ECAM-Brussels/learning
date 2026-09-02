@@ -52,8 +52,8 @@ async function* run(code: string, options?: { math: boolean }) {
   }
 }
 
-async function output(code: string): Promise<FinalOutput> {
-  for await (const chunk of run(code)) {
+async function output(code: string, options?: { math: boolean }): Promise<FinalOutput> {
+  for await (const chunk of run(code, options)) {
     if (!chunk.status) {
       return chunk as FinalOutput
     }
