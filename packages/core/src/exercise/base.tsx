@@ -175,7 +175,6 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     sequenceId: props.id ?? inherited?.().sequenceId ?? '',
     sequencePosition: inherited?.().sequencePosition ?? 0,
     position: inherited?.().position ?? 0,
-    onAction: inherited?.().onAction,
   }))
 
   const exerciseData = createMemo(() =>
@@ -194,12 +193,14 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   const saveStep = (newStep: StoredStep<S['data'], S['inputs'], 'output'>) =>
     exerciseContext().saveStep(stepContext(), newStep)
 
+  const [resetting, setResetting] = createOptimistic(false)
   const reset = action(async function* () {
+    setResetting(true)
     const { position, ...ctx } = stepContext()
     await exerciseContext().reset(ctx)
     yield
     refresh(fetched)
-    ctx.onAction?.()
+    inherited?.().onAction?.()
   })
 
   const StepBoundary = (props: {
@@ -288,7 +289,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     await saveStep(JSON.parse(JSON.stringify(parsedPayload)))
     yield
     refresh(fetched)
-    stepContext().onAction?.()
+    inherited?.().onAction?.()
   })
 
   const Self = (attrs: Partial<StepProps<S, F>>) => (
@@ -305,7 +306,6 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   )
 
   const canReset = createMemo(async () => {
-    return false // Temporarily disable reset
     if (stepContext().position !== 0) return false
     return await hasPermissions(['exercise:deleteOwn'])
   })
@@ -328,7 +328,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
           </button>
         </Show>
       </StepBoundary>
-      <Show when={step().submitted}>
+      <Show when={step().submitted && !resetting()}>
         <StepBoundary fallback="Chargement du feedback..." offset={1}>
           <Dynamic
             component={props.feedback}
