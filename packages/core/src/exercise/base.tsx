@@ -87,7 +87,7 @@ type ObjectSchema<
 
 function StoredStep<D extends RawShape, I extends RawShape>(data: D, inputs: I) {
   return v.object({
-    name: v.optional(v.string()),
+    name: v.nullish(v.string()),
     data: ObjectSchema(data),
     state: v.partial(ObjectSchema(inputs)),
     submitted: v.optional(v.boolean(), false),
@@ -183,9 +183,12 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     position: inherited?.().position ?? 0,
   }))
 
+  const schema = () =>
+    StoredStep(props.schema.data as S['data'], props.schema.inputs as S['inputs'])
+
   /**
-   * Manages retrieving data from the source of truth (localStorage or database),
-   * and merges it with the props.
+   * Retrieve data from the source of truth (localStorage or database),
+   * merge it with the props, and validate.
    *
    * We need to be careful here,
    * as some props are static and not serializable,
@@ -195,20 +198,23 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     typeof props.data === 'function' ? props.data() : props.data,
   )
   const fetched = createMemo(() => exerciseContext().fetchStep(stepContext()))
-  const step = createMemo<StoredStep<S['data'], S['inputs']>>(async () => {
+  const step = createMemo(async () => {
     const [saved, data] = [fetched(), exerciseData()]
-    return {
+    return v.parse(schema(), {
       state: {},
       ...(saved ?? {}),
       data: { ...data, ...saved?.data },
-    } as StoredStep<S['data'], S['inputs']>
+    })
   })
 
   /**
    * Draft state, edited by the user prior to submission.
+   *
+   * This should use primitive values only (e.g. latex instead of `expr` objects),
+   * as this will be consumed by input components
    */
   const [state, setState] = createStore<Partial<ObjectSchema<S['inputs'], 'input'>>>(
-    () => step().state,
+    () => JSON.parse(JSON.stringify(step().state)),
     {} as any,
   )
 
@@ -227,19 +233,14 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     setSubmitting(true)
     const payload = {
       ...step(),
-      state: newState,
-      submitted: true,
+      state: v.parse(schema().entries.state, newState),
+      submitted: Object.keys(newState).length > 0,
     }
-    const parsed = v.parse(v.object(schemas()), { data: payload.data, inputs: payload.state })
-    const [correct, feedback] = normalizeGrade(await props.grade(parsed))
-    yield
+    const gradeResult = await props.grade({ data: payload.data, inputs: payload.state })
+    const [correct, feedback] = normalizeGrade(gradeResult)
     payload.correct = correct
     payload.feedback = feedback
-    const parsedPayload = v.parse(
-      StoredStep(props.schema.data as S['data'], props.schema.inputs as S['inputs']),
-      payload,
-    )
-    await saveStep(JSON.parse(JSON.stringify(parsedPayload)))
+    await saveStep(JSON.parse(JSON.stringify(payload)))
     yield
     refresh(fetched)
     inherited?.().onAction?.()
@@ -281,14 +282,6 @@ export function Step<S extends StepSchema, F extends JsonObject>(
       </FeedbackContext>
     </StepContext>
   )
-
-  const schemas = createMemo(() => ({
-    data: ObjectSchema(props.schema.data as S['data']),
-    inputs: ObjectSchema(props.schema.inputs as S['inputs']),
-  }))
-  const parsedData = createMemo(() => v.parse(schemas().data, step().data))
-  const parsedInputs = createMemo(() => v.parse(schemas().inputs, state))
-  const parsed = createMemo(() => ({ data: parsedData(), inputs: parsedInputs() }))
 
   const fields = createMemo(() =>
     mapValues(props.schema.inputs as S['inputs'], (schema, name) => (
@@ -332,7 +325,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
       when={typeof attrs.children === 'function' && attrs.children}
       fallback={<>{attrs.children}</>}
     >
-      {(next) => <Dynamic component={next()} {...parsed()} />}
+      {(next) => <Dynamic component={next()} data={step().data} inputs={step().state} />}
     </Show>
   )
   return (
@@ -341,7 +334,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
         <Show when={!resetting()}>
           <Dynamic
             component={props.prompt}
-            data={parsedData()}
+            data={step().data}
             inputs={fields()}
             state={promptState}
           />
@@ -360,7 +353,8 @@ export function Step<S extends StepSchema, F extends JsonObject>(
         <StepBoundary fallback="Chargement du feedback..." offset={1}>
           <Dynamic
             component={props.feedback}
-            {...parsed()}
+            data={step().data}
+            inputs={step().state}
             correct={step().correct ?? false}
             feedback={step().feedback as F}
             Self={Self}
