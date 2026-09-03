@@ -168,6 +168,12 @@ export function useExerciseContext() {
 export function Step<S extends StepSchema, F extends JsonObject>(
   props: StepProps<S, F> & { id?: string },
 ) {
+  /**
+   * Context information. Aims to answer the following questions:
+   *
+   * - How to fetch or save?
+   * - Is this an exercise (starting step) or a subsequent step?
+   */
   const inherited = useContext(StepContext)
   const exerciseContext = useExerciseContext()
   const stepContext = createMemo(() => ({
@@ -177,6 +183,14 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     position: inherited?.().position ?? 0,
   }))
 
+  /**
+   * Manages retrieving data from the source of truth (localStorage or database),
+   * and merges it with the props.
+   *
+   * We need to be careful here,
+   * as some props are static and not serializable,
+   * therefore the source of truth should be layered on top of the supplied props.
+   */
   const exerciseData = createMemo(() =>
     typeof props.data === 'function' ? props.data() : props.data,
   )
@@ -190,9 +204,54 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     } as StoredStep<S['data'], S['inputs']>
   })
 
+  /**
+   * Draft state, edited by the user prior to submission.
+   */
+  const [state, setState] = createStore<Partial<ObjectSchema<S['inputs'], 'input'>>>(
+    () => step().state,
+    {} as any,
+  )
+
+  /**
+   * Handle submissions
+   *
+   * - Merge the draft state with the saved state
+   * - Grade the exercise
+   * - Remove unserializable props
+   * - Save and refresh state
+   */
   const saveStep = (newStep: StoredStep<S['data'], S['inputs'], 'output'>) =>
     exerciseContext().saveStep(stepContext(), newStep)
+  const [submitting, setSubmitting] = createOptimistic(false)
+  const submit = action(async function* (newState: typeof state) {
+    setSubmitting(true)
+    const payload = {
+      ...step(),
+      state: newState,
+      submitted: true,
+    }
+    const parsed = v.parse(v.object(schemas()), { data: payload.data, inputs: payload.state })
+    const [correct, feedback] = normalizeGrade(await props.grade(parsed))
+    yield
+    payload.correct = correct
+    payload.feedback = feedback
+    const parsedPayload = v.parse(
+      StoredStep(props.schema.data as S['data'], props.schema.inputs as S['inputs']),
+      payload,
+    )
+    await saveStep(JSON.parse(JSON.stringify(parsedPayload)))
+    yield
+    refresh(fetched)
+    inherited?.().onAction?.()
+  })
 
+  /**
+   * Handle resetting the whole exercise
+   */
+  const canReset = createMemo(async () => {
+    if (stepContext().position !== 0) return false
+    return await hasPermissions(['exercise:deleteOwn'])
+  })
   const [resetting, setResetting] = createOptimistic(false)
   const reset = action(async function* () {
     setResetting(true)
@@ -221,11 +280,6 @@ export function Step<S extends StepSchema, F extends JsonObject>(
         <Boundary fallback={props.fallback}>{props.children}</Boundary>
       </FeedbackContext>
     </StepContext>
-  )
-
-  const [state, setState] = createStore<Partial<ObjectSchema<S['inputs'], 'input'>>>(
-    () => step().state,
-    {} as any,
   )
 
   const schemas = createMemo(() => ({
@@ -269,29 +323,6 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     },
   } satisfies ComponentProps<typeof props.prompt>['state']
 
-  const [submitting, setSubmitting] = createOptimistic(false)
-  const submit = action(async function* (newState: typeof state) {
-    setSubmitting(true)
-    const payload = {
-      ...step(),
-      state: newState,
-      submitted: true,
-    }
-    const parsed = v.parse(v.object(schemas()), { data: payload.data, inputs: payload.state })
-    const [correct, feedback] = normalizeGrade(await props.grade(parsed))
-    yield
-    payload.correct = correct
-    payload.feedback = feedback
-    const parsedPayload = v.parse(
-      StoredStep(props.schema.data as S['data'], props.schema.inputs as S['inputs']),
-      payload,
-    )
-    await saveStep(JSON.parse(JSON.stringify(parsedPayload)))
-    yield
-    refresh(fetched)
-    inherited?.().onAction?.()
-  })
-
   const Self = (attrs: Partial<StepProps<S, F>>) => (
     <Step {...props} data={step().data} {...attrs} />
   )
@@ -304,11 +335,6 @@ export function Step<S extends StepSchema, F extends JsonObject>(
       {(next) => <Dynamic component={next()} {...parsed()} />}
     </Show>
   )
-
-  const canReset = createMemo(async () => {
-    if (stepContext().position !== 0) return false
-    return await hasPermissions(['exercise:deleteOwn'])
-  })
   return (
     <div class={props.class}>
       <StepBoundary fallback="Chargement de l'exercice...">
