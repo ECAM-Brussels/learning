@@ -4,6 +4,7 @@ import { Dynamic, type JSX } from '@solidjs/web'
 import { mapValues } from 'es-toolkit'
 import {
   action,
+  createEffect,
   createMemo,
   createOptimistic,
   createStore,
@@ -87,11 +88,11 @@ type ObjectSchema<
 
 function StoredStep<D extends RawShape, I extends RawShape>(data: D, inputs: I) {
   return v.object({
-    name: v.nullish(v.string()),
+    name: v.nullish(v.string(), undefined),
     data: ObjectSchema(data),
     state: v.partial(ObjectSchema(inputs)),
     submitted: v.optional(v.boolean(), false),
-    correct: v.optional(v.boolean()),
+    correct: v.nullish(v.boolean(), undefined),
     feedback: v.optional(v.object({}), {}),
   })
 }
@@ -227,16 +228,29 @@ export function Step<S extends StepSchema, F extends JsonObject>(
    * - Save and refresh state
    */
   const [submitting, setSubmitting] = createOptimistic(false)
-  const submit = action(async function* (newState: typeof state) {
+  const submit = action(async function* (newState: Partial<ObjectSchema<S['inputs'], 'input'>>) {
     setSubmitting(true)
     const state = v.parse(schema().entries.state, newState)
-    const gradeResult = await props.grade({ data: step().data, inputs: state })
-    const [correct, feedback] = normalizeGrade(gradeResult)
-    const payload = { ...step(), state, submitted: true, correct, feedback }
+    const submitted = Object.keys(state).length > 0
+    const [correct, feedback] = await (async function grade() {
+      if (!submitted) return [undefined, {}] as const
+      const gradeResult = await props.grade({ data: step().data, inputs: state })
+      return normalizeGrade(gradeResult)
+    })()
+    const payload = { ...step(), state, submitted, correct, feedback }
     yield exerciseContext().saveStep(stepContext(), JSON.parse(JSON.stringify(payload)))
     refresh(fetched)
     inherited?.().onAction?.()
   })
+
+  createEffect(
+    () => [step(), fetched()] as const,
+    ([step, fetched]) => {
+      if (!step.submitted && fetched === null) {
+        submit({})
+      }
+    },
+  )
 
   /**
    * Handle resetting the whole exercise
@@ -249,8 +263,8 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   const reset = action(async function* () {
     setResetting(true)
     const { position, ...ctx } = stepContext()
-    await exerciseContext().reset(ctx)
-    yield
+    yield exerciseContext().reset(ctx)
+    refresh(exerciseData)
     refresh(fetched)
     inherited?.().onAction?.()
   })
