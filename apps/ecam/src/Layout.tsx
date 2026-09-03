@@ -46,6 +46,7 @@ function Navbar() {
               fallback={
                 <li>
                   <button
+                    class="cursor-pointer"
                     onClick={async () => {
                       await login({ provider: 'microsoft' })
                     }}
