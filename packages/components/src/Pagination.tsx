@@ -48,9 +48,15 @@ export function Pagination(props: {
           ›
         </button>
       </div>
-      <Boundary>
-        <Dynamic component={props.children[current() - 1]} />
-      </Boundary>
+      <For each={Array.from(Array(props.children.length).keys())}>
+        {(i) => (
+          <div class={{ hidden: i !== current() - 1 }}>
+            <Boundary>
+              <Dynamic component={props.children[i]} />
+            </Boundary>
+          </div>
+        )}
+      </For>
     </div>
   )
 }
