@@ -226,22 +226,14 @@ export function Step<S extends StepSchema, F extends JsonObject>(
    * - Remove unserializable props
    * - Save and refresh state
    */
-  const saveStep = (newStep: StoredStep<S['data'], S['inputs'], 'output'>) =>
-    exerciseContext().saveStep(stepContext(), newStep)
   const [submitting, setSubmitting] = createOptimistic(false)
   const submit = action(async function* (newState: typeof state) {
     setSubmitting(true)
-    const payload = {
-      ...step(),
-      state: v.parse(schema().entries.state, newState),
-      submitted: Object.keys(newState).length > 0,
-    }
-    const gradeResult = await props.grade({ data: payload.data, inputs: payload.state })
+    const state = v.parse(schema().entries.state, newState)
+    const gradeResult = await props.grade({ data: step().data, inputs: state })
     const [correct, feedback] = normalizeGrade(gradeResult)
-    payload.correct = correct
-    payload.feedback = feedback
-    await saveStep(JSON.parse(JSON.stringify(payload)))
-    yield
+    const payload = { ...step(), state, submitted: true, correct, feedback }
+    yield exerciseContext().saveStep(stepContext(), JSON.parse(JSON.stringify(payload)))
     refresh(fetched)
     inherited?.().onAction?.()
   })
