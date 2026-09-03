@@ -4,7 +4,6 @@ import { Dynamic, type JSX } from '@solidjs/web'
 import { mapValues } from 'es-toolkit'
 import {
   action,
-  createEffect,
   createMemo,
   createOptimistic,
   createStore,
@@ -245,15 +244,6 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     refresh(fetched)
     inherited?.().onAction?.()
   })
-
-  createEffect(
-    () => [step(), fetched()] as const,
-    ([step, fetched]) => {
-      if (!step.submitted && fetched === null) {
-        submit({})
-      }
-    },
-  )
 
   /**
    * Handle resetting the whole exercise
