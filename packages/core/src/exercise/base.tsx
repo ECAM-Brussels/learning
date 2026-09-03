@@ -92,7 +92,10 @@ function StoredStep<D extends RawShape, I extends RawShape>(data: D, inputs: I) 
     data: ObjectSchema(data),
     state: v.partial(ObjectSchema(inputs)),
     submitted: v.optional(v.boolean(), false),
-    correct: v.nullish(v.boolean(), undefined),
+    correct: v.pipe(
+      v.nullish(v.boolean()),
+      v.transform((value) => (value === null ? undefined : value)),
+    ),
     feedback: v.optional(v.object({}), {}),
   })
 }
