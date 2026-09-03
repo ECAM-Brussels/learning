@@ -5,7 +5,7 @@ export default function Layout(props: { children: JSX.Element }) {
   return (
     <Page>
       <BreadCrumbs />
-      <Crumb href="/numerical" title="Analyse numérique">
+      <Crumb href="/numerical" title="Documentation">
         {props.children}
       </Crumb>
     </Page>
