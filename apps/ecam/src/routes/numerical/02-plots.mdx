@@ -1,7 +1,9 @@
 import { defineMeta } from '@learning/components'
+import { hasPermissions } from '@learning/core'
 
 export default defineMeta({
   title: 'Session 2: Fonctions et graphiques',
+  authorized: () => hasPermissions(['draft:read']),
 })
 
 # Fonctions et graphiques

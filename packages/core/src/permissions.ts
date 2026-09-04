@@ -4,17 +4,21 @@ import { env } from 'virtual:env/server'
 
 const permissions = {
   exercise: ['readOwn', 'read', 'answerOwn', 'delete', 'deleteOwn'],
+  draft: ['read'],
 } as const satisfies Record<string, readonly string[]>
 
 const roles = {
   guest: {
     exercise: ['readOwn', 'answerOwn', 'deleteOwn'],
+    draft: [],
   },
   student: {
     exercise: ['readOwn', 'answerOwn', 'deleteOwn'],
+    draft: [],
   },
   teacher: {
     exercise: ['readOwn', 'read', 'answerOwn', 'deleteOwn'],
+    draft: ['read'],
   },
   admin: permissions,
 } as const satisfies Record<string, Role>
@@ -38,8 +42,8 @@ export const hasPermissions = query(async <P extends Permission[]>(permissions: 
   const role = await getRole()
   if (!role) return false
   return permissions.every(<S extends Scope>(p: Permission<S>) => {
-    const [scope, action] = p.split(':')
-    return roles[role][scope as S]?.includes(action as any)
+    const [scope, action] = p.split(':') as [S, string]
+    return [...roles[role][scope]].includes(action as any)
   })
 }, 'hasPermissions')
 

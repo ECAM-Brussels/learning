@@ -1,5 +1,5 @@
 import { createMemo, createSignal } from 'solid-js'
-import { Sequence, tex } from '@learning/core'
+import { hasPermissions, Sequence, tex } from '@learning/core'
 import { defineMeta } from '@learning/components'
 import { PythonCode } from '@learning/exercises/python/Code'
 import {
@@ -16,6 +16,7 @@ import {
 
 export default defineMeta({
   title: 'Session 1: Introduction à Python',
+  authorized: () => hasPermissions(['draft:read']),
 })
 
 # Introduction à Python
