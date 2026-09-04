@@ -633,13 +633,28 @@ sera très utile pour tracer les graphes des fonctions.
 <Sequence id="vectorization">
   <Vectorization
     fn="sqrt"
-    x={['0', '0.1', '0.2', '0.3', '0.4', '0.5', '0.6']}
+    x={['0', '0.1', '0.2', '0.3', '0.4', '0.5']}
     latex={(x) => `\\sqrt{${x}}`}
   />
   <Vectorization
     fn="sin"
     x={['0', 'np.pi/6', 'np.pi/4', 'np.pi/3', 'np.pi/2']}
-    latex={(x) => `\\sin{${x}}`}
+    latex={(x) => `\\sin{\left(${x.replace('np.pi', '\\pi')}}\right)`}
+  />
+  <Vectorization
+    fn="tan"
+    x={['0', '0.1', '0.2', '0.3', '0.4', '0.5']}
+    latex={(x) => `\\tan{${x}}`}
+  />
+  <Vectorization
+    fn="exp"
+    x={['0', '0.01', '0.02', '0.03', '0.04', '0.05']}
+    latex={(x) => `e^{${x}}`}
+  />
+  <Vectorization
+    fn="log"
+    x={['0', '0.1', '0.2', '0.3', '0.4', '0.5']}
+    latex={(x) => `\\ln{${x}}`}
   />
 </Sequence>
 
