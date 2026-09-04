@@ -9,6 +9,7 @@ import {
   LinearCombination,
   Print,
   Variables,
+  VectorProduct,
 } from './01-python.exercises'
 
 export default defineMeta({
@@ -560,6 +561,23 @@ np.cross(a, b)
 </div>
 
 :::
+
+<Sequence id="vector-products">
+  <VectorProduct
+    type="dot"
+    v={[
+      [3, -1, 2],
+      [0, -5, -3],
+    ]}
+  />
+  <VectorProduct
+    type="cross"
+    v={[
+      [3, -1, 2],
+      [0, -5, -3],
+    ]}
+  />
+</Sequence>
 
 ### Norme d'un vecteur
 

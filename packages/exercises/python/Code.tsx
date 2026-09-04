@@ -69,7 +69,7 @@ export const PythonCode = createStep({
           {(test) => (
             <li>
               <code>
-                {test.desc ?? test.test} -&gt; {test.result}
+                {test.desc ?? test.test ?? 'Résultat final'} -&gt; {test.result}
                 {test.stdout}
               </code>
               <CheckMark value={test.passed} />

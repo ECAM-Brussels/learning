@@ -337,3 +337,34 @@ export function LinearCombination(props: { c: [number, number]; v: [number[], nu
     />
   )
 }
+
+export function VectorProduct(props: { v: [number[], number[]]; type: 'dot' | 'cross' }) {
+  return (
+    <PythonCode
+      prompt={
+        <>
+          <p>
+            Avec l'aide de <code>numpy</code>, calculez le produit{' '}
+            {props.type === 'dot' ? 'scalaire' : 'vectoriel'}
+          </p>
+          {tex`
+            ${expr(props.v[0])} ${props.type === 'dot' ? `\\cdot` : `\\times`} ${expr(props.v[1])}
+          `}
+        </>
+      }
+      tests={[
+        {
+          test: null,
+          check: async ({ result }) => {
+            const { result: answer } = await python.output(dedent /* python */ `
+              import numpy as np
+              np.${props.type}([${props.v[0].join(',')}], [${props.v[1].join(',')}])
+            `)
+            return result === answer
+          },
+        },
+      ]}
+      check={(code) => code.includes('numpy') && code.includes(props.type)}
+    />
+  )
+}
