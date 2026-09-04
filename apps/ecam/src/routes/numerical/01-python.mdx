@@ -9,6 +9,7 @@ import {
   LinearCombination,
   Print,
   Variables,
+  Vectorization,
   VectorProduct,
 } from './01-python.exercises'
 
@@ -616,11 +617,31 @@ La différence étant que `numpy` peut appliquer ces fonctions sur des listes ou
 ```python run
 import numpy as np
 
-np.sin([0, np.pi/6, np.pi/4, np.pi/3, np.pi/2])
+# Liste des valeurs pour lesquelles on veut calculer le sinus
+x = [0, np.pi/6, np.pi/4, np.pi/3, np.pi/2]
+
+# Calcul du sinus de chaque valeur de la liste x
+np.sin(x)
 ```
+
+Transformer une opération sur les nombres en une opération sur les vecteurs est appelé **vectorisation**.
+La différence, dès lors, entre `math.sin` et `np.sin` est que la seconde est **vectorisée**.
 
 Calculer l'image de plusieurs points en une commande
 sera très utile pour tracer les graphes des fonctions.
+
+<Sequence id="vectorization">
+  <Vectorization
+    fn="sqrt"
+    x={['0', '0.1', '0.2', '0.3', '0.4', '0.5', '0.6']}
+    latex={(x) => `\\sqrt{${x}}`}
+  />
+  <Vectorization
+    fn="sin"
+    x={['0', 'np.pi/6', 'np.pi/4', 'np.pi/3', 'np.pi/2']}
+    latex={(x) => `\\sin{${x}}`}
+  />
+</Sequence>
 
 ### Exemples récapitulatifs
 

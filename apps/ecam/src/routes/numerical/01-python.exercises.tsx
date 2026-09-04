@@ -368,3 +368,35 @@ export function VectorProduct(props: { v: [number[], number[]]; type: 'dot' | 'c
     />
   )
 }
+
+export function Vectorization(props: { x: string[]; fn: string; latex: (x: string) => string }) {
+  return (
+    <PythonCode
+      prompt={
+        <>
+          <p>
+            Avec l'aide de <code>numpy</code>, calculez les coordonnées du vecteur
+          </p>
+          {tex`
+            \begin{pmatrix}
+              ${props.x.map((x) => props.latex(x)).join('\\\\')}
+            \end{pmatrix}
+          `}
+        </>
+      }
+      tests={[
+        {
+          test: null,
+          check: async ({ result }) => {
+            const { result: answer } = await python.output(dedent /* python */ `
+              import numpy as np
+              np.${props.fn}([${props.x.join(',')}])
+            `)
+            return result === answer
+          },
+        },
+      ]}
+      check={(code) => code.includes('numpy') && code.split(props.fn).length < props.x.length}
+    />
+  )
+}
