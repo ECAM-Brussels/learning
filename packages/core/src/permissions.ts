@@ -33,7 +33,7 @@ export const getRole = query(async () => {
   if (!user) return 'guest'
   let role: keyof typeof roles = 'student'
   if (env.ADMINS.includes(user.email)) role = 'admin'
-  else if (/^[a-zA-Z]$/.test(user.email) && user.email.endsWith('@ecam.be')) role = 'teacher'
+  else if (/^[a-zA-Z]/.test(user.email) && user.email.endsWith('@ecam.be')) role = 'teacher'
   return role
 }, 'getRole')
 
