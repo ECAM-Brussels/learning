@@ -86,9 +86,12 @@ Nous vous invitons maintenant à résoudre les exercices suivants:
   <Calculator prompt="(3 + 2i)^5" answer="(-597+122j)" />
   <Calculator prompt="\sqrt[3]{5}" answer={5 ** (1 / 3)} />
   <Calculator prompt="4^3" answer={4 ** 3} />
+  <Calculator prompt="10^{15} + 0.01" answer={10 ** 15 + 0.01} />
 </Sequence>
 
 :::
+
+### Erreurs liées au binaire
 
 :::question
 Pourquoi certains calculs, comme $0.1 \cdot 0.1$, donnent des résultats inattendus?
@@ -165,6 +168,17 @@ import decimal
 # 0.1 * 0.1 avec une réponse exacte
 decimal.Decimal('0.1') * decimal.Decimal('0.1')
 ```
+
+### Erreurs liées aux bits significatifs
+
+Les calculs impliquant les _nombres à virgules_ ont une précision _limitée_ de $53$ _bits significatifs_,
+ce qui correspond à environ $15$ _chiffres significatifs_.
+
+```python run
+1e14 + 0.001
+```
+
+Ceci posera problème plus tard pour le calcul des limites, des dérivées et des intégrales.
 
 ## Python comme calculatrice scientifique
 
@@ -688,16 +702,14 @@ theta_deg
 
 :::
 
-# Pour aller plus loin
-
-## Le binaire
+# Le binaire
 
 L'ordinateur garde en mémoire les nombres sous forme _binaire_,
 c'est-à-dire avec seulement des $0$ et des $1$.
 Comme cela aura des conséquences sur la précision des calculs,
 nous nous attarderons un peu sur la conversion en binaire.
 
-### Conversion entre systèmes de numération
+## Conversion entre systèmes de numération
 
 Pour rappel, nous utilisons la _base $10$_ pour représenter un nombre.
 Ceci signifie les choses suivantes:
@@ -722,7 +734,7 @@ Pour les nombres entiers, la base $10$ et la base $2$ sont essentiellement équi
 à la différence que la base $2$ nécessite plus de chiffres pour représenter un nombre.
 Nous verrons que la situation est plus complexe pour les nombres non entiers.
 
-### Représentations finies et exactes
+## Représentations finies et exactes
 
 L'ordinateur ne peut stocker qu'un nombre fini de **bits** ($0$ ou $1$).
 Par conséquent, le nombre
@@ -770,27 +782,54 @@ qui a comme dénominateur **une puissance de $2$**
 
 :::proposition
 Un nombre est représentable exactement en binaire si et seulement si
-son écriture fractionnelle simplifée a pour dénominateur une puissance de $2$.
+son écriture fractionnelle simplifée a pour dénominateur une puissance de $2$,
+c'est-à-dire qu'il peut s'écrire
+{tex`\displaystyle \frac{p}{2^q},
+  \quad p, q \in \mathbb{Z}.
+`}
 :::
 
-## Le calcul symbolique
+:::example
+Par exemple,
+{tex`0.1
+  = \frac {1}{10}
+  = \frac {1} {2 \cdot 5}
+`}
+n'est pas représentable exactement en binaire,
+puisque sa forme fractionnelle simplifiée a pour dénominateur $10$,
+qui n'est **pas** une puissance de $2$.
+:::
 
-Nous présentons à titre informatif comment faire du calcul _symbolique_ en Python.
+# Résumé
 
-### Manipulation d'expressions
+- Les calculs sont avec une syntaxe standard,
+  mais `**` est utilisé pour l'exponentiation et `.` pour le séparateur décimal.
 
-```python run math
-import sympy as sp
+- Les nombres sont entrés en base $10$ mais sont stockés en base $2$.
+  Certains nombres ne peuvent pas être représentés exactement en binaire,
+  et sont donc **arrondis**.
 
-x = sp.Symbol('x')
-expr = x**2 + 2*x + 1
+- Deux sources d'erreurs arithmétiques
 
-sp.factor(expr)
-```
+  - Le **binaire**: les nombres qui ne peuvent pas s'écrire de manière simplifiée comme $\frac{p}{2^q}$ sont **arrondis**.
+    Par exemple, tout calcul avec $0.1$ est approximatif.
 
-| Opération                          | Code Python                 |
-| ---------------------------------- | --------------------------- |
-| Factoriser                         | `sp.factor(x**2 + 2*x + 1)` |
-| Distribuer                         | `sp.expand(x**2 + 2*x + 1)` |
-| Dériver                            | `sp.diff(x**2 + 2*x + 1)`   |
-| Résoudre une équation $\ldots = 0$ | `sp.solve(x**2 + 2*x + 1)`  |
+  - La précision utilisée est d'environ $15$ chiffres significatifs.
+    On ne peut pas faire de calculs avec des nombres très grands et très petits en même temps
+    sans perdre en précision.
+
+- On importe la librairie `math`
+  pour les fonctions exponentielles, trigonométriques, logarithmes, cyclométriques, etc.
+
+- Par défaut,
+  la trigonométrie se fait en **radians**.
+
+- `numpy` permet de travailler avec les vecturs
+
+  - `np.array` pour créer un vecteur pour lequel fonctionne l'addition et la multiplication scalaire
+  - `np.dot` pour le produit scalaire
+  - `np.cross` pour le produit vectoriel
+
+- `numpy` contient les fonctions de `math`, mais **vectorisées**.
+  Il y a en fait pas de raisons d'employer `math`,
+  puisque `numpy` est plus général.
