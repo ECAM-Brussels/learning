@@ -578,6 +578,19 @@ np.cross(a, b)
 
 :::
 
+:::remark
+
+Pour les paresseux, `np.dot` et `np.cross` peuvent implicitement convertir en un vecteur si vous le souhaitez.
+L'exemple ci-dessus peut être réduit à:
+
+```python run
+import numpy as np
+
+np.cross([1, 2, 3], [4, 5, 6])
+```
+
+:::
+
 <Sequence id="vector-products">
   <VectorProduct
     type="dot"
@@ -611,6 +624,19 @@ v = np.array([1, 2, 3])
 norme = np.linalg.norm(v)
 
 norme
+```
+
+:::
+
+:::remark
+
+Encore une fois, `np.linalg.norm` peut s'occuper de la conversion en vecteurs,
+de sorte qu'on aurait pu écrire:
+
+```python run
+import numpy as np
+
+np.linalg.norm([1, 2, 3])
 ```
 
 :::
