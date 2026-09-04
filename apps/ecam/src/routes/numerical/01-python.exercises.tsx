@@ -281,7 +281,11 @@ export function Variables(props: {
       test: name,
       check: ({ result }: FinalOutput) => result === String(value),
     })),
-    { test: null, check: ({ result }: FinalOutput) => result === String(props.answer) },
+    {
+      desc: `La réponse finale est correcte`,
+      test: null,
+      check: ({ result }: FinalOutput) => result === String(props.answer),
+    },
   ])
   return (
     <PythonCode
