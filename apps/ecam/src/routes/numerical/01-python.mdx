@@ -168,6 +168,8 @@ il est préférable de procéder de la manière suivante:
 import decimal
 
 # 0.1 * 0.1 avec une réponse exacte
+# '0.1' signifie '0.1' en tant que chaîne de caractères,
+# ce qui désactive la conversion en binaire implicite.
 decimal.Decimal('0.1') * decimal.Decimal('0.1')
 ```
 
@@ -235,6 +237,15 @@ Attention, les fonctions trigonométriques utilisent les **radians** par défaut
 :::example
 
 Calculez le sinus de $30^\circ$.
+
+```python run
+import math
+
+# On convertt 30 degrés en radians
+theta = math.radians(30)
+
+math.sin(theta)
+```
 
 :::
 
@@ -511,10 +522,10 @@ w = np.array([4, 5, 6])
 
 <Sequence id="linear-combination">
   <LinearCombination
-    c={[2, 3]}
+    c={[-2, 7]}
     v={[
-      [1, 2, 3],
-      [4, 5, 6],
+      [1, -1, 0],
+      [4, 3, 12],
     ]}
   />
   <LinearCombination
@@ -686,7 +697,7 @@ sera très utile pour tracer les graphes des fonctions.
   <Vectorization
     fn="sin"
     x={['0', 'np.pi/6', 'np.pi/4', 'np.pi/3', 'np.pi/2']}
-    latex={(x) => `\\sin{\left(${x.replace('np.pi', '\\pi')}}\right)`}
+    latex={(x) => `\\sin{\\left(${x.replace('np.pi', '\\pi')}}\\right)`}
   />
   <Vectorization
     fn="tan"
