@@ -318,7 +318,7 @@ export function LinearCombination(props: { c: [number, number]; v: [number[], nu
             Calculez la combinaison linéaire suivante avec <code>numpy</code>:
           </p>
           {tex`
-            ${props.c[0]} ${expr(props.v[0])} ${props.c[1] > 0 ? '+' : ''} ${Math.abs(props.c[1])} ${expr(props.v[1])}
+            ${props.c[0]} ${expr(props.v[0])} ${props.c[1] > 0 ? '+' : ''} ${props.c[1]} ${expr(props.v[1])}
           `}
         </>
       }
