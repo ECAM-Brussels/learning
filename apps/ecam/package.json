@@ -11,6 +11,7 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@solidjs/diagnostics": "catalog:",
     "@solidjs/vite-plugin": "catalog:",
     "@tailwindcss/typography": "^0.5.19",
     "satteri": "^0.9.5",

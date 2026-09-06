@@ -10,6 +10,7 @@ export default defineConfig({
   plugins: [
     satteri(saterriConfig),
     solidPlugin({
+      diagnostics: true,
       extensions: ['.mdx'],
       start: {
         env: './env.ts',

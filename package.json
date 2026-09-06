@@ -13,6 +13,7 @@
   },
   "catalog": {
     "@cortex-js/compute-engine": "0.58.0",
+    "@solidjs/diagnostics": "next",
     "@solidjs/meta": "next",
     "@solidjs/router": "next",
     "@solidjs/vite-plugin": "next",

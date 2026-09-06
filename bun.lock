@@ -40,6 +40,7 @@
         "valibot": "catalog:",
       },
       "devDependencies": {
+        "@solidjs/diagnostics": "catalog:",
         "@solidjs/vite-plugin": "catalog:",
         "@tailwindcss/typography": "^0.5.19",
         "satteri": "^0.9.5",
@@ -188,6 +189,7 @@
     "@fortawesome/fontawesome-common-types": "^7.3.1",
     "@fortawesome/free-brands-svg-icons": "^7.3.1",
     "@fortawesome/free-solid-svg-icons": "^7.3.1",
+    "@solidjs/diagnostics": "next",
     "@solidjs/meta": "next",
     "@solidjs/router": "next",
     "@solidjs/vite-plugin": "next",
@@ -501,6 +503,8 @@
     "@solidjs/compiler-wasm32-wasi": ["@solidjs/compiler-wasm32-wasi@2.0.0-rc.6", "", { "dependencies": { "@emnapi/core": "1.11.3", "@emnapi/runtime": "1.11.3", "@napi-rs/wasm-runtime": "^1.1.6" } }, "sha512-aQCYH+d3TAx1i05vtdINSRnKxPFL8VnkSOoab2OkX3rmxwCGxpRRUvj+fOePiF28XO4ijDoY7Bty4QsP1jbUUw=="],
 
     "@solidjs/compiler-win32-x64-msvc": ["@solidjs/compiler-win32-x64-msvc@2.0.0-rc.6", "", { "os": "win32", "cpu": "x64" }, "sha512-8luAnqBxHJxEfw8SKqKGV1W2x+j1yk0G2rb242/z45pbVkQz+J5HNKMYSnvfKN3B2VpIvhZ447yph449wDKpEA=="],
+
+    "@solidjs/diagnostics": ["@solidjs/diagnostics@2.0.0-rc.6", "", { "dependencies": { "@solidjs/signals": "^2.0.0-rc.6" }, "peerDependencies": { "vitest": ">=2.0.0" }, "optionalPeers": ["vitest"] }, "sha512-Q+4x6iwJCW+mV2jVMboaKubdjEUruirbgp+I4sa0XfNZFrbL1EQluiNqVpYL4Q0HszTzboRh2a2Rzob7OG7DTw=="],
 
     "@solidjs/meta": ["@solidjs/meta@1.0.0-next.2", "", { "peerDependencies": { "@solidjs/web": "^2.0.0-rc.0", "solid-js": "^2.0.0-rc.0" } }, "sha512-4aqPczFqDdep4JTAUXfh4nyfq7InbTgimd7NuN6ZWWE29UPv0uR5dyr53yFcf2YgVXjFdX+JGhXtsE0njGL+fA=="],
 
