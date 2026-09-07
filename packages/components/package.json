@@ -11,12 +11,16 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@codemirror/lang-python": "^6.2.1",
+    "@codemirror/state": "^6.7.4",
+    "@codemirror/view": "^6.43.11",
     "@fortawesome/free-solid-svg-icons": "catalog:",
     "@learning/mdx": "workspace:*",
     "@learning/repl": "workspace:*",
     "@solidjs/meta": "catalog:",
     "@solidjs/router": "catalog:",
     "@solidjs/web": "catalog:",
+    "codemirror": "^6.0.2",
     "dedent": "^1.7.2",
     "es-toolkit": "catalog:",
     "jsxgraph": "^1.12.2",

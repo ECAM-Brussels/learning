@@ -1,7 +1,6 @@
-import type { JSX } from '@solidjs/web'
 import * as monaco from 'monaco-editor'
-import { createEffect, createSignal, onSettled, Show } from 'solid-js'
-import Python from './Python'
+import { createEffect, createSignal, onSettled } from 'solid-js'
+import type { EditorProps } from './index'
 
 self.MonacoEnvironment = {
   getWorker: async function (workerId, label) {
@@ -33,16 +32,6 @@ self.MonacoEnvironment = {
   },
 }
 
-type Props = {
-  class?: JSX.ClassValue | string
-  children: string
-  onChange?: (value: string) => void
-} & {
-  lang: 'python'
-  run?: boolean
-  math?: boolean
-}
-
 /**
  * Display the Monaco editor (used in VSCode)
  *
@@ -50,7 +39,7 @@ type Props = {
  * - `run`: whether to execute the code and display the output (default: `false`)
  * - `math`: whether to render Sympy math outputs using KaTeX (default: `false`)
  */
-export default function Code(props: Props) {
+export default function Code(props: EditorProps) {
   let container: HTMLDivElement | undefined
   let editor: monaco.editor.IStandaloneCodeEditor | undefined
   const [value, setValue] = createSignal(() => props.children)
@@ -87,12 +76,5 @@ export default function Code(props: Props) {
     }
     return () => editor?.dispose()
   })
-  return (
-    <div class="flex flex-col gap-0">
-      <div ref={container!} id="container" class={props.class ?? 'my-0 shadow'} />
-      <Show when={props.lang === 'python' && props.run}>
-        <Python class="my-0 py-0" value={value()} math={props.math} />
-      </Show>
-    </div>
-  )
+  return <div ref={container!} id="container" class={props.class ?? 'my-0 shadow'} />
 }
