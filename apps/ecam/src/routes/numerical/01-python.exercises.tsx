@@ -78,32 +78,44 @@ export function Integer(rawProps: {
             : <code>{number().toString(props.base)}</code>
           </Show>
         </h4>
-        <div class="flex justify-center gap-2 divide-x divide-solid divide-gray-300">
-          <For each={entries()}>
-            {([i, b], index) => (
-              <div class="text-center">
-                <div
-                  class="font-xs my-0 text-center text-gray-300"
-                  title={String(props.base ** Number(i))}
-                >{tex`\small ${props.base}^{${i}}`}</div>
-                <div class="flex justify-center">
-                  <input
-                    class="font-mono"
-                    type="number"
-                    onInput={(e) => changeBit(Number(i), Number(e.target.value))}
-                    value={bits()[Number(i)] ?? 0}
-                    max={props.base - 1}
-                    min={0}
-                    disabled={props.mode === 'decimal'}
-                  />
-                  <Show when={Number(i) === 0 && index() !== entries().length - 1}>
-                    <span class="font-bold">.</span>
-                  </Show>
-                </div>
-              </div>
-            )}
-          </For>
-        </div>
+        <table class="mx-auto rounded-lg">
+          <tbody>
+            <tr class="text-right text-xs text-gray-500">
+              <td class="border border-gray-200 px-2">Rang</td>
+              <For each={entries()}>
+                {([i]) => <td class="border border-gray-200 px-2 text-center">{tex`${i}`}</td>}
+              </For>
+            </tr>
+            <tr class="text-lg">
+              <td class="border border-gray-200 px-2 text-right text-xs text-gray-500">
+                {props.base !== 2 ? 'Chiffre' : 'Bit'}
+              </td>
+              <For each={entries()}>
+                {([i]) => (
+                  <td class="border border-gray-200 bg-blue-100 px-2 py-2 text-center">
+                    <input
+                      class="font-mono font-bold text-blue-950"
+                      type="number"
+                      onInput={(e) => changeBit(Number(i), Number(e.target.value))}
+                      value={bits()[Number(i)] ?? 0}
+                      max={props.base - 1}
+                      min={0}
+                      disabled={props.mode === 'decimal'}
+                    />
+                  </td>
+                )}
+              </For>
+            </tr>
+            <tr class="text-right text-xs text-gray-500">
+              <td class="border border-gray-200 px-2">Poids</td>
+              <For each={entries()}>
+                {([i]) => (
+                  <td class="border border-gray-200 p-2 text-center">{tex`${props.base}^{${i}}`}</td>
+                )}
+              </For>
+            </tr>
+          </tbody>
+        </table>
       </div>
       <Show when={props.showCalculation}>
         {tex`${entries()
