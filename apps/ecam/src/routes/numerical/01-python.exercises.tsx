@@ -1,5 +1,5 @@
 import { Attempt, CheckMark, Highlight, Question } from '@learning/components'
-import { Exercise, expr, tex } from '@learning/core'
+import { Exercise, expr, Sequence, tex } from '@learning/core'
 import { PythonCode } from '@learning/exercises/python/Code'
 import { python, type FinalOutput } from '@learning/repl'
 import { type JSX } from '@solidjs/web'
@@ -442,5 +442,85 @@ export function Norm(props: { x: number[] }) {
       ]}
       check={(code) => code.includes('numpy') && code.includes('linalg.norm')}
     />
+  )
+}
+
+export function Review() {
+  return (
+    <Sequence id="final-exercises">
+      <PythonCode
+        prompt={
+          <p>
+            Avec l'aide de <code>numpy</code>, calculez le volume du parallélépipède engendré par
+            les vecteurs {tex`\vec a = (1, 2, 3)`}, {tex`\vec b = (4, 5, 6)`} et{' '}
+            {tex`\vec c = (7, 8, 9)`}.
+          </p>
+        }
+        tests={[
+          {
+            test: null,
+            check: async ({ result }) => {
+              const { result: answer } = await python.output(dedent /* python */ `
+                import numpy as np
+                a = np.array([1, 2, 3])
+                b = np.array([4, 5, 6])
+                c = np.array([7, 8, 9])
+                np.abs(np.dot(a, np.cross(b, c)))
+              `)
+              return result === answer
+            },
+          },
+        ]}
+        check={(code) => code.includes('numpy') && code.includes('cross') && code.includes('dot')}
+      />
+      <PythonCode
+        prompt={
+          <p>
+            Avec l'aide de <code>numpy</code>, calculez la distance entre les {tex`A(-1, 7, -8)`} et{' '}
+            {tex`B(4, -17, -6)`}.
+          </p>
+        }
+        tests={[
+          {
+            test: null,
+            check: async ({ result }) => {
+              const { result: answer } = await python.output(dedent /* python */ `
+                import numpy as np
+                A = np.array([-1, 7, -8])
+                B = np.array([4, -17, -6])
+                np.linalg.norm(A - B)
+              `)
+              return result === answer
+            },
+          },
+        ]}
+        check={(code) => code.includes('numpy')}
+      />
+      <PythonCode
+        prompt={
+          <p>
+            Avec l'aide de <code>numpy</code>, calculez l'angle <strong>en degrés</strong> entre les
+            vecteurs {tex`\vec a = (4, -3, 2, 9)`} et {tex`\vec b = (-6, 1, 13, -4)`}.
+          </p>
+        }
+        tests={[
+          {
+            test: null,
+            check: async ({ result }) => {
+              const { result: answer } = await python.output(dedent /* python */ `
+                import numpy as np
+                a = np.array([4, -3, 2, 9])
+                b = np.array([-6, 1, 13, -4])
+                cos_theta = np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+                theta = np.arccos(cos_theta)
+                np.degrees(theta)
+              `)
+              return result === answer
+            },
+          },
+        ]}
+        check={(code) => code.includes('numpy') && code.includes('arccos')}
+      />
+    </Sequence>
   )
 }
