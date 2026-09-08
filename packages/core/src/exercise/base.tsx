@@ -47,6 +47,8 @@ const CustomSchemas = {
     ),
     Expression,
   ]),
+  string: v.string(),
+  number: v.number(),
 } as const
 type CustomSchemas = typeof CustomSchemas
 
