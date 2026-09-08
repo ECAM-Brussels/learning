@@ -767,7 +767,7 @@ Ceci signifie les choses suivantes:
 
 En _binaire_ (base $2$), la situation est similaire
 
-- Nous utilisons $2$ _chiffres_: $0$, $1$.
+- Nous utilisons $2$ _chiffres_: `0`, `1`.
 - La valeur des chiffres dépend de la _position_ dans le nombre,
   et est multipliée par une _puissance de $2$_.
 - Multiplier un nombre par $2$ revient à _décaler les chiffres d'une position vers la gauche_.
@@ -778,6 +778,19 @@ Pour les nombres entiers, la base $10$ et la base $2$ sont essentiellement équi
 à la différence que la base $2$ nécessite plus de chiffres pour représenter un nombre.
 Nous verrons que la situation est plus complexe pour les nombres non entiers.
 
+:::remark
+
+Certains nombres ont une signification en binaire **et** en base $10$.
+Par exemple, en binaire, <code>10</code> (qu'on lira "un zéro") signifie $2$,
+
+$$
+\texttt{10} = 1 \cdot 2^1 + 0 \cdot 2^0 = 2
+$$
+
+Pour lever l'ambiguité, on écrira $(\texttt{10})_2$ pour insister qu'on est en base $2$.
+
+:::
+
 ## Représentations finies et exactes
 
 L'ordinateur ne peut stocker qu'un nombre fini de **bits** ($0$ ou $1$).
@@ -785,7 +798,7 @@ Par conséquent, le nombre
 
 {tex`
 
-0.1010101010101010...
+\texttt{0.1010101010101010\dots}
 
 `}
 
@@ -801,11 +814,13 @@ qui a comme dénominateur **une puissance de $10$**.
 
 :::example
 
-- Le nombre $67$ peut s'écrire comme la fraction $\displaystyle \frac{67}{10^0}$.
+- Le nombre $67$ peut s'écrire comme la fraction $\displaystyle \frac{67}{10^0}$,
 
-- Le nombre $0.375$ peut s'écrire comme la fraction $\displaystyle \frac{375}{10^3}$.
+- Le nombre $0.375$ peut s'écrire comme la fraction $\displaystyle \frac{375}{10^3}$,
+  la division par $10^3$ permettant de décaler la virgule de trois positions vers la gauche.
 
 - Le nombre $45.1234$ peut s'écrire comme la fraction $\displaystyle \frac{451234}{10^4}$.
+  la division par $10^4$ permettant de décaler la virgule de trois positions vers la gauche.
 
 - Le nombre $\displaystyle \frac 1 3 = 0.33333\ldots$ n'est **pas représentable**
   puisqu'il faudrait une infinité de chiffres pour le stocker.
@@ -818,9 +833,11 @@ qui a comme dénominateur **une puissance de $2$**
 
 :::example
 
-- Le nombre binaire $(10.11)_2$ peut s'écrire comme la fraction {tex`\displaystyle \frac{(1011)_2}{2^2}`}.
+- Le nombre binaire $(\texttt{10.11})_2$ peut s'écrire comme la fraction {tex`\displaystyle \frac{(\texttt{1011})_2}{2^2}`},
+  la division par $2^2$ permettant de décaler la virgule de deux positions vers la gauche.
 
-- Le nombre binaire $(1101.101)_2$ peut s'écrire comme la fraction {tex`\displaystyle \frac{(1101101)_2}{2^3}`}.
+- Le nombre binaire $(\texttt{1101.101})_2$ peut s'écrire comme la fraction {tex`\displaystyle \frac{(\texttt{1101101})_2}{2^3}`},
+  la division par $2^3$ permettant de décaler la virgule de trois positions vers la gauche.
 
 :::
 
