@@ -1,0 +1,66 @@
+import { createMemo, createSignal } from 'solid-js'
+import { hasPermissions, Sequence, tex, Exercise, expr } from '@learning/core'
+import { defineMeta, Attempt } from '@learning/components'
+import { PythonCode } from '@learning/exercises/python/Code'
+import { sample } from 'es-toolkit'
+import {
+  Calculator,
+  getRep,
+  Integer,
+  LinearCombination,
+  Norm,
+  Print,
+  Variables,
+  Vectorization,
+  VectorProduct,
+} from './01-mathematisation.exercises'
+
+export default defineMeta({
+  title: 'Séance 1: La traduction mathématique',
+})
+
+# La traduction mathématique
+
+L'objectif de ce notebook interactif est d'apprendre comment **reformuler un énoncé en expressions mathématiques**.
+Nous allons procéder étape par étape.
+
+## Les opérations élémentaires
+
+Les opérations élémentaires sont l'addition, la soustraction, la multiplication et la division.
+Faisons un premier exercice de reformulation avec ces 4 opérations élémentaires:
+
+<Sequence
+  id="reformulation-operations-generated"
+  next={() => (
+    <Exercise
+      schema={{
+        data: { a: 'expr', b: 'expr', opword: 'string' },
+        inputs: { attempt: 'expr' },
+      }}
+      data={() => ({
+        ...sample([
+          { a: 'x', b: 'y' },
+          { a: 'y', b: 'x' },
+          { a: 'a', b: 'b' },
+          { a: 'b', b: 'a' },
+          { a: 'c', b: 'd' },
+          { a: 'd', b: 'c' },
+        ]),
+        opword: "L'addition",
+      })}
+      prompt={(ctx) => (
+        <>
+          <p>Traduisez la phrase suivante en une expression mathémathique:</p>
+          <p>
+            <Attempt>
+              "{ctx.data.opword} de deux nombres {tex`${ctx.data.a}`} et {tex`${ctx.data.b}`}":{' '}
+              {ctx.inputs.attempt}
+            </Attempt>
+          </p>
+        </>
+      )}
+      grade={(ctx) => ctx.inputs.attempt.isEqual(expr(`${ctx.data.a} + ${ctx.data.b}`))}
+      feedback={(ctx) => <p>Feedback ici</p>}
+    />
+  )}
+/>
