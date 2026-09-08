@@ -1,5 +1,5 @@
 import { Attempt, CheckMark, Highlight, Question } from '@learning/components'
-import { Exercise, expr, tex } from '@learning/core'
+import { Exercise, expr, Sequence, tex } from '@learning/core'
 import { PythonCode } from '@learning/exercises/python/Code'
 import { python, type FinalOutput } from '@learning/repl'
 import { type JSX } from '@solidjs/web'
@@ -78,32 +78,44 @@ export function Integer(rawProps: {
             : <code>{number().toString(props.base)}</code>
           </Show>
         </h4>
-        <div class="flex justify-center gap-2 divide-x divide-solid divide-gray-300">
-          <For each={entries()}>
-            {([i, b], index) => (
-              <div class="text-center">
-                <div
-                  class="font-xs my-0 text-center text-gray-300"
-                  title={String(props.base ** Number(i))}
-                >{tex`\small ${props.base}^{${i}}`}</div>
-                <div class="flex justify-center">
-                  <input
-                    class="font-mono"
-                    type="number"
-                    onInput={(e) => changeBit(Number(i), Number(e.target.value))}
-                    value={bits()[Number(i)] ?? 0}
-                    max={props.base - 1}
-                    min={0}
-                    disabled={props.mode === 'decimal'}
-                  />
-                  <Show when={Number(i) === 0 && index() !== entries().length - 1}>
-                    <span class="font-bold">.</span>
-                  </Show>
-                </div>
-              </div>
-            )}
-          </For>
-        </div>
+        <table class="mx-auto rounded-lg">
+          <tbody>
+            <tr class="text-right text-xs text-gray-500">
+              <td class="border border-gray-200 px-2">Rang</td>
+              <For each={entries()}>
+                {([i]) => <td class="border border-gray-200 px-2 text-center">{tex`${i}`}</td>}
+              </For>
+            </tr>
+            <tr class="text-lg">
+              <td class="border border-gray-200 px-2 text-right text-xs text-gray-500">
+                {props.base !== 2 ? 'Chiffre' : 'Bit'}
+              </td>
+              <For each={entries()}>
+                {([i]) => (
+                  <td class="border border-gray-200 bg-blue-100 px-2 py-2 text-center">
+                    <input
+                      class="font-mono font-bold text-blue-950"
+                      type="number"
+                      onInput={(e) => changeBit(Number(i), Number(e.target.value))}
+                      value={bits()[Number(i)] ?? 0}
+                      max={props.base - 1}
+                      min={0}
+                      disabled={props.mode === 'decimal'}
+                    />
+                  </td>
+                )}
+              </For>
+            </tr>
+            <tr class="text-right text-xs text-gray-500">
+              <td class="border border-gray-200 px-2">Poids</td>
+              <For each={entries()}>
+                {([i]) => (
+                  <td class="border border-gray-200 p-2 text-center">{tex`${props.base}^{${i}}`}</td>
+                )}
+              </For>
+            </tr>
+          </tbody>
+        </table>
       </div>
       <Show when={props.showCalculation}>
         {tex`${entries()
@@ -430,5 +442,85 @@ export function Norm(props: { x: number[] }) {
       ]}
       check={(code) => code.includes('numpy') && code.includes('linalg.norm')}
     />
+  )
+}
+
+export function Review() {
+  return (
+    <Sequence id="final-exercises">
+      <PythonCode
+        prompt={
+          <p>
+            Avec l'aide de <code>numpy</code>, calculez le volume du parallélépipède engendré par
+            les vecteurs {tex`\vec a = (1, 2, 3)`}, {tex`\vec b = (4, 5, 6)`} et{' '}
+            {tex`\vec c = (7, 8, 9)`}.
+          </p>
+        }
+        tests={[
+          {
+            test: null,
+            check: async ({ result }) => {
+              const { result: answer } = await python.output(dedent /* python */ `
+                import numpy as np
+                a = np.array([1, 2, 3])
+                b = np.array([4, 5, 6])
+                c = np.array([7, 8, 9])
+                np.abs(np.dot(a, np.cross(b, c)))
+              `)
+              return result === answer
+            },
+          },
+        ]}
+        check={(code) => code.includes('numpy') && code.includes('cross') && code.includes('dot')}
+      />
+      <PythonCode
+        prompt={
+          <p>
+            Avec l'aide de <code>numpy</code>, calculez la distance entre les {tex`A(-1, 7, -8)`} et{' '}
+            {tex`B(4, -17, -6)`}.
+          </p>
+        }
+        tests={[
+          {
+            test: null,
+            check: async ({ result }) => {
+              const { result: answer } = await python.output(dedent /* python */ `
+                import numpy as np
+                A = np.array([-1, 7, -8])
+                B = np.array([4, -17, -6])
+                np.linalg.norm(A - B)
+              `)
+              return result === answer
+            },
+          },
+        ]}
+        check={(code) => code.includes('numpy')}
+      />
+      <PythonCode
+        prompt={
+          <p>
+            Avec l'aide de <code>numpy</code>, calculez l'angle <strong>en degrés</strong> entre les
+            vecteurs {tex`\vec a = (4, -3, 2, 9)`} et {tex`\vec b = (-6, 1, 13, -4)`}.
+          </p>
+        }
+        tests={[
+          {
+            test: null,
+            check: async ({ result }) => {
+              const { result: answer } = await python.output(dedent /* python */ `
+                import numpy as np
+                a = np.array([4, -3, 2, 9])
+                b = np.array([-6, 1, 13, -4])
+                cos_theta = np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+                theta = np.arccos(cos_theta)
+                np.degrees(theta)
+              `)
+              return result === answer
+            },
+          },
+        ]}
+        check={(code) => code.includes('numpy') && code.includes('arccos')}
+      />
+    </Sequence>
   )
 }

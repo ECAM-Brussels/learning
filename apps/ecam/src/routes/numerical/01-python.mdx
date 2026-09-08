@@ -9,6 +9,7 @@ import {
   LinearCombination,
   Norm,
   Print,
+  Review,
   Variables,
   Vectorization,
   VectorProduct,
@@ -210,24 +211,24 @@ math.sqrt(2)
 
 Voici un tableau récapitulatif des fonctions mathématiques les plus courantes en Python:
 
-| Opération ou concept      | Exemple                   | Code Python       |
-| ------------------------- | ------------------------- | ----------------- |
-| Racine carrée             | $\sqrt{7}$                | `math.sqrt(7)`    |
-| Racine cubique            | $\sqrt[3]{7}$             | `7 ** (1 / 3)`    |
-| Sinus                     | $\sin 7$                  | `math.sin(7)`     |
-| Cosinus                   | $\cos 7$                  | `math.cos(7)`     |
-| Tangente                  | $\tan 7$                  | `math.tan(7)`     |
-| Arcsinus                  | $\arcsin 1$               | `math.asin(1)`    |
-| Arccosinus                | $\arccos 1$               | `math.acos(1)`    |
-| Arctangente               | $\arctan 1$               | `math.atan(1)`    |
-| Convertir en degrés       | $7 \cdot \frac{180}{\pi}$ | `math.degrees(7)` |
-| Convertir en radians      | $7 \cdot \frac{\pi}{180}$ | `math.radians(7)` |
-| Exponentielle en base $e$ | $e^7$                     | `math.exp(7)`     |
-| Logarithme népérien       | $\ln 7$                   | `math.log(7)`     |
-| Logarithme base $10$      | $\log_{10} 7$             | `math.log(7, 10)` |
-| Le nombre $\pi$           | $\pi$                     | `math.pi`         |
-| Le nombre $e$             | $e$                       | `math.e`          |
-| Notation scientifique     | $1.3 \cdot 10^{-9}$       | `1.3e-9`          |
+| Opération ou concept      | Exemple                        | Code Python       |
+| ------------------------- | ------------------------------ | ----------------- |
+| Racine carrée             | $\sqrt{7}$                     | `math.sqrt(7)`    |
+| Racine cubique            | $\sqrt[3]{7}$                  | `7 ** (1 / 3)`    |
+| Sinus                     | $\sin 7$                       | `math.sin(7)`     |
+| Cosinus                   | $\cos 7$                       | `math.cos(7)`     |
+| Tangente                  | $\tan 7$                       | `math.tan(7)`     |
+| Arcsinus                  | $\arcsin 1$                    | `math.asin(1)`    |
+| Arccosinus                | $\arccos 1$                    | `math.acos(1)`    |
+| Arctangente               | $\arctan 1$                    | `math.atan(1)`    |
+| Convertir en degrés       | {tex`7 \cdot \frac{180}{\pi}`} | `math.degrees(7)` |
+| Convertir en radians      | {tex`7 \cdot \frac{\pi}{180}`} | `math.radians(7)` |
+| Exponentielle en base $e$ | $e^7$                          | `math.exp(7)`     |
+| Logarithme népérien       | $\ln 7$                        | `math.log(7)`     |
+| Logarithme base $10$      | $\log_{10} 7$                  | `math.log(7, 10)` |
+| Le nombre $\pi$           | $\pi$                          | `math.pi`         |
+| Le nombre $e$             | $e$                            | `math.e`          |
+| Notation scientifique     | $1.3 \cdot 10^{-9}$            | `1.3e-9`          |
 
 :::remark
 Attention, les fonctions trigonométriques utilisent les **radians** par défaut.
@@ -725,7 +726,7 @@ on peut calculer l'angle entre deux vecteurs $\vec a$ et $\vec b$ via:
 `}
 
 :::example
-Calculez l'angle en degrés entre les vecteurs $\vec a = (1, 2, 3)$ et $\vec b = (4, 5, 6)$.
+Calculez l'angle entre les vecteurs $\vec a = (1, 2, 3)$ et $\vec b = (4, 5, 6)$.
 
 ```python run
 import numpy as np
@@ -736,14 +737,12 @@ b = np.array([4, 5, 6])
 cos_theta = np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 theta = np.arccos(cos_theta)
 
-# Par défaut, arccos retourne l'angle en radians
-# il faut donc le convertir en degrés
-theta_deg = np.degrees(theta)
-
-theta_deg
+theta
 ```
 
 :::
+
+<Review />
 
 # Le binaire
 
@@ -766,7 +765,7 @@ Ceci signifie les choses suivantes:
 
 En _binaire_ (base $2$), la situation est similaire
 
-- Nous utilisons $2$ _chiffres_: $0$, $1$.
+- Nous utilisons $2$ _chiffres_: `0`, `1`.
 - La valeur des chiffres dépend de la _position_ dans le nombre,
   et est multipliée par une _puissance de $2$_.
 - Multiplier un nombre par $2$ revient à _décaler les chiffres d'une position vers la gauche_.
@@ -777,6 +776,19 @@ Pour les nombres entiers, la base $10$ et la base $2$ sont essentiellement équi
 à la différence que la base $2$ nécessite plus de chiffres pour représenter un nombre.
 Nous verrons que la situation est plus complexe pour les nombres non entiers.
 
+:::remark
+
+Certains nombres ont une signification en binaire **et** en base $10$.
+Par exemple, en binaire, <code>10</code> (qu'on lira "un zéro") signifie $2$,
+
+$$
+\texttt{10} = 1 \cdot 2^1 + 0 \cdot 2^0 = 2
+$$
+
+Pour lever l'ambiguité, on écrira $(\texttt{10})_2$ pour insister qu'on est en base $2$.
+
+:::
+
 ## Représentations finies et exactes
 
 L'ordinateur ne peut stocker qu'un nombre fini de **bits** ($0$ ou $1$).
@@ -784,7 +796,7 @@ Par conséquent, le nombre
 
 {tex`
 
-0.1010101010101010...
+\texttt{0.1010101010101010\dots}
 
 `}
 
@@ -800,11 +812,13 @@ qui a comme dénominateur **une puissance de $10$**.
 
 :::example
 
-- Le nombre $67$ peut s'écrire comme la fraction $\displaystyle \frac{67}{10^0}$.
+- Le nombre $67$ peut s'écrire comme la fraction $\displaystyle \frac{67}{10^0}$,
 
-- Le nombre $0.375$ peut s'écrire comme la fraction $\displaystyle \frac{375}{10^3}$.
+- Le nombre $0.375$ peut s'écrire comme la fraction $\displaystyle \frac{375}{10^3}$,
+  la division par $10^3$ permettant de décaler la virgule de trois positions vers la gauche.
 
 - Le nombre $45.1234$ peut s'écrire comme la fraction $\displaystyle \frac{451234}{10^4}$.
+  la division par $10^4$ permettant de décaler la virgule de trois positions vers la gauche.
 
 - Le nombre $\displaystyle \frac 1 3 = 0.33333\ldots$ n'est **pas représentable**
   puisqu'il faudrait une infinité de chiffres pour le stocker.
@@ -817,9 +831,11 @@ qui a comme dénominateur **une puissance de $2$**
 
 :::example
 
-- Le nombre binaire $(10.11)_2$ peut s'écrire comme la fraction {tex`\displaystyle \frac{(1011)_2}{2^2}`}.
+- Le nombre binaire $(\texttt{10.11})_2$ peut s'écrire comme la fraction {tex`\displaystyle \frac{(\texttt{1011})_2}{2^2}`},
+  la division par $2^2$ permettant de décaler la virgule de deux positions vers la gauche.
 
-- Le nombre binaire $(1101.101)_2$ peut s'écrire comme la fraction {tex`\displaystyle \frac{(1101101)_2}{2^3}`}.
+- Le nombre binaire $(\texttt{1101.101})_2$ peut s'écrire comme la fraction {tex`\displaystyle \frac{(\texttt{1101101})_2}{2^3}`},
+  la division par $2^3$ permettant de décaler la virgule de trois positions vers la gauche.
 
 :::
 
