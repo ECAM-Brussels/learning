@@ -1,5 +1,6 @@
 import { defineMeta } from '@learning/components'
-import { hasPermissions } from '@learning/core'
+import { hasPermissions, Sequence } from '@learning/core'
+import { FunctionExercise } from './02-plots.exercises'
 
 export default defineMeta({
   title: 'Session 2: Fonctions et graphiques',
@@ -7,6 +8,94 @@ export default defineMeta({
 })
 
 # Fonctions et graphiques
+
+## Fonctions
+
+Une fonction est un morceau de code nommé qui est réutilisable.
+Il peut prendre en entrée des _paramètres inconnus_ qui pourront être spécifiés plus tard.
+
+:::example
+
+On définit une fonction `volume_cylindre` qui prend en entrée deux paramètres,
+le `rayon` et la `hauteur` d'un cylindre.
+
+```python run
+import numpy as np
+
+# On crée une fonction `volume_cylindre`
+# qui dépend de deux paramètres: `rayon` et `hauteur`
+def volume_cylindre(rayon, hauteur):
+    # On écrit notre code en terme de `rayon` et `hauteur`
+    # même si on ne connaît pas encore leurs valeurs.
+    # Attention, chaque ligne doit commencer par une indentation de 4 espaces,
+    # pour indiquer l'appartenance à la fonction.
+    volume = np.pi * rayon ** 2 * hauteur
+
+    # On spécifie le résultat final
+    return volume
+
+# A partir d'ici, on n'est plus dans la fonction,
+# puisqu'il n'y a plus d'indentation.
+
+# Calcul de volume de cylindre avec rayon = 2 et hauteur = 3,
+# puis avec rayon = 5 et hauteur = 10
+[volume_cylindre(2, 3), volume_cylindre(5, 10)]
+```
+
+La fonction `volume_cylindre` peut ensuite être utilisée autant de fois que l'on veut,
+avec les valeurs de `rayon` et de `hauteur` que l'on souhaite.
+
+:::
+
+L'anatomie d'une fonction est la suivante:
+
+```python
+def nom_de_la_fonction(parametre1, parametre2, ...):
+
+    # Code indenté de 4 espaces
+    # ...
+
+    return resultat_final
+```
+
+<Sequence id="functions">
+  <FunctionExercise
+    fnName="aire_carre"
+    prompt={
+      <p>
+        Définissez une fonction <code>aire_carre</code> qui prend en entrée un paramètre
+        <code>cote</code> et qui retourne l'aire d'un carré de côté <code>cote</code>.
+      </p>
+    }
+    tests={[1, 2, 3, 7, 10].map((x) => [[x], String(x ** 2)])}
+  />
+  <FunctionExercise
+    fnName="aire_triangle"
+    prompt={
+      <p>
+        Définissez une fonction <code>aire_triangle</code> qui prend en entrée un paramètre{' '}
+        <code>cote</code> et qui retourne l'aire d'un <strong>triangle équilatéral</strong> de côté{' '}
+        <code>cote</code>.
+      </p>
+    }
+    tests={[1, 2, 3, 4, 5].map((x) => [[x], String((x ** 2 * Math.sin(Math.PI / 3)) / 2)])}
+  />
+  <FunctionExercise
+    fnName="angle_vecteurs"
+    prompt={
+      <p>
+        Définissez une fonction <code>angle_vecteurs</code> qui prend en entrée deux listes{' '}
+        <code>a</code> et <code>b</code> et qui retourne l'angle <strong>en degrés</strong> entre
+        les vecteurs associés à ces listes.
+      </p>
+    }
+    tests={[
+      [['[1, 0]', '[0, 1]'], '90'],
+      [['[1, 0]', '[1, 0]'], '0'],
+      [['[1, 0]', '[-1, 0]'], '180'],
+    ]}
+  />
+</Sequence>
 
 ## Graphe d'une fonction
 

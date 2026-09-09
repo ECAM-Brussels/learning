@@ -4,6 +4,22 @@ export default defineMeta({
   title: 'Créer un exercice',
 })
 
+# Créer un choix multiple
+
+```mdx
+import { MultipleChoice } from '@learning/exercises/MultipleChoice'
+
+<MultipleChoice
+  prompt={<p>Que vaut 1 + 1?</p>}
+  options={{
+    A: 'A',
+    B: <code>B</code>
+    C: <>Option C</>,
+  }}
+  grade={(sel) => sel.equals(['A'])}
+/>
+```
+
 # Créer un exercice
 
 ```mdx
