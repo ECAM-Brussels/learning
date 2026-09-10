@@ -1,8 +1,15 @@
 import { BreadCrumbs, Crumb, Page } from '@learning/components'
 import { getUser } from '@learning/core'
+import { type RouteDefinition } from '@solidjs/router'
 import type { JSX } from '@solidjs/web/jsx-runtime'
 import { createMemo, Show } from 'solid-js'
 import { paths } from '../../router'
+
+export const route = {
+  preload() {
+    getUser()
+  },
+} satisfies RouteDefinition
 
 export default function Layout(props: { children: JSX.Element }) {
   const user = createMemo(() => getUser())
