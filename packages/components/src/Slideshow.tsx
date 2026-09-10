@@ -1,4 +1,4 @@
-import type { JSX } from 'solid-js/jsx-runtime'
+import type { JSX } from '@solidjs/web'
 
 /**
  * Slideshow component to display a series of slides

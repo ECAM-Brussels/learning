@@ -1,5 +1,5 @@
+import type { JSX } from '@solidjs/web'
 import { Loading, Show } from 'solid-js'
-import type { JSX } from 'solid-js/jsx-runtime'
 
 type Props = {
   class?: string
