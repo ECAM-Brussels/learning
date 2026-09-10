@@ -17,7 +17,7 @@
     "valibot": "^1.4.2"
   },
   "scripts": {
-    "dev": "docker compose up --build",
+    "dev": "docker compose up",
     "db:push": "drizzle-kit push --force"
   }
 }

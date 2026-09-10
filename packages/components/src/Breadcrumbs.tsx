@@ -1,17 +1,21 @@
 import { faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import { Title } from '@solidjs/meta'
+import type { PathEnd } from '@solidjs/router'
 import { type JSX } from '@solidjs/web'
 import { createContext, createStore, For, omit, onSettled, Show, useContext } from 'solid-js'
 import { Fa } from './Fa'
 
-type Crumb = { href: string; title: string }
-const CrumbContext = createContext<{ level: number; crumbs: readonly Crumb[] } | null>(null)
+type Crumb = { href: PathEnd | string; title: string }
+const CrumbContext = createContext<{ level: number; crumbs: Crumb[] }>({
+  level: 0,
+  crumbs: [],
+})
 
 export function BreadCrumbs() {
   const context = useContext(CrumbContext)
   return (
     <ul class="not-prose mb-4 flex list-none gap-2 p-0 text-sm text-gray-400">
-      <For each={context?.crumbs}>
+      <For each={context.crumbs}>
         {(crumb, i) => (
           <>
             <li>
@@ -36,23 +40,22 @@ export function Crumb(
 ) {
   const crumb = omit(props, 'children')
   const context = useContext(CrumbContext)
-  const [crumbs, setCrumbs] = createStore<Crumb[]>(context?.crumbs ?? [])
-  const position = context?.level ?? 0
+  const [crumbs, setCrumbs] = createStore(context.crumbs)
 
   onSettled(() => {
     setCrumbs((s) => {
-      s[position] = crumb
+      s[context.level] = crumb
     })
 
     return () => {
       setCrumbs((s) => {
-        s.splice(position, 1)
+        s.splice(context.level, 1)
       })
     }
   })
 
   return (
-    <CrumbContext value={{ level: position + 1, crumbs }}>
+    <CrumbContext value={{ level: context.level + 1, crumbs }}>
       <Title>{props.title}</Title>
       {props.children}
     </CrumbContext>

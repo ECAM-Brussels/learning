@@ -4,8 +4,10 @@ import { Dynamic, type JSX } from '@solidjs/web'
 import { mapValues } from 'es-toolkit'
 import {
   action,
+  createEffect,
   createMemo,
   createOptimistic,
+  createSignal,
   createStore,
   omit,
   refresh,
@@ -18,6 +20,7 @@ import * as v from 'valibot'
 import { getUser } from '../auth'
 import { expr, Expression } from '../expr'
 import { hasPermissions } from '../permissions'
+import { createIsVisible } from '../visibility'
 import { StepContext } from './context'
 import local from './context.local'
 import remote from './context.remote'
@@ -248,6 +251,20 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   })
 
   /**
+   * Save on load
+   */
+  const [form, setForm] = createSignal<HTMLFormElement | null>(null)
+  const visible = createIsVisible(form)
+  createEffect(
+    () => [visible(), step().submitted, fetched()] as const,
+    ([isVisible, submitted, fetched]) => {
+      if (isVisible && fetched === null && !submitted) {
+        submit({})
+      }
+    },
+  )
+
+  /**
    * Handle resetting the whole exercise
    */
   const canReset = createMemo(async () => {
@@ -332,23 +349,30 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   return (
     <div class={props.class}>
       <StepBoundary fallback="Chargement de l'exercice...">
-        <Show when={!resetting()}>
-          <Dynamic
-            component={props.prompt}
-            data={step().data}
-            inputs={fields()}
-            state={promptState}
-          />
-        </Show>
-        <Show when={!step().submitted}>
-          <button
-            class="block rounded-lg bg-green-800 px-3 py-2 text-green-100 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
-            disabled={submitting()}
-            onClick={() => submit(state)}
-          >
-            Soumettre
-          </button>
-        </Show>
+        <form
+          ref={setForm}
+          onSubmit={(e) => {
+            e.preventDefault()
+            submit(state)
+          }}
+        >
+          <Show when={!resetting()}>
+            <Dynamic
+              component={props.prompt}
+              data={step().data}
+              inputs={fields()}
+              state={promptState}
+            />
+          </Show>
+          <Show when={!step().submitted}>
+            <button
+              class="block rounded-lg bg-green-800 px-3 py-2 text-green-100 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+              disabled={submitting()}
+            >
+              Soumettre
+            </button>
+          </Show>
+        </form>
       </StepBoundary>
       <Show when={step().submitted && !resetting()}>
         <StepBoundary fallback="Chargement du feedback..." offset={1}>
