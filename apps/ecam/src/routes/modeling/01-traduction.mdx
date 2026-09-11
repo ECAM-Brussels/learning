@@ -2,6 +2,7 @@ import { createMemo, createSignal, Show } from 'solid-js'
 import { hasPermissions, Sequence, tex, Exercise, expr } from '@learning/core'
 import { defineMeta, Attempt, CheckMark } from '@learning/components'
 import { PythonCode } from '@learning/exercises/python/Code'
+import { MultipleChoice } from '@learning/exercises/MultipleChoice'
 import { sample } from 'es-toolkit'
 import {
   Calculator,
@@ -146,5 +147,48 @@ _la somme, la différence, le produit_ et _le quotient._
 
 ## La distance
 
-Qu'est-ce que la _distance_ entre deux nombres réels a et b ? Essayons de le découvrir dans la séquence d'exercices
-suivantes. Sélectionnez toutes les bonnes réponses:
+Qu'est-ce que la _distance_ entre deux nombres réels a et b ?
+Essayons de le découvrir dans la séquence d'exercices suivantes.
+Sélectionnez toutes les bonnes réponses:
+
+<Sequence id="distance">
+  <MultipleChoice
+    prompt={
+      <p>
+        Quelle est la distance entre {tex`0`} et {tex`4`} ?
+      </p>
+    }
+    options={{
+      A: tex`4`,
+      B: tex`-4`,
+      C: tex`8`,
+    }}
+    grade={(sel) => sel.equals(['A'])}
+  />
+  <MultipleChoice
+    prompt={
+      <p>
+        Quelle est la distance entre {tex`0`} et {tex`-4`} ?
+      </p>
+    }
+    options={{
+      A: tex`-4`,
+      B: tex`4`,
+      C: tex`8`,
+    }}
+    grade={(sel) => sel.equals(['B'])}
+  />
+  <MultipleChoice
+    prompt={
+      <p>
+        Pour un nombre réel {tex`a > 0`}, quelle est la distance entre {tex`0`} et {tex`a`} ?
+      </p>
+    }
+    options={{
+      A: tex`-a`,
+      B: tex`|a|`,
+      C: tex`a`,
+    }}
+    grade={(sel) => sel.length === 2 && sel.includes('B') && sel.includes('C')}
+  />
+</Sequence>
