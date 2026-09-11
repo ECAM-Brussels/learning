@@ -1,6 +1,13 @@
 import banner from './banner.png'
+import { defineMeta } from '@learning/components'
+import { hasPermissions } from '@learning/core'
 
 <img src={banner} class="h-90 w-full rounded-xl object-cover opacity-90" />
+
+export default defineMeta({
+  title: 'Mathématiques de base',
+  authorized: () => hasPermissions(['draft:read']),
+})
 
 # Mathématiques de base
 
