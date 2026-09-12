@@ -11,7 +11,7 @@ export const Root = createStep({
   grade: (ctx) => ctx.data.expr.checkRoot(ctx.inputs.root),
   prompt: (ctx) => (
     <>
-      <p>Trouvez une racine de {tex`${ctx.data.expr}`}</p>
+      <p>Déterminez une racine de {tex`${ctx.data.expr}`}</p>
       <Attempt>
         {tex`x =`} {ctx.inputs.root}
       </Attempt>
