@@ -3,6 +3,7 @@ import { createContext, useContext, type Component, type ParentComponent } from 
 type LowercaseKey = `${Lowercase<string>}${string}`
 type Components = Partial<
   {
+    a: ParentComponent<{ href?: string }>
     div: ParentComponent<{ 'data-type'?: string }>
     Code: Component<{
       lang: 'python'
@@ -24,7 +25,7 @@ type Components = Partial<
 >
 
 export const MDXContext = createContext<Components>({
-  a: (props) => <a {...props} />,
+  a: (props) => <a {...props} target={props.href?.startsWith('http') ? '_blank' : '_self'} />,
   blockquote: (props) => <blockquote {...props} />,
   code: (props) => <code {...props} />,
   details: (props) => <details {...props} />,
