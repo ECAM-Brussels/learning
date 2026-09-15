@@ -27,7 +27,7 @@ Nous vous invitons à modifier les morceaux de code,
 et à **soumettre les exercices**
 pour vérifier vos réponses et _sauvegarder votre progrès_.
 
-:::exercise
+:::exercise[Hello world]
 
 Pour votre premier exercice,
 nous allons commercer par afficher un message à l'écran.
@@ -44,7 +44,7 @@ La première chose que nous apprendrons est d'_utiliser Python comme une simple 
 La syntaxe est relativement intuitive,
 comme le montre l'exemple suivant:
 
-:::example
+:::example[Opérations arithmétiques]
 
 ```python run
 (3 + 5) * 2
@@ -75,9 +75,11 @@ Nous attirons votre attention sur les points suivants:
 
 Nous vous invitons maintenant à résoudre les exercices suivants:
 
-:::exercise
+:::exercise[Opérations arithmétiques]
 
 <Sequence id="python-as-calculator">
+  <Calculator prompt="4^3" answer={4 ** 3} />
+  <Calculator prompt="10^{15} + 0.01" answer={10 ** 15 + 0.01} />
   <Calculator prompt="0.1 \cdot 0.1" answer={0.1 * 0.1} inexact={['0.1']} />
   <Calculator prompt="1.1 + 2.2" answer={1.1 + 2.2} inexact={['1.1', '2.2']} />
   <Calculator
@@ -86,10 +88,8 @@ Nous vous invitons maintenant à résoudre les exercices suivants:
     inexact={['0.1', '0.3']}
   />
   <Calculator prompt="i^2" answer="(-1+0j)" />
-  <Calculator prompt="(3 + 2i)^5" answer="(-597+122j)" />
   <Calculator prompt="\sqrt[3]{5}" answer={5 ** (1 / 3)} />
-  <Calculator prompt="4^3" answer={4 ** 3} />
-  <Calculator prompt="10^{15} + 0.01" answer={10 ** 15 + 0.01} />
+  <Calculator prompt="(3 + 2i)^5" answer="(-597+122j)" />
 </Sequence>
 
 :::
@@ -198,7 +198,7 @@ Les instructions `import` ne doivent être écrites qu'une seule fois,
 et se trouvent généralement au début du code,
 comme le montre l'exemple ci-dessous.
 
-:::example
+:::example[Bibliothèque math]
 Pour calculer la racine carrée de $2$,
 on écrit:
 
@@ -231,11 +231,11 @@ Voici un tableau récapitulatif des fonctions mathématiques les plus courantes 
 | Le nombre $e$             | $e$                            | `math.e`          |
 | Notation scientifique     | $1.3 \cdot 10^{-9}$            | `1.3e-9`          |
 
-:::remark
+:::remark[Radians]
 Attention, les fonctions trigonométriques utilisent les **radians** par défaut.
 :::
 
-:::example
+:::example[Trigonométrie]
 
 Calculez le sinus de $30^\circ$.
 
@@ -250,11 +250,11 @@ math.sin(theta)
 
 :::
 
-:::exercice
+:::exercice[Bibliothèque math]
 
 <Sequence id="math-library">
   <Calculator prompt="\sqrt{67}" answer={Math.sqrt(67)} />
-  <Calculator prompt="\sin {1}" answer={Math.sin(1)} />
+  <Calculator prompt="\cos {1}" answer={Math.cos(1)} />
   <Calculator prompt="\sin{\frac \pi 4}" answer={Math.sin(Math.PI / 4)} />
   <Calculator prompt={`\\log_{10}(85)`} answer={Math.log10(85)} />
   <Calculator prompt="-\\log_{10} (1.05 \cdot 10^{-5})" answer={-Math.log10(1.05 * 10 ** -5)}>
@@ -265,7 +265,7 @@ math.sin(theta)
 
 :::
 
-:::remark
+:::remark[Imports]
 
 Il existe plusieurs manières d'importer les fonctions d'une bibliothèque en Python.
 
@@ -292,7 +292,7 @@ Ceci facilite la lecture pour les humains et pour les agents.
 Les variables permettent de stocker des valeurs pour les réutiliser plus tard.
 Elles jouent un rôle important pour rendre le code plus lisible et plus facile à maintenir.
 
-:::example
+:::example[Variables]
 Calculez le volume d'un cylindre de rayon $2$ et de hauteur $3$,
 en utilisant les variables `rayon` et `hauteur` pour le rayon et la hauteur.
 
@@ -386,7 +386,7 @@ liste = [2, 4, 6, 8, 10]
 liste[0] # Premier élément
 ```
 
-:::example
+:::example[Produit scalaire]
 
 ```python run
 v = [1, 2, 3]
@@ -438,7 +438,7 @@ on utilise la fonction `numpy.array`,
 en lui passant une liste
 qui contient les coordonnées du vecteur.
 
-:::example
+:::example[Vecteurs avec numpy]
 Pour créer le vecteur $\vec v = (1, 2, 3)$,
 on écrit:
 
@@ -466,7 +466,7 @@ Pour additionner des vecteurs,
 il suffit d'utiliser l'opérateur `+` comme pour les nombres,
 à condition que les vecteurs aient les _mêmes dimensions_.
 
-:::example
+:::example[Addition de vecteurs]
 
 Pour calculer la somme $\vec v + \vec w$ avec $\vec v = (1, 2, 3)$ et $\vec w = (4, 5, 6)$,
 on écrit:
@@ -487,7 +487,7 @@ v + w
 Pour la multiplication scalaire d'un vecteur,
 on peut multiplier le vecteur par un nombre avec l'opérateur `*`.
 
-:::example
+:::example[Multiplication scalaire de vecteurs]
 
 Pour calculer $2 \vec v$ avec $\vec v = (1, 2, 3)$,
 on écrit:
@@ -506,7 +506,7 @@ v = np.array([1, 2, 3])
 
 On peut bien entendu combiner les deux opérations précédentes pour calculer des _combinaisons linéaires_ de vecteurs.
 
-:::example
+:::example[Combinaisons linéaires]
 Si $\vec v = (1, 2, 3)$ et $\vec w = (4, 5, 6)$,
 calcule $2 \vec v + 3 \vec w$.
 
@@ -563,7 +563,7 @@ w = np.array([4, 5, 6])
 
 Les produits scalaires et vectoriels se calculent avec les fonctions `np.dot` et `np.cross` respectivement.
 
-:::example
+:::example[Produits scalaires et vectoriels]
 
 <div class="lg:grid lg:grid-cols-2 lg:gap-8">
 
@@ -591,7 +591,7 @@ np.cross(a, b)
 
 :::
 
-:::remark
+:::remark[Conversions implicites]
 
 Pour les paresseux, `np.dot` et `np.cross` peuvent implicitement convertir en un vecteur si vous le souhaitez.
 L'exemple ci-dessus peut être réduit à:
@@ -625,7 +625,7 @@ np.cross([1, 2, 3], [4, 5, 6])
 
 La norme d'un vecteur peut se calculer avec la fonction `np.linalg.norm`.
 
-:::example
+:::example[Norme d'un vecteur]
 Calculez la norme du vecteur $\vec v = (1, 2, 3)$.
 
 ```python run
@@ -641,7 +641,7 @@ norme
 
 :::
 
-:::remark
+:::remark[Conversion implicite]
 
 Encore une fois, `np.linalg.norm` peut s'occuper de la conversion en vecteurs,
 de sorte qu'on aurait pu écrire:
@@ -726,7 +726,7 @@ on peut calculer l'angle entre deux vecteurs $\vec a$ et $\vec b$ via:
   = \frac{\vec a \cdot \vec b}{\|\vec a\| \|\vec b\|}
 `}
 
-:::example
+:::example[Angle entre deux vecteurs]
 Calculez l'angle entre les vecteurs $\vec a = (1, 2, 3)$ et $\vec b = (4, 5, 6)$.
 
 ```python run
