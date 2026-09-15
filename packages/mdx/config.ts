@@ -21,10 +21,22 @@ function component(name: string, attributes: Record<string, unknown>) {
 const directives = defineMdastPlugin({
   name: 'directives',
   containerDirective(node, ctx) {
+    const [labelNode, ...children] = node.children
+    const isLabel = Boolean(
+      (labelNode as { data?: { directiveLabel?: boolean } } | undefined)?.data?.directiveLabel,
+    )
+    const label = isLabel
+      ? (labelNode as unknown as { children: Array<{ value?: string }> }).children
+          .map(({ value }) => value ?? '')
+          .join('')
+      : undefined
+
+    ctx.setProperty(node, 'children', isLabel ? children : node.children)
     ctx.setProperty(node, 'data', {
       hName: 'div',
       hProperties: {
         'data-type': node.name,
+        'data-label': label,
         ...node.attributes,
       },
     })

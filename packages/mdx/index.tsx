@@ -4,7 +4,7 @@ type LowercaseKey = `${Lowercase<string>}${string}`
 type Components = Partial<
   {
     a: ParentComponent<{ href?: string }>
-    div: ParentComponent<{ 'data-type'?: string }>
+    div: ParentComponent<{ 'data-type'?: string; 'data-label'?: string }>
     Code: Component<{
       lang: 'python'
       children: string

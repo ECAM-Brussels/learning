@@ -15,7 +15,7 @@ import {
 } from '@learning/components'
 import { getUser, login, logout } from '@learning/core'
 import { MDXProvider } from '@learning/mdx'
-import type { PathEnd } from '@solidjs/router'
+import { useIsRouting, type PathEnd } from '@solidjs/router'
 import { createMemo, Match, Show, Switch, type ParentComponent } from 'solid-js'
 import { paths } from './router'
 
@@ -80,44 +80,50 @@ function Navbar() {
   )
 }
 
-export const Layout: ParentComponent = (props) => (
-  <MDXProvider
-    components={{
-      div: (attrs) => (
-        <Switch fallback={<div>{attrs.children}</div>}>
-          <Match when={attrs['data-type'] === 'example'}>
-            <Example {...attrs} />
-          </Match>
-          <Match when={attrs['data-type'] === 'exercise'}>
-            <Exercise {...attrs} />
-          </Match>
-          <Match when={attrs['data-type'] === 'info'}>
-            <Info {...attrs} />
-          </Match>
-          <Match when={attrs['data-type'] === 'question'}>
-            <Question {...attrs} />
-          </Match>
-          <Match when={attrs['data-type'] === 'remark'}>
-            <Remark {...attrs} />
-          </Match>
-        </Switch>
-      ),
-      table: (attrs) => <table class="mx-auto max-w-4/5" {...attrs} />,
-      tr: (attrs) => <tr class="px-2 even:bg-slate-50" {...attrs} />,
-      td: (attrs) => <td class="px-2" {...attrs} />,
-      th: (attrs) => <th class="px-2" {...attrs} />,
-      Code,
-      Highlight,
-      Latex,
-    }}
-  >
-    <Navbar />
-    <div class="container mx-auto">
-      <Boundary>
-        <Crumb href="/" title="Accueil">
-          {props.children}
-        </Crumb>
-      </Boundary>
-    </div>
-  </MDXProvider>
-)
+export const Layout: ParentComponent = (props) => {
+  const routing = useIsRouting()
+  return (
+    <MDXProvider
+      components={{
+        div: (attrs) => (
+          <Switch fallback={<div>{attrs.children}</div>}>
+            <Match when={attrs['data-type'] === 'example'}>
+              <Example {...attrs} title={attrs['data-label']} />
+            </Match>
+            <Match when={attrs['data-type'] === 'exercise'}>
+              <Exercise {...attrs} title={attrs['data-label']} />
+            </Match>
+            <Match when={attrs['data-type'] === 'info'}>
+              <Info {...attrs} title={attrs['data-label']} />
+            </Match>
+            <Match when={attrs['data-type'] === 'question'}>
+              <Question {...attrs} title={attrs['data-label']} />
+            </Match>
+            <Match when={attrs['data-type'] === 'remark'}>
+              <Remark {...attrs} title={attrs['data-label']} />
+            </Match>
+          </Switch>
+        ),
+        table: (attrs) => <table class="mx-auto max-w-4/5" {...attrs} />,
+        tr: (attrs) => <tr class="px-2 even:bg-slate-50" {...attrs} />,
+        td: (attrs) => <td class="px-2" {...attrs} />,
+        th: (attrs) => <th class="px-2" {...attrs} />,
+        Code,
+        Highlight,
+        Latex,
+      }}
+    >
+      <Navbar />
+      <div class="container mx-auto">
+        <Boundary>
+          <Crumb href="/" title="Accueil">
+            <Show when={routing()}>
+              <div class="my-4 rounded-xl bg-white p-4">Chargement de la page...</div>
+            </Show>
+            <div class={{ 'opacity-50': routing() }}>{props.children}</div>
+          </Crumb>
+        </Boundary>
+      </div>
+    </MDXProvider>
+  )
+}
