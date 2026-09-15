@@ -22,7 +22,8 @@ export default {
             parseInt(k.split(':').at(-1)!),
             answered.length > 0 ? answered.every((part: StoredStep) => part.correct) : undefined,
           ]
-        }),
+        })
+        .filter(([, correct]) => correct !== undefined),
     )
   },
   saveStep: async (ctx: StepContext, step: StoredStep) => {
