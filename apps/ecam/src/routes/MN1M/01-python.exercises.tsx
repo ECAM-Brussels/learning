@@ -1,10 +1,11 @@
 import { Attempt, CheckMark, Highlight, Question } from '@learning/components'
-import { Exercise, expr, Sequence, tex } from '@learning/core'
+import { createDerivedStep, Exercise, expr, Sequence, tex } from '@learning/core'
 import { PythonCode } from '@learning/exercises/python/Code'
 import { python, type FinalOutput } from '@learning/repl'
 import { type JSX } from '@solidjs/web'
-import { allKeyed, dedent } from 'es-toolkit'
+import { allKeyed, dedent, randomInt } from 'es-toolkit'
 import { createMemo, createProjection, createSignal, For, merge, Show } from 'solid-js'
+import * as v from 'valibot'
 
 export function Integer(rawProps: {
   mode?: 'decimal' | 'base' | 'both'
@@ -413,37 +414,41 @@ export function Vectorization(props: { x: string[]; fn: string; latex: (x: strin
   )
 }
 
-export function Norm(props: { x: number[] }) {
-  return (
-    <PythonCode
-      prompt={
-        <>
-          <p>
-            Avec l'aide de <code>numpy</code>, calculez la norme du vecteur
-          </p>
-          {tex`
-            \begin{pmatrix}
-              ${props.x.join('\\\\')}
-            \end{pmatrix}
-          `}
-        </>
-      }
-      tests={[
-        {
-          test: null,
-          check: async ({ result }) => {
-            const { result: answer } = await python.output(dedent /* python */ `
-              import numpy as np
-              np.linalg.norm([${props.x.join(',')}])
-            `)
-            return result === answer
-          },
-        },
-      ]}
-      check={(code) => code.includes('numpy') && code.includes('linalg.norm')}
-    />
-  )
-}
+const Norm = createDerivedStep(PythonCode, { x: v.array(v.number()) }, (props) => ({
+  prompt: (
+    <>
+      <p>
+        Avec l'aide de <code>numpy</code>, calculez la norme du vecteur
+      </p>
+      {tex`
+        \begin{pmatrix}
+          ${props.x.join('\\\\')}
+        \end{pmatrix}
+      `}
+    </>
+  ),
+  tests: [
+    {
+      test: null,
+      check: async ({ result }) => {
+        const { result: answer } = await python.output(dedent /* python */ `
+          import numpy as np
+          np.linalg.norm([${props.x.join(',')}])
+        `)
+        return result === answer
+      },
+    },
+  ],
+}))
+
+export const NormSequence = () => (
+  <Sequence
+    id="norm"
+    next={() => (
+      <Norm data={() => ({ x: [randomInt(-20, 21), randomInt(-20, 21), randomInt(-20, 21)] })} />
+    )}
+  />
+)
 
 export function Review() {
   return (
