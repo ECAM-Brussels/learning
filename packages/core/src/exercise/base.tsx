@@ -401,11 +401,11 @@ export function Step<S extends StepSchema, F extends JsonObject>(
 
 export function createStep<S extends StepSchema, F extends JsonObject>(
   step: Omit<StepProps<S, F>, 'data'>,
-): Component<
-  { id?: string } & Pick<StepProps<S, F>, 'class' | 'feedback' | 'children'> &
-    (ObjectSchema<S['data'], 'input'> | { data: StepProps<S, F>['data'] })
-> {
-  return (props) => {
+) {
+  const StepComponent: Component<
+    { id?: string } & Pick<StepProps<S, F>, 'class' | 'feedback' | 'children'> &
+      (ObjectSchema<S['data'], 'input'> | { data: StepProps<S, F>['data'] })
+  > = (props) => {
     const data = omit(props, 'id', 'class', 'feedback', 'data', 'children') as
       ObjectSchema<S['data'], 'input'> | undefined
     return (
@@ -419,6 +419,42 @@ export function createStep<S extends StepSchema, F extends JsonObject>(
       />
     )
   }
+  return Object.assign(StepComponent, { config: step })
+}
+
+type StepComponent<S extends StepSchema, F extends JsonObject> = ReturnType<typeof createStep<S, F>>
+
+export function createDerivedStep<R extends RawShape, S extends StepSchema, F extends JsonObject>(
+  component: StepComponent<S, F>,
+  schema: R,
+  transform: (
+    data: ObjectSchema<NoInfer<R>, 'output'>,
+  ) => ObjectSchema<NoInfer<S>['data'], 'input'>,
+) {
+  const step = component.config
+  return createStep<{ data: R; inputs: S['inputs'] }, F>({
+    ...component.config,
+    schema: { data: schema, inputs: step.schema.inputs },
+    prompt: (props) => step.prompt({ ...props, data: transform(props.data) }),
+    grade: (ctx) => step.grade({ ...ctx, data: transform(ctx.data) }),
+    feedback: (props) => {
+      const Self: ComponentProps<NonNullable<typeof step.feedback>>['Self'] = (attrs) => {
+        return props.Self({
+          ...attrs,
+          data: props.data,
+          feedback: attrs.feedback
+            ? (feedbackProps) =>
+                attrs.feedback?.({
+                  ...feedbackProps,
+                  data: transform(feedbackProps.data),
+                  Self,
+                })
+            : undefined,
+        })
+      }
+      return step.feedback?.({ ...props, data: transform(props.data), Self })
+    },
+  })
 }
 
 function normalizeGrade<T extends boolean | [boolean, JsonObject]>(
