@@ -548,3 +548,28 @@ export function Review() {
     </Sequence>
   )
 }
+
+export function Input(props: { number: number; onChange?: (n: number) => void }) {
+  return (
+    <input
+      class="rounded border border-gray-500 p-2"
+      value={props.number}
+      onInput={(e) => {
+        const newNumber = parseFloat(e.target.value)
+        if (!isNaN(newNumber)) {
+          props.onChange?.(newNumber)
+        }
+      }}
+    />
+  )
+}
+
+export const BinaryRepresentation = (props: { value: number }) => {
+  const binary = () => props.value.toString(2)
+  return (
+    <code>
+      {binary()}
+      {(binary().split('.').at(1)?.length ?? 0) > 10 ? '...' : ''}
+    </code>
+  )
+}

@@ -3,9 +3,11 @@ import { hasPermissions, Sequence, tex } from '@learning/core'
 import { defineMeta } from '@learning/components'
 import { PythonCode } from '@learning/exercises/python/Code'
 import {
+  BinaryRepresentation,
   Calculator,
   getRep,
   Integer,
+  Input,
   LinearCombination,
   Print,
   Review,
@@ -103,40 +105,17 @@ La raison est que l'ordinateur utilise le **binaire** pour stocker les nombres.
 Voici quelques exemples de nombres décimaux et leur représentation binaire:
 
 export const [number, setNumber] = createSignal(0.3)
-export const binary = () => number().toString(2)
 export const real = createMemo(() => getRep(number()))
-export const Input = () => (
-  <input
-    class="rounded border border-gray-500 p-2"
-    value={number()}
-    onInput={(e) => {
-      const newNumber = parseFloat(e.target.value)
-      if (!isNaN(newNumber)) {
-        setNumber(newNumber)
-      } else {
-        setNumber(0)
-      }
-    }}
-  />
-)
-export const BinaryRepresentation = () => {
-  return (
-    <code>
-      {binary()}
-      {(binary().split('.').at(1)?.length ?? 0) > 10 ? '...' : ''}
-    </code>
-  )
-}
 
-| Nombre décimal (base $10$) | Représentation binaire (base $2$)                           |
-| -------------------------: | :---------------------------------------------------------- |
-|                        $0$ | `0`                                                         |
-|                        $1$ | `1`                                                         |
-|                        $2$ | `10`                                                        |
-|                       $10$ | `1010`                                                      |
-|                      $0.5$ | `0.1`                                                       |
-|                      $0.1$ | `0.0001100110011001100110011001100110011001100110011001101` |
-|                  <Input /> | <BinaryRepresentation />                                    |
+|                       Nombre décimal (base $10$) | Représentation binaire (base $2$)                           |
+| -----------------------------------------------: | :---------------------------------------------------------- |
+|                                              $0$ | `0`                                                         |
+|                                              $1$ | `1`                                                         |
+|                                              $2$ | `10`                                                        |
+|                                             $10$ | `1010`                                                      |
+|                                            $0.5$ | `0.1`                                                       |
+|                                            $0.1$ | `0.0001100110011001100110011001100110011001100110011001101` |
+| <Input number={number()} onChange={setNumber} /> | <BinaryRepresentation value={number()} />                   |
 
 Nous verrons dans une prochaine section
 comment convertir en binaire.
@@ -146,11 +125,11 @@ une **infinité de bits** ($0$ et $1$) pour être représentés exactement en bi
 En pratique,
 l'ordinateur **arrondit** et on perd en précision.
 
-| Nombre entré | Nombre utilisé en pratique                                  |
-| ------------ | ----------------------------------------------------------- |
-| $0.1$        | `0.1000000000000000055511151231257827021181583404541015625` |
-| $0.5$        | `0.5`                                                       |
-| <Input />    | <code>{real()}</code>                                       |
+| Nombre entré                                     | Nombre utilisé en pratique                                  |
+| ------------------------------------------------ | ----------------------------------------------------------- |
+| $0.1$                                            | `0.1000000000000000055511151231257827021181583404541015625` |
+| $0.5$                                            | `0.5`                                                       |
+| <Input number={number()} onChange={setNumber} /> | <BinaryRepresentation value={number()} />                   |
 
 Pour obtenir le nombre exact qui se cache derrière un nombre dans Python,
 vous pouvez utiliser le code suivant:
