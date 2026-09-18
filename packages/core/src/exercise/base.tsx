@@ -1,6 +1,6 @@
 import { Boundary, FeedbackContext, MathField } from '@learning/components'
 import { useLocation } from '@solidjs/router'
-import { Dynamic, type JSX } from '@solidjs/web'
+import { dynamic, Dynamic, type JSX } from '@solidjs/web'
 import { mapValues } from 'es-toolkit'
 import {
   action,
@@ -430,12 +430,17 @@ export function createDerivedStep<R extends RawShape, S extends StepSchema, F ex
   transform: (
     data: ObjectSchema<NoInfer<R>, 'output'>,
   ) => ObjectSchema<NoInfer<S>['data'], 'input'>,
+  patch: Partial<StepProps<{ data: R; inputs: S['inputs'] }, F>> = {},
 ) {
   const step = component.config
   return createStep<{ data: R; inputs: S['inputs'] }, F>({
-    ...component.config,
+    ...step,
     schema: { data: schema, inputs: step.schema.inputs },
-    prompt: (props) => step.prompt({ ...props, data: transform(props.data) }),
+    prompt: (props) => {
+      const Prompt = dynamic(() => step.prompt)
+      const data = createMemo(() => transform(props.data))
+      return <Prompt {...props} data={data()} />
+    },
     grade: (ctx) => step.grade({ ...ctx, data: transform(ctx.data) }),
     feedback: (props) => {
       const Self: ComponentProps<NonNullable<typeof step.feedback>>['Self'] = (attrs) => {
@@ -454,6 +459,7 @@ export function createDerivedStep<R extends RawShape, S extends StepSchema, F ex
       }
       return step.feedback?.({ ...props, data: transform(props.data), Self })
     },
+    ...patch,
   })
 }
 
