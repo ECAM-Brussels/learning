@@ -1,25 +1,6 @@
 import { createMemo, createSignal } from 'solid-js'
-import { hasPermissions, Sequence, tex } from '@learning/core'
-import { defineMeta } from '@learning/components'
-import { PythonCode } from '@learning/exercises/python/Code'
-import {
-  BinaryRepresentation,
-  Calculator,
-  getRep,
-  Integer,
-  Input,
-  LinearCombination,
-  Print,
-  Review,
-  Variables,
-  Vectorization,
-  VectorProduct,
-} from './01-python.exercises'
-
-export default defineMeta({
-  title: 'Séance 1: Introduction à Python',
-  authorized: () => hasPermissions(['draft:read']),
-})
+import { Sequence, tex } from '@learning/core'
+import * as Exercise from './01-python.exercises'
 
 # Introduction à Python
 
@@ -33,9 +14,9 @@ pour vérifier vos réponses et _sauvegarder votre progrès_.
 Pour votre premier exercice,
 nous allons commercer par afficher un message à l'écran.
 
-<Print id="hello-world" message="Vive Python" initialCode="print('Hello world')">
+<Exercise.Print id="hello-world" message="Vive Python" initialCode="print('Hello world')">
   Modifiez le code pour afficher le message `Vive Python` à la place de `Hello world`.
-</Print>
+</Exercise.Print>
 
 :::
 
@@ -79,18 +60,18 @@ Nous vous invitons maintenant à résoudre les exercices suivants:
 :::exercise[Opérations arithmétiques]
 
 <Sequence id="python-as-calculator">
-  <Calculator prompt="4^3" answer={4 ** 3} />
-  <Calculator prompt="10^{15} + 0.01" answer={10 ** 15 + 0.01} />
-  <Calculator prompt="0.1 \cdot 0.1" answer={0.1 * 0.1} inexact={['0.1']} />
-  <Calculator prompt="1.1 + 2.2" answer={1.1 + 2.2} inexact={['1.1', '2.2']} />
-  <Calculator
+  <Exercise.Calculator prompt="4^3" answer={4 ** 3} />
+  <Exercise.Calculator prompt="10^{15} + 0.01" answer={10 ** 15 + 0.01} />
+  <Exercise.Calculator prompt="0.1 \cdot 0.1" answer={0.1 * 0.1} inexact={['0.1']} />
+  <Exercise.Calculator prompt="1.1 + 2.2" answer={1.1 + 2.2} inexact={['1.1', '2.2']} />
+  <Exercise.Calculator
     prompt="0.1 + 0.1 + 0.1 - 0.3"
     answer={0.1 + 0.1 + 0.1 - 0.3}
     inexact={['0.1', '0.3']}
   />
-  <Calculator prompt="i^2" answer="(-1+0j)" />
-  <Calculator prompt="\sqrt[3]{5}" answer={5 ** (1 / 3)} />
-  <Calculator prompt="(3 + 2i)^5" answer="(-597+122j)" />
+  <Exercise.Calculator prompt="i^2" answer="(-1+0j)" />
+  <Exercise.Calculator prompt="\sqrt[3]{5}" answer={5 ** (1 / 3)} />
+  <Exercise.Calculator prompt="(3 + 2i)^5" answer="(-597+122j)" />
 </Sequence>
 
 :::
@@ -105,17 +86,17 @@ La raison est que l'ordinateur utilise le **binaire** pour stocker les nombres.
 Voici quelques exemples de nombres décimaux et leur représentation binaire:
 
 export const [number, setNumber] = createSignal(0.3)
-export const real = createMemo(() => getRep(number()))
+export const real = createMemo(() => Exercise.getRep(number()))
 
-|                       Nombre décimal (base $10$) | Représentation binaire (base $2$)                           |
-| -----------------------------------------------: | :---------------------------------------------------------- |
-|                                              $0$ | `0`                                                         |
-|                                              $1$ | `1`                                                         |
-|                                              $2$ | `10`                                                        |
-|                                             $10$ | `1010`                                                      |
-|                                            $0.5$ | `0.1`                                                       |
-|                                            $0.1$ | `0.0001100110011001100110011001100110011001100110011001101` |
-| <Input number={number()} onChange={setNumber} /> | <BinaryRepresentation value={number()} />                   |
+|                                Nombre décimal (base $10$) | Représentation binaire (base $2$)                           |
+| --------------------------------------------------------: | :---------------------------------------------------------- |
+|                                                       $0$ | `0`                                                         |
+|                                                       $1$ | `1`                                                         |
+|                                                       $2$ | `10`                                                        |
+|                                                      $10$ | `1010`                                                      |
+|                                                     $0.5$ | `0.1`                                                       |
+|                                                     $0.1$ | `0.0001100110011001100110011001100110011001100110011001101` |
+| <Exercise.Input number={number()} onChange={setNumber} /> | <Exercise.BinaryRepresentation value={number()} />          |
 
 Nous verrons dans une prochaine section
 comment convertir en binaire.
@@ -125,11 +106,11 @@ une **infinité de bits** ($0$ et $1$) pour être représentés exactement en bi
 En pratique,
 l'ordinateur **arrondit** et on perd en précision.
 
-| Nombre entré                                     | Nombre utilisé en pratique                                  |
-| ------------------------------------------------ | ----------------------------------------------------------- |
-| $0.1$                                            | `0.1000000000000000055511151231257827021181583404541015625` |
-| $0.5$                                            | `0.5`                                                       |
-| <Input number={number()} onChange={setNumber} /> | <BinaryRepresentation value={number()} />                   |
+| Nombre entré                                              | Nombre utilisé en pratique                                  |
+| --------------------------------------------------------- | ----------------------------------------------------------- |
+| $0.1$                                                     | `0.1000000000000000055511151231257827021181583404541015625` |
+| $0.5$                                                     | `0.5`                                                       |
+| <Exercise.Input number={number()} onChange={setNumber} /> | <Exercise.BinaryRepresentation value={number()} />          |
 
 Pour obtenir le nombre exact qui se cache derrière un nombre dans Python,
 vous pouvez utiliser le code suivant:
@@ -231,14 +212,17 @@ math.sin(theta)
 :::exercice[Bibliothèque math]
 
 <Sequence id="math-library">
-  <Calculator prompt="\sqrt{67}" answer={Math.sqrt(67)} />
-  <Calculator prompt="\cos {1}" answer={Math.cos(1)} />
-  <Calculator prompt="\sin{\frac \pi 4}" answer={Math.sin(Math.PI / 4)} />
-  <Calculator prompt={`\\log_{10}(85)`} answer={Math.log10(85)} />
-  <Calculator prompt="-\\log_{10} (1.05 \cdot 10^{-5})" answer={-Math.log10(1.05 * 10 ** -5)}>
+  <Exercise.Calculator prompt="\sqrt{67}" answer={Math.sqrt(67)} />
+  <Exercise.Calculator prompt="\cos {1}" answer={Math.cos(1)} />
+  <Exercise.Calculator prompt="\sin{\frac \pi 4}" answer={Math.sin(Math.PI / 4)} />
+  <Exercise.Calculator prompt={`\\log_{10}(85)`} answer={Math.log10(85)} />
+  <Exercise.Calculator
+    prompt="-\\log_{10} (1.05 \cdot 10^{-5})"
+    answer={-Math.log10(1.05 * 10 ** -5)}
+  >
     Calculer le pH d'une solution de concentration $C = 1.05 \cdot 10^{-5}$ mol/L. Pour rappel, le
     pH est défini par $\mathrm{pH} = -\log_{10} C$.
-  </Calculator>
+  </Exercise.Calculator>
 </Sequence>
 
 :::
@@ -299,7 +283,7 @@ Les avantages des variables sont les suivants:
 :::
 
 <Sequence id="variables">
-  <Variables
+  <Exercise.Variables
     vars={{ c: 5 }}
     answer={5 * 5}
     calculate={
@@ -308,7 +292,7 @@ Les avantages des variables sont les suivants:
       </>
     }
   />
-  <Variables
+  <Exercise.Variables
     vars={{ rayon: 7 }}
     answer={Math.PI * 7 ** 2}
     calculate={
@@ -317,7 +301,7 @@ Les avantages des variables sont les suivants:
       </>
     }
   />
-  <Variables
+  <Exercise.Variables
     vars={{ rayon: 4, hauteur: 10 }}
     answer={Math.PI * 4 ** 2 * 10}
     calculate={
@@ -326,7 +310,7 @@ Les avantages des variables sont les suivants:
       </>
     }
   />
-  <Variables
+  <Exercise.Variables
     vars={{ x: 3, y: 4, z: 5 }}
     answer={3 * 4 * 5}
     calculate={
@@ -500,35 +484,35 @@ w = np.array([4, 5, 6])
 :::
 
 <Sequence id="linear-combination">
-  <LinearCombination
+  <Exercise.LinearCombination
     c={[-2, 7]}
     v={[
       [1, -1, 0],
       [4, 3, 12],
     ]}
   />
-  <LinearCombination
+  <Exercise.LinearCombination
     c={[1, -1]}
     v={[
       [1, 2],
       [3, 4],
     ]}
   />
-  <LinearCombination
+  <Exercise.LinearCombination
     c={[0.5, 0.5]}
     v={[
       [1, 0],
       [0, 1],
     ]}
   />
-  <LinearCombination
+  <Exercise.LinearCombination
     c={[1, 2]}
     v={[
       [1, 2, 3],
       [4, 5, 6],
     ]}
   />
-  <LinearCombination
+  <Exercise.LinearCombination
     c={[3, -2]}
     v={[
       [1, 0, 0],
@@ -583,14 +567,14 @@ np.cross([1, 2, 3], [4, 5, 6])
 :::
 
 <Sequence id="vector-products">
-  <VectorProduct
+  <Exercise.VectorProduct
     type="dot"
     v={[
       [3, -1, 2],
       [0, -5, -3],
     ]}
   />
-  <VectorProduct
+  <Exercise.VectorProduct
     type="cross"
     v={[
       [3, -1, 2],
@@ -632,9 +616,7 @@ np.linalg.norm([1, 2, 3])
 
 :::
 
-import { NormSequence } from './01-python.exercises'
-
-<NormSequence />
+<Exercise.NormSequence />
 
 ### Vectorisation
 
@@ -667,27 +649,27 @@ Calculer l'image de plusieurs points en une commande
 sera très utile pour tracer les graphes des fonctions.
 
 <Sequence id="vectorization">
-  <Vectorization
+  <Exercise.Vectorization
     fn="sqrt"
     x={['0', '0.1', '0.2', '0.3', '0.4', '0.5']}
     latex={(x) => `\\sqrt{${x}}`}
   />
-  <Vectorization
+  <Exercise.Vectorization
     fn="sin"
     x={['0', 'np.pi/6', 'np.pi/4', 'np.pi/3', 'np.pi/2']}
     latex={(x) => `\\sin{\\left(${x.replace('np.pi', '\\pi')}\\right)}`}
   />
-  <Vectorization
+  <Exercise.Vectorization
     fn="tan"
     x={['0', '0.1', '0.2', '0.3', '0.4', '0.5']}
     latex={(x) => `\\tan{${x}}`}
   />
-  <Vectorization
+  <Exercise.Vectorization
     fn="exp"
     x={['0', '0.01', '0.02', '0.03', '0.04', '0.05']}
     latex={(x) => `e^{${x}}`}
   />
-  <Vectorization
+  <Exercise.Vectorization
     fn="log"
     x={['0', '0.1', '0.2', '0.3', '0.4', '0.5']}
     latex={(x) => `\\ln{${x}}`}
@@ -720,7 +702,7 @@ theta
 
 :::
 
-<Review />
+<Exercise.Review />
 
 # Le binaire
 
@@ -739,7 +721,7 @@ Ceci signifie les choses suivantes:
   et est multipliée par une _puissance de $10$_.
 - Multiplier un nombre par $10$ revient à _décaler les chiffres d'une position vers la gauche_.
 
-<Integer mode="both" base={10} value={3674.5} showCalculation />
+<Exercise.Integer mode="both" base={10} value={3674.5} showCalculation />
 
 En _binaire_ (base $2$), la situation est similaire
 
@@ -748,7 +730,7 @@ En _binaire_ (base $2$), la situation est similaire
   et est multipliée par une _puissance de $2$_.
 - Multiplier un nombre par $2$ revient à _décaler les chiffres d'une position vers la gauche_.
 
-<Integer mode="both" showCalculation value={13.75} />
+<Exercise.Integer mode="both" showCalculation value={13.75} />
 
 Pour les nombres entiers, la base $10$ et la base $2$ sont essentiellement équivalentes,
 à la différence que la base $2$ nécessite plus de chiffres pour représenter un nombre.
