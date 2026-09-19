@@ -138,9 +138,18 @@ decimal.Decimal('0.1') * decimal.Decimal('0.1')
 Les calculs impliquant les _nombres à virgules_ ont une précision _limitée_ de $53$ _bits significatifs_,
 ce qui correspond à environ $15$ _chiffres significatifs_.
 
+:::example
+Lorsque l'ordinateur calcule $10^{14} + 0.001$,
+l'ordinateur répond $10^{14}$.
+
 ```python run
 1e14 + 0.001
 ```
+
+Ceci est dû au fait que
+$100000000000000.001$ nécéssite plus de $15$ chiffres significatifs pour être représenté exactement.
+
+:::
 
 Ceci posera problème plus tard pour le calcul des limites, des dérivées et des intégrales.
 
