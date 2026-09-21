@@ -35,7 +35,7 @@ export const Code: Component<Props> = (props) => {
     <Loading fallback={<p>Chargement de l'éditeur...</p>}>
       <div class="flex flex-col gap-0">
         <Dynamic
-          component={props.backend === 'monaco' ? Monaco : CodeMirror}
+          component={props.backend === 'codemirror' ? CodeMirror : Monaco}
           children={value()}
           lang={props.lang}
           onChange={(newValue) => {
