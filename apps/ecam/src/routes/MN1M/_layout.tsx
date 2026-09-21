@@ -23,7 +23,7 @@ export default function Layout(props: { children: JSX.Element }) {
           sur cet appareil.
         </p>
       </Show>
-      <Crumb href={paths.MN1M} title="Analyse numérique">
+      <Crumb href={paths.MN1M} title="MN1M: Méthodes numériques">
         {props.children}
       </Crumb>
     </Page>

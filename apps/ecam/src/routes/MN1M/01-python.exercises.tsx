@@ -500,8 +500,8 @@ export function Review() {
       <PythonCode
         prompt={
           <p>
-            Avec l'aide de <code>numpy</code>, calculez la distance entre les {tex`A(-1, 7, -8)`} et{' '}
-            {tex`B(4, -17, -6)`}.
+            Avec l'aide de <code>numpy</code>, calculez la distance entre les points{' '}
+            {tex`A(-1, 7, -8)`} et {tex`B(4, -17, -6)`}.
           </p>
         }
         tests={[
