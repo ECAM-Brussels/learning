@@ -183,9 +183,12 @@ export function Step<S extends StepSchema, F extends JsonObject>(
    */
   const inherited = useContext(StepContext)
   const exerciseContext = useExerciseContext()
-  const stepContext = createMemo(() => ({
+  const sequenceContext = createMemo(() => ({
     url: useLocation().pathname,
     sequenceId: props.id ?? inherited?.().sequenceId ?? '',
+  }))
+  const stepContext = createMemo(() => ({
+    ...sequenceContext(),
     sequencePosition: inherited?.().sequencePosition ?? 0,
     position: inherited?.().position ?? 0,
   }))
@@ -204,8 +207,11 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   const exerciseData = createMemo(() =>
     typeof props.data === 'function' ? props.data() : props.data,
   )
-  const fetched = createMemo(() => exerciseContext().fetchStep(stepContext()))
-  const step = createMemo(async () => {
+  const all = createMemo(() => exerciseContext().fetchSequence(sequenceContext()))
+  const fetched = createMemo(
+    () => all()[stepContext().sequencePosition]?.[stepContext().position] ?? null,
+  )
+  const step = createMemo(() => {
     const [saved, data] = [fetched(), exerciseData()]
     return v.parse(schema(), {
       state: {},
@@ -246,11 +252,8 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     const payload = { ...step(), state, submitted, correct, feedback }
     yield exerciseContext().saveStep(stepContext(), JSON.parse(JSON.stringify(payload)))
     revalidate([
-      exerciseContext().fetchStep.keyFor(stepContext()),
-      exerciseContext().getProgress.keyFor({
-        url: stepContext().url,
-        sequenceId: stepContext().sequenceId,
-      }),
+      exerciseContext().fetchSequence.keyFor(sequenceContext()),
+      exerciseContext().getProgress.keyFor(sequenceContext()),
     ])
   })
 
@@ -281,11 +284,8 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     const { position, ...ctx } = stepContext()
     yield exerciseContext().reset(ctx)
     revalidate([
-      exerciseContext().fetchStep.keyFor(stepContext()),
-      exerciseContext().getProgress.keyFor({
-        url: stepContext().url,
-        sequenceId: stepContext().sequenceId,
-      }),
+      exerciseContext().fetchSequence.keyFor(sequenceContext()),
+      exerciseContext().getProgress.keyFor(sequenceContext()),
     ])
   })
 
@@ -382,7 +382,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
           </Show>
         </form>
       </StepBoundary>
-      <Show when={step().submitted && !resetting()}>
+      <Show when={step().submitted}>
         <StepBoundary fallback="Chargement du feedback..." offset={1}>
           <Dynamic
             component={props.feedback}

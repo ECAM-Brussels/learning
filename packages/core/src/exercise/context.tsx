@@ -12,7 +12,11 @@ export type StepContext = {
 export const StepContext = createContext<Accessor<StepContext> | null>(null)
 
 export type ExerciseContext = {
-  fetchStep: CachedFunction<(ctx: StepContext) => Promise<StoredStep | null>>
+  fetchSequence: CachedFunction<
+    (
+      ctx: Omit<StepContext, 'position' | 'sequencePosition'>,
+    ) => Promise<Record<number, Record<number, StoredStep | undefined | null>>>
+  >
   getProgress: CachedFunction<
     (
       ctx: Omit<StepContext, 'position' | 'sequencePosition'>,
