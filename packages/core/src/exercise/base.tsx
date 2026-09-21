@@ -1,5 +1,5 @@
 import { Boundary, FeedbackContext, MathField } from '@learning/components'
-import { useLocation } from '@solidjs/router'
+import { revalidate, useLocation } from '@solidjs/router'
 import { dynamic, Dynamic, type JSX } from '@solidjs/web'
 import { mapValues } from 'es-toolkit'
 import {
@@ -10,7 +10,6 @@ import {
   createSignal,
   createStore,
   omit,
-  refresh,
   Show,
   useContext,
   type Component,
@@ -246,8 +245,13 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     })()
     const payload = { ...step(), state, submitted, correct, feedback }
     yield exerciseContext().saveStep(stepContext(), JSON.parse(JSON.stringify(payload)))
-    refresh(fetched)
-    inherited?.().onAction?.()
+    revalidate([
+      exerciseContext().fetchStep.keyFor(stepContext()),
+      exerciseContext().getProgress.keyFor({
+        url: stepContext().url,
+        sequenceId: stepContext().sequenceId,
+      }),
+    ])
   })
 
   /**
@@ -276,9 +280,13 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     setResetting(true)
     const { position, ...ctx } = stepContext()
     yield exerciseContext().reset(ctx)
-    refresh(exerciseData)
-    refresh(fetched)
-    inherited?.().onAction?.()
+    revalidate([
+      exerciseContext().fetchStep.keyFor(stepContext()),
+      exerciseContext().getProgress.keyFor({
+        url: stepContext().url,
+        sequenceId: stepContext().sequenceId,
+      }),
+    ])
   })
 
   const StepBoundary = (props: {
