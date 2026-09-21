@@ -114,12 +114,14 @@ export const Layout: ParentComponent = (props) => {
       }}
     >
       <Navbar />
+      <Show when={routing()}>
+        <div class="h-0.5 w-full overflow-hidden rounded-full bg-slate-200">
+          <div class="loading-progress h-full w-1/3 rounded-full bg-sky-300" />
+        </div>
+      </Show>
       <div class="container mx-auto">
         <Boundary>
           <Crumb href="/" title="Accueil">
-            <Show when={routing()}>
-              <div class="my-4 rounded-xl bg-white p-4">Chargement de la page...</div>
-            </Show>
             <div class={{ 'opacity-50': routing() }}>{props.children}</div>
           </Crumb>
         </Boundary>
