@@ -270,8 +270,10 @@ export const Calculator = createDerivedStep(
                   </tbody>
                 </table>
                 <p>
-                  {props.data.inexact!.length > 0 ? 'Ces approximations' : 'Cette approximation'} se
-                  propage ensuite dans les calculs.
+                  {props.data.inexact!.length > 0
+                    ? 'Ces approximations se propagent'
+                    : 'Cette approximation se propage'}{' '}
+                  ensuite dans les calculs.
                 </p>
               </>
             )
