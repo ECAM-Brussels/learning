@@ -82,12 +82,18 @@ const _MultipleChoice = createStep({
   },
 })
 
-export function MultipleChoice<const K extends string>(
-  props: Omit<ComponentProps<typeof _MultipleChoice>, 'prompt' | 'options' | 'grade'> & {
-    prompt: JSX.Element
-    options: Options<K>
-    grade: (sel: SpecialSet<K>) => boolean
-  },
-) {
-  return <_MultipleChoice {...(props as unknown as ComponentProps<typeof _MultipleChoice>)} />
+type MultipleChoiceProps<K extends string> = Omit<
+  ComponentProps<typeof _MultipleChoice>,
+  'prompt' | 'options' | 'grade'
+> & {
+  prompt: JSX.Element
+  options: Options<K>
+  grade: (sel: SpecialSet<K>) => boolean
 }
+
+interface MultipleChoiceComponent extends Pick<typeof _MultipleChoice, 'config'> {
+  <K extends string>(props: MultipleChoiceProps<K>): JSX.Element
+  (props: ComponentProps<typeof _MultipleChoice>): JSX.Element
+}
+
+export const MultipleChoice = _MultipleChoice as unknown as MultipleChoiceComponent
