@@ -562,6 +562,22 @@ np.cross(a, b)
 
 :::
 
+:::remark[Notations alternatives pour le produit scalaire]
+
+Il est également possible d'utiliser `a @ b` ou `a.dot(b)` pour calculer un produit scalaire.
+
+```python run
+import numpy as np
+
+a = np.array([1, 2, 3])
+b = np.array([4, 5, 6])
+
+# Produit scalaire entre a et b
+a @ b
+```
+
+:::
+
 :::remark[Conversions implicites]
 
 Pour les paresseux, `np.dot` et `np.cross` peuvent implicitement convertir en un vecteur si vous le souhaitez.
@@ -680,7 +696,7 @@ sera très utile pour tracer les graphes des fonctions.
   />
   <Exercise.Vectorization
     fn="log"
-    x={['0', '0.1', '0.2', '0.3', '0.4', '0.5']}
+    x={['1', '1.1', '1.2', '1.3', '1.4', '0.5']}
     latex={(x) => `\\ln{${x}}`}
   />
 </Sequence>

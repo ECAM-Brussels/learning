@@ -396,7 +396,7 @@ export const VectorProduct = createDerivedStep(
         },
       },
     ],
-    check: (code) => code.includes('numpy') && code.includes(props.type),
+    check: (code) => code.includes('numpy') && (code.includes(props.type) || code.includes('@')),
   }),
 )
 
@@ -479,8 +479,8 @@ export function Review() {
         prompt={
           <p>
             Avec l'aide de <code>numpy</code>, calculez le volume du parallélépipède engendré par
-            les vecteurs {tex`\vec a = (1, 2, 3)`}, {tex`\vec b = (4, 5, 6)`} et{' '}
-            {tex`\vec c = (7, 8, 9)`}.
+            les vecteurs {tex`\vec a = (1, -2, 3)`}, {tex`\vec b = (4, 5, -6)`} et{' '}
+            {tex`\vec c = (7, 8, -9)`}.
           </p>
         }
         tests={[
@@ -489,16 +489,20 @@ export function Review() {
             check: async ({ result }) => {
               const { result: answer } = await python.output(dedent /* python */ `
                 import numpy as np
-                a = np.array([1, 2, 3])
-                b = np.array([4, 5, 6])
-                c = np.array([7, 8, 9])
+                a = np.array([1, -2, 3])
+                b = np.array([4, 5, -6])
+                c = np.array([7, 8, -9])
                 np.abs(np.dot(a, np.cross(b, c)))
               `)
               return result === answer
             },
           },
         ]}
-        check={(code) => code.includes('numpy') && code.includes('cross') && code.includes('dot')}
+        check={(code) =>
+          code.includes('numpy') &&
+          code.includes('cross') &&
+          (code.includes('dot') || code.includes('@'))
+        }
       />
       <PythonCode
         prompt={
@@ -547,6 +551,55 @@ export function Review() {
           },
         ]}
         check={(code) => code.includes('numpy') && code.includes('arccos')}
+      />
+      <PythonCode
+        prompt={
+          <p>
+            À l'aide de <code>numpy</code>, calculez la <strong>norme</strong> du vecteur{' '}
+            {tex`\vec v = (3, -2, -4, 9)`},
+            <em>
+              sans utiliser <code>linalg.norm</code>.
+            </em>
+          </p>
+        }
+        tests={[
+          {
+            test: null,
+            check: async ({ result }) => {
+              const { result: answer } = await python.output(dedent /* python */ `
+                import numpy as np
+                np.linalg.norm([3, -2, -4, 9])
+              `)
+              return result === answer
+            },
+          },
+        ]}
+        check={(code) =>
+          code.includes('numpy') && code.includes('sqrt') && !code.includes('linalg')
+        }
+      />
+      <PythonCode
+        prompt={
+          <p>
+            À l'aide de <code>numpy</code>, calculez la projection du vecteur{' '}
+            {tex`\vec a = (4, -3, 2, 9)`} sur le vecteur {tex`\vec b = (-6, 1, 13, -4)`}.
+          </p>
+        }
+        tests={[
+          {
+            test: null,
+            check: async ({ result }) => {
+              const { result: answer } = await python.output(dedent /* python */ `
+                import numpy as np
+                a = np.array([4, -3, 2, 9])
+                b = np.array([-6, 1, 13, -4])
+                (np.dot(a, b) / np.dot(b, b)) * b
+              `)
+              return result === answer
+            },
+          },
+        ]}
+        check={(code) => code.includes('numpy')}
       />
     </Sequence>
   )
