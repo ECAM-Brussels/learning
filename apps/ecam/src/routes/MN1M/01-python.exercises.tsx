@@ -1,5 +1,6 @@
 import { Attempt, CheckMark, Highlight, Question } from '@learning/components'
 import { createDerivedStep, Exercise, expr, omitFromJSON, Sequence, tex } from '@learning/core'
+import { MultipleChoice } from '@learning/exercises/MultipleChoice'
 import { PythonCode } from '@learning/exercises/python/Code'
 import { python, type FinalOutput } from '@learning/repl'
 import { type JSX } from '@solidjs/web'
@@ -550,6 +551,55 @@ export function Review() {
     </Sequence>
   )
 }
+
+export const Representable = createDerivedStep(
+  MultipleChoice,
+  { x: 'expr' },
+  (props) => ({
+    prompt: (
+      <p>Le nombre {tex`${props.x}`} est représentable en binaire avec un nombre fini de bits</p>
+    ),
+    options: new Map([
+      ['true', 'Vrai'],
+      ['false', 'Faux'],
+    ]),
+    grade: (sel) => {
+      const expr = props.x.simplify().evaluate().json
+      if (!Array.isArray(expr) || !['Rational', 'Divide'].includes(expr[0]))
+        throw new Error('Expected a rational number')
+      const [_, m, n] = expr as [string, number, number]
+      const answer = n > 0 && (n & (n - 1)) === 0
+      return sel.equals([answer ? 'true' : 'false'])
+    },
+  }),
+  {
+    feedback: (ctx) => {
+      const frac = () => ctx.data.x.simplify().evaluate().json as [string, number, number]
+      const powerOfTwo = (n: number) => n > 0 && (n & (n - 1)) === 0
+      const representable = () => powerOfTwo(frac()[2])
+      const binary = () => (frac()[1] / frac()[2]).toString(2)
+      return (
+        <>
+          <Show when={ctx.correct}>
+            <p>
+              Correct! <CheckMark value={true} />
+            </p>
+          </Show>
+          <p>
+            Après simplification, on obtient {tex`\frac{${frac()[1]}}{${frac()[2]}}`}, et le
+            dénominateur {tex`${frac()[2]}`} {representable() ? 'est' : "n'est pas"} une puissance
+            de {tex`2`}. Dès lors, le nombre {tex`${ctx.data.x}`}{' '}
+            {representable() ? 'est' : "n'est pas"} représentable avec un nombre fini de bits.
+          </p>
+          <p>En fait,</p>
+          {tex`
+            ${ctx.data.x} = (${binary()}${representable() ? '' : '\\dots'})_{2}
+          `}
+        </>
+      )
+    },
+  },
+)
 
 export function Input(props: { number: number; onChange?: (n: number) => void }) {
   return (
