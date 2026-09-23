@@ -5,6 +5,7 @@ import {
   createMemo,
   createSignal,
   Loading,
+  merge,
   Show,
   type Component,
   type ComponentProps,
@@ -29,13 +30,14 @@ type Props = Omit<EditorProps, 'lang'> & {
   math?: boolean
 }
 
-export const Code: Component<Props> = (props) => {
+export const Code: Component<Props> = (rawProps) => {
+  const props = merge({ backend: 'codemirror' }, rawProps)
   const [value, setValue] = createSignal(() => props.children)
   return (
     <Loading fallback={<p>Chargement de l'éditeur...</p>}>
       <div class="flex flex-col gap-0">
         <Dynamic
-          component={props.backend === 'codemirror' ? CodeMirror : Monaco}
+          component={props.backend === 'monaco' ? Monaco : CodeMirror}
           children={value()}
           lang={props.lang}
           onChange={(newValue) => {
