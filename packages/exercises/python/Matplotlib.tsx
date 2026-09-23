@@ -15,11 +15,15 @@ const Test = v.variant('type', [
     type: v.literal('lineCount'),
     value: v.number(),
   }),
+  v.object({
+    type: v.literal('title'),
+    pattern: v.instance(RegExp),
+  }),
 ])
 
 export const Matplotlib = createDerivedStep(
   PythonCode,
-  { prompt: omitFromJSON(v.custom<JSX.Element>(() => true)), tests: v.array(Test) },
+  { prompt: omitFromJSON(v.custom<JSX.Element>(() => true)), tests: omitFromJSON(v.array(Test)) },
   (props) => ({
     math: true,
     prompt: props.prompt,
@@ -61,6 +65,19 @@ export const Matplotlib = createDerivedStep(
               result
             `,
             check: ({ result }) => result?.toLowerCase() === 'true',
+          }
+        case 'title':
+          return {
+            desc: `Le titre de la figure correspond à l'énoncé`,
+            test: dedent /* python */ `
+              import matplotlib.pyplot as plt
+              fig = plt.gcf()
+              ax = plt.gcf().axes[0]
+              title = ax.get_title()
+              plt.close("all")
+              title
+            `,
+            check: ({ result }) => t.pattern.test(result ?? ''),
           }
       }
     }),
