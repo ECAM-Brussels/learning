@@ -45,8 +45,8 @@ export default () => {
             <TH>Charge de travail</TH>
             <TD>
               <ul>
-                <li>Q1: 9 heures de séances d'exercices</li>
-                <li>Q2: 9 heures de séances d'exercices</li>
+                <li>Q1: 6 séances d'exercices</li>
+                <li>Q2: 6 séances d'exercices</li>
               </ul>
             </TD>
           </TR>
