@@ -38,7 +38,7 @@ const _MultipleChoice = createStep({
   schema: {
     data: {
       prompt: omitFromJSON(v.custom<JSX.Element>(() => true)),
-      options: omitFromJSON(Options(v.string())),
+      choices: omitFromJSON(Options(v.string())),
       grade: omitFromJSON(v.custom<(sel: SpecialSet<string>) => boolean>(() => true)),
     },
     inputs: { selection: v.array(v.string()) },
@@ -52,7 +52,7 @@ const _MultipleChoice = createStep({
         {ctx.data.prompt}
         <div class="flex gap-4">
           <Attempt>
-            <For each={Array.from(ctx.data.options.entries())}>
+            <For each={Array.from(ctx.data.choices.entries())}>
               {([name, element]) => (
                 <label class="rounded-md border border-blue-100 bg-blue-50 p-2">
                   <input
@@ -87,7 +87,7 @@ type MultipleChoiceProps<K extends string> = Omit<
   'prompt' | 'options' | 'grade'
 > & {
   prompt: JSX.Element
-  options: Options<K>
+  choices: Options<K>
   grade: (sel: SpecialSet<K>) => boolean
 }
 

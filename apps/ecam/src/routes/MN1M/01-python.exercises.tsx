@@ -612,7 +612,7 @@ export const Representable = createDerivedStep(
     prompt: (
       <p>Le nombre {tex`${props.x}`} est représentable en binaire avec un nombre fini de bits</p>
     ),
-    options: new Map([
+    choices: new Map([
       ['true', 'Vrai'],
       ['false', 'Faux'],
     ]),
