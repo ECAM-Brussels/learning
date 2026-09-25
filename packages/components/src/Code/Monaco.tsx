@@ -65,6 +65,9 @@ export default function Code(props: EditorProps) {
       language: props.lang,
       automaticLayout: true,
       minimap: { enabled: false },
+      scrollbar: {
+        alwaysConsumeMouseWheel: false,
+      },
     })
     editor.onDidChangeModelContent(() => setValue(editor!.getValue()))
     editor.updateOptions({ scrollBeyondLastLine: false })
