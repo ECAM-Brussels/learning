@@ -194,9 +194,8 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     sequencePosition: inherited?.().sequencePosition ?? 0,
     position: inherited?.().position ?? 0,
   }))
-  const options = createMemo(() =>
-    v.parse(Options, { ...useContext(ExerciseOptionsContext), ...props.options }),
-  )
+  const optionsCtx = useContext(ExerciseOptionsContext)
+  const options = createMemo(() => v.parse(Options, { ...optionsCtx(), ...props.options }))
 
   const schema = () =>
     StoredStep(props.schema.data as S['data'], props.schema.inputs as S['inputs'])

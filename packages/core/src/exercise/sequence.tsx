@@ -71,9 +71,8 @@ type Props<T extends object> = {
  */
 export function Sequence<T extends object>(props: Props<T>) {
   const exerciseContext = useExerciseContext()
-  const options = createMemo(() =>
-    v.parse(Options, { ...useContext(ExerciseOptionsContext), ...props.options }),
-  )
+  const optionsContext = useContext(ExerciseOptionsContext)
+  const options = createMemo(() => v.parse(Options, { ...optionsContext(), ...props.options }))
   const sequence = createMemo(() => ({ url: useLocation().pathname, sequenceId: props.id }))
   const progress = createMemo(() => {
     if (options().showFeedback === false) return {}
@@ -88,7 +87,7 @@ export function Sequence<T extends object>(props: Props<T>) {
     'children' in props ? props.children.length : Object.keys(progress()).length + 1,
   )
   return (
-    <ExerciseOptionsContext value={options()}>
+    <ExerciseOptionsContext value={options}>
       <Pagination progress={progress()}>
         {range(length()).map((i) => () => (
           <StepContext value={() => stepContext(i)}>
