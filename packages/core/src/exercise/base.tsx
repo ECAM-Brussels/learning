@@ -283,9 +283,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     if (!step().submitted) return false
     return options().allowResets && (await hasPermissions(['exercise:deleteOwn']))
   })
-  const [resetting, setResetting] = createOptimistic(false)
   const reset = action(async function* () {
-    setResetting(true)
     const { position, ...ctx } = stepContext()
     yield exerciseContext().reset(ctx)
     revalidate([
@@ -316,17 +314,19 @@ export function Step<S extends StepSchema, F extends JsonObject>(
 
   const fields = createMemo(() =>
     mapValues(props.schema.inputs as S['inputs'], (schema, name) => (
-      <Dynamic
-        class="rounded border border-gray-200"
-        component={schema === 'expr' ? MathField : 'input'}
-        value={step().state[name] ?? ''}
-        onChange={(e: Event & { target: HTMLInputElement }) => {
-          setState((s) => {
-            s[name] = e.target.value as any
-          })
-        }}
-        readonly={step().submitted}
-      />
+      <Boundary>
+        <Dynamic
+          class="rounded border border-gray-200"
+          component={schema === 'expr' ? MathField : 'input'}
+          value={step().state[name] ?? ''}
+          onChange={(e: Event & { target: HTMLInputElement }) => {
+            setState((s) => {
+              s[name] = e.target.value as any
+            })
+          }}
+          readonly={step().submitted}
+        />
+      </Boundary>
     )),
   )
 
@@ -369,14 +369,12 @@ export function Step<S extends StepSchema, F extends JsonObject>(
             submit(state)
           }}
         >
-          <Show when={!resetting()}>
-            <Dynamic
-              component={props.prompt}
-              data={step().data}
-              inputs={fields()}
-              state={promptState}
-            />
-          </Show>
+          <Dynamic
+            component={props.prompt}
+            data={step().data}
+            inputs={fields()}
+            state={promptState}
+          />
           <Show when={!step().submitted}>
             <button
               class="block rounded-lg bg-green-800 px-3 py-2 text-green-100 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"

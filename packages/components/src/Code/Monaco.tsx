@@ -42,7 +42,7 @@ self.MonacoEnvironment = {
 export default function Code(props: EditorProps) {
   let container: HTMLDivElement | undefined
   let editor: monaco.editor.IStandaloneCodeEditor | undefined
-  const [value, setValue] = createSignal(() => props.children)
+  const [value, setValue] = createSignal(() => props.children ?? '')
 
   createEffect(value, (value) => {
     if (editor?.getValue() !== value) {
