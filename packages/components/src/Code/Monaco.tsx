@@ -58,23 +58,42 @@ export default function Code(props: EditorProps) {
     },
   )
 
+  function mount() {
+    if (editor || !container) return
+    editor = monaco.editor.create(container, {
+      value: value(),
+      language: props.lang,
+      automaticLayout: true,
+      minimap: { enabled: false },
+    })
+    editor.onDidChangeModelContent(() => setValue(editor!.getValue()))
+    editor.updateOptions({ scrollBeyondLastLine: false })
+    editor.onDidContentSizeChange(() => {
+      const height = editor!.getModel()!.getLineCount() * 19 + 18
+      container.style.height = `${height}px`
+      editor!.layout()
+    })
+  }
+
+  function unmount() {
+    editor?.dispose()
+    editor = undefined
+  }
+
   onSettled(() => {
-    if (container) {
-      editor = monaco.editor.create(container, {
-        value: props.children,
-        language: props.lang,
-        automaticLayout: true,
-        minimap: { enabled: false },
-      })
-      editor.onDidChangeModelContent(() => setValue(editor!.getValue()))
-      editor.updateOptions({ scrollBeyondLastLine: false })
-      editor.onDidContentSizeChange(() => {
-        const height = editor!.getModel()!.getLineCount() * 19 + 18
-        container.style.height = `${height}px`
-        editor!.layout()
-      })
+    if (!container) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) mount()
+        else unmount()
+      },
+      { rootMargin: '200px' },
+    )
+    observer.observe(container)
+    return () => {
+      observer.disconnect()
+      unmount()
     }
-    return () => editor?.dispose()
   })
   return <div ref={container!} id="container" class={props.class ?? 'my-0 shadow'} />
 }
