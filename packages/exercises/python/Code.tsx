@@ -3,7 +3,7 @@ import { createStep, omitFromJSON } from '@learning/core'
 import { python } from '@learning/repl'
 import type { JSX } from '@solidjs/web'
 import { allKeyed, mapAsync } from 'es-toolkit'
-import { createMemo, createProjection, For, Show } from 'solid-js'
+import { createEffect, createMemo, createProjection, For, Show } from 'solid-js'
 import * as v from 'valibot'
 
 export const PythonCode = createStep({
@@ -35,18 +35,28 @@ export const PythonCode = createStep({
     })
     return tests.every((t) => t.passed) && codeCheck !== false
   },
-  prompt: (ctx) => (
-    <>
-      {ctx.data.prompt}
-      <Code
-        lang="python"
-        children={ctx.state.current.code ?? ctx.data.initialCode}
-        onChange={ctx.state.set.bind(null, 'code')}
-        math={ctx.data.math}
-        run
-      />
-    </>
-  ),
+  prompt: (ctx) => {
+    createEffect(
+      () => [ctx.state.current.code, ctx.data.initialCode] as const,
+      ([current, initial]) => {
+        if (current === undefined) {
+          ctx.state.set('code', initial)
+        }
+      },
+    )
+    return (
+      <>
+        {ctx.data.prompt}
+        <Code
+          lang="python"
+          children={ctx.state.current.code ?? ctx.data.initialCode}
+          onChange={ctx.state.set.bind(null, 'code')}
+          math={ctx.data.math}
+          run
+        />
+      </>
+    )
+  },
   feedback: (ctx) => {
     const tests = createProjection(
       () =>
