@@ -31,7 +31,7 @@ type Props = Omit<EditorProps, 'lang'> & {
 }
 
 export const Code: Component<Props> = (rawProps) => {
-  const props = merge({ backend: 'codemirror' }, rawProps)
+  const props = merge({ backend: 'monaco' }, rawProps)
   const [value, setValue] = createSignal(() => props.children)
   return (
     <Loading fallback={<p>Chargement de l'éditeur...</p>}>
