@@ -121,7 +121,7 @@ export const Layout: ParentComponent = (props) => {
       </Show>
       <div class="container mx-auto">
         <Boundary>
-          <Crumb href="/" title="Accueil">
+          <Crumb href="/" title="Accueil" prefix="Learning - ">
             <div class={{ 'opacity-50': routing() }}>{props.children}</div>
           </Crumb>
         </Boundary>

@@ -1,17 +1,55 @@
-import { defineMeta } from '@learning/components'
-import { hasPermissions, Sequence } from '@learning/core'
+import { Sequence } from '@learning/core'
 import { FunctionExercise } from './02-plots.exercises'
-
-export default defineMeta({
-  title: 'Séance 2: Fonctions et graphiques',
-  authorized: () => hasPermissions(['draft:read']),
-})
 
 # Fonctions et graphiques
 
 ## Fonctions
 
-Une fonction est un morceau de code nommé qui est réutilisable.
+Une fonction est un _morceau de code_ nommé qui est réutilisable.
+En d'autres mots,
+on peut créer **nos propres instructions**.
+Les objectifs sont la **lisibilité**,
+mais aussi la **réutilisation** du code.
+
+```python run
+# On crée une fonction `bonjour`
+def bonjour():
+    print(" _   _      _ _")
+    print("| | | | ___| | | ___")
+    print("| |_| |/ _ \ | |/ _ \ ")
+    print("|  _| |  __/ | | (_) |")
+    print("|_| |_|\___|_|_|\___/")
+
+print("Je ne fais plus partie de la fonction")
+
+# On peut l'appeler autant de fois que l'on veut
+bonjour()
+bonjour()
+```
+
+Après `def bonjour():`,
+
+Un autre intérêt des fonctions est de pouvoir utiliser des **paramètres**.
+
+```python run
+def bonjour(nom):
+    print("Bonjour", nom, "!")
+
+bonjour("Alice")
+bonjour("Bob")
+```
+
+```python run
+def carbonara(n):
+    print("Spaghetti carbonara pour", n, "personnes:")
+    print("-", 100 * n, "g de pâtes")
+    print("-", 50 * n, "g de lardons")
+    print("-", 1 * n, "oeufs" if n > 1 else "oeuf")
+
+carbonara(2)
+carbonara(4)
+```
+
 Il peut prendre en entrée des _paramètres inconnus_ qui pourront être spécifiés plus tard.
 
 :::example

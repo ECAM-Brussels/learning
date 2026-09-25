@@ -1,5 +1,5 @@
 import { Boundary, FeedbackContext, MathField } from '@learning/components'
-import { useLocation } from '@solidjs/router'
+import { revalidate, useLocation } from '@solidjs/router'
 import { dynamic, Dynamic, type JSX } from '@solidjs/web'
 import { mapValues } from 'es-toolkit'
 import {
@@ -10,7 +10,6 @@ import {
   createSignal,
   createStore,
   omit,
-  refresh,
   Show,
   useContext,
   type Component,
@@ -24,6 +23,7 @@ import { createIsVisible } from '../visibility'
 import { StepContext } from './context'
 import local from './context.local'
 import remote from './context.remote'
+import { ExerciseOptionsContext, Options } from './options'
 
 type MaybeAsync<T> = T | Promise<T>
 type Json = string | number | boolean | null | { [key: string]: Json } | Json[]
@@ -158,6 +158,7 @@ type StepBaseProps<D, I extends v.ObjectSchema<any, any>, F extends JsonObject> 
         data: Infer<NoInfer<D>, 'output'>
         inputs: v.InferOutput<NoInfer<I>>
       }) => JSX.Element)
+  options?: Options<'input'>
 }
 
 type StepProps<S extends StepSchema, F extends JsonObject> = StepBaseProps<
@@ -184,12 +185,18 @@ export function Step<S extends StepSchema, F extends JsonObject>(
    */
   const inherited = useContext(StepContext)
   const exerciseContext = useExerciseContext()
-  const stepContext = createMemo(() => ({
+  const sequenceContext = createMemo(() => ({
     url: useLocation().pathname,
     sequenceId: props.id ?? inherited?.().sequenceId ?? '',
+  }))
+  const stepContext = createMemo(() => ({
+    ...sequenceContext(),
     sequencePosition: inherited?.().sequencePosition ?? 0,
     position: inherited?.().position ?? 0,
   }))
+  const options = createMemo(() =>
+    v.parse(Options, { ...useContext(ExerciseOptionsContext), ...props.options }),
+  )
 
   const schema = () =>
     StoredStep(props.schema.data as S['data'], props.schema.inputs as S['inputs'])
@@ -205,8 +212,11 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   const exerciseData = createMemo(() =>
     typeof props.data === 'function' ? props.data() : props.data,
   )
-  const fetched = createMemo(() => exerciseContext().fetchStep(stepContext()))
-  const step = createMemo(async () => {
+  const all = createMemo(() => exerciseContext().fetchSequence(sequenceContext()))
+  const fetched = createMemo(
+    () => all()[stepContext().sequencePosition]?.[stepContext().position] ?? null,
+  )
+  const step = createMemo(() => {
     const [saved, data] = [fetched(), exerciseData()]
     return v.parse(schema(), {
       state: {},
@@ -246,8 +256,10 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     })()
     const payload = { ...step(), state, submitted, correct, feedback }
     yield exerciseContext().saveStep(stepContext(), JSON.parse(JSON.stringify(payload)))
-    refresh(fetched)
-    inherited?.().onAction?.()
+    revalidate([
+      exerciseContext().fetchSequence.keyFor(sequenceContext()),
+      exerciseContext().getProgress.keyFor(sequenceContext()),
+    ])
   })
 
   /**
@@ -269,16 +281,18 @@ export function Step<S extends StepSchema, F extends JsonObject>(
    */
   const canReset = createMemo(async () => {
     if (stepContext().position !== 0) return false
-    return await hasPermissions(['exercise:deleteOwn'])
+    if (!step().submitted) return false
+    return options().allowResets && (await hasPermissions(['exercise:deleteOwn']))
   })
   const [resetting, setResetting] = createOptimistic(false)
   const reset = action(async function* () {
     setResetting(true)
     const { position, ...ctx } = stepContext()
     yield exerciseContext().reset(ctx)
-    refresh(exerciseData)
-    refresh(fetched)
-    inherited?.().onAction?.()
+    revalidate([
+      exerciseContext().fetchSequence.keyFor(sequenceContext()),
+      exerciseContext().getProgress.keyFor(sequenceContext()),
+    ])
   })
 
   const StepBoundary = (props: {
@@ -292,7 +306,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
       <FeedbackContext
         value={{
           get correct() {
-            return step().correct
+            return options().showFeedback ? step().correct : undefined
           },
         }}
       >
@@ -374,7 +388,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
           </Show>
         </form>
       </StepBoundary>
-      <Show when={step().submitted && !resetting()}>
+      <Show when={step().submitted && options().showFeedback}>
         <StepBoundary fallback="Chargement du feedback..." offset={1}>
           <Dynamic
             component={props.feedback}
@@ -389,11 +403,11 @@ export function Step<S extends StepSchema, F extends JsonObject>(
             <Next>{props.children}</Next>
           </Show>
         </StepBoundary>
-        <Show when={canReset()}>
-          <button class="cursor-pointer text-sm text-gray-500" onClick={reset}>
-            Recommencer l'exercice
-          </button>
-        </Show>
+      </Show>
+      <Show when={canReset()}>
+        <button class="cursor-pointer text-sm text-gray-500" onClick={reset}>
+          Recommencer l'exercice
+        </button>
       </Show>
     </div>
   )
@@ -403,7 +417,7 @@ export function createStep<S extends StepSchema, F extends JsonObject>(
   step: Omit<StepProps<S, F>, 'data'>,
 ) {
   const StepComponent: Component<
-    { id?: string } & Pick<StepProps<S, F>, 'class' | 'feedback' | 'children'> &
+    { id?: string } & Pick<StepProps<S, F>, 'class' | 'feedback' | 'children' | 'options'> &
       (ObjectSchema<S['data'], 'input'> | { data: StepProps<S, F>['data'] })
   > = (props) => {
     const data = omit(props, 'id', 'class', 'feedback', 'data', 'children') as
@@ -416,6 +430,7 @@ export function createStep<S extends StepSchema, F extends JsonObject>(
         feedback={props.feedback ?? step.feedback}
         children={props.children ?? step.children}
         data={('data' in props ? props.data : data)!}
+        options={props.options ?? step.options}
       />
     )
   }

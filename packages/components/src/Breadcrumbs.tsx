@@ -2,10 +2,19 @@ import { faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import { Title } from '@solidjs/meta'
 import type { PathEnd } from '@solidjs/router'
 import { type JSX } from '@solidjs/web'
-import { createContext, createStore, For, omit, onSettled, Show, useContext } from 'solid-js'
+import {
+  createContext,
+  createMemo,
+  createStore,
+  For,
+  omit,
+  onSettled,
+  Show,
+  useContext,
+} from 'solid-js'
 import { Fa } from './Fa'
 
-type Crumb = { href: PathEnd | string; title: string }
+type Crumb = { href: PathEnd | string; title: string; prefix?: string }
 const CrumbContext = createContext<{ level: number; crumbs: Crumb[] }>({
   level: 0,
   crumbs: [],
@@ -41,6 +50,12 @@ export function Crumb(
   const crumb = omit(props, 'children')
   const context = useContext(CrumbContext)
   const [crumbs, setCrumbs] = createStore(context.crumbs)
+  const prefix = createMemo(() =>
+    crumbs
+      .map((c) => c.prefix)
+      .filter((p): p is string => !!p)
+      .at(-1),
+  )
 
   onSettled(() => {
     setCrumbs((s) => {
@@ -56,7 +71,9 @@ export function Crumb(
 
   return (
     <CrumbContext value={{ level: context.level + 1, crumbs }}>
-      <Title>{props.title}</Title>
+      <Title>
+        {prefix()} {props.title}
+      </Title>
       {props.children}
     </CrumbContext>
   )

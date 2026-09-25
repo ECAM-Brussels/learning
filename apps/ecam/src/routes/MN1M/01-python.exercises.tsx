@@ -1,5 +1,6 @@
 import { Attempt, CheckMark, Highlight, Question } from '@learning/components'
 import { createDerivedStep, Exercise, expr, omitFromJSON, Sequence, tex } from '@learning/core'
+import { MultipleChoice } from '@learning/exercises/MultipleChoice'
 import { PythonCode } from '@learning/exercises/python/Code'
 import { python, type FinalOutput } from '@learning/repl'
 import { type JSX } from '@solidjs/web'
@@ -270,8 +271,10 @@ export const Calculator = createDerivedStep(
                   </tbody>
                 </table>
                 <p>
-                  {props.data.inexact!.length > 0 ? 'Ces approximations' : 'Cette approximation'} se
-                  propage ensuite dans les calculs.
+                  {props.data.inexact!.length > 0
+                    ? 'Ces approximations se propagent'
+                    : 'Cette approximation se propage'}{' '}
+                  ensuite dans les calculs.
                 </p>
               </>
             )
@@ -393,7 +396,7 @@ export const VectorProduct = createDerivedStep(
         },
       },
     ],
-    check: (code) => code.includes('numpy') && code.includes(props.type),
+    check: (code) => code.includes('numpy') && (code.includes(props.type) || code.includes('@')),
   }),
 )
 
@@ -476,8 +479,8 @@ export function Review() {
         prompt={
           <p>
             Avec l'aide de <code>numpy</code>, calculez le volume du parallélépipède engendré par
-            les vecteurs {tex`\vec a = (1, 2, 3)`}, {tex`\vec b = (4, 5, 6)`} et{' '}
-            {tex`\vec c = (7, 8, 9)`}.
+            les vecteurs {tex`\vec a = (1, -2, 3)`}, {tex`\vec b = (4, 5, -6)`} et{' '}
+            {tex`\vec c = (7, 8, -9)`}.
           </p>
         }
         tests={[
@@ -486,22 +489,26 @@ export function Review() {
             check: async ({ result }) => {
               const { result: answer } = await python.output(dedent /* python */ `
                 import numpy as np
-                a = np.array([1, 2, 3])
-                b = np.array([4, 5, 6])
-                c = np.array([7, 8, 9])
+                a = np.array([1, -2, 3])
+                b = np.array([4, 5, -6])
+                c = np.array([7, 8, -9])
                 np.abs(np.dot(a, np.cross(b, c)))
               `)
               return result === answer
             },
           },
         ]}
-        check={(code) => code.includes('numpy') && code.includes('cross') && code.includes('dot')}
+        check={(code) =>
+          code.includes('numpy') &&
+          code.includes('cross') &&
+          (code.includes('dot') || code.includes('@'))
+        }
       />
       <PythonCode
         prompt={
           <p>
-            Avec l'aide de <code>numpy</code>, calculez la distance entre les {tex`A(-1, 7, -8)`} et{' '}
-            {tex`B(4, -17, -6)`}.
+            Avec l'aide de <code>numpy</code>, calculez la distance entre les points{' '}
+            {tex`A(-1, 7, -8)`} et {tex`B(4, -17, -6)`}.
           </p>
         }
         tests={[
@@ -545,9 +552,107 @@ export function Review() {
         ]}
         check={(code) => code.includes('numpy') && code.includes('arccos')}
       />
+      <PythonCode
+        prompt={
+          <p>
+            À l'aide de <code>numpy</code>, calculez la <strong>norme</strong> du vecteur{' '}
+            {tex`\vec v = (3, -2, -4, 9)`},
+            <em>
+              sans utiliser <code>linalg.norm</code>.
+            </em>
+          </p>
+        }
+        tests={[
+          {
+            test: null,
+            check: async ({ result }) => {
+              const { result: answer } = await python.output(dedent /* python */ `
+                import numpy as np
+                np.linalg.norm([3, -2, -4, 9])
+              `)
+              return result === answer
+            },
+          },
+        ]}
+        check={(code) =>
+          code.includes('numpy') && code.includes('sqrt') && !code.includes('linalg')
+        }
+      />
+      <PythonCode
+        prompt={
+          <p>
+            À l'aide de <code>numpy</code>, calculez la projection du vecteur{' '}
+            {tex`\vec a = (4, -3, 2, 9)`} sur le vecteur {tex`\vec b = (-6, 1, 13, -4)`}.
+          </p>
+        }
+        tests={[
+          {
+            test: null,
+            check: async ({ result }) => {
+              const { result: answer } = await python.output(dedent /* python */ `
+                import numpy as np
+                a = np.array([4, -3, 2, 9])
+                b = np.array([-6, 1, 13, -4])
+                (np.dot(a, b) / np.dot(b, b)) * b
+              `)
+              return result === answer
+            },
+          },
+        ]}
+        check={(code) => code.includes('numpy')}
+      />
     </Sequence>
   )
 }
+
+export const Representable = createDerivedStep(
+  MultipleChoice,
+  { x: 'expr' },
+  (props) => ({
+    prompt: (
+      <p>Le nombre {tex`${props.x}`} est représentable en binaire avec un nombre fini de bits</p>
+    ),
+    choices: new Map([
+      ['true', 'Vrai'],
+      ['false', 'Faux'],
+    ]),
+    grade: (sel) => {
+      const expr = props.x.simplify().evaluate().json
+      if (!Array.isArray(expr) || !['Rational', 'Divide'].includes(expr[0]))
+        throw new Error('Expected a rational number')
+      const [_, m, n] = expr as [string, number, number]
+      const answer = n > 0 && (n & (n - 1)) === 0
+      return sel.equals([answer ? 'true' : 'false'])
+    },
+  }),
+  {
+    feedback: (ctx) => {
+      const frac = () => ctx.data.x.simplify().evaluate().json as [string, number, number]
+      const powerOfTwo = (n: number) => n > 0 && (n & (n - 1)) === 0
+      const representable = () => powerOfTwo(frac()[2])
+      const binary = () => (frac()[1] / frac()[2]).toString(2)
+      return (
+        <>
+          <Show when={ctx.correct}>
+            <p>
+              Correct! <CheckMark value={true} />
+            </p>
+          </Show>
+          <p>
+            Après simplification, on obtient {tex`\frac{${frac()[1]}}{${frac()[2]}}`}, et le
+            dénominateur {tex`${frac()[2]}`} {representable() ? 'est' : "n'est pas"} une puissance
+            de {tex`2`}. Dès lors, le nombre {tex`${ctx.data.x}`}{' '}
+            {representable() ? 'est' : "n'est pas"} représentable avec un nombre fini de bits.
+          </p>
+          <p>En fait,</p>
+          {tex`
+            ${ctx.data.x} = (${binary()}${representable() ? '' : '\\dots'})_{2}
+          `}
+        </>
+      )
+    },
+  },
+)
 
 export function Input(props: { number: number; onChange?: (n: number) => void }) {
   return (

@@ -7,4 +7,5 @@ COPY . .
 CMD ["uv", "run", "fastapi", "dev", "main.py", "--host", "0.0.0.0"]
 
 FROM dev AS prod
-CMD ["uv", "run", "fastapi", "run", "main.py"]
+ENV WORKERS=4
+CMD ["sh", "-c", "uv run fastapi run main.py --workers ${WORKERS}"]

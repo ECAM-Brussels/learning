@@ -15,6 +15,7 @@ function initPyodide() {
 }
 
 self.onmessage = async (event: MessageEvent<Input>) => {
+  if (event.data.code.trim() === '') return
   self.postMessage({ id: event.data.id, status: 'loading' })
   initPyodide()
   const pyodide = await pyodidePromise!
@@ -24,7 +25,7 @@ self.onmessage = async (event: MessageEvent<Input>) => {
   let output: Output = { id: event.data.id }
   try {
     pyodide.globals.clear()
-    if (event.data.options?.math && event.data.code.includes('matplotlib')) {
+    if (event.data.code.includes('matplotlib')) {
       pyodide.runPython(dedent`
         import os
         os.environ["MPLBACKEND"] = "AGG"
@@ -55,8 +56,10 @@ self.onmessage = async (event: MessageEvent<Input>) => {
           buffer.seek(0)
           base64.b64encode(buffer.read()).decode('utf-8')
         `)
-        output.result = `data:image/png;base64,${image}`
-        output.format = 'image'
+        if (image) {
+          output.result = `data:image/png;base64,${image}`
+          output.format = 'image'
+        }
       }
     }
   } catch (error) {
