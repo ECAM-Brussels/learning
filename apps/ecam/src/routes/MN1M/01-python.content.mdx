@@ -15,7 +15,8 @@ Pour votre premier exercice,
 nous allons commencer par afficher un message à l'écran.
 
 <Exercise.Print id="hello-world" message="Vive Python" initialCode="print('Hello world')">
-  Modifiez le code pour afficher le message `Vive Python` à la place de `Hello world`.
+  Modifiez le code pour afficher le message `Vive Python` à la place de `Hello world`. Ensuite,
+  cliquez sur le bouton **Soumettre** pour vérifier votre réponse.
 </Exercise.Print>
 
 :::
@@ -36,15 +37,16 @@ comme le montre l'exemple suivant:
 
 Voici un tableau récapitulatif des opérations de base en Python:
 
-| Concept            | Exemple mathématique | Code Python |
-| ------------------ | -------------------- | ----------- |
-| Addition           | $3 + 5$              | `3 + 5`     |
-| Soustraction       | $13 - 4$             | `13 - 4`    |
-| Multiplication     | $3 \cdot 4$          | `3 * 4`     |
-| Division           | $\frac 3 4$          | `3 / 4`     |
-| Exponentiation     | $3^4$                | `3 ** 4`    |
-| Séparateur décimal | {tex`3{,}14`}        | `3.14`      |
-| Nombre complexe    | $3 + 4i$             | `3 + 4j`    |
+| Concept               | Exemple mathématique | Code Python |
+| --------------------- | -------------------- | ----------- |
+| Addition              | $3 + 5$              | `3 + 5`     |
+| Soustraction          | $13 - 4$             | `13 - 4`    |
+| Multiplication        | $3 \cdot 4$          | `3 * 4`     |
+| Division              | $\frac 3 4$          | `3 / 4`     |
+| Exponentiation        | $3^4$                | `3 ** 4`    |
+| Séparateur décimal    | {tex`3{,}14`}        | `3.14`      |
+| Nombre complexe       | $3 + 4i$             | `3 + 4j`    |
+| Notation scientifique | $1.3 \cdot 10^{-9}$  | `1.3e-9`    |
 
 Nous attirons votre attention sur les points suivants:
 
@@ -55,13 +57,15 @@ Nous attirons votre attention sur les points suivants:
   Le `j` doit obligatoirement suivre un nombre,
   par exemple $i$ s'écrit `1j` et $-i$ s'écrit `-1j`.
 
-Nous vous invitons maintenant à résoudre les exercices suivants:
+Nous vous invitons maintenant à résoudre les exercices suivants.
+Si vous n'avez pas encore vu les nombres complexes,
+vous pouvez ignorer ces exercices et les faire plus tard.
 
 :::exercise[Opérations arithmétiques]
 
 <Sequence id="python-as-calculator">
   <Exercise.Calculator prompt="4^3" answer={4 ** 3} />
-  <Exercise.Calculator prompt="10^{15} + 0.01" answer={10 ** 15 + 0.01} />
+  <Exercise.Calculator prompt="10^{15} + 0.01" answer={10 ** 15 + 0.01} rounded />
   <Exercise.Calculator prompt="0.1 \cdot 0.1" answer={0.1 * 0.1} inexact={['0.1']} />
   <Exercise.Calculator prompt="1.1 + 2.2" answer={1.1 + 2.2} inexact={['1.1', '2.2']} />
   <Exercise.Calculator
@@ -88,15 +92,15 @@ Voici quelques exemples de nombres décimaux et leur représentation binaire:
 export const [number, setNumber] = createSignal(0.3)
 export const real = createMemo(() => Exercise.getRep(number()))
 
-|                                Nombre décimal (base $10$) | Représentation binaire (base $2$)                           |
-| --------------------------------------------------------: | :---------------------------------------------------------- |
-|                                                       $0$ | `0`                                                         |
-|                                                       $1$ | `1`                                                         |
-|                                                       $2$ | `10`                                                        |
-|                                                      $10$ | `1010`                                                      |
-|                                                     $0.5$ | `0.1`                                                       |
-|                                                     $0.1$ | `0.0001100110011001100110011001100110011001100110011001101` |
-| <Exercise.Input number={number()} onChange={setNumber} /> | <Exercise.BinaryRepresentation value={number()} />          |
+|                                Nombre décimal (base $10$) | Représentation binaire (base $2$)                              |
+| --------------------------------------------------------: | :------------------------------------------------------------- |
+|                                                       $0$ | `0`                                                            |
+|                                                       $1$ | `1`                                                            |
+|                                                       $2$ | `10`                                                           |
+|                                                      $10$ | `1010`                                                         |
+|                                                     $0.5$ | `0.1`                                                          |
+|                                                     $0.1$ | `0.0001100110011001100110011001100110011001100110011001101...` |
+| <Exercise.Input number={number()} onChange={setNumber} /> | <Exercise.BinaryRepresentation value={number()} />             |
 
 Nous verrons dans une prochaine section
 comment convertir en binaire.
@@ -226,12 +230,9 @@ math.sin(theta)
   <Exercise.Calculator prompt="\sin{\frac \pi 4}" answer={Math.sin(Math.PI / 4)} />
   <Exercise.Calculator prompt={`\\log_{10}(85)`} answer={Math.log10(85)} />
   <Exercise.Calculator
-    prompt="-\\log_{10} (1.05 \cdot 10^{-5})"
+    prompt="-\log_{10} (1.05 \cdot 10^{-5})"
     answer={-Math.log10(1.05 * 10 ** -5)}
-  >
-    Calculer le pH d'une solution de concentration $C = 1.05 \cdot 10^{-5}$ mol/L. Pour rappel, le
-    pH est défini par $\mathrm{pH} = -\log_{10} C$.
-  </Exercise.Calculator>
+  />
 </Sequence>
 
 :::
@@ -276,10 +277,10 @@ rayon = 2
 hauteur = 3
 
 # On définit la variable V pour stocker le volume du cylindre
-Volume = math.pi * rayon**2 * hauteur
+volume = math.pi * rayon**2 * hauteur
 
 # On affiche le volume
-Volume
+volume
 ```
 
 Les avantages des variables sont les suivants:
@@ -359,6 +360,8 @@ liste[0] # Premier élément
 
 :::example[Produit scalaire]
 
+Utilisons les indices pour calculer le produit scalaire entre deux vecteurs de dimension $3$.
+
 ```python run
 v = [1, 2, 3]
 w = [4, 5, 6]
@@ -367,6 +370,8 @@ produit_scalaire = v[0] * w[0] + v[1] * w[1] + v[2] * w[2]
 
 produit_scalaire
 ```
+
+Nous verrons qu'il y a une manière plus simple de calculer le produit scalaire avec la bibliothèque `numpy`.
 
 :::
 
@@ -419,7 +424,8 @@ on écrit:
 import numpy as np
 
 # On définit un vecteur, en employant np.array
-# Ne pas oublier qu'il faut des parenthèses et des crochets
+# Ne pas oublier qu'il faut des parenthèses et des crochets,
+# puisque np.array prend une _liste_ comme argument.
 v = np.array([1, 2, 3])
 
 # On affiche le vecteur
@@ -576,6 +582,8 @@ b = np.array([4, 5, 6])
 a @ b
 ```
 
+Il n'y a pas de notation équivalente pour le produit vectoriel.
+
 :::
 
 :::remark[Conversions implicites]
@@ -604,6 +612,20 @@ np.cross([1, 2, 3], [4, 5, 6])
     v={[
       [3, -1, 2],
       [0, -5, -3],
+    ]}
+  />
+  <Exercise.VectorProduct
+    type="dot"
+    v={[
+      [5, 3, 2],
+      [7, 8, -2],
+    ]}
+  />
+  <Exercise.VectorProduct
+    type="cross"
+    v={[
+      [5, 3, 2],
+      [7, 8, -2],
     ]}
   />
 </Sequence>
@@ -771,6 +793,7 @@ $$
 $$
 
 Pour lever l'ambiguité, on écrira $(\texttt{10})_2$ pour insister qu'on est en base $2$.
+Remarquez que ce document utilise une autre police pour insister qu'on est en binaire.
 
 :::
 
@@ -842,6 +865,13 @@ Par exemple,
 n'est pas représentable exactement en binaire,
 puisque sa forme fractionnelle simplifiée a pour dénominateur $10$,
 qui n'est **pas** une puissance de $2$.
+
+En revanche,
+{tex`0.1875
+  = \frac {3}{2^4}
+`}
+est représentable exactement en binaire,
+puisque sa forme fractionnelle simplifiée a pour dénominateur une puissance de $2$.
 :::
 
 <Sequence id="has-binary-representation">
