@@ -175,19 +175,18 @@ export function Print(props: {
             }
           >
             <p>
-              Pour afficher le message{' '}
+              Malheureusement, la réponse est incorrecte. Pour afficher le message{' '}
               <input
-                class="border font-mono"
+                class="border p-1 font-mono"
                 value={message()}
                 onInput={(e) => setMessage(e.target.value)}
               />{' '}
               en Python, tapez:
             </p>
             <Highlight lang="python" code={`print('${message().replace("'", "\\'")}')`} />
-            <details class="text-sm">
-              <summary>Prêt.e à réessayer l'exercice?</summary>
-              <ctx.Self />
-            </details>
+            <p>
+              Cliquez sur <em>Recommencer l'exercice</em> pour soumettre une nouvelle tentative.
+            </p>
           </Show>
         )
       }}
@@ -207,6 +206,7 @@ export const Calculator = createDerivedStep(
     prompt: v.string(),
     answer: v.union([v.number(), v.string()]),
     inexact: v.optional(v.array(v.string())),
+    rounded: v.optional(v.boolean()),
   },
   (props) => ({
     prompt: props.children ?? <p>Utilisez Python pour calculer {tex`${props.prompt}`}</p>,
@@ -219,13 +219,13 @@ export const Calculator = createDerivedStep(
   }),
   {
     children: (props) => (
-      <Show when={props.data.inexact !== undefined}>
+      <Show when={props.data.inexact !== undefined || props.data.rounded}>
         <Exercise
           schema={{ data: {}, inputs: { attempt: 'expr' } }}
           data={{}}
           prompt={(ctx) => (
             <>
-              <p>Quel aurait été le résultat théorique?</p>
+              <p>Quel aurait dû être le résultat?</p>
               <Attempt>
                 {tex`${props.data.prompt} =`} {ctx.inputs.attempt}
               </Attempt>
@@ -244,38 +244,47 @@ export const Calculator = createDerivedStep(
                   {tex`${props.data.prompt} = ${expr(props.data.prompt).simplify()}`}
                 </Show>
                 <Question>Pourquoi la réponse de Python est-elle incorrecte?</Question>
-                <p>
-                  Puisque l'ordinateur utilise le <strong>binaire</strong>, certains des nombres du
-                  code ont été remplacés par des <strong>approximations</strong>. Dans ce cas-ci:
-                </p>
-                <table>
-                  <thead>
-                    <tr>
-                      <th class="text-right">Nombre entré</th>
-                      <th>
-                        Nombre réellement utilisé par <code>Python</code>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <For each={props.data.inexact}>
-                      {(n) => (
-                        <tr>
-                          <td class="text-right">{tex`${n}`}</td>
-                          <td>
-                            <code>{reps[n]}</code>
-                          </td>
-                        </tr>
-                      )}
-                    </For>
-                  </tbody>
-                </table>
-                <p>
-                  {props.data.inexact!.length > 0
-                    ? 'Ces approximations se propagent'
-                    : 'Cette approximation se propage'}{' '}
-                  ensuite dans les calculs.
-                </p>
+                <Show when={props.data.rounded}>
+                  <p>
+                    Pour les nombres <strong>non entiers</strong>, Python travaille avec une
+                    précision d'environ <strong>15 chiffres significatifs</strong>.
+                  </p>
+                </Show>
+                <Show when={props.data.inexact?.length}>
+                  <p>
+                    Puisque l'ordinateur utilise le <strong>binaire</strong>, certains des nombres
+                    du code ont été remplacés par des <strong>approximations</strong>. Dans ce
+                    cas-ci:
+                  </p>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th class="text-right">Nombre entré</th>
+                        <th>
+                          Nombre réellement utilisé par <code>Python</code>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <For each={props.data.inexact}>
+                        {(n) => (
+                          <tr>
+                            <td class="text-right">{tex`${n}`}</td>
+                            <td>
+                              <code>{reps[n]}</code>
+                            </td>
+                          </tr>
+                        )}
+                      </For>
+                    </tbody>
+                  </table>
+                  <p>
+                    {props.data.inexact!.length > 0
+                      ? 'Ces approximations se propagent'
+                      : 'Cette approximation se propage'}{' '}
+                    ensuite dans les calculs. Nous verrons cela plus en détail plus tard.
+                  </p>
+                </Show>
               </>
             )
           }}
@@ -291,7 +300,9 @@ export const Calculator = createDerivedStep(
           </p>
         }
       >
-        <ctx.Self />
+        <p>
+          La réponse est incorrecte. <CheckMark value={false} />
+        </p>
       </Show>
     ),
   },
@@ -317,7 +328,8 @@ export const Variables = createDerivedStep(
             )}
           </For>
         </ul>
-        Ensuite, utilisez ces variables pour calculer {props.calculate}.
+        Ensuite, utilisez {Object.keys(props.vars).length > 1 ? 'ces variables' : 'cette variable'}{' '}
+        pour calculer {props.calculate}.
       </>
     ),
     tests: [
@@ -556,7 +568,7 @@ export function Review() {
         prompt={
           <p>
             À l'aide de <code>numpy</code>, calculez la <strong>norme</strong> du vecteur{' '}
-            {tex`\vec v = (3, -2, -4, 9)`},
+            {tex`\vec v = (3, -2, -4, 9)`},{' '}
             <em>
               sans utiliser <code>linalg.norm</code>.
             </em>
