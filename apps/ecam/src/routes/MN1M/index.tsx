@@ -5,6 +5,7 @@ import type { JSX } from '@solidjs/web'
 import { createMemo, Show } from 'solid-js'
 import { paths } from '../../router'
 import banner from './banner.jpg'
+import session2 from './matplotlib.jpg'
 import session1 from './python.jpg'
 
 export const route = {
@@ -56,7 +57,7 @@ export default () => {
       <div class="grid gap-2 lg:grid-cols-2">
         <Show when={showDrafts()}>
           <SessionCard index={1} title="Introduction à Python" link="01-python" img={session1} />
-          <SessionCard index={2} title="Fonctions et graphiques" link="02-plots" />
+          <SessionCard index={2} title="Fonctions et graphiques" link="02-plots" img={session2} />
         </Show>
       </div>
     </>
