@@ -17,6 +17,7 @@ mais aussi la **réutilisation** du code.
 # On crée une fonction `bonjour`
 # Rien ne sera exécuté tant qu'on ne l'appelle pas.
 def bonjour():
+    # Les 4 espaces en début de ligne (indentation) sont importants!
     print(" _   _      _ _")
     print("| | | | ___| | | ___")
     print("| |_| |/ _ \ | |/ _ \ ")
@@ -40,7 +41,7 @@ La convention est d'utiliser **4 espaces**.
 ### Paramètres
 
 Un autre intérêt des fonctions est de pouvoir utiliser des **paramètres**,
-qui sont des _valeurs inconnues_ que l'on peut spécifier plus tard lors de l'appel.
+qui sont des _valeurs inconnues_ que l'on peut spécifier _plus tard_ lors de l'appel.
 
 ```python run
 def bonjour(nom):
@@ -64,7 +65,9 @@ carbonara(2)
 carbonara(4)
 ```
 
-Il est également possible d'employer plusieurs paramètres.
+Il est également possible d'employer plusieurs paramètres,
+qui sont alors séparés par des virgules dans la définition de la fonction.
+Lors de l'appel, il faut fournir les valeurs dans le même ordre.
 
 ```python run
 def rectangle(longueur, largeur):
@@ -72,8 +75,8 @@ def rectangle(longueur, largeur):
     print("Périmètre:", 2 * (longueur + largeur))
     print("Aire:", longueur * largeur)
 
-rectangle(5, 3)
-rectangle(2, 4)
+rectangle(5, 3) # longueur = 5, largeur = 3
+rectangle(2, 4) # longueur = 2, largeur = 4
 ```
 
 ### Retour de valeur
@@ -88,7 +91,7 @@ laissant le choix à l'utilisateur de l'afficher ou non.
 def aire_carre(x):
     return x ** 2
 
-# N'affiche rien
+# N'affiche rien, capture la valeur retournée, c'est-à-dire 9
 resultat = aire_carre(3)
 
 # Affiche le résultat
@@ -105,8 +108,8 @@ Définissons une fonction qui calcule le volume d'un cylindre.
 import numpy as np
 
 def volume_cylindre(rayon, hauteur):
-    aire_cercle = np.pi * rayon ** 2
-    volume = aire_cercle * hauteur
+    aire_disque = np.pi * rayon ** 2
+    volume = aire_disque * hauteur
     return volume
 
 # Calcul de volume de cylindre avec rayon = 2 et hauteur = 3,
@@ -190,6 +193,10 @@ plt.plot(x, y)
 Pour tracer un graphe _courbe_,
 il faut juste **plus de points**,
 pour donner l'_illusion d'une courbe lisse_.
+En réalité, le graphe est toujours constitué de points reliés par des segments de droite.
+
+Spécifier les points à tracer un par un peut être fastidieux.
+Nous allons voir que `numpy` permet de fortement accélérer le processus grâce à la _vectorisation_.
 
 ## _"Multiplication"_ de vecteurs et _"addition scalaire"_
 
@@ -206,6 +213,22 @@ y = np.array([2, -3, -1])
 x * y
 ```
 
+En d'autres termes,
+ceci implique que les fonctions $f(x) = x^n$ sont **vectorisées**.
+
+```python run
+import numpy as np
+
+def f(x):
+    # Puisque x ** 2 = x * x,
+    # cette fonction sera appliquée composante par composante
+    # si x est un vecteur
+    return x**2
+
+x = np.array([1, 2, 3])
+f(x)
+```
+
 De la même manière,
 `numpy` vous autorise à additionner des nombres à des vecteurs,
 en appliquant l'addition _à chaque composante_.
@@ -219,10 +242,41 @@ v = np.array([1, 2, 3])
 v + 5
 ```
 
+En d'autres termes,
+les fonctions $f(x) = x + c$ sont également **vectorisées**,
+puisque
+
+```python run
+import numpy as np
+
+# Cette fonction, si appliquée à un vecteur, ajoutera 5 à chaque composante
+def f(x):
+    return x + 5
+
+x = np.array([1, 2, 3])
+f(x)
+```
+
 Si ces opérations vous feront perdre toute crédibilité à vos examens de mathématiques,
-elles sont néanmoins très pratique pour tracer des courbes.
-Par exemple, pour tracer le graphe de la fonction $f(x) = x^2 + 1$,
-nous pouvons procéder de la manière suivante:
+elles sont néanmoins très pratique pour tracer des courbes,
+puisque toutes les _fonctions polynomiales_ sont automatiquement vectorisées.
+En effet, si nous souhaitons tracer la courbe de la fonction $f(x) = x^2 + 1$,
+
+```python run
+import numpy as np
+
+x = np.array([0, 0.1, 0.2, 0.3, 0.4, 0.5])
+
+# Au lieu de calculer les y un par un
+y = np.array([x[0] ** 2 + 1, ..., x[5] ** 2 + 1])
+
+# On peut simplement faire ceci
+y = x ** 2 + 1
+
+y
+```
+
+On peut alors tracer le graphe comme ceci:
 
 ```python run math
 import matplotlib.pyplot as plt
@@ -234,11 +288,34 @@ y = x ** 2 + 1
 plt.plot(x, y)
 ```
 
-La génération du vecteur `x` reste (pour l'instant) manuelle.
+On peut également définir la fonction `f` et l'appliquer au vecteur `x`.
+
+```python run
+import matplotlib.pyplot as plt
+import numpy as np
+
+def f(x):
+    return x ** 2 + 1
+
+x = np.array([0, 0.1, 0.2, 0.3, 0.4, 0.5])
+plt.plot(x, f(x))
+```
+
+La génération du vecteur `x` reste (pour l'instant) manuelle,
+ce qui ne nous convient pas,
+car comme vous le voyez,
+le graphe ci-dessus n'est pas très lisse.
+Il faut en général _au moins_ entre $50$ et $100$ points
+pour que le graphe paraisse lisse.
 
 ## Graphes de polynômes
 
 La fonction `numpy.linspace` permet de générer un vecteur dont les composantes sont **uniformément espacées** sur un intervalle donné.
+Trois paramètres sont nécessaires:
+
+1. la première composante
+2. la dernière composante
+3. le nombre de points à générer.
 
 $$
 \mathtt{numpy.linspace}(0, 1, 6)
@@ -262,17 +339,20 @@ Tracez le graphe de la fonction $f(x) = x^2 + 1$ sur l'intervalle $[-1, 1]$
 import numpy as np
 import matplotlib.pyplot as plt
 
-x = np.linspace(-1, 1, 100)
-y = x ** 2 + 1
+def f(x):
+    return x ** 2 + 1
 
-plt.plot(x, y)
+x = np.linspace(-1, 1, 100)
+plt.plot(x, f(x))
 ```
 
 :::
 
 ## Vectorisation
 
-Les fonctions dans la librairie `math`
+En plus de la multiplication et de l'addition,
+nous verrons que d'autres fonctions sont également vectorisées.
+Tout d'abord, rappelons que les fonctions dans la librairie `math`
 ont leur équivalent dans la librairie `numpy`.
 
 ```python run
@@ -295,6 +375,14 @@ import numpy as np
 np.sqrt([1, 4, 9])
 ```
 
+Cependant, `math.sqrt` ne peut pas être appliqué à un vecteur,
+car les opérations de la bibliothèque `math` ne sont pas vectorisées.
+
+```python run
+import math
+math.sqrt([1, 4, 9])
+```
+
 Ceci est très pratique pour tracer un graphe de fonction,
 puisqu'on peut facilement calculer le vecteur `y`.
 
@@ -303,9 +391,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 x = np.linspace(0, 10, 100)
-y = np.sqrt(x)
-
-plt.plot(x, y)
+plt.plot(x, np.sqrt(x))
 ```
 
 ## Personnalisation du graphe
@@ -321,6 +407,8 @@ plt.plot(x, y)
 | `plt.grid()`                    | Ajoute une grille                              |
 | `plt.xticks([0, 1, 2])`         | Définit les graduations de l'axe des abscisses |
 | `plt.yticks([0, 1, 2])`         | Définit les graduations de l'axe des ordonnées |
+| `plt.axhline(3, color="red")`   | Trace une ligne horizontale en $y = 3$         |
+| `plt.axvline(3, color="red")`   | Trace une ligne verticale en $x = 3$           |
 
 :::example
 Traçons un joli graphe de la fonction $f(x) = \sin x$
@@ -330,18 +418,21 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 x = np.linspace(0, 2 * np.pi, 100)
-y = np.sin(x)
 
-# Si vous souhaitez survivre
+plt.title("Graphe de f(x) = sin(x)")
+plt.grid()
+
+# Si HIL est derrière vous
 plt.xlabel("x")
 plt.ylabel("y")
+plt.axhline(0, color="black")
+plt.axvline(0, color="black")
 
+# Graduations adaptées à la fonction sin(x)
 plt.xticks([0, np.pi / 2, np.pi, 3 * np.pi / 2, 2 * np.pi], labels=["0", "π/2", "π", "3π/2", "2π"])
 plt.yticks([-1, -0.5, 0, 0.5, 1])
 
-plt.grid()
-plt.title("Graphe de f(x) = sin(x)")
-plt.plot(x, y, label="f(x) = sin(x)", color="pink")
+plt.plot(x, np.sin(x), label="f(x) = sin(x)", color="magenta")
 ```
 
 :::
@@ -361,11 +452,16 @@ x = np.linspace(0, 10, 100)
 y1 = np.sin(x)
 y2 = np.cos(x)
 
+# Alternativement, on peut faire plt.plot(x, y1, x, y2)
 plt.plot(x, y1)
 plt.plot(x, y2)
 ```
 
 ### Dans des graphiques séparés
+
+Pour créer plusieurs graphiques dans la même figure,
+on peut utiliser la fonction `plt.subplots` et spéficier combien de graphiques on souhaite créer.
+On peut ensuite appeler la fonction `plot` sur chaque graphique séparément.
 
 ```python run math
 import matplotlib.pyplot as plt
@@ -383,6 +479,18 @@ plots[1].set_title("Graphe de cos(x)")
 ```
 
 ## Fonctions en escalier
+
+# Points milieux
+
+```python run
+import numpy as np
+steps = np.array([0, 0.1, 0.2, 0.3, 0.4, 0.5])
+
+left, right = steps[:-1], steps[1:]
+print("steps: ", steps)
+print("left:", left)
+print("right:", right)
+```
 
 ```python run math
 import matplotlib.pyplot as plt
