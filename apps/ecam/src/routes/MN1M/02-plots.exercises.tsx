@@ -57,6 +57,22 @@ export function PrettyPlotsSequence() {
           { type: 'plot', x: [-2, 2], y: 'x**2', n: 40 },
         ]}
       />
+      <Matplotlib
+        prompt={
+          <p>
+            Tracez le graphe de {tex`f(x) = \cos x`} sur {tex`[-\pi, \pi]`}. Assurez-vous que les
+            axes sont correctement nommés et que la grille est affichée. Le titre de la figure doit
+            être {tex`\cos x`}
+          </p>
+        }
+        tests={[
+          { type: 'axes', value: 'both' },
+          { type: 'axisLabels', x: /x/i, y: /y/i },
+          { type: 'grid', value: true },
+          { type: 'title', pattern: /cos x/i },
+          { type: 'plot', x: [-Math.PI, Math.PI], y: `np.cos(x)`, n: 40 },
+        ]}
+      />
     </Sequence>
   )
 }
