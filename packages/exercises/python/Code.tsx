@@ -6,20 +6,34 @@ import { allKeyed, mapAsync } from 'es-toolkit'
 import { createEffect, createMemo, createProjection, For, Show } from 'solid-js'
 import * as v from 'valibot'
 
+const Test = v.variant('test', [
+  v.object({
+    desc: v.optional(v.string()),
+    test: v.custom<(code: string) => boolean | Promise<boolean>>(() => true),
+  }),
+  v.object({
+    desc: v.optional(v.string()),
+    test: v.union([v.string(), v.null()]),
+    check: v.custom<Parameters<typeof python.test>[2]>(() => true),
+  }),
+])
+
+async function runTest(code: string, test: v.InferInput<typeof Test>) {
+  if ('check' in test && test.test !== undefined) {
+    return python.test(code, test.test, test.check)
+  } else if (typeof test.test === 'function') {
+    const passed = await test.test(code)
+    return { ...test, passed, result: passed, stdout: '' }
+  }
+  throw new Error('Invalid test')
+}
+
 export const PythonCode = createStep({
   name: 'python/code',
   schema: {
     data: {
       prompt: omitFromJSON(v.custom<JSX.Element>(() => true)),
-      tests: omitFromJSON(
-        v.array(
-          v.object({
-            desc: v.optional(v.string()),
-            test: v.union([v.string(), v.null()]),
-            check: v.custom<Parameters<typeof python.test>[2]>(() => true),
-          }),
-        ),
-      ),
+      tests: omitFromJSON(v.array(Test)),
       check: omitFromJSON(
         v.optional(v.custom<(code: string) => boolean | Promise<boolean>>(() => true)),
       ),
@@ -30,7 +44,7 @@ export const PythonCode = createStep({
   },
   grade: async (ctx) => {
     const { tests, codeCheck } = await allKeyed({
-      tests: mapAsync(ctx.data.tests, (t) => python.test(ctx.inputs.code, t.test, t.check)),
+      tests: mapAsync(ctx.data.tests, (t) => runTest(ctx.inputs.code, t)),
       codeCheck: ctx.data.check?.(ctx.inputs.code),
     })
     return tests.every((t) => t.passed) && codeCheck !== false
@@ -62,7 +76,7 @@ export const PythonCode = createStep({
       () =>
         mapAsync(ctx.data.tests, async (t) => ({
           ...t,
-          ...(await python.test(ctx.inputs.code, t.test, t.check)),
+          ...(await runTest(ctx.inputs.code, t)),
         })),
       [],
     )
