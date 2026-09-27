@@ -86,7 +86,10 @@ function SessionCard(props: {
     <a href={paths.MN1M[props.link] as string} class="not-prose no-underline">
       <div class="border border-slate-200 bg-cover bg-center shadow-xs hover:bg-blue-50">
         <Show when={props.img} fallback={<div class="h-48 w-full bg-slate-100" />}>
-          <img src={props.img} class="h-48 w-full object-cover opacity-50 hover:opacity-100" />
+          <img
+            src={props.img}
+            class="h-48 w-full object-cover opacity-50 transition ease-in-out hover:opacity-100"
+          />
         </Show>
         <h3 class="px-2 py-4 text-lg font-bold text-stone-700">
           Session {props.index} - {props.title}
