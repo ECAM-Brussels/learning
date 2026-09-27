@@ -26,7 +26,7 @@ export function Environment(props: {
           <span class="font-light"> ({props.title})</span>
         </Show>
       </h3>
-      <div class="my-4 p-4">{props.children}</div>
+      <div class="my-4 px-4 py-2">{props.children}</div>
     </div>
   )
 }

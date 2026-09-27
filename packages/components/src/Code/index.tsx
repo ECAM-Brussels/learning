@@ -35,7 +35,7 @@ export const Code: Component<Props> = (rawProps) => {
   const [value, setValue] = createSignal(() => props.children)
   return (
     <Loading fallback={<p>Chargement de l'éditeur...</p>}>
-      <div class="flex flex-col gap-0">
+      <div class="my-4 flex flex-col gap-0">
         <Dynamic
           component={props.backend === 'monaco' ? Monaco : CodeMirror}
           children={value()}

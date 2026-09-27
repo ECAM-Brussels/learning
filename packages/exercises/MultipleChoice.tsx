@@ -54,7 +54,7 @@ const _MultipleChoice = createStep({
           <Attempt>
             <For each={Array.from(ctx.data.choices.entries())}>
               {([name, element]) => (
-                <label class="rounded-md border border-blue-100 bg-blue-50 p-2">
+                <label class="rounded-md border border-slate-100 p-2 px-4 text-slate-800 shadow-sm hover:bg-slate-50 has-checked:border-blue-200 has-checked:bg-blue-50 has-checked:text-sky-700">
                   <input
                     type="checkbox"
                     class="mr-2"
