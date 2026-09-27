@@ -9,23 +9,24 @@ import * as v from 'valibot'
 const Test = v.variant('test', [
   v.object({
     desc: v.optional(v.string()),
-    test: v.custom<(code: string) => boolean | Promise<boolean>>(() => true),
+    test: v.union([v.string(), v.null()]),
+    check: v.custom<Parameters<typeof python.test>[2]>(() => true),
   }),
   v.object({
     desc: v.optional(v.string()),
-    test: v.union([v.string(), v.null()]),
-    check: v.custom<Parameters<typeof python.test>[2]>(() => true),
+    test: v.custom<(code: string) => boolean | Promise<boolean>>(
+      (val) => typeof val === 'function',
+    ),
   }),
 ])
 
 async function runTest(code: string, test: v.InferInput<typeof Test>) {
-  if ('check' in test && test.test !== undefined) {
+  if ('check' in test) {
     return python.test(code, test.test, test.check)
-  } else if (typeof test.test === 'function') {
+  } else {
     const passed = await test.test(code)
     return { ...test, passed, result: passed, stdout: '' }
   }
-  throw new Error('Invalid test')
 }
 
 export const PythonCode = createStep({
