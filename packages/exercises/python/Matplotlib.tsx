@@ -58,11 +58,12 @@ export const Matplotlib = createDerivedStep(
             desc: `Les axes sont correctement nommés`,
             test: dedent /* python */ `
               import matplotlib.pyplot as plt
+              import json
               ax = plt.gcf().axes[0]
               x_label = ax.get_xlabel()
               y_label = ax.get_ylabel()
               plt.close("all")
-              { "x": x_label, "y": y_label }
+              json.dumps({ "x": x_label, "y": y_label })
             `,
             check: ({ result }) => {
               if (!result) return false
