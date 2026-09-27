@@ -57,6 +57,12 @@ export default function Code(props: EditorProps) {
       if (editor) monaco.editor.setModelLanguage(editor.getModel()!, lang)
     },
   )
+  createEffect(
+    () => props.readOnly,
+    (readOnly) => {
+      if (editor) editor.updateOptions({ readOnly: readOnly ?? false })
+    },
+  )
 
   function mount() {
     if (editor || !container) return
@@ -68,6 +74,7 @@ export default function Code(props: EditorProps) {
       scrollbar: {
         alwaysConsumeMouseWheel: false,
       },
+      readOnly: props.readOnly ?? false,
     })
     editor.onDidChangeModelContent(() => setValue(editor!.getValue()))
     editor.updateOptions({ scrollBeyondLastLine: false })

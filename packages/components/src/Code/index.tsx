@@ -20,6 +20,7 @@ export type EditorProps = {
   lang: 'python'
   children: string
   onChange?: (value: string) => void
+  readOnly?: boolean
 }
 
 type Props = Omit<EditorProps, 'lang'> & {
@@ -44,6 +45,7 @@ export const Code: Component<Props> = (rawProps) => {
             setValue(newValue)
             props.onChange?.(newValue)
           }}
+          readOnly={props.readOnly}
         />
         <Show when={props.lang === 'python' && props.run}>
           <Python class="my-0 py-0" value={value()} math={props.math} />

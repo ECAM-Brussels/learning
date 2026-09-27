@@ -58,6 +58,7 @@ const _MultipleChoice = createStep({
                   <input
                     type="checkbox"
                     class="mr-2"
+                    disabled={ctx.state.saved !== undefined}
                     checked={ctx.state.current.selection?.includes(name)}
                     onChange={(event) =>
                       ctx.state.set('selection', (prev) => {
