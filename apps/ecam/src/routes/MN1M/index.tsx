@@ -5,6 +5,7 @@ import type { JSX } from '@solidjs/web'
 import { createMemo, Show } from 'solid-js'
 import { paths } from '../../router'
 import banner from './banner.jpg'
+import session2 from './matplotlib.jpg'
 import session1 from './python.jpg'
 
 export const route = {
@@ -50,13 +51,22 @@ export default () => {
               </ul>
             </TD>
           </TR>
+          <TR>
+            <TH>Évaluation</TH>
+            <TD>
+              <ul>
+                <li>Janvier: examen écrit (50%)</li>
+                <li>Juin: examen écrit (50%)</li>
+              </ul>
+            </TD>
+          </TR>
         </tbody>
       </table>
       <Heading level={2}>Séances d'exercices</Heading>
       <div class="grid gap-2 lg:grid-cols-2">
         <Show when={showDrafts()}>
           <SessionCard index={1} title="Introduction à Python" link="01-python" img={session1} />
-          <SessionCard index={2} title="Fonctions et graphiques" link="02-plots" />
+          <SessionCard index={2} title="Fonctions et graphiques" link="02-plots" img={session2} />
         </Show>
       </div>
     </>
@@ -85,7 +95,10 @@ function SessionCard(props: {
     <a href={paths.MN1M[props.link] as string} class="not-prose no-underline">
       <div class="border border-slate-200 bg-cover bg-center shadow-xs hover:bg-blue-50">
         <Show when={props.img} fallback={<div class="h-48 w-full bg-slate-100" />}>
-          <img src={props.img} class="h-48 w-full object-cover opacity-50 hover:opacity-100" />
+          <img
+            src={props.img}
+            class="h-48 w-full object-cover opacity-50 transition ease-in-out hover:opacity-100"
+          />
         </Show>
         <h3 class="px-2 py-4 text-lg font-bold text-stone-700">
           Session {props.index} - {props.title}

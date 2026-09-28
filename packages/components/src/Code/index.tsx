@@ -20,6 +20,7 @@ export type EditorProps = {
   lang: 'python'
   children: string
   onChange?: (value: string) => void
+  readOnly?: boolean
 }
 
 type Props = Omit<EditorProps, 'lang'> & {
@@ -31,11 +32,11 @@ type Props = Omit<EditorProps, 'lang'> & {
 }
 
 export const Code: Component<Props> = (rawProps) => {
-  const props = merge({ backend: 'codemirror' }, rawProps)
+  const props = merge({ backend: 'monaco' }, rawProps)
   const [value, setValue] = createSignal(() => props.children)
   return (
     <Loading fallback={<p>Chargement de l'éditeur...</p>}>
-      <div class="flex flex-col gap-0">
+      <div class="my-4 flex flex-col gap-0">
         <Dynamic
           component={props.backend === 'monaco' ? Monaco : CodeMirror}
           children={value()}
@@ -44,6 +45,7 @@ export const Code: Component<Props> = (rawProps) => {
             setValue(newValue)
             props.onChange?.(newValue)
           }}
+          readOnly={props.readOnly}
         />
         <Show when={props.lang === 'python' && props.run}>
           <Python class="my-0 py-0" value={value()} math={props.math} />
