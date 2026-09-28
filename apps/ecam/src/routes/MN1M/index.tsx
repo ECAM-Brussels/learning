@@ -51,6 +51,15 @@ export default () => {
               </ul>
             </TD>
           </TR>
+          <TR>
+            <TH>Évaluation</TH>
+            <TD>
+              <ul>
+                <li>Janvier: examen écrit (50%)</li>
+                <li>Juin: examen écrit (50%)</li>
+              </ul>
+            </TD>
+          </TR>
         </tbody>
       </table>
       <Heading level={2}>Séances d'exercices</Heading>
