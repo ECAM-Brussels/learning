@@ -6,7 +6,6 @@ import { createMemo, useContext, type Component } from 'solid-js'
 import * as v from 'valibot'
 import { useExerciseContext } from './base'
 import { StepContext } from './context'
-import remote from './context.remote'
 import { ExerciseOptionsContext, Options } from './options'
 
 type Prettify<T> = {
@@ -115,22 +114,5 @@ export function Sequence<T extends object>(props: Props<T> & { id: string }) {
         ))}
       </Pagination>
     </ExerciseOptionsContext>
-  )
-}
-
-export function defineSequences<K extends string, T extends Record<K, Props<object>>>(
-  sequences: T,
-) {
-  return Object.assign(
-    (props: { id: K }) => {
-      return <Sequence id={props.id} {...sequences[props.id]} />
-    },
-    {
-      prefetch(url: string) {
-        for (const sequenceId of Object.keys(sequences)) {
-          remote.fetchSequence({ url, sequenceId })
-        }
-      },
-    },
   )
 }

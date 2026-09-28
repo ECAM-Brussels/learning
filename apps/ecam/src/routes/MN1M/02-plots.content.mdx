@@ -1,5 +1,5 @@
 import { Sequence } from '@learning/core'
-import { FunctionExercise, PrettyPlotsSequence } from './02-plots.exercises'
+import { Exercises } from './02-plots.exercises'
 
 # Fonctions et graphiques
 
@@ -121,44 +121,7 @@ avec les valeurs de `rayon` et de `hauteur` que l'on souhaite.
 
 :::
 
-<Sequence id="functions">
-  <FunctionExercise
-    fnName="aire_carre"
-    prompt={
-      <p>
-        Définissez une fonction <code>aire_carre</code> qui prend en entrée un paramètre
-        <code>cote</code> et qui retourne l'aire d'un carré de côté <code>cote</code>.
-      </p>
-    }
-    tests={[1, 2, 3, 7, 10].map((x) => [[x], String(x ** 2)])}
-  />
-  <FunctionExercise
-    fnName="aire_triangle"
-    prompt={
-      <p>
-        Définissez une fonction <code>aire_triangle</code> qui prend en entrée un paramètre{' '}
-        <code>cote</code> et qui retourne l'aire d'un <strong>triangle équilatéral</strong> de côté{' '}
-        <code>cote</code>.
-      </p>
-    }
-    tests={[1, 2, 3, 4, 5].map((x) => [[x], String((x ** 2 * Math.sin(Math.PI / 3)) / 2)])}
-  />
-  <FunctionExercise
-    fnName="angle_vecteurs"
-    prompt={
-      <p>
-        Définissez une fonction <code>angle_vecteurs</code> qui prend en entrée deux listes{' '}
-        <code>a</code> et <code>b</code> et qui retourne l'angle <strong>en degrés</strong> entre
-        les vecteurs associés à ces listes.
-      </p>
-    }
-    tests={[
-      [['[1, 0]', '[0, 1]'], '90'],
-      [['[1, 0]', '[1, 0]'], '0'],
-      [['[1, 0]', '[-1, 0]'], '180'],
-    ]}
-  />
-</Sequence>
+<Exercises.Functions />
 
 ## Graphe d'une fonction
 
@@ -438,7 +401,7 @@ plt.plot(x, np.sin(x), label="f(x) = sin(x)", color="magenta")
 
 :::
 
-<PrettyPlotsSequence />
+<Exercises.PrettyPlots />
 
 ## Plusieurs courbes
 
