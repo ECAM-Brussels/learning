@@ -1,5 +1,4 @@
 import { createDerivedStep, omitFromJSON } from '@learning/core'
-import type { JSX } from '@solidjs/web'
 import { dedent } from 'es-toolkit/string'
 import * as v from 'valibot'
 import { PythonCode } from './Code'
@@ -36,7 +35,7 @@ const Test = v.variant('type', [
 
 export const Matplotlib = createDerivedStep(
   PythonCode,
-  { prompt: omitFromJSON(v.custom<JSX.Element>(() => true)), tests: omitFromJSON(v.array(Test)) },
+  { prompt: 'jsx', tests: omitFromJSON(v.array(Test)) },
   (props) => ({
     math: true,
     prompt: props.prompt,

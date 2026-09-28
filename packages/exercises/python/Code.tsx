@@ -1,7 +1,6 @@
 import { CheckMark, Code } from '@learning/components'
 import { createStep, omitFromJSON } from '@learning/core'
 import { python } from '@learning/repl'
-import type { JSX } from '@solidjs/web'
 import { allKeyed, mapAsync } from 'es-toolkit'
 import { createEffect, createMemo, createProjection, For, Show } from 'solid-js'
 import * as v from 'valibot'
@@ -33,7 +32,7 @@ export const PythonCode = createStep({
   name: 'python/code',
   schema: {
     data: {
-      prompt: omitFromJSON(v.custom<JSX.Element>(() => true)),
+      prompt: 'jsx',
       tests: omitFromJSON(v.array(Test)),
       check: omitFromJSON(
         v.optional(v.custom<(code: string) => boolean | Promise<boolean>>(() => true)),

@@ -23,6 +23,7 @@ import * as v from 'valibot'
 import { getUser } from '../auth'
 import { expr, Expression } from '../expr'
 import { hasPermissions } from '../permissions'
+import { omitFromJSON } from '../validation'
 import { createIsVisible } from '../visibility'
 import { StepContext } from './context'
 import local from './context.local'
@@ -47,6 +48,7 @@ const JsonObject = v.record(v.string(), Json)
 type JsonObject = v.InferInput<typeof JsonObject>
 
 const CustomSchemas = {
+  boolean: v.boolean(),
   expr: v.union([
     v.pipe(
       v.string(),
@@ -54,6 +56,7 @@ const CustomSchemas = {
     ),
     Expression,
   ]),
+  jsx: omitFromJSON(v.custom<JSX.Element>(() => true)),
   string: v.string(),
   number: v.number(),
 } as const
