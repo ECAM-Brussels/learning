@@ -1,6 +1,8 @@
 import { Sequence, tex } from '@learning/core'
+import { PythonCode } from '@learning/exercises/python/Code'
 import { PythonFunction } from '@learning/exercises/python/Function'
 import { Matplotlib } from '@learning/exercises/python/Matplotlib'
+import dedent from 'dedent'
 
 export const Exercises = {
   Functions: () => (
@@ -87,6 +89,76 @@ export const Exercises = {
           </p>
         }
         tests={[{ type: 'points', x: [-1, 2, 5], y: [4, 10, -11] }]}
+      />
+    </Sequence>
+  ),
+  Discretization: () => (
+    <Sequence id="discretization">
+      <PythonCode
+        prompt={
+          <p>
+            Créez une variable <code>x</code> contenant {tex`100`} points uniformément répartis
+            entre {tex`0`} et {tex`10`}.
+          </p>
+        }
+        tests={[
+          {
+            desc: 'La variable x est un vecteur de 100 points',
+            test: 'len(x)',
+            check: (output) => output.result === '100',
+          },
+          {
+            desc: 'La première composante de x est 0',
+            test: 'x[0]',
+            check: (output) => output.result === '0',
+          },
+          {
+            desc: 'La dernière composante de x est 10',
+            test: 'x[-1]',
+            check: (output) => output.result === '10',
+          },
+          {
+            desc: 'Les points de x sont uniformément répartis entre 0 et 10',
+            test: dedent /* python */ `
+              import numpy as np
+              np.allclose(np.diff(x), np.diff(x)[0])
+            `,
+            check: (output) => output.result?.toLowerCase() === 'true',
+          },
+        ]}
+      />
+      <PythonCode
+        prompt={
+          <p>
+            Définissez un vecteur <code>x</code> contenant {tex`50`} points uniformément répartis
+            entre {tex`-\pi`} et {tex`\pi`}.
+          </p>
+        }
+        tests={[
+          {
+            desc: 'La variable x est un vecteur de 50 points',
+            test: 'len(x)',
+            check: (output) => output.result === '50',
+          },
+          {
+            desc: 'La première composante de x est -pi',
+            test: 'x[0]',
+            check: (output) => output.result === (-Math.PI).toString(),
+          },
+          {
+            desc: 'La dernière composante de x est pi',
+            test: 'x[-1]',
+            check: (output) => output.result === Math.PI.toString(),
+          },
+          {
+            desc: 'Les points de x sont uniformément répartis',
+            test: dedent /* python */ `
+              import numpy as np
+              np.allclose(np.diff(x), np.diff(x)[0])
+            `,
+            check: (output) => output.result?.toLowerCase() === 'true',
+          },
+        ]}
       />
     </Sequence>
   ),
