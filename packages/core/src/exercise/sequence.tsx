@@ -6,26 +6,32 @@ import { createMemo, useContext, type Component } from 'solid-js'
 import * as v from 'valibot'
 import { useExerciseContext } from './base'
 import { StepContext } from './context'
+import remote from './context.remote'
 import { ExerciseOptionsContext, Options } from './options'
 
-type Props<T extends object> = {
-  id: string
-  options?: Options<'input'>
-} & (
-  | {
-      exercise: Component<T>
-      next: (props: {
-        position: number
-        progress: Record<number, boolean | null | undefined>
-      }) => Promise<T> | T
-    }
-  | {
-      next: Component<{ position: number; progress: Record<number, boolean | null | undefined> }>
-    }
-  | {
-      children: JSX.Element[]
-    }
-)
+type Prettify<T> = {
+  [K in keyof T]: T[K]
+} & {}
+
+type Props<T extends object> = Prettify<
+  {
+    options?: Options<'input'>
+  } & (
+    | {
+        exercise: Component<T>
+        next: (props: {
+          position: number
+          progress: Record<number, boolean | null | undefined>
+        }) => Promise<T> | T
+      }
+    | {
+        next: Component<{ position: number; progress: Record<number, boolean | null | undefined> }>
+      }
+    | {
+        children: JSX.Element[]
+      }
+  )
+>
 
 /**
  * Create a sequence of exercises
@@ -69,7 +75,7 @@ type Props<T extends object> = {
  *   }}
  * />
  */
-export function Sequence<T extends object>(props: Props<T>) {
+export function Sequence<T extends object>(props: Props<T> & { id: string }) {
   const exerciseContext = useExerciseContext()
   const optionsContext = useContext(ExerciseOptionsContext)
   const options = createMemo(() => v.parse(Options, { ...optionsContext(), ...props.options }))
@@ -109,5 +115,22 @@ export function Sequence<T extends object>(props: Props<T>) {
         ))}
       </Pagination>
     </ExerciseOptionsContext>
+  )
+}
+
+export function defineSequences<K extends string, T extends Record<K, Props<object>>>(
+  sequences: T,
+) {
+  return Object.assign(
+    (props: { id: K }) => {
+      return <Sequence id={props.id} {...sequences[props.id]} />
+    },
+    {
+      prefetch(url: string) {
+        for (const sequenceId of Object.keys(sequences)) {
+          remote.fetchSequence({ url, sequenceId })
+        }
+      },
+    },
   )
 }
