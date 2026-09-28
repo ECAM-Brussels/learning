@@ -373,7 +373,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     </Show>
   )
   return (
-    <div class={['not-prose', props.class]}>
+    <div class={['not-prose my-4', props.class]}>
       <StepBoundary fallback="Chargement de l'exercice...">
         <form
           ref={setForm}
