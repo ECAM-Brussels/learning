@@ -24,6 +24,11 @@ const Test = v.variant('type', [
     n: v.optional(v.number(), 40),
   }),
   v.object({
+    type: v.literal('points'),
+    x: v.array(v.number()),
+    y: v.array(v.number()),
+  }),
+  v.object({
     type: v.literal('lineCount'),
     value: v.number(),
   }),
@@ -99,6 +104,7 @@ export const Matplotlib = createDerivedStep(
             desc: `La figure contient la courbe demandée`,
             test: dedent /* python */ `
               import matplotlib.pyplot as plt
+              import numpy as np
               ax = plt.gcf().axes[0]
               result = False
 
@@ -109,6 +115,31 @@ export const Matplotlib = createDerivedStep(
                   bool(x[0] == ${t.x[0]} and x[-1] == ${t.x[1]}),
                   len(x) > ${t.n},
                   np.allclose(y, ${t.y}),
+                ]
+                if all(checks):
+                  result = True
+                  break
+
+              plt.close("all") 
+              result
+            `,
+            check: ({ result }) => result?.toLowerCase() === 'true',
+          }
+        case 'points':
+          return {
+            desc: `La figure contient les points demandés`,
+            test: dedent /* python */ `
+              import matplotlib.pyplot as plt
+              import numpy as np
+              ax = plt.gcf().axes[0]
+              result = False
+
+              for line in ax.get_lines():
+                x = line.get_xdata()
+                y = line.get_ydata()
+                checks = [
+                  np.allclose(x, ${JSON.stringify(t.x)}),
+                  np.allclose(y, ${JSON.stringify(t.y)}),
                 ]
                 if all(checks):
                   result = True
