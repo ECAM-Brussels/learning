@@ -125,6 +125,8 @@ avec les valeurs de `rayon` et de `hauteur` que l'on souhaite.
 
 ## Graphe d'une fonction
 
+### Fonctions linéaires par morceaux
+
 Pour tracer un graphe passant par plusieurs points,
 on utilise la fonction `matplotlib.pyplot.plot`,
 qui prend en argument:
@@ -161,7 +163,9 @@ En réalité, le graphe est toujours constitué de points reliés par des segmen
 Spécifier les points à tracer un par un peut être fastidieux.
 Nous allons voir que `numpy` permet de fortement accélérer le processus grâce à la _vectorisation_.
 
-## _"Multiplication"_ de vecteurs et _"addition scalaire"_
+<Exercises.PiecewiseLinear />
+
+### _"Multiplication"_ de vecteurs et _"addition scalaire"_
 
 Remarquons que `numpy` autorise la _multiplication de vecteurs_ de dimension égale,
 en appliquant la multiplication _composante par composante_.
@@ -253,7 +257,7 @@ plt.plot(x, y)
 
 On peut également définir la fonction `f` et l'appliquer au vecteur `x`.
 
-```python run
+```python run math
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -271,7 +275,7 @@ le graphe ci-dessus n'est pas très lisse.
 Il faut en général _au moins_ entre $50$ et $100$ points
 pour que le graphe paraisse lisse.
 
-## Graphes de polynômes
+### Graphes de polynômes
 
 La fonction `numpy.linspace` permet de générer un vecteur dont les composantes sont **uniformément espacées** sur un intervalle donné.
 Trois paramètres sont nécessaires:
@@ -311,7 +315,9 @@ plt.plot(x, f(x))
 
 :::
 
-## Vectorisation
+<Exercises.Polynomials />>
+
+### Vectorisation
 
 En plus de la multiplication et de l'addition,
 nous verrons que d'autres fonctions sont également vectorisées.
@@ -357,7 +363,7 @@ x = np.linspace(0, 10, 100)
 plt.plot(x, np.sqrt(x))
 ```
 
-## Personnalisation du graphe
+### Personnalisation du graphe
 
 | Instruction                     | Description                                    |
 | ------------------------------- | ---------------------------------------------- |
@@ -403,12 +409,12 @@ plt.plot(x, np.sin(x), label="f(x) = sin(x)", color="magenta")
 
 <Exercises.PrettyPlots />
 
-## Plusieurs courbes
+### Plusieurs courbes
 
 En répétant l'appel à `plt.plot` plusieurs fois,
 on peut tracer plusieurs courbes sur le même graphe.
 
-### Dans le même graphique
+#### Dans le même graphique
 
 ```python run math
 import matplotlib.pyplot as plt
@@ -423,7 +429,9 @@ plt.plot(x, y1)
 plt.plot(x, y2)
 ```
 
-### Dans des graphiques séparés
+<Exercises.MultiplePlots />
+
+#### Dans des graphiques séparés
 
 Pour créer plusieurs graphiques dans la même figure,
 on peut utiliser la fonction `plt.subplots` et spéficier combien de graphiques on souhaite créer.

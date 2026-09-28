@@ -472,20 +472,26 @@ export function createDerivedStep<R extends RawShape, S extends StepSchema, F ex
     grade: (ctx) => step.grade({ ...ctx, data: transform(ctx.data) }),
     feedback: (props) => {
       const Self: ComponentProps<NonNullable<typeof step.feedback>>['Self'] = (attrs) => {
-        return props.Self({
-          ...attrs,
-          data: props.data,
-          feedback: attrs.feedback
-            ? (feedbackProps) =>
-                attrs.feedback?.({
-                  ...feedbackProps,
-                  data: transform(feedbackProps.data),
-                  Self,
-                })
-            : undefined,
-        })
+        const Component = dynamic(() => props.Self)
+        return (
+          <Component
+            {...attrs}
+            data={props.data}
+            feedback={
+              attrs.feedback
+                ? (feedbackProps) =>
+                    attrs.feedback?.({
+                      ...feedbackProps,
+                      data: transform(feedbackProps.data),
+                      Self,
+                    })
+                : undefined
+            }
+          />
+        )
       }
-      return step.feedback?.({ ...props, data: transform(props.data), Self })
+      const Feedback = dynamic(() => step.feedback)
+      return <Feedback {...props} Self={Self} data={transform(props.data)} />
     },
     ...patch,
   })
