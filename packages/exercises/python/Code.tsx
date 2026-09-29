@@ -5,7 +5,7 @@ import { allKeyed, mapAsync } from 'es-toolkit'
 import { createEffect, createMemo, createProjection, For, Show } from 'solid-js'
 import * as v from 'valibot'
 
-const Test = v.variant('test', [
+export const Test = v.variant('test', [
   v.object({
     desc: v.optional(v.string()),
     test: v.union([v.string(), v.null()]),
