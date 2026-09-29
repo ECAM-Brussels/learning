@@ -8,24 +8,29 @@ import { useExerciseContext } from './base'
 import { StepContext } from './context'
 import { ExerciseOptionsContext, Options } from './options'
 
-type Props<T extends object> = {
-  id: string
-  options?: Options<'input'>
-} & (
-  | {
-      exercise: Component<T>
-      next: (props: {
-        position: number
-        progress: Record<number, boolean | null | undefined>
-      }) => Promise<T> | T
-    }
-  | {
-      next: Component<{ position: number; progress: Record<number, boolean | null | undefined> }>
-    }
-  | {
-      children: JSX.Element[]
-    }
-)
+type Prettify<T> = {
+  [K in keyof T]: T[K]
+} & {}
+
+type Props<T extends object> = Prettify<
+  {
+    options?: Options<'input'>
+  } & (
+    | {
+        exercise: Component<T>
+        next: (props: {
+          position: number
+          progress: Record<number, boolean | null | undefined>
+        }) => Promise<T> | T
+      }
+    | {
+        next: Component<{ position: number; progress: Record<number, boolean | null | undefined> }>
+      }
+    | {
+        children: JSX.Element[]
+      }
+  )
+>
 
 /**
  * Create a sequence of exercises
@@ -69,11 +74,10 @@ type Props<T extends object> = {
  *   }}
  * />
  */
-export function Sequence<T extends object>(props: Props<T>) {
+export function Sequence<T extends object>(props: Props<T> & { id: string }) {
   const exerciseContext = useExerciseContext()
-  const options = createMemo(() =>
-    v.parse(Options, { ...useContext(ExerciseOptionsContext), ...props.options }),
-  )
+  const optionsContext = useContext(ExerciseOptionsContext)
+  const options = createMemo(() => v.parse(Options, { ...optionsContext(), ...props.options }))
   const sequence = createMemo(() => ({ url: useLocation().pathname, sequenceId: props.id }))
   const progress = createMemo(() => {
     if (options().showFeedback === false) return {}
@@ -88,7 +92,7 @@ export function Sequence<T extends object>(props: Props<T>) {
     'children' in props ? props.children.length : Object.keys(progress()).length + 1,
   )
   return (
-    <ExerciseOptionsContext value={options()}>
+    <ExerciseOptionsContext value={options}>
       <Pagination progress={progress()}>
         {range(length()).map((i) => () => (
           <StepContext value={() => stepContext(i)}>

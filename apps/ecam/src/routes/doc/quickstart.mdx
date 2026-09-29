@@ -1,0 +1,208 @@
+# Pourquoi le Web
+
+- Les applications web sont **accessibles**
+
+  - Il ne faut rien installer
+
+- Les applications web sont **faciles à programmer**
+
+- **Écosystème adapté** à la pédagogie
+
+  - Formules mathématiques $\LaTeX$
+  - Interactivité
+
+# Pourquoi `learning` ?
+
+## Problèmes avec les plateformes
+
+- Peu de plateformes d'apprentissage réellement adaptées aux référentiels FWB
+
+- Plateformes d'apprentissage sont souvent des banques de questions indépendantes
+
+- Feedback verbeux difficiles à comprendre
+
+## Design de learning
+
+- Plateforme d'apprentissage **basée sur le calcul formel**:
+  génération d'exercices intelligente
+
+- Les compétences forment un graphe interconnecté
+
+- Les interactions sont des **conversations** courtes avec l'étudiant·e,
+  et le moteur d'exercice se déplace sur le graphe.
+
+# HTML
+
+Le HTML est le langage dans lequel sont écrites les pages web.
+
+```html
+<h1>Ceci est un titre</h1>
+
+<p>Ceci est un paragraphe</p>
+
+<a href="https://example.com">Ceci est un lien</a>
+```
+
+- Balises de début/fin
+
+- Attributs et valeurs
+
+# Programmation Web
+
+La programmation web moderne repose sur la création de balises propres,
+qu'on appelle **composants**.
+
+```tsx
+<Sequence>
+  <Factor expr="x^2 - 5x + 6" />
+  <Factor expr="x^2 - 3x + 2" />
+</Sequence>
+```
+
+Il existe plusieurs manières de créer des composants.
+Nous employons [SolidJS](https://www.solidjs.com/).
+
+# Premier composant
+
+```tsx
+function Factor(props: { expr: string }) {
+  return <p>Factorisez l'expression {props.expr}</p>
+}
+```
+
+Conceptuellement, un **composant** est une _fonction_ qui prend en argument les propriétés (attributs)
+et retourne du TSX (un langage de balises qui ressemble à HTML).
+
+Après avoir défini le composant, on peut l'utiliser autant que nécessaire
+
+```tsx
+<Factor expr="x^2 - 5x + 6" /> // Factorisez l'expression x^2 - 5x + 6
+```
+
+# Avantages des composants
+
+- Réutilisabilité
+
+- Encapsulation/isolation
+
+- Composition/imbrication
+
+- Testabilité
+
+:::remark
+Dans notre plateforme,
+chaque exercise est un composant.
+Pédagogiquement, le fait que nos exercices sont réutilisables et composables est très important.
+
+Par exemple, un exercice sur les limites est composé de plusieurs exercices:
+la factorisation, la simplification, etc.
+:::
+
+# Composants mis à votre disposition
+
+La plateforme a des composants génériques pour créer des ressources.
+
+| Composant    | Description                                                       |
+| ------------ | ----------------------------------------------------------------- |
+| `<Sequence>` | Crée une séquence d'exercices avec pagination et progression      |
+| `<Geogebra>` | Intègre une animation Geogebra dans la page                       |
+| `<Latex>`    | Ajoute une formule mathématique                                   |
+| `<Attempt>`  | Utile pour les prompts d'exercices, centre et affiche un feedback |
+
+Le but est de créer des composants spécifiques à chaque exercice
+
+| Composant          | Description                  |
+| ------------------ | ---------------------------- |
+| `<Factor>`         | Factorisation d'un polynôme  |
+| `<MultipleChoice>` | Création d'un choix multiple |
+| ...                | Votre travail (merci!)       |
+
+# MDX
+
+Pour créer du contenu pédagogique,
+on utilise le langage [MDX](https://mdxjs.com/),
+qui permet d'écrire du TSX plus rapidement.
+
+```md
+# Ceci est un titre
+
+Ceci est un paragrahe, avec une formule mathématique $x^2$.
+
+:::example
+Ceci est un exemple!
+:::
+
+On peut aussi employer nos composants:
+
+<Factor expr="x^2 - 5x + 6" />
+```
+
+# Calcul symbolique
+
+La fonction `expr` permet d'analyser une chaîne écrite en $\LaTeX$.
+
+```ts
+expr('4').isEqual('2 \\times 2') // true
+expr('x^2').diff() // 2x
+expr('(x - 2) (x - 3)').expand() // x^2 - 5x + 6
+expr('x^2 - 1').factor() // (x - 1) (x + 1)
+expr('3 - 2').simplify() // 1
+```
+
+Pour afficher une expression, on emploie `tex`
+
+```ts
+tex`(x - 1) (x + 1) = ${expr('(x - 1) (x + 1)').expand()}`
+```
+
+# Réactivité
+
+La réactivité est un concept central dans la création d'interface.
+Quand les inputs de l'utilisateur.trice changent,
+l'interface doit se mettre à jour de manière cohérente.
+
+Malheureusement, en programmation, les relations sont souvent détruites:
+
+```ts
+let a = 1
+let b = 2
+let c = a + b // c vaut 3
+
+a = 3 // c vaut toujours 3, pas 5
+```
+
+L'idée centrale est que si on travaille avec des **fonctions**,
+les relations sont préservées
+puisqu'on recalcule les valeurs à chaque fois qu'on en a besoin.
+
+```ts
+let a = () => 1
+let b = () => 2
+
+let c = () => a() + b() // c() vaut 3
+
+a = () => 3 // c() vaut 5
+```
+
+# Exemple
+
+```tsx
+function Factor(props: { expr: string }) {
+  return (
+    <>
+      <p>Factorisez l'expression {tex`${props.expr}`}</p>
+      <p>La réponse est {tex`${expr(props.expr).factor()}`}</p>
+    </>
+  )
+}
+```
+
+Les indications de types sont facultatives,
+on peut les omettre et écrire `Factor(props)`
+mais elles permettent l'auto-complétion dans l'éditeur de texte.
+
+# `createStep`
+
+La création d'un composant d'exercice est répétitive est fastidieuse.
+
+- Il faut exposer les `options`

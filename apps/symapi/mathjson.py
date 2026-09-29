@@ -2,7 +2,12 @@ import pydantic
 import sympy
 from typing import cast
 
-type MathJSON = str | int | float | list["MathJSON"]
+
+class Num(pydantic.BaseModel):
+    num: str
+
+
+type MathJSON = str | int | float | list["MathJSON"] | Num
 
 
 def parse_expr(expr: MathJSON) -> sympy.Expr:
@@ -82,6 +87,11 @@ def parse_expr(expr: MathJSON) -> sympy.Expr:
                 return sympy.sin(*args, evaluate=False)
             case "Tan":
                 return sympy.tan(*args, evaluate=False)
+    if isinstance(expr, Num):
+        try:
+            return sympy.Rational(expr.num)
+        except:
+            raise ValueError(f"Invalid MathJSON number: {expr.num!r}")
     raise ValueError("Not a valid expression")
 
 

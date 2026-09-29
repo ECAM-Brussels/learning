@@ -15,7 +15,6 @@ function initPyodide() {
 }
 
 self.onmessage = async (event: MessageEvent<Input>) => {
-  if (event.data.code.trim() === '') return
   self.postMessage({ id: event.data.id, status: 'loading' })
   initPyodide()
   const pyodide = await pyodidePromise!

@@ -18,6 +18,6 @@ export type Options<T extends 'input' | 'output' = 'input'> = T extends 'input'
   ? v.InferInput<typeof Options>
   : v.InferOutput<typeof Options>
 
-export const ExerciseOptionsContext = createContext<v.InferOutput<typeof Options>>(
+export const ExerciseOptionsContext = createContext<() => v.InferOutput<typeof Options>>(() =>
   v.parse(Options, {}),
 )
