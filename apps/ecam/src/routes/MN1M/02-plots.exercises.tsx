@@ -5,6 +5,73 @@ import { Matplotlib } from '@learning/exercises/python/Matplotlib'
 import dedent from 'dedent'
 
 export const Exercises = {
+  FirstFunctions: () => (
+    <Sequence id="first-functions">
+      <PythonFunction
+        fnName="ma_premiere_fonction"
+        prompt={
+          <p>
+            Définissez une fonction <code>ma_premiere_fonction</code> qui affiche le texte{' '}
+            <code>Vive Python!</code>. Ensuite, appelez cette fonction <strong>deux fois</strong>.
+          </p>
+        }
+        tests={[
+          { input: [], output: 'Vive Python!\n'.repeat(3), type: 'stdout' },
+          {
+            desc: 'La fonction est bien appelée deux fois',
+            test: null,
+            check: ({ stdout }) => stdout === 'Vive Python!\nVive Python!\n',
+          },
+        ]}
+      />
+      <PythonFunction
+        fnName="test"
+        prompt={
+          <p>
+            Définissez une fonction <code>test</code> qui affiche le texte <code>A</code>, puis{' '}
+            <code>B</code> à la ligne suivante, en deux instructions. N'<strong>appelez</strong> pas
+            cette fonction. Ensuite, affichez le texte <code>C</code> à l'écran,{' '}
+            <strong>hors de la fonction</strong>.
+          </p>
+        }
+        tests={[
+          { test: null, desc: 'Affiche C', check: ({ stdout }) => stdout === 'C\n' },
+          { input: [], output: 'C\nA\nB\n', type: 'stdout' },
+          { desc: '3 appels de print', test: (code) => code.match(/print/g)?.length === 3 },
+        ]}
+      />
+    </Sequence>
+  ),
+  Parameters: () => (
+    <Sequence id="parameters">
+      <PythonFunction
+        fnName="double"
+        prompt={
+          <p>
+            Définissez une fonction <code>double</code>, qui prend un paramètre et affiche le double
+            de cette valeur à l'écran. N'appellez pas cette fonction.
+          </p>
+        }
+        tests={[
+          { input: [2], output: '4\n', type: 'stdout' },
+          { input: [5], output: '10\n', type: 'stdout' },
+        ]}
+      />
+      <PythonFunction
+        fnName="produit"
+        prompt={
+          <p>
+            Définissez une fonction <code>produit</code>, qui prend deux paramètres et affiche leur
+            produit à l'écran. N'appellez pas cette fonction.
+          </p>
+        }
+        tests={[
+          { input: [2, 2], output: '4\n', type: 'stdout' },
+          { input: [5, 2], output: '10\n', type: 'stdout' },
+        ]}
+      />
+    </Sequence>
+  ),
   Functions: () => (
     <Sequence id="functions">
       <PythonFunction
@@ -155,6 +222,48 @@ export const Exercises = {
             test: dedent /* python */ `
               import numpy as np
               np.allclose(np.diff(x), np.diff(x)[0])
+            `,
+            check: (output) => output.result?.toLowerCase() === 'true',
+          },
+        ]}
+      />
+      <PythonCode
+        prompt={
+          <p>
+            Définissez un vecteur <code>x</code> contenant les nombres entiers naturels de {tex`0`}{' '}
+            à {tex`10`}. Ensuite, utilisez <code>x</code> pour définir un vecteur <code>y</code>{' '}
+            contenant les premiers termes de la série géométrique {tex`3, 6, 12, \dots`}.
+          </p>
+        }
+        tests={[
+          {
+            desc: 'La variable x a le bon nombre de composantes',
+            test: 'len(x)',
+            check: (output) => output.result === '11',
+          },
+          {
+            desc: 'La première composante de x est 0',
+            test: 'x[0]',
+            check: (output) => output.result === '0',
+          },
+          {
+            desc: 'La dernière composante de x est 10',
+            test: 'x[-1]',
+            check: (output) => output.result === '10',
+          },
+          {
+            desc: 'Les points de x sont uniformément répartis',
+            test: dedent /* python */ `
+              import numpy as np
+              np.allclose(np.diff(x), np.diff(x)[0])
+            `,
+            check: (output) => output.result?.toLowerCase() === 'true',
+          },
+          {
+            desc: 'La variable y est la suite géométrique de raison 2 et de premier terme 3',
+            test: dedent /* python */ `
+              import numpy as np
+              np.allclose(y, 3 * 2 ** x)
             `,
             check: (output) => output.result?.toLowerCase() === 'true',
           },
