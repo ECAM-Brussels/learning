@@ -3,6 +3,7 @@ import { PythonCode } from '@learning/exercises/python/Code'
 import { PythonFunction } from '@learning/exercises/python/Function'
 import { Matplotlib } from '@learning/exercises/python/Matplotlib'
 import dedent from 'dedent'
+import { Remark } from '../../../../../packages/components'
 
 export const Exercises = {
   FirstFunctions: () => (
@@ -371,25 +372,38 @@ export const Exercises = {
       <Matplotlib
         prompt={
           <p>
-            Tracez les graphes de {tex`f(x) = x^2`} et {tex`g(x) = x^3`} sur {tex`[-1, 1]`}.
-            Assurez-vous que les axes sont correctement nommés et que la grille est affichée.
+            Tracez les graphes de {tex`f(x) = x^2`}, {tex`g(x) = \sqrt x`} et {tex`h(x) = x`} sur{' '}
+            {tex`[0, 1]`}. Assurez-vous que les axes sont affichés, correctement nommés, que la
+            grille est affichée, et que vous employez la <strong>même échelle</strong> pour {tex`x`}{' '}
+            et {tex`y`}.
           </p>
         }
         tests={[
           { type: 'axes', value: 'both' },
           { type: 'axisLabels', x: /x/i, y: /y/i },
           { type: 'grid', value: true },
-          { type: 'lineCount', value: 4 },
-          { type: 'plot', x: [-1, 1], y: 'x**2', n: 40 },
-          { type: 'plot', x: [-1, 1], y: 'x**3', n: 40 },
+          { type: 'lineCount', value: 5 },
+          { type: 'sameScale' },
+          { type: 'plot', x: [0, 1], y: 'x**2', n: 40 },
+          { type: 'plot', x: [0, 1], y: 'x', n: 40 },
+          { type: 'plot', x: [0, 1], y: 'np.sqrt(x)', n: 40 },
         ]}
-      />
+      >
+        <Remark>
+          <p>
+            Observez que les graphes sont symétriques par rapport à la droite {tex`y = x`}. Ceci
+            n'est pas accidentel. Ceci se produit lorsque {tex`f(x)`} et {tex`g(x)`} sont{' '}
+            <strong>réciproques</strong>.
+          </p>
+        </Remark>
+      </Matplotlib>
       <Matplotlib
         prompt={
           <p>
-            Tracez les graphes de {tex`f(x) = \sin x`} et {tex`g(x) = \cos x`} sur{' '}
-            {tex`[-\pi, \pi]`}. Assurez-vous que les axes sont correctement nommés et que la grille
-            est affichée. Le titre de la figure doit être "{tex`\sin x`} et {`\cos x`}".
+            Tracez les graphes de {tex`f(x) = \sin x`} et{' '}
+            {tex`g(x) = x - \frac{x^3} 6 + \frac{x^5} {120}`} sur {tex`[-\pi, \pi]`}. Assurez-vous
+            que les axes sont correctement nommés et que la grille est affichée. Le titre de la
+            figure doit être <code>Approximation polynomiale</code>.
           </p>
         }
         tests={[
@@ -397,11 +411,27 @@ export const Exercises = {
           { type: 'axisLabels', x: /x/i, y: /y/i },
           { type: 'grid', value: true },
           { type: 'lineCount', value: 4 },
-          { type: 'title', pattern: /sin x et cos x/i },
+          { type: 'title', pattern: /Approximation polynomiale/i },
           { type: 'plot', x: [-Math.PI, Math.PI], y: `np.sin(x)`, n: 40 },
-          { type: 'plot', x: [-Math.PI, Math.PI], y: `np.cos(x)`, n: 40 },
+          { type: 'plot', x: [-Math.PI, Math.PI], y: `x - x**3/6 + x**5/120`, n: 40 },
         ]}
-      />
+      >
+        <Remark>
+          <p>
+            Remarquez que les deux graphes sont très proches autour de {tex`0`}. Ceci n'est pas une
+            coïncidence. L'ordinateur ne connaît que les opérations arithmétiques de base, et pour
+            les fonctions plus complexes, il procède à une approximation polynomiale. En
+            l'occurence,
+          </p>
+          {tex`
+            \sin x \approx x - \frac{x^3} {3 \cdot 2 \cdot 1}
+            + \frac{x^5} {5 \cdot 4 \cdot 3 \cdot 2 \cdot 1}
+            - \frac{x^7} {7 \cdot 6 \cdot 5 \cdot 4 \cdot 3 \cdot 2 \cdot 1}
+            + \frac{x^9} {9 \cdot 8 \cdot 7 \cdot 6 \cdot 5 \cdot 4 \cdot 3 \cdot 2 \cdot 1}
+            + \dots
+          `}
+        </Remark>
+      </Matplotlib>
     </Sequence>
   ),
 }
