@@ -464,7 +464,8 @@ plt.plot(x, y2)
 :::remark
 
 Le fait que ces fonctions soient très proches autour de $x = 1$ n'est pas un hasard.
-En fait, l'ordinateur utilise une formule similaire pour calculer $\ln x$.
+Nous verrons plus tard que $g(x)$ est un <em>développement de Taylor</em> de $\ln x$.
+En pratique, une approximation polynomiale telle que $g(x)$ est utilisée pour calculer $\ln x$.
 
 :::
 
@@ -520,7 +521,6 @@ Voici un exemple avec une grille de 2 lignes et 2 colonnes.
 ```python run math
 import matplotlib.pyplot as plt
 import numpy as np
-
 
 x = np.linspace(-2 * np.pi, 2 * np.pi, 100)
 
@@ -581,6 +581,7 @@ plt.tight_layout()
   mais si l'on utilise suffisamment de points,
   le graphe paraîtra lisse.
 
-- Si une fonction `f` est vectorisée, alors `y = f(x)`.
+- Si une fonction `f` est vectorisée, alors `y = f(x)`,
+  où `x` est un vecteur d'abscisses.
 
 - `matplotlib.pyplot.subplot(i, j, n)` permet de sélectionner le `n`-ième graphique dans une grille de `i` lignes et `j` colonnes.

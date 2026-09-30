@@ -467,16 +467,19 @@ export const Exercises = {
         <Remark>
           <p>
             Remarquez que les deux graphes sont très proches autour de {tex`0`}. Ceci n'est pas une
-            coïncidence. L'ordinateur ne connaît que les opérations arithmétiques de base, et pour
-            les fonctions plus complexes, il procède à une approximation polynomiale. En
-            l'occurence,
+            coïncidence, et nous verrons plus tard que {tex`g(x)`} un{' '}
+            <em>développement de Taylor</em> de {tex`\sin x`}.
+          </p>
+          <p>
+            En pratique, pour une valeur {tex`x`} proche de {tex`0`}, on peut donc utiliser{' '}
+            {tex`g(x)`} au lieu de {tex`\sin x`}. En pratique, c'est exactement ce que fait
+            l'ordinateur.
           </p>
           {tex`
             \sin x \approx x - \frac{x^3} {3 \cdot 2 \cdot 1}
             + \frac{x^5} {5 \cdot 4 \cdot 3 \cdot 2 \cdot 1}
             - \frac{x^7} {7 \cdot 6 \cdot 5 \cdot 4 \cdot 3 \cdot 2 \cdot 1}
             + \frac{x^9} {9 \cdot 8 \cdot 7 \cdot 6 \cdot 5 \cdot 4 \cdot 3 \cdot 2 \cdot 1}
-            + \dots
           `}
         </Remark>
       </Matplotlib>
