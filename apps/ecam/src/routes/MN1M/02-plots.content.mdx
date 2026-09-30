@@ -464,8 +464,21 @@ En fait, l'ordinateur utilise une formule similaire pour calculer $\ln x$.
 ### Dans des graphiques séparés
 
 Pour créer plusieurs graphiques dans la même figure,
-on peut utiliser la fonction `plt.subplots` et spéficier combien de graphiques on souhaite créer.
-On peut ensuite appeler la fonction `plot` sur chaque graphique séparément.
+on peut utiliser la fonction `plt.subplot` pour changer le graphe courant.
+Les fonctions dont nous aurons besoin sont:
+
+| Instruction                    | Description                                                               |
+| ------------------------------ | ------------------------------------------------------------------------- |
+| `plt.subplot(i, j, n)`         | Sélectionne le n-ième graphique dans une grille de i lignes et j colonnes |
+| `plt.tight_layout()`           | Ajuste les espaces entre les graphiques (appeler à la fin)                |
+| `plt.suptitle("Titre global")` | Ajoute un titre **global** à la figure                                    |
+
+Sans appeler `tight_layout`, les graphiques risquent de se chevaucher.
+
+:::example
+
+Traçons les graphes de $f(x) = \sin x$ et $g(x) = \cos x$ dans la même figure,
+et disposez-les verticalement.
 
 ```python run math
 import matplotlib.pyplot as plt
@@ -473,61 +486,57 @@ import numpy as np
 
 x = np.linspace(0, 10, 100)
 
-# Fig est la figure globale, plots est une liste des graphiques
-fig, plots = plt.subplots(2, constrained_layout=True)
+# Dans la grille 2x1, sélectionne le graphique 1
+plt.subplot(2, 1, 1)
+# Graphique 1
+plt.plot(x, np.sin(x))
+plt.title("Graphe de sin(x)")
 
-# Titre
-fig.suptitle("Fonctions trigonométriques")
+# Dans la grille 2x1, sélectionne le graphique 2
+plt.subplot(2, 1, 2)
+# Graphique 2
+plt.plot(x, np.cos(x))
+plt.title("Graphe de cos(x)")
 
-# plots[0] pointe vers le premier graphique
-plots[0].plot(x, np.sin(x))
-plots[0].set_title("Graphe de sin(x)")
-
-# plots[1] pointe vers le premier graphique
-plots[1].plot(x, np.cos(x))
-plots[1].set_title("Graphe de cos(x)")
+plt.suptitle("Fonctions trigonométriques") # Tite global
+plt.tight_layout() # Réajuste les espaces
 ```
 
-On peut également créer une **grille de graphiques** en spécifiant le nombre de lignes et de colonnes.
+Si nous souhations que les graphiques soient sur la même ligne,
+il aurait fallu utiliser `plt.subplot(1, 2, 1)` et `plt.subplot(1, 2, 2)` respectivement.
+:::
+
+Voici un exemple avec une grille de 2 lignes et 2 colonnes.
 
 ```python run math
 import matplotlib.pyplot as plt
 import numpy as np
 
-x = np.linspace(0, 10, 100)
 
-fig, plots = plt.subplots(2, 2, constrained_layout=True)
+x = np.linspace(-2 * np.pi, 2 * np.pi, 100)
 
-fig.suptitle("Plusieurs graphiques dans la même figure")
+# En haut à gauche
+plt.subplot(2, 2, 1)
+plt.plot(x, np.sin(x))
+plt.title("Graphe de sin(x)")
 
-# plots[0, 0] pointe vers le graphique en haut à gauche
-plots[0, 0].plot(x, np.sin(x))
-plots[0, 0].set_title("Graphe de sin(x)")
+# En haut à droite
+plt.subplot(2, 2, 2)
+plt.plot(x, np.cos(x))
+plt.title("Graphe de cos(x)")
 
-# plots[0, 1] pointe vers le graphique en haut à droite
-plots[0, 1].plot(x, np.cos(x))
-plots[0, 1].set_title("Graphe de cos(x)")
+x = np.linspace(-2, 2, 100)
 
-plots[1, 0].plot(x, np.exp(x))
-plots[1, 0].set_title("Graphe de exp(x)")
+# En bas à gauche
+plt.subplot(2, 2, 3)
+plt.plot(x, np.exp(x))
+plt.title("Graphe de exp(x)")
 
-plots[1, 1].plot(x, np.exp(-x))
-plots[1, 1].set_title("Graphe de exp(-x)")
+# En bas à droite
+plt.subplot(2, 2, 4)
+plt.plot(x, np.exp(-x))
+plt.title("Graphe de exp(-x)")
+
+plt.suptitle("Plusieurs graphiques dans la même figure")
+plt.tight_layout()
 ```
-
-Remarquez que sur les sous-graphes,
-on emploie `set_title` au lieu de `title`.
-La raison est que la version sans `set_` est réservée à la figure globale.
-
-| Avec `plt`           | Avec `plots[...]`               | Description                                 |
-| -------------------- | ------------------------------- | ------------------------------------------- |
-| `plt.plot(x, y)`     | `plots[...].plot(x, y)`         | Tracer un graphique                         |
-| `plt.title("Titre")` | `plots[...].set_title("Titre")` | Définir le titre                            |
-| `plt.xlabel("x")`    | `plots[...].set_xlabel("x")`    | Définir l'étiquette de l'axe des $x$        |
-| `plt.ylabel("y")`    | `plots[...].set_ylabel("y")`    | Définir l'étiquette de l'axe des $y$        |
-| `plt.grid()`         | `plots[...].grid()`             | Afficher la grille                          |
-| `plt.xticks(...)`    | `plots[...].set_xticks(...)`    | Définir les graduations de l'axe des $x$    |
-| `plt.yticks(...)`    | `plots[...].set_yticks(...)`    | Définir les graduations de l'axe des $y$    |
-| `plt.axhline(...)`   | `plots[...].axhline(...)`       | Tracer une ligne horizontale                |
-| `plt.axvline(...)`   | `plots[...].axvline(...)`       | Tracer une ligne verticale                  |
-| `plt.axis("equal")`  | `plots[...].axis("equal")`      | Utiliser la même échelle pour les deux axes |
