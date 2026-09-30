@@ -394,7 +394,6 @@ export const Exercises = {
         tests={[
           { type: 'axes', value: 'both' },
           { type: 'axisLabels', x: /x/i, y: /y/i },
-          { type: 'grid', value: true },
           { type: 'plot', x: [-2, 2], y: 'x**2', n: 40 },
         ]}
       />

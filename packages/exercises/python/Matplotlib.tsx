@@ -105,7 +105,7 @@ export const Matplotlib = createDerivedStep(
           }
         case 'plot':
           return {
-            desc: `La figure contient la courbe ${t.y} demandée`,
+            desc: `La figure contient la courbe demandée`,
             test: dedent /* python */ `
               import matplotlib.pyplot as plt
               import numpy as np
