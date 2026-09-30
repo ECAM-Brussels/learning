@@ -35,6 +35,7 @@ Après `def bonjour():`,
 le corps de la fonction est constitué de toutes les lignes **indentées**,
 c'est-à-dire qui commencent par un certain nombre d'espaces.
 La convention est d'utiliser **4 espaces**.
+La première ligne non indentée signale la fin de la fonction.
 
 <Exercises.FirstFunctions />
 
@@ -47,8 +48,8 @@ qui sont des _valeurs inconnues_ que l'on peut spécifier _plus tard_ lors de l'
 def bonjour(nom):
     print("Bonjour", nom, "!")
 
-bonjour("Alice")
-bonjour("Bob")
+bonjour("Alice") # nom vaut "Alice"
+bonjour("Bob")   # nom vaut "Bob"
 ```
 
 Ces _paramètres_ peuvent également être utilisés dans des calculs,
@@ -87,6 +88,7 @@ Jusqu'à présent,
 nos fonctions affichent du texte à l'écran.
 Il est également possible que la fonction **retourne une valeur**,
 laissant le choix à l'utilisateur de l'afficher ou non.
+Le résultat peut alors être **stocké dans une variable** pour être réutilisé plus tard.
 
 ```python run
 # Calcule l'aire d'un carré de côté `x`

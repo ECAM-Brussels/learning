@@ -30,7 +30,7 @@ export const Exercises = {
         prompt={
           <p>
             Définissez une fonction <code>test</code> qui affiche le texte <code>A</code>, puis{' '}
-            <code>B</code> à la ligne suivante, en deux instructions. N'<strong>appelez</strong> pas
+            <code>B</code> à la ligne suivante, en deux instructions. N'<strong>appelez pas</strong>{' '}
             cette fonction. Ensuite, affichez le texte <code>C</code> à l'écran,{' '}
             <strong>hors de la fonction</strong>.
           </p>
@@ -79,8 +79,8 @@ export const Exercises = {
         fnName="aire_carre"
         prompt={
           <p>
-            Définissez une fonction <code>aire_carre</code> qui prend en entrée un paramètre{' '}
-            <code>cote</code> et qui retourne l'aire d'un carré de côté <code>cote</code>.
+            Définissez une fonction <code>aire_carre</code> qui prend en entrée la longueur du côté
+            d'un carré et qui retourne son aire.
           </p>
         }
         tests={[1, 2, 3, 7, 10].map((x) => ({ input: [x], output: (x ** 2).toString() }))}
@@ -89,9 +89,8 @@ export const Exercises = {
         fnName="aire_triangle"
         prompt={
           <p>
-            Définissez une fonction <code>aire_triangle</code> qui prend en entrée un paramètre{' '}
-            <code>cote</code> et qui retourne l'aire d'un <strong>triangle équilatéral</strong> de
-            côté <code>cote</code>.
+            Définissez une fonction <code>aire_triangle</code> qui prend en entrée la longueur du
+            côté d'un <strong>triangle équilatéral</strong> et qui retourne son aire.
           </p>
         }
         tests={[1, 2, 3, 4, 5].map((x) => ({
@@ -103,9 +102,9 @@ export const Exercises = {
         fnName="angle_vecteurs"
         prompt={
           <p>
-            Définissez une fonction <code>angle_vecteurs</code> qui prend en entrée deux listes{' '}
-            <code>a</code> et <code>b</code> et qui retourne l'angle <strong>en degrés</strong>{' '}
-            entre les vecteurs associés à ces listes.
+            Définissez une fonction <code>angle_vecteurs</code> qui prend en entrée deux listes et
+            qui retourne l'angle <strong>en degrés</strong> entre les vecteurs associés à ces
+            listes.
           </p>
         }
         tests={[
@@ -124,6 +123,29 @@ export const Exercises = {
           {
             input: ['[1, 0]', '[-1, 0]'],
             output: '180',
+          },
+        ]}
+      />
+      <PythonFunction
+        fnName="distance"
+        prompt={
+          <p>
+            Définissez une fonction <code>distance</code> qui prend en entrée deux listes et qui
+            retourne la distance entre les points associés à ces listes.
+          </p>
+        }
+        tests={[
+          {
+            input: ['[0, 0]', '[1, 1]'],
+            output: Math.sqrt(2).toString(),
+          },
+          {
+            input: ['[1, 2]', '[4, 6]'],
+            output: '5',
+          },
+          {
+            input: ['[0, 0]', '[0, 0]'],
+            output: '0',
           },
         ]}
       />
