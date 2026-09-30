@@ -6,6 +6,7 @@ export * from './src/Breadcrumbs'
 export * from './src/Card'
 export * from './src/CheckMark'
 export * from './src/Code'
+export * from './src/Dot'
 export * from './src/Environment'
 export * from './src/Fa'
 export * from './src/Feedback'
@@ -21,6 +22,7 @@ export * from './src/Pagination'
 export * from './src/Scope'
 export * from './src/Slide'
 export * from './src/Slideshow'
+export * from './src/SymbolicRepresentation'
 
 export const Board = clientOnly(() => import('./src/Board'))
 export const MathField = clientOnly(() => import('./src/MathField'))
