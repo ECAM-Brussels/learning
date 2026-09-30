@@ -12,7 +12,7 @@ export const route = {
 
 export default () => {
   return (
-    <Meta title="Séance 1: Introduction à Python" authorized={() => hasPermissions(['draft:read'])}>
+    <Meta title="Séance 1: Introduction à Python">
       <Page />
     </Meta>
   )
