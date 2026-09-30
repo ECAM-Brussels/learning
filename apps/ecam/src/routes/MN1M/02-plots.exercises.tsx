@@ -1,9 +1,14 @@
+import { Remark } from '@learning/components'
 import { Sequence, tex } from '@learning/core'
 import { PythonCode } from '@learning/exercises/python/Code'
 import { PythonFunction } from '@learning/exercises/python/Function'
 import { Matplotlib } from '@learning/exercises/python/Matplotlib'
+import { type JSX } from '@solidjs/web'
 import dedent from 'dedent'
-import { Remark } from '../../../../../packages/components'
+
+function Code(props: { children: JSX.Element }) {
+  return <code class="font-semibold">{props.children}</code>
+}
 
 export const Exercises = {
   FirstFunctions: () => (
@@ -12,8 +17,8 @@ export const Exercises = {
         fnName="ma_premiere_fonction"
         prompt={
           <p>
-            Définissez une fonction <code>ma_premiere_fonction</code> qui affiche le texte{' '}
-            <code>Vive Python!</code>. Ensuite, appelez cette fonction <strong>deux fois</strong>.
+            Définissez une fonction <Code>ma_premiere_fonction</Code> qui affiche le texte{' '}
+            <Code>Vive Python!</Code>. Ensuite, appelez cette fonction <strong>deux fois</strong>.
           </p>
         }
         tests={[
@@ -33,11 +38,11 @@ export const Exercises = {
         fnName="test"
         prompt={
           <p>
-            Définissez une fonction <code>test</code> qui affiche le texte <code>A</code>, puis{' '}
-            <code>B</code> à la ligne suivante, en deux instructions. N'appelez{' '}
-            <strong>pas encore</strong> cette fonction. Ensuite, affichez le texte <code>C</code> à
+            Définissez une fonction <Code>test</Code> qui affiche le texte <Code>A</Code>, puis{' '}
+            <Code>B</Code> à la ligne suivante, en deux instructions. N'appelez{' '}
+            <strong>pas encore</strong> cette fonction. Ensuite, affichez le texte <Code>C</Code> à
             l'écran, <strong>hors de la fonction</strong>. Enfin, appelez la fonction{' '}
-            <code>test</code> une seule fois.
+            <Code>test</Code> une seule fois.
           </p>
         }
         tests={[
@@ -54,7 +59,7 @@ export const Exercises = {
         fnName="double"
         prompt={
           <p>
-            Définissez une fonction <code>double</code>, qui prend un paramètre et affiche le double
+            Définissez une fonction <Code>double</Code>, qui prend un paramètre et affiche le double
             de cette valeur à l'écran. Appelez ensuite cette fonction avec la valeur {tex`3`}.
           </p>
         }
@@ -68,7 +73,7 @@ export const Exercises = {
         fnName="produit"
         prompt={
           <p>
-            Définissez une fonction <code>produit</code>, qui prend deux paramètres et affiche leur
+            Définissez une fonction <Code>produit</Code>, qui prend deux paramètres et affiche leur
             produit à l'écran. Appelez ensuite cette fonction avec les valeurs {tex`5`} et {tex`3`}.
           </p>
         }
@@ -86,7 +91,7 @@ export const Exercises = {
         fnName="perimetre_carre"
         prompt={
           <p>
-            Définissez une fonction <code>perimetre_carre</code> qui prend en entrée la longueur du
+            Définissez une fonction <Code>perimetre_carre</Code> qui prend en entrée la longueur du
             côté d'un carré et qui retourne son périmètre. Appelez-la ensuite avec la valeur{' '}
             {tex`5`}.
           </p>
@@ -103,7 +108,7 @@ export const Exercises = {
         fnName="aire_triangle"
         prompt={
           <p>
-            Définissez une fonction <code>aire_triangle</code> qui prend en entrée la longueur du
+            Définissez une fonction <Code>aire_triangle</Code> qui prend en entrée la longueur du
             côté d'un <strong>triangle équilatéral</strong> et qui retourne son aire. Vous pouvez
             appeler la fonction pour la tester.
           </p>
@@ -117,7 +122,7 @@ export const Exercises = {
         fnName="angle_vecteurs"
         prompt={
           <p>
-            Définissez une fonction <code>angle_vecteurs</code> qui prend en entrée deux listes et
+            Définissez une fonction <Code>angle_vecteurs</Code> qui prend en entrée deux listes et
             qui retourne l'angle <strong>en degrés</strong> entre les vecteurs associés à ces
             listes. Vous pouvez appeler la fonction pour la tester.
           </p>
@@ -145,7 +150,7 @@ export const Exercises = {
         fnName="distance"
         prompt={
           <p>
-            Définissez une fonction <code>distance</code> qui prend en entrée deux listes et qui
+            Définissez une fonction <Code>distance</Code> qui prend en entrée deux listes et qui
             retourne la distance entre les points associés à ces listes. Vous pouvez appeler la
             fonction pour la tester.
           </p>
@@ -203,7 +208,7 @@ export const Exercises = {
       <PythonCode
         prompt={
           <p>
-            Créez une variable <code>x</code> contenant {tex`100`} points uniformément répartis
+            Créez une variable <Code>x</Code> contenant {tex`100`} points uniformément répartis
             entre {tex`0`} et {tex`10`}.
           </p>
         }
@@ -236,7 +241,7 @@ export const Exercises = {
       <PythonCode
         prompt={
           <p>
-            Définissez un vecteur <code>x</code> contenant {tex`50`} points uniformément répartis
+            Définissez un vecteur <Code>x</Code> contenant {tex`50`} points uniformément répartis
             entre {tex`-\pi`} et {tex`\pi`}.
           </p>
         }
@@ -270,9 +275,9 @@ export const Exercises = {
         prompt={
           <>
             <p>
-              Définissez un vecteur <code>x</code> contenant les nombres entiers naturels de{' '}
-              {tex`0`} à {tex`10`}. Ensuite, utilisez <code>x</code> pour définir un vecteur{' '}
-              <code>y</code> contenant les 11 premiers termes de la suite géométrique{' '}
+              Définissez un vecteur <Code>x</Code> contenant les nombres entiers naturels de{' '}
+              {tex`0`} à {tex`10`}. Ensuite, utilisez <Code>x</Code> pour définir un vecteur{' '}
+              <Code>y</Code> contenant les 11 premiers termes de la suite géométrique{' '}
               {tex`3, 6, 12, \dots`}.
             </p>
             <p>
@@ -349,7 +354,7 @@ export const Exercises = {
       <Matplotlib
         prompt={
           <p>
-            Tracez le graphe de {tex`f(x) = \ln x`} sur {tex`[3, 7]`}
+            Tracez le graphe de {tex`f(x) = \ln x`} sur {tex`[3, 7]`}.
           </p>
         }
         tests={[{ type: 'plot', x: [3, 7], y: 'np.log(x)', n: 40 }]}
@@ -357,7 +362,7 @@ export const Exercises = {
       <Matplotlib
         prompt={
           <p>
-            Tracez le graphe de {tex`f(x) = \sqrt x`} sur {tex`[0, 9]`}
+            Tracez le graphe de {tex`f(x) = \sqrt x`} sur {tex`[0, 9]`}.
           </p>
         }
         tests={[{ type: 'plot', x: [0, 9], y: 'np.sqrt(x)', n: 40 }]}
@@ -398,7 +403,7 @@ export const Exercises = {
           <p>
             Tracez le graphe de {tex`f(x) = \cos x`} sur {tex`[-\pi, \pi]`}. Assurez-vous que les
             axes sont affichés, correctement nommés et que la grille est affichée. Le titre de la
-            figure doit être {tex`\cos x`}
+            figure doit être {tex`\cos x`}.
           </p>
         }
         tests={[
@@ -447,7 +452,7 @@ export const Exercises = {
             Tracez les graphes de {tex`f(x) = \sin x`} et{' '}
             {tex`g(x) = x - \frac{x^3} 6 + \frac{x^5} {120}`} sur {tex`[-\pi, \pi]`}. Assurez-vous
             que les axes sont correctement nommés et que la grille est affichée. Le titre de la
-            figure doit être <code>Approximation polynomiale</code>.
+            figure doit être <Code>Approximation polynomiale</Code>.
           </p>
         }
         tests={[
