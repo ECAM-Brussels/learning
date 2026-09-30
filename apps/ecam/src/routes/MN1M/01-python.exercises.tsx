@@ -477,7 +477,7 @@ const Norm = createDerivedStep(PythonCode, { x: v.array(v.number()) }, (props) =
 
 export const NormSequence = () => (
   <Sequence id="norm">
-    <Norm x={[1, 2, 3]} />
+    <Norm x={[-14, -13, 35]} />
     <Norm x={[-3, -7, 8]} />
     <Norm x={[-13, 23, 7, -15, 12]} />
     <Norm x={[-13, 3, -27, -18, 24, 0.5]} />
