@@ -106,18 +106,30 @@ export const reset = async (rawCtx: Omit<StepContext, 'position'>) => {
     ),
     rawCtx,
   )
-  await db
-    .update(tables.steps)
-    .set({ deleted: true })
-    .where(
-      and(
-        eq(tables.steps.userEmail, ctx.userEmail),
-        eq(tables.steps.url, ctx.url),
-        eq(tables.steps.sequenceId, ctx.sequenceId),
-        eq(tables.steps.sequencePosition, ctx.sequencePosition),
-        eq(tables.steps.deleted, false),
-      ),
-    )
+  const currentExercise = and(
+    eq(tables.steps.userEmail, ctx.userEmail),
+    eq(tables.steps.url, ctx.url),
+    eq(tables.steps.sequenceId, ctx.sequenceId),
+    eq(tables.steps.sequencePosition, ctx.sequencePosition),
+    eq(tables.steps.deleted, false),
+  )
+
+  await db.transaction(async (tx) => {
+    const [step] = await tx
+      .select()
+      .from(tables.steps)
+      .where(and(currentExercise, eq(tables.steps.position, 0)))
+      .limit(1)
+    if (!step) throw new Error('Initial step not found')
+    await tx.update(tables.steps).set({ deleted: true }).where(currentExercise)
+    await tx.insert(tables.steps).values({
+      ...step,
+      id: undefined,
+      submitted: false,
+      feedback: {},
+      correct: null,
+    })
+  })
 }
 
 export const getStats = query(async (rawSequence: SequenceContext) => {

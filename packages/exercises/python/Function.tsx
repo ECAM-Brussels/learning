@@ -19,7 +19,7 @@ export const PythonFunction = createDerivedStep(
         v.union([
           v.object({
             input: v.array(StringLike),
-            output: StringLike,
+            correct: v.custom<(output?: string) => boolean>(() => true),
             type: v.optional(v.union([v.literal('stdout'), v.literal('result')]), 'result'),
           }),
           Test,
@@ -39,7 +39,7 @@ export const PythonFunction = createDerivedStep(
         if ('input' in test) {
           return {
             test: `${props.fnName}(${test.input.join(', ')})`,
-            check: (output: FinalOutput) => output[test.type] === test.output,
+            check: (output: FinalOutput) => test.correct(output[test.type]?.trim()),
           }
         }
         return test

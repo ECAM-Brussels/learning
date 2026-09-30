@@ -295,13 +295,11 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   const [resetting, setResetting] = createOptimistic(false)
   const reset = action(async function* () {
     setResetting(true)
-    setStep((s) => ({
-      state: {} as any,
-      feedback: {},
-      submitted: false,
-      correct: undefined,
-      data: {} as any,
-    }))
+    setStep((s) => {
+      s.feedback = {}
+      s.submitted = false
+      s.correct = undefined
+    })
     const { position, ...ctx } = stepContext()
     yield exerciseContext().reset(ctx)
     revalidate([
