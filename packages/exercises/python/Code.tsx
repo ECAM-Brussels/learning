@@ -90,24 +90,26 @@ export const PythonCode = createStep({
           {tests.length}
           <CheckMark value={tests.every((t) => t.passed) && valid() !== false} />
         </summary>
-        <For each={tests}>
-          {(test) => (
-            <li>
-              <code>
-                {test.desc ?? test.test ?? 'Résultat final'} -&gt; {test.result}
-                {test.stdout}
-              </code>
-              <CheckMark value={test.passed} />
-            </li>
-          )}
-        </For>
-        <Show when={valid() !== undefined}>
-          {
-            <li>
-              Le code est valide <CheckMark value={valid()} />
-            </li>
-          }
-        </Show>
+        <ul class="list-disc pl-4">
+          <For each={tests}>
+            {(test) => (
+              <li>
+                <code>
+                  {test.desc ?? test.test ?? 'Résultat final'} -&gt; {test.result}
+                  {test.stdout}
+                </code>
+                <CheckMark value={test.passed} />
+              </li>
+            )}
+          </For>
+          <Show when={valid() !== undefined}>
+            {
+              <li>
+                Le code est valide <CheckMark value={valid()} />
+              </li>
+            }
+          </Show>
+        </ul>
       </details>
     )
   },
