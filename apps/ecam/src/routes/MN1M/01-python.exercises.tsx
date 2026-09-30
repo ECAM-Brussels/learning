@@ -256,11 +256,11 @@ export const Calculator = createDerivedStep(
                     du code ont été remplacés par des <strong>approximations</strong>. Dans ce
                     cas-ci:
                   </p>
-                  <table>
+                  <table class="mx-auto my-4">
                     <thead>
-                      <tr>
-                        <th class="text-right">Nombre entré</th>
-                        <th>
+                      <tr class="border-b border-gray-200">
+                        <th class="px-4 text-right">Nombre entré</th>
+                        <th class="px-4 text-left">
                           Nombre réellement utilisé par <code>Python</code>
                         </th>
                       </tr>
@@ -269,8 +269,8 @@ export const Calculator = createDerivedStep(
                       <For each={props.data.inexact}>
                         {(n) => (
                           <tr>
-                            <td class="text-right">{tex`${n}`}</td>
-                            <td>
+                            <td class="px-4 py-2">{tex`${n}`}</td>
+                            <td class="px-4 py-2">
                               <code>{reps[n]}</code>
                             </td>
                           </tr>
@@ -373,6 +373,18 @@ export const LinearCombination = createDerivedStep(
           `)
           return result === answer
         },
+      },
+      {
+        desc: 'numpy est importé',
+        test: (code) => code.includes('numpy'),
+      },
+      {
+        desc: 'Le code comporte une addition ou soustraction',
+        test: (code) => code.includes('+') || code.includes('-'),
+      },
+      {
+        desc: 'Le code comporte au moins deux vecteurs',
+        test: (code) => (code.match(/array/g)?.length ?? 0) >= 2,
       },
     ],
   }),
@@ -593,8 +605,8 @@ export function Review() {
       <PythonCode
         prompt={
           <p>
-            À l'aide de <code>numpy</code>, calculez la projection du vecteur{' '}
-            {tex`\vec a = (4, -3, 2, 9)`} sur le vecteur {tex`\vec b = (-6, 1, 13, -4)`}.
+            À l'aide de <code>numpy</code>, calculez la <strong>projection vectorielle</strong> du
+            vecteur {tex`\vec a = (4, -3, 2, 9)`} sur le vecteur {tex`\vec b = (-6, 1, 13, -4)`}.
           </p>
         }
         tests={[
