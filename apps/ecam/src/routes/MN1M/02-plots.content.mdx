@@ -1,11 +1,9 @@
 import { Sequence } from '@learning/core'
 import { Exercises } from './02-plots.exercises'
 
-# Fonctions et graphiques
+# Fonctions
 
-## Fonctions
-
-### Fonctions sans paramètres
+## Fonctions sans paramètres
 
 Une fonction est un _morceau de code_ nommé qui est réutilisable.
 En d'autres mots,
@@ -40,7 +38,7 @@ La convention est d'utiliser **4 espaces**.
 
 <Exercises.FirstFunctions />
 
-### Paramètres
+## Paramètres
 
 Un autre intérêt des fonctions est de pouvoir utiliser des **paramètres**,
 qui sont des _valeurs inconnues_ que l'on peut spécifier _plus tard_ lors de l'appel.
@@ -83,7 +81,7 @@ rectangle(2, 4) # longueur = 2, largeur = 4
 
 <Exercises.Parameters />
 
-### Retour de valeur
+## Retour de valeur
 
 Jusqu'à présent,
 nos fonctions affichent du texte à l'écran.
@@ -102,7 +100,7 @@ resultat = aire_carre(3)
 resultat
 ```
 
-### Exemple récapitulatif
+## Exemple récapitulatif
 
 :::example
 
@@ -127,9 +125,9 @@ avec les valeurs de `rayon` et de `hauteur` que l'on souhaite.
 
 <Exercises.Functions />
 
-## Graphe d'une fonction
+# Graphe d'une fonction
 
-### Fonctions linéaires par morceaux
+## Fonctions linéaires par morceaux
 
 Pour tracer un graphe passant par plusieurs points,
 on utilise la fonction `matplotlib.pyplot.plot`,
@@ -169,7 +167,7 @@ Nous allons voir que `numpy` permet de fortement accélérer le processus grâce
 
 <Exercises.PiecewiseLinear />
 
-### _"Multiplication"_ de vecteurs et _"addition scalaire"_
+## _"Multiplication"_ de vecteurs et _"addition scalaire"_
 
 Remarquons que `numpy` autorise la _multiplication de vecteurs_ de dimension égale,
 en appliquant la multiplication _composante par composante_.
@@ -279,7 +277,7 @@ le graphe ci-dessus n'est pas très lisse.
 Il faut en général _au moins_ entre $50$ et $100$ points
 pour que le graphe paraisse lisse.
 
-### Graphes de polynômes
+## Vecteurs linéairement espacés
 
 La fonction `numpy.linspace` permet de générer un vecteur dont les composantes sont **uniformément espacées** sur un intervalle donné.
 Trois paramètres sont nécessaires:
@@ -305,6 +303,12 @@ x
 
 <Exercises.Discretization />
 
+## Graphe de polynômes
+
+On peut maintenant utiliser nos vecteurs linéairement espacés
+et le fait que les fonctions polynomiales sont vectorisées
+pour tracer le graphe de fonctions polynomiales.
+
 :::example
 Tracez le graphe de la fonction $f(x) = x^2 + 1$ sur l'intervalle $[-1, 1]$
 
@@ -323,7 +327,7 @@ plt.plot(x, f(x))
 
 <Exercises.Polynomials />>
 
-### Vectorisation
+## Vectorisation
 
 En plus de la multiplication et de l'addition,
 nous verrons que d'autres fonctions sont également vectorisées.
@@ -369,7 +373,7 @@ x = np.linspace(0, 10, 100)
 plt.plot(x, np.sqrt(x))
 ```
 
-### Personnalisation du graphe
+## Personnalisation du graphe
 
 | Instruction                     | Description                                    |
 | ------------------------------- | ---------------------------------------------- |
@@ -416,29 +420,46 @@ plt.plot(x, np.sin(x), label="f(x) = sin(x)", color="magenta")
 
 <Exercises.PrettyPlots />
 
-### Plusieurs courbes
+## Plusieurs courbes
+
+### Dans le même graphique
 
 En répétant l'appel à `plt.plot` plusieurs fois,
 on peut tracer plusieurs courbes sur le même graphe.
 
-#### Dans le même graphique
+:::example
+
+Traçons les graphes suivants:
+
+- $f(x) = \log x$
+- $\displaystyle g(x) = (x - 1) - \frac{(x - 1)^2}{2} + \frac{(x - 1)^3}{3} - \frac{(x - 1)^4}{4} + \frac{(x - 1)^5}{5}$
 
 ```python run math
 import matplotlib.pyplot as plt
 import numpy as np
 
-x = np.linspace(0, 10, 100)
-y1 = np.sin(x)
-y2 = np.cos(x)
+x = np.linspace(0.2, 1.8, 100)
+y1 = np.log(x)
+y2 = (x - 1) - (x - 1) ** 2 / 2 + (x - 1) ** 3 / 3 - (x - 1) ** 4 / 4 + (x - 1) ** 5 / 5
 
+plt.grid()
 # Alternativement, on peut faire plt.plot(x, y1, x, y2)
 plt.plot(x, y1)
 plt.plot(x, y2)
 ```
 
+:::
+
+:::remark
+
+Le fait que ces fonctions soient très proches autour de $x = 1$ n'est pas un hasard.
+En fait, l'ordinateur utilise une formule similaire pour calculer $\ln x$.
+
+:::
+
 <Exercises.MultiplePlots />
 
-#### Dans des graphiques séparés
+### Dans des graphiques séparés
 
 Pour créer plusieurs graphiques dans la même figure,
 on peut utiliser la fonction `plt.subplots` et spéficier combien de graphiques on souhaite créer.
@@ -450,41 +471,61 @@ import numpy as np
 
 x = np.linspace(0, 10, 100)
 
-fig, plots = plt.subplots(2)
+# Fig est la figure globale, plots est une liste des graphiques
+fig, plots = plt.subplots(2, constrained_layout=True)
 
+# Titre
+fig.suptitle("Fonctions trigonométriques")
+
+# plots[0] pointe vers le premier graphique
 plots[0].plot(x, np.sin(x))
 plots[0].set_title("Graphe de sin(x)")
 
+# plots[1] pointe vers le premier graphique
 plots[1].plot(x, np.cos(x))
 plots[1].set_title("Graphe de cos(x)")
 ```
 
-## Fonctions en escalier
-
-# Points milieux
-
-```python run
-import numpy as np
-steps = np.array([0, 0.1, 0.2, 0.3, 0.4, 0.5])
-
-left, right = steps[:-1], steps[1:]
-print("steps: ", steps)
-print("left:", left)
-print("right:", right)
-```
+On peut également créer une **grille de graphiques** en spécifiant le nombre de lignes et de colonnes.
 
 ```python run math
 import matplotlib.pyplot as plt
 import numpy as np
 
-def f(x):
-    return x**2
+x = np.linspace(0, 10, 100)
 
-steps = np.linspace(0, 1, 11)
-left, right = steps[:-1], steps[1:]
-mid = (left + right) / 2
-plt.bar(mid, f(mid), width=np.diff(steps), edgecolor="black")
+fig, plots = plt.subplots(2, 2, constrained_layout=True)
 
-x = np.linspace(0, 1, 100)
-plt.plot(x, f(x), label="f(x) = x^2", color="red")
+fig.suptitle("Plusieurs graphiques dans la même figure")
+
+# plots[0, 0] pointe vers le graphique en haut à gauche
+plots[0, 0].plot(x, np.sin(x))
+plots[0, 0].set_title("Graphe de sin(x)")
+
+# plots[0, 1] pointe vers le graphique en haut à droite
+plots[0, 1].plot(x, np.cos(x))
+plots[0, 1].set_title("Graphe de cos(x)")
+
+plots[1, 0].plot(x, np.exp(x))
+plots[1, 0].set_title("Graphe de exp(x)")
+
+plots[1, 1].plot(x, np.exp(-x))
+plots[1, 1].set_title("Graphe de exp(-x)")
 ```
+
+Remarquez que sur les sous-graphes,
+on emploie `set_title` au lieu de `title`.
+La raison est que la version sans `set_` est réservée à la figure globale.
+
+| Avec `plt`           | Avec `plots[...]`               | Description                                 |
+| -------------------- | ------------------------------- | ------------------------------------------- |
+| `plt.plot(x, y)`     | `plots[...].plot(x, y)`         | Tracer un graphique                         |
+| `plt.title("Titre")` | `plots[...].set_title("Titre")` | Définir le titre                            |
+| `plt.xlabel("x")`    | `plots[...].set_xlabel("x")`    | Définir l'étiquette de l'axe des $x$        |
+| `plt.ylabel("y")`    | `plots[...].set_ylabel("y")`    | Définir l'étiquette de l'axe des $y$        |
+| `plt.grid()`         | `plots[...].grid()`             | Afficher la grille                          |
+| `plt.xticks(...)`    | `plots[...].set_xticks(...)`    | Définir les graduations de l'axe des $x$    |
+| `plt.yticks(...)`    | `plots[...].set_yticks(...)`    | Définir les graduations de l'axe des $y$    |
+| `plt.axhline(...)`   | `plots[...].axhline(...)`       | Tracer une ligne horizontale                |
+| `plt.axvline(...)`   | `plots[...].axvline(...)`       | Tracer une ligne verticale                  |
+| `plt.axis("equal")`  | `plots[...].axis("equal")`      | Utiliser la même échelle pour les deux axes |
