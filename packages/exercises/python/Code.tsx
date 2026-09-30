@@ -66,7 +66,7 @@ export const PythonCode = createStep({
           children={ctx.state.current.code ?? ctx.data.initialCode}
           onChange={ctx.state.set.bind(null, 'code')}
           math={ctx.data.math}
-          readOnly={ctx.state.saved?.code !== undefined}
+          readOnly={ctx.state.correct !== undefined}
           run
         />
       </>

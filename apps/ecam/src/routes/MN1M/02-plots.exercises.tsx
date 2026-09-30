@@ -17,7 +17,11 @@ export const Exercises = {
           </p>
         }
         tests={[
-          { input: [], output: 'Vive Python!\n'.repeat(3), type: 'stdout' },
+          {
+            input: [],
+            correct: (output) => output === 'Vive Python!\n'.repeat(3).trim(),
+            type: 'stdout',
+          },
           {
             desc: 'La fonction est bien appelée deux fois',
             test: null,
@@ -30,14 +34,15 @@ export const Exercises = {
         prompt={
           <p>
             Définissez une fonction <code>test</code> qui affiche le texte <code>A</code>, puis{' '}
-            <code>B</code> à la ligne suivante, en deux instructions. N'<strong>appelez pas</strong>{' '}
-            cette fonction. Ensuite, affichez le texte <code>C</code> à l'écran,{' '}
-            <strong>hors de la fonction</strong>.
+            <code>B</code> à la ligne suivante, en deux instructions. N'appelez{' '}
+            <strong>pas encore</strong> cette fonction. Ensuite, affichez le texte <code>C</code> à
+            l'écran, <strong>hors de la fonction</strong>. Enfin, appelez la fonction{' '}
+            <code>test</code> une seule fois.
           </p>
         }
         tests={[
-          { test: null, desc: 'Affiche C', check: ({ stdout }) => stdout === 'C\n' },
-          { input: [], output: 'C\nA\nB\n', type: 'stdout' },
+          { test: null, desc: 'Affiche C', check: ({ stdout }) => stdout === 'C\nA\nB\n' },
+          { input: [], correct: (output) => output === 'C\nA\nB\nA\nB', type: 'stdout' },
           { desc: '3 appels de print', test: (code) => code.match(/print/g)?.length === 3 },
         ]}
       />
@@ -50,12 +55,13 @@ export const Exercises = {
         prompt={
           <p>
             Définissez une fonction <code>double</code>, qui prend un paramètre et affiche le double
-            de cette valeur à l'écran. N'appellez pas cette fonction.
+            de cette valeur à l'écran. Appelez ensuite cette fonction avec la valeur {tex`3`}.
           </p>
         }
         tests={[
-          { input: [2], output: '4\n', type: 'stdout' },
-          { input: [5], output: '10\n', type: 'stdout' },
+          { test: null, desc: 'Affiche 6', check: ({ stdout }) => stdout === '6\n' },
+          { input: [2], correct: (output) => output === '6\n4', type: 'stdout' },
+          { input: [5], correct: (output) => output === '6\n10', type: 'stdout' },
         ]}
       />
       <PythonFunction
@@ -63,12 +69,13 @@ export const Exercises = {
         prompt={
           <p>
             Définissez une fonction <code>produit</code>, qui prend deux paramètres et affiche leur
-            produit à l'écran. N'appellez pas cette fonction.
+            produit à l'écran. Appelez ensuite cette fonction avec les valeurs {tex`5`} et {tex`3`}.
           </p>
         }
         tests={[
-          { input: [2, 2], output: '4\n', type: 'stdout' },
-          { input: [5, 2], output: '10\n', type: 'stdout' },
+          { test: null, desc: 'Affiche 15', check: ({ stdout }) => stdout === '15\n' },
+          { input: [2, 2], correct: (output) => output === '15\n4', type: 'stdout' },
+          { input: [15, 1], correct: (output) => output === '15\n15', type: 'stdout' },
         ]}
       />
     </Sequence>
@@ -80,22 +87,30 @@ export const Exercises = {
         prompt={
           <p>
             Définissez une fonction <code>perimetre_carre</code> qui prend en entrée la longueur du
-            côté d'un carré et qui retourne son périmètre.
+            côté d'un carré et qui retourne son périmètre. Appelez-la ensuite avec la valeur{' '}
+            {tex`5`}.
           </p>
         }
-        tests={[1, 2, 3, 7, 10].map((x) => ({ input: [x], output: 4 * x }))}
+        tests={[
+          { test: null, desc: 'Affiche 20', check: ({ result }) => result === '20' },
+          ...[1, 2, 3, 7, 10].map((x) => ({
+            input: [x],
+            correct: (output?: string) => output === (4 * x).toString(),
+          })),
+        ]}
       />
       <PythonFunction
         fnName="aire_triangle"
         prompt={
           <p>
             Définissez une fonction <code>aire_triangle</code> qui prend en entrée la longueur du
-            côté d'un <strong>triangle équilatéral</strong> et qui retourne son aire.
+            côté d'un <strong>triangle équilatéral</strong> et qui retourne son aire. Vous pouvez
+            appeler la fonction pour la tester.
           </p>
         }
         tests={[1, 2, 3, 4, 5].map((x) => ({
           input: [x],
-          output: (x ** 2 * Math.sin(Math.PI / 3)) / 2,
+          correct: (output) => approx(output ?? 0, (x ** 2 * Math.sin(Math.PI / 3)) / 2),
         }))}
       />
       <PythonFunction
@@ -104,25 +119,25 @@ export const Exercises = {
           <p>
             Définissez une fonction <code>angle_vecteurs</code> qui prend en entrée deux listes et
             qui retourne l'angle <strong>en degrés</strong> entre les vecteurs associés à ces
-            listes.
+            listes. Vous pouvez appeler la fonction pour la tester.
           </p>
         }
         tests={[
           {
             input: ['[1, 0]', '[0, 1]'],
-            output: '90',
+            correct: (output) => output === '90',
           },
           {
             input: ['[1, 0]', '[1, 0]'],
-            output: '0',
+            correct: (output) => output === '0',
           },
           {
             input: ['[0, 1]', '[0, 1]'],
-            output: '0',
+            correct: (output) => output === '0',
           },
           {
             input: ['[1, 0]', '[-1, 0]'],
-            output: '180',
+            correct: (output) => output === '180',
           },
         ]}
       />
@@ -131,21 +146,22 @@ export const Exercises = {
         prompt={
           <p>
             Définissez une fonction <code>distance</code> qui prend en entrée deux listes et qui
-            retourne la distance entre les points associés à ces listes.
+            retourne la distance entre les points associés à ces listes. Vous pouvez appeler la
+            fonction pour la tester.
           </p>
         }
         tests={[
           {
             input: ['[0, 0]', '[1, 1]'],
-            output: Math.sqrt(2).toString(),
+            correct: (output) => output === Math.sqrt(2).toString(),
           },
           {
             input: ['[1, 2]', '[4, 6]'],
-            output: '5',
+            correct: (output) => output === '5',
           },
           {
             input: ['[0, 0]', '[0, 0]'],
-            output: '0',
+            correct: (output) => output === '0',
           },
         ]}
       />
@@ -252,11 +268,17 @@ export const Exercises = {
       />
       <PythonCode
         prompt={
-          <p>
-            Définissez un vecteur <code>x</code> contenant les nombres entiers naturels de {tex`0`}{' '}
-            à {tex`10`}. Ensuite, utilisez <code>x</code> pour définir un vecteur <code>y</code>{' '}
-            contenant les premiers termes de la série géométrique {tex`3, 6, 12, \dots`}.
-          </p>
+          <>
+            <p>
+              Définissez un vecteur <code>x</code> contenant les nombres entiers naturels de{' '}
+              {tex`0`} à {tex`10`}. Ensuite, utilisez <code>x</code> pour définir un vecteur{' '}
+              <code>y</code> contenant les 11 premiers termes de la suite géométrique{' '}
+              {tex`3, 6, 12, \dots`}.
+            </p>
+            <p>
+              <em>Indication</em>: l'exponentielle est bien vectorisée également.
+            </p>
+          </>
         }
         tests={[
           {
@@ -456,4 +478,9 @@ export const Exercises = {
       </Matplotlib>
     </Sequence>
   ),
+}
+
+function approx(a: string | number, b: number | number, error = 1e-6) {
+  const parse = (x: string | number) => (typeof x === 'string' ? parseFloat(x) : x)
+  return Math.abs(parse(a) - parse(b)) < error
 }
