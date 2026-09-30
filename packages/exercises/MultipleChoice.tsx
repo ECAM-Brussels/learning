@@ -50,7 +50,7 @@ const _MultipleChoice = createStep({
     return (
       <>
         {ctx.data.prompt}
-        <div class="flex gap-4">
+        <div class="my-4 flex gap-4">
           <Attempt>
             <For each={Array.from(ctx.data.choices.entries())}>
               {([name, element]) => (
