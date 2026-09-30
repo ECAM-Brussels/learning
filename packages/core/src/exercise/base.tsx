@@ -223,11 +223,14 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     () => all[stepContext().sequencePosition]?.[stepContext().position] ?? null,
   )
   const [step, setStep] = createOptimisticStore(() => {
-    const [saved, data] = [fetched(), exerciseData()]
     return v.parse(schema(), {
       state: {},
-      ...(saved ?? {}),
-      data: { ...data, ...saved?.data },
+      ...(fetched() ?? {}),
+      data: {
+        ...exerciseData(),
+        // Override with saved data only if the data comes from a generator
+        ...(typeof props.data === 'function' ? fetched()?.data : {}),
+      },
     })
   }, {} as any)
 
