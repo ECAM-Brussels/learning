@@ -4,7 +4,7 @@ import { MultipleChoice } from '@learning/exercises/MultipleChoice'
 import { PythonCode } from '@learning/exercises/python/Code'
 import { python, type FinalOutput } from '@learning/repl'
 import { type JSX } from '@solidjs/web'
-import { allKeyed, dedent, randomInt } from 'es-toolkit'
+import { allKeyed, dedent } from 'es-toolkit'
 import { createMemo, createProjection, createSignal, For, merge, Show } from 'solid-js'
 import * as v from 'valibot'
 
@@ -476,12 +476,12 @@ const Norm = createDerivedStep(PythonCode, { x: v.array(v.number()) }, (props) =
 }))
 
 export const NormSequence = () => (
-  <Sequence
-    id="norm"
-    next={() => (
-      <Norm data={() => ({ x: [randomInt(-20, 21), randomInt(-20, 21), randomInt(-20, 21)] })} />
-    )}
-  />
+  <Sequence id="norm">
+    <Norm x={[1, 2, 3]} />
+    <Norm x={[-3, -7, 8]} />
+    <Norm x={[-13, 23, 7, -15, 12]} />
+    <Norm x={[-13, 3, -27, -18, 24, 0.5]} />
+  </Sequence>
 )
 
 export function Review() {
