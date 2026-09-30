@@ -76,14 +76,14 @@ export const Exercises = {
   Functions: () => (
     <Sequence id="functions">
       <PythonFunction
-        fnName="aire_carre"
+        fnName="perimetre_carre"
         prompt={
           <p>
-            Définissez une fonction <code>aire_carre</code> qui prend en entrée la longueur du côté
-            d'un carré et qui retourne son aire.
+            Définissez une fonction <code>perimetre_carre</code> qui prend en entrée la longueur du
+            côté d'un carré et qui retourne son périmètre.
           </p>
         }
-        tests={[1, 2, 3, 7, 10].map((x) => ({ input: [x], output: (x ** 2).toString() }))}
+        tests={[1, 2, 3, 7, 10].map((x) => ({ input: [x], output: 4 * x }))}
       />
       <PythonFunction
         fnName="aire_triangle"
