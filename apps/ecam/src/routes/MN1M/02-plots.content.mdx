@@ -540,3 +540,38 @@ plt.title("Graphe de exp(-x)")
 plt.suptitle("Plusieurs graphiques dans la même figure")
 plt.tight_layout()
 ```
+
+# Résumé
+
+- Définir une **fonction** permet un code plus _lisible_ et _réutilisable_.
+
+- Anatomie d'une fonction:
+
+  ```python
+  def nom_de_la_fonction(parametre1, parametre2):
+      # Corps de la fonction indenté de 4 espaces
+      return valeur_de_retour
+  ```
+
+- On dit qu'une fonction scalaire est **vectorisée**
+  si elle peut s'appliquer à des vecteurs
+  en procédant _composante par composante_.
+
+- La multiplication et l'addition sont **vectorisées** dans `numpy`.
+  Cela permet de calculer facilement l'image d'une fonction polynomiale sur un vecteur d'abscisses.
+
+- `numpy.linspace(a, b, n)` permet de générer un vecteur de `n` points uniformément espacés entre `a` et `b`.
+
+- Il est préférable d'importer les fonctions mathématiques de `numpy` plutôt que de `math`,
+  car elles sont **vectorisées**.
+
+- Pour tracer une courbe, on peut utiliser `matplotlib.pyplot.plot(x, y)`,
+  où `x` et `y` sont des vecteurs de même dimension.
+
+- `matplotlib` graphe techniquement des fonctions linéaires par morceaux,
+  mais si l'on utilise suffisamment de points,
+  le graphe paraîtra lisse.
+
+- Si une fonction `f` est vectorisée, alors `y = f(x)`.
+
+- `matplotlib.pyplot.subplot(i, j, n)` permet de sélectionner le `n`-ième graphique dans une grille de `i` lignes et `j` colonnes.
