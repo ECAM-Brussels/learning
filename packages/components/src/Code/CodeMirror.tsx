@@ -1,9 +1,11 @@
 import { python } from '@codemirror/lang-python'
-import { EditorState } from '@codemirror/state'
+import { Compartment, EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { basicSetup } from 'codemirror'
 import { createEffect, createSignal, onSettled } from 'solid-js'
 import type { EditorProps } from './index'
+
+const compartment = new Compartment()
 
 export default function CodeMirror(props: EditorProps) {
   let container: HTMLDivElement | undefined
@@ -18,6 +20,15 @@ export default function CodeMirror(props: EditorProps) {
     }
   })
 
+  createEffect(
+    () => props.readOnly,
+    (readOnly) => {
+      editor?.dispatch({
+        effects: compartment.reconfigure(EditorState.readOnly.of(readOnly === true)),
+      })
+    },
+  )
+
   onSettled(() => {
     if (container) {
       const onChange = EditorView.updateListener.of((update) => {
@@ -28,7 +39,12 @@ export default function CodeMirror(props: EditorProps) {
       editor = new EditorView({
         state: EditorState.create({
           doc: props.children,
-          extensions: [basicSetup, python(), onChange],
+          extensions: [
+            basicSetup,
+            python(),
+            onChange,
+            compartment.of(EditorState.readOnly.of(props.readOnly === true)),
+          ],
         }),
         parent: container,
       })

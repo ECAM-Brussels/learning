@@ -50,7 +50,7 @@ const _MultipleChoice = createStep({
     return (
       <>
         {ctx.data.prompt}
-        <div class="flex gap-4">
+        <div class="my-4 flex gap-4">
           <Attempt>
             <For each={Array.from(ctx.data.choices.entries())}>
               {([name, element]) => (
@@ -58,7 +58,7 @@ const _MultipleChoice = createStep({
                   <input
                     type="checkbox"
                     class="mr-2"
-                    disabled={ctx.state.saved?.selection !== undefined}
+                    disabled={ctx.state.correct !== undefined}
                     checked={ctx.state.current.selection?.includes(name)}
                     onChange={(event) =>
                       ctx.state.set('selection', (prev) => {

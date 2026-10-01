@@ -223,11 +223,14 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     () => all[stepContext().sequencePosition]?.[stepContext().position] ?? null,
   )
   const [step, setStep] = createOptimisticStore(() => {
-    const [saved, data] = [fetched(), exerciseData()]
     return v.parse(schema(), {
       state: {},
-      ...(saved ?? {}),
-      data: { ...data, ...saved?.data },
+      ...(fetched() ?? {}),
+      data: {
+        ...exerciseData(),
+        // Override with saved data only if the data comes from a generator
+        ...(typeof props.data === 'function' ? fetched()?.data : {}),
+      },
     })
   }, {} as any)
 
@@ -273,9 +276,9 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   const [form, setForm] = createSignal<HTMLFormElement | null>(null)
   const visible = createIsVisible(form)
   createEffect(
-    () => [visible(), step.submitted, fetched()] as const,
-    ([isVisible, submitted, fetched]) => {
-      if (isVisible && fetched === null && !submitted) {
+    () => [props.data, visible(), step.submitted, fetched()] as const,
+    ([data, isVisible, submitted, fetched]) => {
+      if (typeof data === 'function' && isVisible && fetched === null && !submitted) {
         submit({})
       }
     },
@@ -292,13 +295,11 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   const [resetting, setResetting] = createOptimistic(false)
   const reset = action(async function* () {
     setResetting(true)
-    setStep((s) => ({
-      state: {} as any,
-      feedback: {},
-      submitted: false,
-      correct: undefined,
-      data: {} as any,
-    }))
+    setStep((s) => {
+      s.feedback = {}
+      s.submitted = false
+      s.correct = undefined
+    })
     const { position, ...ctx } = stepContext()
     yield exerciseContext().reset(ctx)
     revalidate([
