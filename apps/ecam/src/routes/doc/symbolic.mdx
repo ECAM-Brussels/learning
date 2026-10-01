@@ -151,8 +151,11 @@ Un flux typique d'utilisation est le suivant:
 
 ## En pratique
 
-Nous avons une méthode `expr` qui permet d'obtenir l'arbre d'une expression
-sur lequel on peut appeler des méthodes chaînables et terminales.
+Le coeur de la plateforme fournit deux méthodes pour travailler avec des expressions symboliques: `expr` et `tex`.
+La première permet de manipuler des expressions symboliques, tandis que la seconde permet de les afficher.
+Après application de `expr`,
+les méthodes suivantes sont disponibles pour manipuler les expressions.
+Cette liste n'est pas exhaustive, et d'autres méthodes peuvent être ajoutées au fur et à mesure des besoins.
 
 | Méthode               | Type      | Description                                    |
 | --------------------- | --------- | ---------------------------------------------- |
@@ -170,13 +173,13 @@ sur lequel on peut appeler des méthodes chaînables et terminales.
 
 :::example[Calcul d'intégrale]
 
-Pour calculer $\displaystyle \int_0^1 x^2 \, dx$, on peut écrire:
+Pour calculer $\displaystyle \int_0^1 x^2 \, \mathrm{d} x$, on peut écrire:
 
 ```ts
 expr('x^2').integrate('x', 0, 1).latex()
 ```
 
-En pratique, on verra que le système peut _deviner_
+En pratique, on verra que le système peut en pratique _deviner_
 qu'il doit appeler `latex()`.
 
 :::
