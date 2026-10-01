@@ -1,9 +1,50 @@
 import { Latex } from '@learning/components'
 import { mapAsync } from 'es-toolkit'
-import { createMemo, Errored } from 'solid-js'
+import { createMemo, Errored, Loading } from 'solid-js'
 import { expr } from './expr'
 
 type MaybePromise<T> = T | Promise<T>
+
+type Substitution =
+  | undefined
+  | null
+  | string
+  | number
+  | { rawInput: string }
+  | { json: Extract<Parameters<typeof expr>[0], { json: any }>['json'] }
+  | { latex: () => MaybePromise<string> }
+
+function Tex(props: { strings: TemplateStringsArray; values: Substitution[] }) {
+  const parsed = createMemo(() => {
+    return mapAsync(props.values, async (value) => {
+      if (!value) return ''
+      if (typeof value === 'object' && 'rawInput' in value && typeof value.rawInput === 'string')
+        return value.rawInput
+      if (typeof value === 'object' && 'json' in value && typeof value.json === 'object')
+        return expr({ json: value.json }).latex()
+      if (typeof value === 'object' && 'latex' in value && typeof value.latex === 'function')
+        return value.latex()
+      return String(value).replace(/e\+?(\d+)/, '\\cdot 10^{ $1 }')
+    })
+  })
+  const latex = createMemo(() => {
+    return String.raw(props.strings, ...parsed())
+  })
+  const displayMode = createMemo(() => latex().split('\n').length > 1)
+  return (
+    <Errored
+      fallback={
+        <span class="border border-red-900 px-1 text-red-900">
+          Erreur lors de l'affichage de la formule
+        </span>
+      }
+    >
+      <Loading>
+        <Latex value={latex()} displayMode={displayMode()} />
+      </Loading>
+    </Errored>
+  )
+}
 
 /**
  * A helper for rendering LaTeX in JSX using template literals
@@ -17,44 +58,8 @@ type MaybePromise<T> = T | Promise<T>
  * `} // renders in display mode
  */
 export const tex = Object.assign(
-  (
-    strings: TemplateStringsArray,
-    ...values: MaybePromise<
-      | undefined
-      | null
-      | string
-      | number
-      | { rawInput: string }
-      | { json: Extract<Parameters<typeof expr>[0], { json: any }>['json'] }
-      | { latex: () => MaybePromise<string> }
-    >[]
-  ) => {
-    const latex = createMemo(async () => {
-      const parsed = await mapAsync(values, async (v) => {
-        const value = await v
-        if (!value) return ''
-        if (typeof value === 'object' && 'rawInput' in value && typeof value.rawInput === 'string')
-          return value.rawInput
-        if (typeof value === 'object' && 'json' in value && typeof value.json === 'object')
-          return expr({ json: value.json }).latex()
-        if (typeof value === 'object' && 'latex' in value && typeof value.latex === 'function')
-          return value.latex()
-        return String(value).replace(/e\+?(\d+)/, '\\cdot 10^{ $1 }')
-      })
-      return String.raw(strings, ...parsed)
-    })
-    const displayMode = createMemo(() => latex().split('\n').length > 1)
-    return (
-      <Errored
-        fallback={
-          <span class="border border-red-900 px-1 text-red-900">
-            Erreur lors de l'affichage de la formule
-          </span>
-        }
-      >
-        <Latex value={latex()} displayMode={displayMode()} />
-      </Errored>
-    )
+  (strings: TemplateStringsArray, ...values: Substitution[]) => {
+    return <Tex strings={strings} values={values} />
   },
   {
     raw: String.raw,
