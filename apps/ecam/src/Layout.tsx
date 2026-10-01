@@ -16,6 +16,7 @@ import {
 import { getUser, login, logout } from '@learning/core'
 import { MDXProvider } from '@learning/mdx'
 import { useIsRouting, type PathEnd } from '@solidjs/router'
+import { Portal } from '@solidjs/web'
 import { createMemo, Match, Show, Switch, type ParentComponent } from 'solid-js'
 import { paths } from './router'
 
@@ -118,11 +119,16 @@ export const Layout: ParentComponent = (props) => {
         <div class="h-0.5 w-full overflow-hidden rounded-full bg-slate-200">
           <div class="loading-progress h-full w-1/3 rounded-full bg-sky-300" />
         </div>
+        <Portal>
+          <div class="fixed inset-0 z-50 flex items-center justify-center bg-white/60">
+            <div class="h-16 w-16 animate-spin rounded-full border-4 border-sky-300 border-t-transparent" />
+          </div>
+        </Portal>
       </Show>
       <div class="container mx-auto">
         <Boundary>
           <Crumb href="/" title="Accueil" prefix="Learning - ">
-            <div class={{ 'opacity-50': routing() }}>{props.children}</div>
+            <div>{props.children}</div>
           </Crumb>
         </Boundary>
       </div>

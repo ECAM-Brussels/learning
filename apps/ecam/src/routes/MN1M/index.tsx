@@ -63,7 +63,13 @@ export default () => (
     <Heading level={2}>Séances d'exercices</Heading>
     <div class="grid gap-2 lg:grid-cols-2">
       <SessionCard index={1} title="Introduction à Python" link="01-python" img={session1} />
-      <SessionCard index={2} title="Fonctions et graphiques" link="02-plots" img={session2} draft />
+      <SessionCard
+        index={2}
+        title="Fonctions et graphiques"
+        link="02-plots"
+        img={session2}
+        draft={new Date('2026-10-02 07:00')}
+      />
     </div>
   </>
 )
@@ -85,9 +91,12 @@ function SessionCard(props: {
   title: JSX.Element
   link: keyof typeof paths.MN1M
   img?: string
-  draft?: boolean
+  draft?: boolean | Date
 }) {
-  const show = createMemo(() => (props.draft ? hasPermissions(['draft:read']) : true))
+  const isDraft = createMemo(
+    () => props.draft === true || (props.draft instanceof Date && new Date() < props.draft),
+  )
+  const show = createMemo(() => (isDraft() ? hasPermissions(['draft:read']) : true))
   return (
     <Boundary>
       <Show when={show()}>
@@ -99,15 +108,14 @@ function SessionCard(props: {
                 class={[
                   'h-48 w-full object-cover transition ease-in-out',
                   {
-                    'opacity-30 grayscale hover:opacity-100 hover:grayscale-0':
-                      props.draft === true,
-                    'opacity-80 hover:opacity-100': !props.draft,
+                    'opacity-30 grayscale hover:opacity-100 hover:grayscale-0': isDraft(),
+                    'opacity-80 hover:opacity-100': !isDraft(),
                   },
                 ]}
               />
             </Show>
             <h3 class="px-2 py-4 text-lg font-bold text-stone-700">
-              Session {props.index} - {props.title} <Show when={props.draft}>(non publié)</Show>
+              Session {props.index} - {props.title} <Show when={isDraft()}>(non publié)</Show>
             </h3>
           </div>
         </a>

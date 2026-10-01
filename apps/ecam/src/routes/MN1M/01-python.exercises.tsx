@@ -319,7 +319,7 @@ export const Variables = createDerivedStep(
     prompt: (
       <>
         <p>Définissez:</p>
-        <ul>
+        <ul class="list-disc pl-8">
           <For each={Object.entries(props.vars)}>
             {([name, value]) => (
               <li>

@@ -14,7 +14,10 @@ export default () => {
   return (
     <Meta
       title="Séance 2: Fonctions et graphiques"
-      authorized={() => hasPermissions(['draft:read'])}
+      authorized={() => {
+        if (new Date() > new Date('2026-10-02 07:00')) return true
+        return hasPermissions(['draft:read'])
+      }}
     >
       <Page />
     </Meta>
