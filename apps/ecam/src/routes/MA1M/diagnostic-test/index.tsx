@@ -5,13 +5,44 @@ import { sample } from 'es-toolkit/array'
 import * as v from 'valibot'
 import triangleImage from './triangle.png'
 
+function countSymbol(value: unknown, symbol: string): number {
+  if (value === symbol) return 1
+  if (!Array.isArray(value)) return 0
+  return value.reduce((count, child) => count + countSymbol(child, symbol), 0)
+}
+
 function DiagnosticTest() {
   return (
     <>
       <div>
         <h1>Diagnostic Test</h1>
       </div>
-
+      <Exercise
+        id="complete-the-square"
+        schema={{ data: { a: 'expr', b: 'expr', c: 'expr' }, inputs: { attempt: 'expr' } }}
+        data={() => ({
+          a: sample([-3, -2, 2, 3]),
+          b: sample([-3, -4, -5, -6, 3, 4, 5, 6]),
+          c: sample([-9, -8, -7, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
+        })}
+        prompt={(ctx) => {
+          const expression = () => expr(`a (x - b)^2 + c`).subs(ctx.data).expand()
+          return (
+            <>
+              <p>Complétez le carré:</p>
+              <p>
+                <Attempt>
+                  {tex`${expression()} = `} {ctx.inputs.attempt}
+                </Attempt>
+              </p>
+            </>
+          )
+        }}
+        grade={async (ctx) => {
+          if (countSymbol(ctx.inputs.attempt.json, 'x') !== 1) return false
+          return expr(`a (x - b)^2 + c`).subs(ctx.data).isEqual(ctx.inputs.attempt)
+        }}
+      />
       <Sequence id="diagnostic-test">
         <TrueOrFalse prompt={tex`\sin(\pi-x) = -\sin x`} answer={false} />
         <MultipleChoice
