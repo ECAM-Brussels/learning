@@ -254,6 +254,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
    * - Save and refresh state
    */
   const submit = action(async function* (newState: Partial<ObjectSchema<S['inputs'], 'input'>>) {
+    if (options().readOnly) return
     const state = v.parse(schema().entries.state, newState)
     const submitted = Object.keys(state).length > 0
     if (submitted) affects(step, 'submitted')
@@ -263,7 +264,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
       return normalizeGrade(gradeResult)
     })()
     const payload = { ...step, state, submitted, correct, feedback }
-    yield exerciseContext().saveStep(stepContext(), JSON.parse(JSON.stringify(payload)))
+    yield exerciseContext().saveStep(stepContext(), JSON.parse(JSON.stringify(payload)), options())
     revalidate([
       exerciseContext().fetchSequence.keyFor(sequenceContext()),
       exerciseContext().getProgress.keyFor(sequenceContext()),
@@ -288,12 +289,14 @@ export function Step<S extends StepSchema, F extends JsonObject>(
    * Handle resetting the whole exercise
    */
   const canReset = createMemo(async () => {
+    if (options().readOnly) return false
     if (stepContext().position !== 0) return false
     if (!step.submitted) return false
     return options().allowResets && (await hasPermissions(['exercise:deleteOwn']))
   })
   const [resetting, setResetting] = createOptimistic(false)
   const reset = action(async function* () {
+    if (!canReset()) return
     setResetting(true)
     setStep((s) => {
       s.feedback = {}
@@ -340,7 +343,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
               s[name] = e.target.value as any
             })
           }}
-          readonly={step.submitted}
+          readonly={step.submitted || options().readOnly}
         />
       </Boundary>
     )),
@@ -389,7 +392,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
             inputs={fields()}
             state={promptState}
           />
-          <Show when={!step.submitted && !resetting()}>
+          <Show when={!step.submitted && !resetting() && !options().readOnly}>
             <button
               class="my-4 block cursor-pointer rounded-lg bg-green-800 px-3 py-2 font-bold text-green-100 hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
               disabled={isPending(() => step.submitted)}
