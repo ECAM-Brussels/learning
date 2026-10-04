@@ -1,4 +1,4 @@
-import { Boundary, FeedbackContext, MathField } from '@learning/components'
+import { Boundary, FeedbackContext, Form, MathField } from '@learning/components'
 import { revalidate, useLocation } from '@solidjs/router'
 import { dynamic, Dynamic, type JSX } from '@solidjs/web'
 import { mapValues } from 'es-toolkit'
@@ -9,7 +9,6 @@ import {
   createMemo,
   createOptimistic,
   createOptimisticStore,
-  createProjection,
   createSignal,
   createStore,
   isPending,
@@ -28,7 +27,7 @@ import { createIsVisible } from '../visibility'
 import { StepContext } from './context'
 import local from './context.local'
 import remote from './context.remote'
-import { ExerciseOptionsContext, Options } from './options'
+import { Options, OptionsContext } from './options'
 
 type MaybeAsync<T> = T | Promise<T>
 type Json = string | number | boolean | null | { [key: string]: Json } | Json[]
@@ -201,8 +200,9 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     sequencePosition: inherited?.().sequencePosition ?? 0,
     position: inherited?.().position ?? 0,
   }))
-  const optionsCtx = useContext(ExerciseOptionsContext)
-  const options = createMemo(() => v.parse(Options, { ...optionsCtx(), ...props.options }))
+  const optionsCtx = useContext(OptionsContext)
+  const rawOptions = createMemo(() => ({ ...optionsCtx(), ...props.options }))
+  const options = createMemo(() => v.parse(Options, rawOptions()))
 
   const schema = () =>
     StoredStep(props.schema.data as S['data'], props.schema.inputs as S['inputs'])
@@ -218,9 +218,9 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   const exerciseData = createMemo(() =>
     typeof props.data === 'function' ? props.data() : props.data,
   )
-  const all = createProjection(() => exerciseContext().fetchSequence(sequenceContext()), {})
+  const all = createMemo(() => exerciseContext().fetchSequence(sequenceContext()), {})
   const fetched = createMemo(
-    () => all[stepContext().sequencePosition]?.[stepContext().position] ?? null,
+    () => all()[stepContext().sequencePosition]?.[stepContext().position] ?? null,
   )
   const [step, setStep] = createOptimisticStore(() => {
     return v.parse(schema(), {
@@ -245,6 +245,10 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     {} as any,
   )
 
+  const canSubmit = createMemo(
+    () =>
+      !options().readOnly && (!step.submitted || (!step.correct && options().allowResubmissions)),
+  )
   /**
    * Handle submissions
    *
@@ -254,7 +258,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
    * - Save and refresh state
    */
   const submit = action(async function* (newState: Partial<ObjectSchema<S['inputs'], 'input'>>) {
-    if (options().readOnly) return
+    if (!canSubmit()) return
     const state = v.parse(schema().entries.state, newState)
     const submitted = Object.keys(state).length > 0
     if (submitted) affects(step, 'submitted')
@@ -285,16 +289,17 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     },
   )
 
-  /**
-   * Handle resetting the whole exercise
-   */
   const canReset = createMemo(async () => {
+    if (canSubmit()) return false
     if (options().readOnly) return false
     if (stepContext().position !== 0) return false
     if (!step.submitted) return false
     return options().allowResets && (await hasPermissions(['exercise:deleteOwn']))
   })
   const [resetting, setResetting] = createOptimistic(false)
+  /**
+   * Handle resetting the whole exercise
+   */
   const reset = action(async function* () {
     if (!canReset()) return
     setResetting(true)
@@ -319,15 +324,24 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     <StepContext
       value={() => ({ ...stepContext(), position: stepContext().position + (props.offset ?? 0) })}
     >
-      <FeedbackContext
-        value={{
-          get correct() {
-            return options().showFeedback ? step.correct : undefined
-          },
-        }}
+      <OptionsContext
+        value={() => ({
+          ...rawOptions(),
+          ...(options().allowResubmissions && step.correct === false
+            ? { allowResubmissions: false, readOnly: true }
+            : {}),
+        })}
       >
-        <Boundary fallback={props.fallback}>{props.children}</Boundary>
-      </FeedbackContext>
+        <FeedbackContext
+          value={{
+            get correct() {
+              return options().showFeedback ? step.correct : undefined
+            },
+          }}
+        >
+          <Boundary fallback={props.fallback}>{props.children}</Boundary>
+        </FeedbackContext>
+      </OptionsContext>
     </StepContext>
   )
 
@@ -343,7 +357,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
               s[name] = e.target.value as any
             })
           }}
-          readonly={step.submitted || options().readOnly}
+          readonly={!canSubmit()}
         />
       </Boundary>
     )),
@@ -379,7 +393,8 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   return (
     <div class={['not-prose my-4', props.class]}>
       <StepBoundary fallback="Chargement de l'exercice...">
-        <form
+        <Form
+          readOnly={!canSubmit()}
           ref={setForm}
           onSubmit={(e) => {
             e.preventDefault()
@@ -392,7 +407,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
             inputs={fields()}
             state={promptState}
           />
-          <Show when={!step.submitted && !resetting() && !options().readOnly}>
+          <Show when={canSubmit() && !resetting()}>
             <button
               class="my-4 block cursor-pointer rounded-lg bg-green-800 px-3 py-2 font-bold text-green-100 hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
               disabled={isPending(() => step.submitted)}
@@ -400,7 +415,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
               {isPending(() => step.submitted) ? 'Soumission...' : 'Soumettre'}
             </button>
           </Show>
-        </form>
+        </Form>
       </StepBoundary>
       <Show when={step.submitted && options().showFeedback}>
         <StepBoundary fallback="Chargement du feedback..." offset={1}>
