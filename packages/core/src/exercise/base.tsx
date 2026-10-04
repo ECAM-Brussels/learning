@@ -13,6 +13,8 @@ import {
   createStore,
   isPending,
   omit,
+  onSettled,
+  refresh,
   Show,
   useContext,
   type Component,
@@ -203,6 +205,12 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   const optionsCtx = useContext(OptionsContext)
   const rawOptions = createMemo(() => ({ ...optionsCtx(), ...props.options }))
   const options = createMemo(() => v.parse(Options, rawOptions()))
+  onSettled(() => {
+    let interval = setInterval(() => {
+      refresh(options)
+    }, 1000)
+    return () => clearInterval(interval)
+  })
 
   const schema = () =>
     StoredStep(props.schema.data as S['data'], props.schema.inputs as S['inputs'])
