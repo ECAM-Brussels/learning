@@ -206,7 +206,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   const rawOptions = createMemo(() => ({ ...optionsCtx(), ...props.options }))
   const options = createMemo(() => v.parse(Options, rawOptions()))
   onSettled(() => {
-    let interval = setInterval(() => {
+    const interval = setInterval(() => {
       refresh(options)
     }, 1000)
     return () => clearInterval(interval)
