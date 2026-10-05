@@ -93,6 +93,15 @@ function expression(input: Math) {
       expression({ json })
         .subs({ [x]: root })
         .isEqual(0),
+    count: (symol: string) => {
+      function _count(json: MathJsonExpression): number {
+        if (json === symol) return 1
+        if (!Array.isArray(json)) return 0
+        const [_func, ...args] = json
+        return args.reduce((sum, arg) => sum + _count(arg), 0)
+      }
+      return _count(json)
+    },
     degree: () => symapi.expr.degree({ expr: json }),
     delta: (x: string, a: Math, b: Math) => {
       const f = (t: Math) => expression({ json }).subs({ [x]: t }).json
