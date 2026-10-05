@@ -1,6 +1,7 @@
-import { Attempt, Feedback } from '@learning/components'
+import { Attempt } from '@learning/components'
 import { createDerivedStep, Exercise, expr, Sequence, tex } from '@learning/core'
 import { MultipleChoice } from '@learning/exercises/MultipleChoice'
+import { allKeyed } from 'es-toolkit'
 import { sample } from 'es-toolkit/array'
 import * as v from 'valibot'
 import triangleImage from './triangle.png'
@@ -15,96 +16,100 @@ function DiagnosticTest() {
   return (
     <>
       <div>
-        <h1>Diagnostic Test</h1>
+        <h1>Test diagnostique</h1>
+        <h2>Trigonométrie</h2>
       </div>
+
       <Exercise
-        id="complete-the-square"
-        schema={{ data: { a: 'expr', b: 'expr', c: 'expr' }, inputs: { attempt: 'expr' } }}
-        data={() => ({
-          a: sample([-3, -2, 2, 3]),
-          b: sample([-3, -4, -5, -6, 3, 4, 5, 6]),
-          c: sample([-9, -8, -7, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
-        })}
-        prompt={(ctx) => {
-          const expression = () => expr(`a (x - b)^2 + c`).subs(ctx.data).expand()
-          return (
-            <>
-              <p>Complétez le carré:</p>
-              <p>
-                <Attempt>
-                  {tex`${expression()} = `} {ctx.inputs.attempt}
-                </Attempt>
-              </p>
-            </>
-          )
+        id="system-two-equations"
+        schema={{
+          data: { equation1: 'expr', equation2: 'expr' },
+          inputs: { x: 'expr', y: 'expr' },
         }}
+        data={{ equation1: '-4x + 3y = 20', equation2: '-x + y = 6' }}
+        prompt={(ctx) => (
+          <>
+            <p>Résolvez le système d'équations suivant :</p>
+            <div class="flex justify-center">
+              {tex`\left\{\begin{array}{l} ${ctx.data.equation1} \\ ${ctx.data.equation2} \end{array}\right.`}
+            </div>
+            <p>
+              <Attempt class="text-lg text-red-600">
+                {tex`x =`} {ctx.inputs.x}, {tex`y =`} {ctx.inputs.y}
+              </Attempt>
+            </p>
+          </>
+        )}
         grade={async (ctx) => {
-          if (countSymbol(ctx.inputs.attempt.json, 'x') !== 1) return false
-          return expr(`a (x - b)^2 + c`).subs(ctx.data).isEqual(ctx.inputs.attempt)
+          const tests = await allKeyed({
+            first: ctx.data.equation1.subs(ctx.inputs).isTrue(),
+            second: ctx.data.equation2.subs(ctx.inputs).isTrue(),
+          })
+          return tests.first && tests.second
         }}
       />
-      <Sequence id="diagnostic-test">
+
+      <Sequence
+        id="diagnostic-test-trigonometry"
+        options={{ showFeedback: new Date('2026-10-02 12:13') }}
+      >
         <TrueOrFalse prompt={tex`\sin(\pi-x) = -\sin x`} answer={false} />
         <MultipleChoice
           prompt={
             <>
               <p>On considère le triangle isocèle suivant, où le coté {tex`AB`} mesure 5 cm.</p>
-              <div class="flex justify-center">
-                <img src={triangleImage} alt="Triangle isocèle" class="block h-auto w-90" />
-              </div>
+              <img src={triangleImage} alt="Triangle isocèle" class="mx-auto block h-auto w-90" />
               <p>Quelle est la longueur du coté {tex`AC`} ?</p>
             </>
           }
           choices={{
-            A: <>{tex`\frac{5\sqrt{5}}{2}`}</>,
-            B: <>{tex`\frac{5\sqrt{6}}{2}`}</>,
-            C: <>{tex`5\sqrt{2}`}</>,
-            D: <>{tex`5\sqrt{3}`}</>,
+            A: tex`\frac{5\sqrt{5}}{2}`,
+            B: tex`\frac{5\sqrt{6}}{2}`,
+            C: tex`5\sqrt{2}`,
+            D: tex`5\sqrt{3}`,
           }}
           grade={(sel) => sel.equals(['D'])}
         />
         <Exercise
-          schema={{ data: { a: 'expr', b: 'expr', c: 'expr' }, inputs: { attempt: 'expr' } }}
-          data={() => ({
-            a: sample([-3, -2, -1, 2, 3]),
-            b: sample([
-              expr(`\\frac{\\pi}{3}`),
-              expr(`\\frac{\\pi}{6}`),
-              expr(`-\\frac{\\pi}{3}`),
-              expr(`-\\frac{\\pi}{6}`),
-            ]),
-            c: sample([
+          schema={{ data: { equation: 'expr' }, inputs: { attempt: 'expr' } }}
+          data={() => {
+            const a = sample([-3, -2, -1, 2, 3])
+            const b = sample([
+              `\\frac{\\pi}{3}`,
+              `\\frac{\\pi}{6}`,
+              `-\\frac{\\pi}{3}`,
+              `-\\frac{\\pi}{6}`,
+            ])
+            const c = sample([
               `-\\frac{1}{2}`,
               `\\frac{1}{2}`,
               `-\\frac{\\sqrt{3}}{2}`,
               `\\frac{\\sqrt{3}}{2}`,
               `-\\frac{\\sqrt{2}}{2}`,
               `\\frac{\\sqrt{2}}{2}`,
-            ]),
-          })}
-          prompt={(ctx) => {
-            const arg = () => expr(`a x + b`).subs(ctx.data).simplify()
-            return (
-              <>
-                <p>Déterminez une solution de l'équation :</p>
-                <div class="flex justify-center">
-                  {tex`\sin\left(${arg()}\right) = ${ctx.data.c}`}
-                </div>
-                <p>
-                  <Attempt>
-                    {tex`x=`}
-                    {ctx.inputs.attempt}
-                  </Attempt>
-                </p>
-              </>
-            )
+            ])
+            return { equation: expr(`\\sin(ax + b) = c`).subs({ a, b, c }).simplify() }
           }}
-          grade={(ctx) =>
-            expr(tex.raw`\sin(a * x + b) = c`)
-              .subs({ ...ctx.data, x: ctx.inputs.attempt })
-              .isTrue()
-          }
+          prompt={(ctx) => (
+            <>
+              <p>Déterminez une solution de l'équation :</p>
+              {tex`${ctx.data.equation}
+                `}
+              <p>
+                <Attempt class="justify-start">
+                  {tex`x=`}
+                  {ctx.inputs.attempt}
+                </Attempt>
+              </p>
+            </>
+          )}
+          grade={(ctx) => ctx.data.equation.subs({ x: ctx.inputs.attempt }).isTrue()}
         />
+      </Sequence>
+      <div>
+        <h2>Vecteurs</h2>
+      </div>
+      <Sequence id="diagnostic-test-vectors">
         <TrueOrFalse
           prompt={
             <p>
@@ -143,18 +148,16 @@ function DiagnosticTest() {
               .isEqual(ctx.inputs.attempt)
           }
           feedback={(ctx) => (
-            <Feedback>
+            <>
               <p>Le produit scalaire est :</p>
               <div class="flex justify-center">
-                {tex`\vec{u} \cdot \vec{v} = ${expr(`u * v * \\cos(b)`).subs({
-                  ...ctx.data,
-                  b: expr(`${ctx.data.a} * \\pi / 180`),
-                })}
-                = ${expr(`u * v * \\cos(b)`)
-                  .subs({ ...ctx.data, b: expr(`${ctx.data.a} * \\pi / 180`) })
+                {tex`\vec{u} \cdot \vec{v}
+                = ${expr(tex.raw`u v \cos{\frac{a \pi}{180}}`).subs(ctx.data)}
+                = ${expr(tex.raw`u v \cos{\frac{a \pi}{180}}`)
+                  .subs(ctx.data)
                   .simplify()}`}
               </div>
-            </Feedback>
+            </>
           )}
         />
         <TrueOrFalse
@@ -177,19 +180,24 @@ function DiagnosticTest() {
             </>
           }
           choices={{
-            A: <>{tex`\overrightarrow{1_y}`}</>,
-            B: <>{tex`-\overrightarrow{1_y}`}</>,
+            A: tex`\overrightarrow{1_y}`,
+            B: tex`-\overrightarrow{1_y}`,
             C: <>{tex`1`}</>,
             D: <>{tex`\vec{0}`}</>,
             E: <>Cette expression n'a pas de sens</>,
           }}
           grade={(sel) => sel.equals(['B'])}
         />
+      </Sequence>
+      <div>
+        <h2>Algèbre</h2>
+      </div>
+      <Sequence id="diagnostic-test-algebra">
         <Exercise
           schema={{ data: { a: 'expr' }, inputs: { attempt: 'expr' } }}
           data={() => ({ a: sample([21, 22, 23, 24]) })}
           prompt={(ctx) => {
-            const amount = () => expr(`a * 9`).subs(ctx.data).simplify()
+            const amount = () => expr(`9 a`).subs(ctx.data).simplify()
             return (
               <>
                 <p>
@@ -215,22 +223,52 @@ function DiagnosticTest() {
           answer={false}
         />
         <MultipleChoice
-          prompt={
-            <>
-              <p>
-                Pour un nombre {tex`a\in \mathbb{R}`}, quelle est la distance entre {tex`a`} et{' '}
-                {tex`5`} ?
-              </p>
-            </>
-          }
-          choices={{
-            A: <>{tex`5-a`}</>,
-            B: <>{tex`a-5`}</>,
-            C: <>{tex`|a-5|`}</>,
-            D: <>{tex`|5+a|`}</>,
-            E: <>{tex`|a|-|5|`}</>,
+          data={() => {
+            const b = sample([5])
+            return {
+              prompt: (
+                <>
+                  <p>
+                    Pour un nombre {tex`a\in \mathbb{R}`}, quelle est la distance entre {tex`a`} et{' '}
+                    {tex`${b}`} ?
+                  </p>
+                </>
+              ),
+              choices: {
+                A: <>{tex`${b}-a`}</>,
+                B: <>{tex`a-${b}`}</>,
+                C: <>{tex`|a-${b}|`}</>,
+                D: <>{tex`|${b}+a|`}</>,
+                E: <>{tex`|a|-|${b}|`}</>,
+              },
+              grade: (sel) => sel.equals(['C']),
+            }
           }}
-          grade={(sel) => sel.equals(['C'])}
+        />
+        <Exercise
+          schema={{ data: { a: 'expr', b: 'expr', c: 'expr' }, inputs: { attempt: 'expr' } }}
+          data={() => ({
+            a: sample([-3, -2, 2, 3]),
+            b: sample([-3, -4, -5, -6, 3, 4, 5, 6]),
+            c: sample([-9, -8, -7, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
+          })}
+          prompt={(ctx) => {
+            const expression = () => expr(`a (x - b)^2 + c`).subs(ctx.data).expand()
+            return (
+              <>
+                <p>Complétez le carré:</p>
+                <p>
+                  <Attempt>
+                    {tex`${expression()} = `} {ctx.inputs.attempt}
+                  </Attempt>
+                </p>
+              </>
+            )
+          }}
+          grade={async (ctx) => {
+            if (countSymbol(ctx.inputs.attempt.json, 'x') !== 1) return false
+            return expr(`a (x - b)^2 + c`).subs(ctx.data).isEqual(ctx.inputs.attempt)
+          }}
         />
       </Sequence>
     </>
