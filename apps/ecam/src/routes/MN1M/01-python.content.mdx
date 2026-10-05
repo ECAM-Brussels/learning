@@ -114,12 +114,13 @@ l'ordinateur **arrondit** et on perd en précision.
 | --------------------------------------------------------- | ----------------------------------------------------------- |
 | $0.1$                                                     | `0.1000000000000000055511151231257827021181583404541015625` |
 | $0.5$                                                     | `0.5`                                                       |
-| <Exercise.Input number={number()} onChange={setNumber} /> | <Exercise.BinaryRepresentation value={number()} />          |
+| <Exercise.Input number={number()} onChange={setNumber} /> | <code>{real()}</code>                                       |
 
 Pour obtenir le nombre exact qui se cache derrière un nombre dans Python,
 vous pouvez utiliser le code suivant:
 
 ```python run
+# On importe la bibliothèque 'decimal' pour travailler en base 10
 import decimal
 
 decimal.Decimal(0.1)
@@ -459,12 +460,13 @@ v + w
 
 :::
 
-#### Multiplication scalaire
+#### Multiplication par un scalaire
 
-Pour la multiplication scalaire d'un vecteur,
+Pour la multiplication d'un vecteur _par un scalaire_
+(à ne pas confondre avec le _produit scalaire_),
 on peut multiplier le vecteur par un nombre avec l'opérateur `*`.
 
-:::example[Multiplication scalaire de vecteurs]
+:::example[Multiplication d'un vecteur par un scalaire]
 
 Pour calculer $2 \vec v$ avec $\vec v = (1, 2, 3)$,
 on écrit:
@@ -718,7 +720,7 @@ sera très utile pour tracer les graphes des fonctions.
   />
   <Exercise.Vectorization
     fn="log"
-    x={['1', '1.1', '1.2', '1.3', '1.4', '0.5']}
+    x={['1', '1.1', '1.2', '1.3', '1.4', '1.5']}
     latex={(x) => `\\ln{${x}}`}
   />
 </Sequence>
@@ -825,8 +827,8 @@ qui a comme dénominateur **une puissance de $10$**.
 - Le nombre $0.375$ peut s'écrire comme la fraction $\displaystyle \frac{375}{10^3}$,
   la division par $10^3$ permettant de décaler la virgule de trois positions vers la gauche.
 
-- Le nombre $45.1234$ peut s'écrire comme la fraction $\displaystyle \frac{451234}{10^4}$.
-  la division par $10^4$ permettant de décaler la virgule de trois positions vers la gauche.
+- Le nombre $45.1234$ peut s'écrire comme la fraction $\displaystyle \frac{451234}{10^4}$,
+  la division par $10^4$ permettant de décaler la virgule de quatre positions vers la gauche.
 
 - Le nombre $\displaystyle \frac 1 3 = 0.33333\ldots$ n'est **pas représentable**
   puisqu'il faudrait une infinité de chiffres pour le stocker.

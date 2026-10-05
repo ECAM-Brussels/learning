@@ -7,9 +7,11 @@ import {
   Loading,
   merge,
   Show,
+  useContext,
   type Component,
   type ComponentProps,
 } from 'solid-js'
+import { FormState } from '../Form'
 import Python from '../Python'
 
 const Monaco = clientOnly(() => import('./Monaco'))
@@ -34,18 +36,23 @@ type Props = Omit<EditorProps, 'lang'> & {
 export const Code: Component<Props> = (rawProps) => {
   const props = merge({ backend: 'monaco' }, rawProps)
   const [value, setValue] = createSignal(() => props.children)
+  const editor = createMemo(() => {
+    if (isMobile()) return 'codemirror'
+    return props.backend
+  })
+  const formState = useContext(FormState)
   return (
     <Loading fallback={<p>Chargement de l'éditeur...</p>}>
       <div class="my-4 flex flex-col gap-0">
         <Dynamic
-          component={props.backend === 'monaco' ? Monaco : CodeMirror}
+          component={editor() === 'monaco' ? Monaco : CodeMirror}
           children={value()}
           lang={props.lang}
           onChange={(newValue) => {
             setValue(newValue)
             props.onChange?.(newValue)
           }}
-          readOnly={props.readOnly}
+          readOnly={props.readOnly ?? formState().readOnly}
         />
         <Show when={props.lang === 'python' && props.run}>
           <Python class="my-0 py-0" value={value()} math={props.math} />
@@ -62,4 +69,11 @@ export function code(props: Omit<ComponentProps<typeof Code>, 'children'>) {
     )
     return <Code {...props} children={code()} />
   }
+}
+
+function isMobile() {
+  return (
+    /Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent) ||
+    (navigator.maxTouchPoints > 0 && window.matchMedia('(pointer: coarse)').matches)
+  )
 }

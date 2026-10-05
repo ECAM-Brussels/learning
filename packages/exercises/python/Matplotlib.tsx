@@ -33,6 +33,10 @@ const Test = v.variant('type', [
     value: v.number(),
   }),
   v.object({
+    type: v.literal('sameScale'),
+    value: v.optional(v.boolean(), true),
+  }),
+  v.object({
     type: v.literal('title'),
     pattern: v.instance(RegExp),
   }),
@@ -109,8 +113,8 @@ export const Matplotlib = createDerivedStep(
               result = False
 
               for line in ax.get_lines():
-                x = line.get_xdata()
-                y = line.get_ydata()
+                x = np.array(line.get_xdata())
+                y = np.array(line.get_ydata())
                 checks = [
                   bool(x[0] == ${t.x[0]} and x[-1] == ${t.x[1]}),
                   len(x) > ${t.n},
@@ -135,8 +139,8 @@ export const Matplotlib = createDerivedStep(
               result = False
 
               for line in ax.get_lines():
-                x = line.get_xdata()
-                y = line.get_ydata()
+                x = np.array(line.get_xdata())
+                y = np.array(line.get_ydata())
                 checks = [
                   np.allclose(x, ${JSON.stringify(t.x)}),
                   np.allclose(y, ${JSON.stringify(t.y)}),
@@ -149,6 +153,16 @@ export const Matplotlib = createDerivedStep(
               result
             `,
             check: ({ result }) => result?.toLowerCase() === 'true',
+          }
+        case 'sameScale':
+          return {
+            desc: `L'échelle ${t.value ? 'doit' : 'ne doit pas'} être la même pour les deux axes`,
+            test: dedent /* python */ `
+              import matplotlib.pyplot as plt
+              ax = plt.gcf().axes[0]
+              ax.get_aspect()
+            `,
+            check: ({ result }) => (result === '1') === t.value,
           }
         case 'title':
           return {
