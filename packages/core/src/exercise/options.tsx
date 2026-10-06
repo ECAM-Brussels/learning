@@ -1,5 +1,5 @@
 import type { JSX } from '@solidjs/web'
-import { createContext, useContext } from 'solid-js'
+import { createContext, omit, useContext } from 'solid-js'
 import * as v from 'valibot'
 
 const DateSchema = v.union([
@@ -42,8 +42,9 @@ export const OptionsContext = createContext<() => Partial<Options>>(() => ({}))
 
 export function ExerciseOptions(props: Partial<Options> & { children: JSX.Element }) {
   const parentOptions = useContext(OptionsContext)
+  const options = omit(props, 'children')
   return (
-    <OptionsContext value={() => ({ ...parentOptions(), ...props })}>
+    <OptionsContext value={() => ({ ...parentOptions(), ...options })}>
       {props.children}
     </OptionsContext>
   )
