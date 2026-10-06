@@ -1,0 +1,213 @@
+import { tex } from '@learning/core'
+
+# Rappels
+
+- Les nombres représentables par un ordinateur
+  forment un ensemble fini
+  et s'écrivent sous la forme $\frac {m} {2^n}$ avec $m, n \in \mathbb Z$.
+
+- Au plus on est proche de $0$, au plus on a de chance
+  qu'un nombre soit représentable.
+
+  <div class="grid grid-cols-2 gap-4">
+
+  ```python run
+  # Pas représentable car loin de 0
+  100 + 1e-15
+  ```
+
+  ```python run
+  # Représentable car proche de 0
+  1 + 1e-15
+  ```
+
+  </div>
+
+  Au plus on s'éloigne de $0$, au plus on perd en précision.
+
+- Pour définir une **fonction**,
+  on utilise le mot clé `def` suivi du nom de la fonction et de ses paramètres entre parenthèses.
+  Le corps de la fonction est **indenté**.
+
+  Par exemple, la fonction $f(x) = x^2 - 3x + 4$ se définit comme suit:
+
+  ```python
+  def f(x):
+      return x**2 - 3*x + 4
+  ```
+
+- Pour tracer un graphe,
+  on définit un vecteur des abscisses avec `np.linspace`,
+  et on applique une _fonction vectorisée_ à ce vecteur pour obtenir les ordonnées.
+
+  ```python run math
+  import matplotlib.pyplot as plt
+  import numpy as np
+
+  def f(x):
+      return x**2 - 3*x + 4
+
+  x = np.linspace(-5, 5, 100)
+  y = f(x)
+
+  plt.plot(x, y)
+  ```
+
+# Introduction
+
+L'objectif de ce chapitre est de calculer des **dérivées**.
+À cette fin, on rappelle que $f'(x)$ est définie par
+
+{tex`f'(x)
+= \lim_{h \to 0} \frac{\overbrace{f(x + h) - f(x)}^{\Delta y}} {\underbrace{h}_{\Delta x}}.`}
+
+Malheureusement,
+nous verrons que le concept de limite touche _aux limites du calcul numérique_,
+et que l'application stricte de la définition ci-dessus donnera $0$.
+L'alternative sera de considérer une quantité mathématique
+qui se rapproche plus vite de la dérivée
+et de ne pas considérer des $h$ trop petits.
+
+# Différences finies
+
+La dérivée se définit comme ceci
+{tex`f'(x)
+= \lim_{h \to 0} \frac {f(x + h) - f(x)} h.`}
+
+En particulier, si $h$ est petit
+{tex`f'(x)
+\approx \frac {f(x + h) - f(x)} h.`}
+
+Nous allons utiliser cette approximation pour calculer des dérivées.
+
+## Quotient différentiel
+
+On parle de **quotient différentiel en avant**
+la quantité
+{tex`
+\frac {f(x + h) - f(x)} h,
+\quad h > 0`}
+
+:::example
+
+Approximons la dérivée de $f(x) = x^2 + 1$ en $x = 1$
+avec comme pas $h = 10^{-30}$.
+
+```python run
+import numpy as np
+
+def f(x):
+    return x**2 + 1
+
+def diff(x, h = 1e-6):
+    return (f(x + h) - f(x)) / h
+
+diff(1, 1e-30)
+```
+
+Le résultat n'est **absolument pas correct**,
+puisque nous aurions dû obtenir:
+{tex`f'(1)
+= \left. 2x \right|_{x = 1}
+= 2.
+`}
+
+Souvenez-vous que Python n'utilise qu'environ $15$ chiffres significatifs,
+ce qui signifie que pour Python, $1 + h = 0$:
+
+```python run
+h = 1e-30
+1 + h
+```
+
+L'erreur se propage alors
+
+{tex`\frac {(\overbrace{1 + h}^1)^2 - 1^2} h
+= \frac 0 h
+= 0
+`}
+
+:::
+
+:::example
+
+Tracez le graphe de la dérivée de $f(x) = e^{-x^2}$ pour $x \in [-1, 1]$,
+et celui du _quotient différentiel avant_ pour $h = 10^{-6}$ et $h = 10^{-20}$.
+
+```python run math
+import matplotlib.pyplot as plt
+import numpy as np
+
+def f(x):
+    return np.exp(-x**2)
+
+def diff(x, h = 1e-6):
+    return (f(x + h) - f(x)) / h
+
+x = np.linspace(-1, 1, 1000)
+
+plt.subplot(2, 1, 1)
+plt.title("h = 1e-6")
+plt.xlabel("x")
+plt.ylabel("y")
+plt.plot(x, -2*x*np.exp(-x**2), label="f'(x)")
+plt.plot(x, diff(x, 1e-6), label="diff(x)")
+plt.legend()
+
+plt.subplot(2, 1, 2)
+plt.title("h = 1e-20")
+plt.xlabel("x")
+plt.ylabel("y")
+plt.plot(x, -2*x*np.exp(-x**2), label="f'(x)")
+plt.plot(x, diff(x, 1e-20), label="diff(x)")
+plt.legend()
+plt.tight_layout()
+```
+
+:::
+
+Lorsque $h$ est trop petit,
+on voit que le calcul numérique n'est pas fiable pour approximer la dérivée.
+
+:::example
+
+Approximons la dérivée de $f(x) = \sin x$ en $x = 0$.
+Le résultat théorique devrait être:
+{tex`f'(0)
+= \left. \cos x \right|_{x = 0}
+= 1`}
+
+```python run
+import numpy as np
+
+def f(x):
+    return np.sin(x)
+
+def diff(x, h = 1e-6):
+    return (f(x + h) - f(x)) / h
+
+diff(0, 1e-30)
+```
+
+Le résultat est ici **correct**.
+Ceci est dû au fait que en $x = 0$, $f(x) = 0$.
+Comme il y a plus de nombres représentables autour de $0$,
+il y a beaucoup moins de perte de précision lors du calcul de $f(x + h) - f(x)$.
+
+:::
+
+:::remark
+À l'examen,
+il est nécessaire de pouvoir expliquer
+quand et pourquoi le résultat devient $0$.
+:::
+
+## En avant, en arrière, ou central
+
+Pour $h > 0$, on distingue trois types de **quotients différentiels**:
+
+| Type       | Formule                                                |
+| ---------- | ------------------------------------------------------ |
+| En avant   | {tex`\displaystyle \frac {f(x + h) - f(x)} h`}         |
+| En arrière | {tex`\displaystyle \frac {f(x) - f(x - h)} h`}         |
+| Central    | {tex`\displaystyle \frac {f(x + h) - f(x - h)} {2 h}`} |
