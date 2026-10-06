@@ -79,10 +79,7 @@ export function Sequence<T extends object>(props: Props<T> & { id: string }) {
   const optionsContext = useContext(OptionsContext)
   const options = createMemo(() => v.parse(Options, { ...optionsContext(), ...props.options }))
   const sequence = createMemo(() => ({ url: useLocation().pathname, sequenceId: props.id }))
-  const progress = createMemo(() => {
-    if (options().showFeedback === false) return {}
-    return exerciseContext().getProgress(sequence())
-  })
+  const progress = createMemo(() => exerciseContext().getProgress(sequence()))
   const stepContext = (sequencePosition = 0) => ({
     ...sequence(),
     sequencePosition,
@@ -93,7 +90,7 @@ export function Sequence<T extends object>(props: Props<T> & { id: string }) {
   )
   return (
     <OptionsContext value={options}>
-      <Pagination progress={progress()}>
+      <Pagination progress={progress()} showFeedback={options().showFeedback}>
         {range(length()).map((i) => () => (
           <StepContext value={() => stepContext(i)}>
             <Boundary fallback="Chargement de l'exercice...">

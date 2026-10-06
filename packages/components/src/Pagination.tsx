@@ -1,13 +1,15 @@
 import { Dynamic, type JSX } from '@solidjs/web'
-import { createEffect, createSignal, For } from 'solid-js'
+import { createEffect, createSignal, For, merge } from 'solid-js'
 import { Boundary } from './Boundary'
 
-export function Pagination(props: {
+export function Pagination(rawProps: {
   current?: number
   children: (() => JSX.Element)[]
   onChange?: (page: number) => void
   progress?: Record<number, boolean | null | undefined>
+  showFeedback?: boolean
 }) {
+  const props = merge({ showFeedback: true }, rawProps)
   const [current, setCurrent] = createSignal(() => props.current ?? 1)
   createEffect(current, (current) => {
     if (props.current !== current) {
@@ -31,8 +33,9 @@ export function Pagination(props: {
                 {
                   'border border-sky-700 font-bold text-sky-700': current() === i + 1,
                   'text-gray-400': current() !== i + 1,
-                  'bg-green-100': props.progress?.[i] === true,
-                  'bg-red-100': props.progress?.[i] === false,
+                  'bg-green-100': props.showFeedback && props.progress?.[i] === true,
+                  'bg-red-100': props.showFeedback && props.progress?.[i] === false,
+                  'bg-sky-50': !props.showFeedback && typeof props.progress?.[i] === 'boolean',
                 },
               ]}
               onClick={() => setCurrent(i + 1)}
