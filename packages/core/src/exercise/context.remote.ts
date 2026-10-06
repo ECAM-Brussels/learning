@@ -1,11 +1,12 @@
 import { db, tables } from '@learning/db'
 import { query } from '@solidjs/router'
 import { getRequestEvent } from '@solidjs/web'
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq, gte, sql } from 'drizzle-orm'
 import * as v from 'valibot'
 import { ensurePermissions } from '../permissions'
 import type { StoredStep } from './base'
 import type { ExerciseContext } from './context'
+import type { Options } from './options'
 
 function addEmail<T>(ctx: T) {
   const user = getRequestEvent()?.locals.user
@@ -75,25 +76,47 @@ export const getProgress = query(async (rawSequence: SequenceContext) => {
   return Object.fromEntries(rows.map((r) => [r.i, r.correct] as const))
 }, 'getProgress')
 
-export const saveStep = async (rawCtx: StepContext, step: StoredStep) => {
+export const saveStep = async (rawCtx: StepContext, step: StoredStep, options: Options) => {
   'use server'
   await ensurePermissions(['exercise:answerOwn'])
   const ctx = v.parse(StepContext, rawCtx)
-  await db
-    .insert(tables.steps)
-    .values({ ...ctx, ...step })
-    .onConflictDoUpdate({
-      target: [
-        tables.steps.userEmail,
-        tables.steps.url,
-        tables.steps.sequenceId,
-        tables.steps.sequencePosition,
-        tables.steps.position,
-      ],
-      set: { ...step, deleted: false },
-      setWhere: sql`${tables.steps.submitted} = false`,
-      targetWhere: sql`${tables.steps.deleted} = false`,
-    })
+  const currentExercise = and(
+    eq(tables.steps.userEmail, ctx.userEmail),
+    eq(tables.steps.url, ctx.url),
+    eq(tables.steps.sequenceId, ctx.sequenceId),
+    eq(tables.steps.sequencePosition, ctx.sequencePosition),
+  )
+  await db.transaction(async (tx) => {
+    if (options.allowResubmissions) {
+      await tx
+        .update(tables.steps)
+        .set({ deleted: true })
+        .where(
+          and(
+            currentExercise,
+            gte(tables.steps.position, ctx.position),
+            eq(tables.steps.deleted, false),
+            eq(tables.steps.submitted, true),
+            eq(tables.steps.correct, false),
+          ),
+        )
+    }
+    await tx
+      .insert(tables.steps)
+      .values({ ...ctx, ...step })
+      .onConflictDoUpdate({
+        target: [
+          tables.steps.userEmail,
+          tables.steps.url,
+          tables.steps.sequenceId,
+          tables.steps.sequencePosition,
+          tables.steps.position,
+        ],
+        set: { ...step, deleted: false },
+        setWhere: sql`${tables.steps.submitted} = false`,
+        targetWhere: sql`${tables.steps.deleted} = false`,
+      })
+  })
 }
 
 export const reset = async (rawCtx: Omit<StepContext, 'position'>) => {
