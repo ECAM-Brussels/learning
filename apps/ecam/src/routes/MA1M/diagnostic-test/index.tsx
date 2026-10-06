@@ -5,6 +5,7 @@ import { useSearchParams, type RouteDefinition } from '@solidjs/router'
 import { allKeyed, sampleSize } from 'es-toolkit'
 import { sample } from 'es-toolkit/array'
 import * as v from 'valibot'
+import { paths } from '../../../router'
 import triangleImage from './triangle.png'
 
 export const route = {
@@ -14,7 +15,7 @@ export const route = {
 } satisfies RouteDefinition
 
 function DiagnosticTest() {
-  const [params, setParams] = useSearchParams()
+  const [params] = useSearchParams(paths.MA1M['diagnostic-test'])
   const options = () => {
     if (params.group === 'A') {
       return { showFeedback: '2026-10-09 15:30', readOnly: '2026-10-09 15:30' }
@@ -29,7 +30,10 @@ function DiagnosticTest() {
         <h2>Trigonométrie</h2>
       </div>
       <Sequence id="diagnostic-test-trigonometry">
-        <TrueOrFalse prompt={tex`\sin(\pi-x) = -\sin x`} answer={false} />
+        <TrueOrFalse
+          prompt={params.group === 'A' ? tex`\sin(\pi-x) = -\sin x` : tex`\cos(\pi-x) = \cos x`}
+          answer={false}
+        />
         <MultipleChoice
           prompt={
             <>
@@ -196,9 +200,15 @@ function DiagnosticTest() {
         />
         <TrueOrFalse
           prompt={
-            <p>
-              {tex`\sqrt{x^2-16} = x-4`} pour tout réel {tex`x`}
-            </p>
+            params.group === 'A' ? (
+              <p>
+                {tex`\sqrt{x^2-16} = x-4`} pour tout réel {tex`x`}
+              </p>
+            ) : (
+              <p>
+                {tex`\sqrt{x^2-25} = x-5`} pour tout réel {tex`x`}
+              </p>
+            )
           }
           answer={false}
         />
@@ -255,7 +265,11 @@ function DiagnosticTest() {
             data: { equation1: 'expr', equation2: 'expr' },
             inputs: { x: 'expr', y: 'expr' },
           }}
-          data={{ equation1: '-4x + 3y = 20', equation2: '-x + y = 6' }}
+          data={() =>
+            params.group === 'A'
+              ? { equation1: '-4x + 3y = 20', equation2: '-x + y = 6' }
+              : { equation1: '2x - 3y = 5', equation2: 'x - y = 4' }
+          }
           prompt={(ctx) => (
             <>
               <p>Résolvez le système d'équations suivant :</p>
@@ -282,12 +296,12 @@ function DiagnosticTest() {
             <p>
               Lors de la résolution d'un système linéaire à trois équations et trois inconnues,
               supposons qu'on obtient par la méthode de Gauss la forme réduite suivante :
-              {tex`\left(
-              \begin{array}{ccc|c}
-              1 & -1 & 4 & 6 \\
-              0 & 2 & -3 & 5 \\
-              0 & 0 & 0 & 0
-              \end{array} \right)`}
+              {tex`\left\{
+              \begin{array}{rcl}
+              x - y + 4z & = & 6 \\
+              2y - 3z & = & 5 \\
+              0 & = & 0
+              \end{array} \right.`}
               Cela veut dire que {tex`z = 0`}.
             </p>
           }
