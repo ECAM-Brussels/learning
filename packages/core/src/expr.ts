@@ -157,6 +157,7 @@ function expression(input: Math) {
       )
       return expression({ json: ce.expr(json, { form: 'raw' }).subs(substitutions).json })
     },
+    solve: (x: Math = 'x') => set(['Solve', json, v.parse(Math, x).json]),
     taylor: (x: Math, a: Math, n: number) =>
       expression({
         json: ['Normal', ['Series', json, v.parse(Math, x).json, v.parse(Math, a).json, n]],
@@ -240,6 +241,19 @@ export function quantity(...rawQuantity: v.InferInput<typeof QuantityInput>) {
     N: (precision?: number) => quantity(expression({ json: json[1] }).N(precision), json[2]),
     rawInput: rawQuantity,
     toJSON: () => rawQuantity,
+  }
+}
+
+const MathSet = v.custom<[string, ...MathJsonExpression[]]>(() => true)
+type MathSet = v.InferInput<typeof MathSet>
+
+export function set(input: MathSet) {
+  const json = v.parse(MathSet, input)
+  return {
+    json,
+    intersect: (other: MathSet) => set(['Intersect', json, v.parse(MathSet, other)]),
+    isEqual: async (other: MathSet) =>
+      symapi.expr.setEqual({ expr1: json, expr2: v.parse(MathSet, other) }),
   }
 }
 

@@ -51,6 +51,13 @@ def equal(input: TwoExpressions) -> bool:
     return sympy.simplify(expr) == 0
 
 
+@router.post("/setEqual")
+def set_equal(input: TwoExpressions) -> bool:
+    set1 = input.expr1.expr
+    set2 = input.expr2.expr
+    return set1.is_subset(set2) and set2.is_subset(set1)
+
+
 @router.post("/equivalent")
 def equivalent(input: TwoExpressions) -> bool:
     eq1, eq2 = input.expr1.expr, input.expr2.expr
