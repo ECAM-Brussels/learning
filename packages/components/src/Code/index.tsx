@@ -7,9 +7,11 @@ import {
   Loading,
   merge,
   Show,
+  useContext,
   type Component,
   type ComponentProps,
 } from 'solid-js'
+import { FormState } from '../Form'
 import Python from '../Python'
 
 const Monaco = clientOnly(() => import('./Monaco'))
@@ -38,6 +40,7 @@ export const Code: Component<Props> = (rawProps) => {
     if (isMobile()) return 'codemirror'
     return props.backend
   })
+  const formState = useContext(FormState)
   return (
     <Loading fallback={<p>Chargement de l'éditeur...</p>}>
       <div class="my-4 flex flex-col gap-0">
@@ -49,7 +52,7 @@ export const Code: Component<Props> = (rawProps) => {
             setValue(newValue)
             props.onChange?.(newValue)
           }}
-          readOnly={props.readOnly}
+          readOnly={props.readOnly ?? formState().readOnly}
         />
         <Show when={props.lang === 'python' && props.run}>
           <Python class="my-0 py-0" value={value()} math={props.math} />
