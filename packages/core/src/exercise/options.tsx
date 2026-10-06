@@ -1,4 +1,5 @@
-import { createContext } from 'solid-js'
+import type { JSX } from '@solidjs/web'
+import { createContext, useContext } from 'solid-js'
 import * as v from 'valibot'
 
 const DateSchema = v.union([
@@ -21,6 +22,7 @@ export const Options = v.object({
     true,
   ),
   allowResets: v.optional(v.boolean(), true),
+  allowResubmissions: v.optional(v.boolean(), false),
   readOnly: v.optional(
     v.union([
       v.boolean(),
@@ -36,6 +38,13 @@ export type Options<T extends 'input' | 'output' = 'input'> = T extends 'input'
   ? v.InferInput<typeof Options>
   : v.InferOutput<typeof Options>
 
-export const ExerciseOptionsContext = createContext<() => v.InferOutput<typeof Options>>(() =>
-  v.parse(Options, {}),
-)
+export const OptionsContext = createContext<() => Partial<Options>>(() => ({}))
+
+export function ExerciseOptions(props: Partial<Options> & { children: JSX.Element }) {
+  const parentOptions = useContext(OptionsContext)
+  return (
+    <OptionsContext value={() => ({ ...parentOptions(), ...props })}>
+      {props.children}
+    </OptionsContext>
+  )
+}
