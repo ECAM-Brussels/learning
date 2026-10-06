@@ -1,9 +1,18 @@
-import { Attempt } from '@learning/components'
-import { createDerivedStep, Exercise, expr, Sequence, tex } from '@learning/core'
+import { Attempt, Heading } from '@learning/components'
+import {
+  createDerivedStep,
+  Exercise,
+  ExerciseOptions,
+  expr,
+  hasPermissions,
+  Sequence,
+  tex,
+} from '@learning/core'
 import { MultipleChoice } from '@learning/exercises/MultipleChoice'
 import { useSearchParams, type RouteDefinition } from '@solidjs/router'
 import { allKeyed, sampleSize } from 'es-toolkit'
 import { sample } from 'es-toolkit/array'
+import { createMemo, createSignal, Show } from 'solid-js'
 import * as v from 'valibot'
 import { paths } from '../../../router'
 import triangleImage from './triangle.png'
@@ -16,19 +25,19 @@ export const route = {
 
 function DiagnosticTest() {
   const [params] = useSearchParams(paths.MA1M['diagnostic-test'])
-  const options = () => {
-    if (params.group === 'A') {
-      return { showFeedback: '2026-10-09 15:30', readOnly: '2026-10-09 15:30' }
-    } else {
-      return { showFeedback: '2026-10-09 13:45', readOnly: '2026-10-09 13:45' }
-    }
-  }
+  const date = () => (params.group === 'A' ? '2026-10-09 15:30' : '2026-10-09 13:45')
+  const [showFeedback, setShowFeedback] = createSignal(false)
+  const authorized = createMemo(() => hasPermissions(['draft:read']))
   return (
-    <>
-      <div>
-        <h1>Test diagnostique {params.group}</h1>
-        <h2>Trigonométrie</h2>
-      </div>
+    <ExerciseOptions showFeedback={showFeedback() ? true : date()} readOnly={date()}>
+      <Show when={authorized()}>
+        <label>
+          <input type="checkbox" onChange={(e) => setShowFeedback(e.target.checked)} /> Montrer le
+          feedback
+        </label>
+      </Show>
+      <Heading level={1}>Test diagnostique {params.group}</Heading>
+      <Heading level={2}>Trigonométrie</Heading>
       <Sequence id="diagnostic-test-trigonometry">
         <TrueOrFalse
           prompt={params.group === 'A' ? tex`\sin(\pi-x) = -\sin x` : tex`\cos(\pi-x) = \cos x`}
@@ -90,9 +99,7 @@ function DiagnosticTest() {
           grade={(ctx) => ctx.data.equation.subs({ x: ctx.inputs.attempt }).isTrue()}
         />
       </Sequence>
-      <div>
-        <h2>Vecteurs</h2>
-      </div>
+      <Heading level={2}>Vecteurs</Heading>
       <Sequence id="diagnostic-test-vectors">
         <TrueOrFalse
           prompt={
@@ -147,7 +154,7 @@ function DiagnosticTest() {
         <TrueOrFalse
           prompt={
             <p>
-              si {tex`\vec{u} \times \vec{v}`}, alors {tex`\vec{u} = \vec{0}`} ou{' '}
+              si {tex`\vec{u} \times \vec{v} = \vec{0}`}, alors {tex`\vec{u} = \vec{0}`} ou{' '}
               {tex`\vec{v} = \vec{0}`}
             </p>
           }
@@ -173,9 +180,7 @@ function DiagnosticTest() {
           grade={(sel) => sel.equals(['B'])}
         />
       </Sequence>
-      <div>
-        <h2>Algèbre</h2>
-      </div>
+      <Heading level={2}>Algèbre</Heading>
       <Sequence id="diagnostic-test-algebra">
         <Exercise
           schema={{ data: { a: 'expr' }, inputs: { attempt: 'expr' } }}
@@ -308,9 +313,7 @@ function DiagnosticTest() {
           answer={false}
         />
       </Sequence>
-      <div>
-        <h2>Géométrie</h2>
-      </div>
+      <Heading level={2}>Géométrie</Heading>
       <Sequence id="diagnostic-test-geometry">
         <Exercise
           schema={{ data: { u: 'expr', v: 'expr', w: 'expr' }, inputs: { attempt: 'expr' } }}
@@ -395,7 +398,7 @@ function DiagnosticTest() {
           grade={(sel) => sel.equals(['A'])}
         />
       </Sequence>
-    </>
+    </ExerciseOptions>
   )
 }
 
