@@ -33,8 +33,12 @@ def parse_expr(expr: MathJSON) -> sympy.Expr:
                 return sympy.Abs(*args, evaluate=False)
             case "Add":
                 return sympy.Add(*args, evaluate=False)
+            case "Argument":
+                return sympy.arg(*args)
             case "Complex":
                 return sympy.Add(args[0], args[1] * sympy.I, evaluate=False)
+            case "Conjugate":
+                return sympy.conjugate(*args)
             case "Divide":
                 if len(args) != 2:
                     raise ValueError("Divide expects exactly 2 arguments")
@@ -51,6 +55,8 @@ def parse_expr(expr: MathJSON) -> sympy.Expr:
                 return sympy.expand(args[0])
             case "Factor":
                 return sympy.factor(args[0])
+            case "Imaginary":
+                return sympy.im(args[0])
             case "Integrate":
                 return sympy.integrate(*args)
             case "Interval":
@@ -69,6 +75,8 @@ def parse_expr(expr: MathJSON) -> sympy.Expr:
                 return sympy.Pow(*args, evaluate=False)
             case "Rational":
                 return sympy.Rational(*args)
+            case "Real":
+                return sympy.re(args[0])
             case "Series":
                 args[3] = args[3] + 1
                 return sympy.series(*args)

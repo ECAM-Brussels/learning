@@ -85,6 +85,7 @@ function expression(input: Math) {
     rawInput,
     json,
     abs: () => expression({ json: ['Abs', json] }),
+    arg: () => expression({ json: ['Argument', json] }),
     args: () => {
       if (!Array.isArray(json)) throw new Error(`Only arrays have the property args`)
       return json.slice(1) as Math[]
@@ -93,6 +94,7 @@ function expression(input: Math) {
       expression({ json })
         .subs({ [x]: root })
         .isEqual(0),
+    conj: () => expression({ json: ['Conjugate', json] }),
     count: (symol: string) => {
       function _count(json: MathJsonExpression): number {
         if (json === symol) return 1
@@ -120,6 +122,7 @@ function expression(input: Math) {
       if (!Array.isArray(json)) throw new Error(`Only arrays have the property func`)
       return json[0] as string
     },
+    imaginary: () => expression({ json: ['Imaginary', json] }),
     integrate: (...params: v.InferInput<typeof integrateParams>) =>
       expression({ json: ['Integrate', json, ...v.parse(integrateParams, params)] }),
     isEqual: async (other: MaybeAsync<Math>, error: number = 0) => {
@@ -148,6 +151,7 @@ function expression(input: Math) {
       }
     },
     matches: (other: Math) => symapi.expr.match({ expr1: json, expr2: v.parse(Math, other).json }),
+    real: () => expression({ json: ['Real', json] }),
     roots: (complex = false) => symapi.expr.roots({ expr: json, complex }),
     simplify: () => expression({ json: ['Simplify', json] }),
     subs: (rawSubstitutions: Record<string, Math>) => {
