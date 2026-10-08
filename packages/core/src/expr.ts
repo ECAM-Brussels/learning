@@ -134,6 +134,95 @@ function expression(input: Math) {
       }
       return await symapi.expr.equal({ expr1: json, expr2: v.parse(Math, await other).json })
     },
+    isComplexAlgebraic: () => {
+      if (expression({ json }).isComplexPolar()) return false
+      if (Array.isArray(json) && json[0] === 'Complex') return true
+      // a + b i, a + i, a - i
+      if (Array.isArray(json) && ['Add', 'Subtract'].includes(json[0]) && ce.expr(json[1]).isReal) {
+        if (
+          ['InvisibleOperator', 'Multiply'].includes(json[2][0]) &&
+          json[2].length === 3 &&
+          ce.expr(json[2][1]).isReal &&
+          json[2][2] === 'ImaginaryUnit'
+        )
+          return true
+        if (json[2] === 'ImaginaryUnit') return true
+      }
+      // a
+      if (ce.expr(json).isReal) return true
+      // b i
+      if (
+        Array.isArray(json) &&
+        ['InvisibleOperator', 'Multiply'].includes(json[0]) &&
+        json.length === 3 &&
+        ce.expr(json[1]).isReal &&
+        json[2] === 'ImaginaryUnit'
+      )
+        return true
+      // i
+      if (json === 'ImaginaryUnit') return true
+      if (Array.isArray(json) && json[0] === 'Negate' && json[1] === 'ImaginaryUnit') return true
+      return false
+    },
+    isComplexExponential: () => {
+      function isUnitExponential(json: MathJsonExpression) {
+        if (Array.isArray(json) && json[0] === 'Power' && json.length === 3) {
+          const [_, base, exponent] = json
+          if (
+            base === 'exponentialE' &&
+            ['Multiply', 'InvisibleOperator'].includes(exponent[0]) &&
+            exponent.length === 3 &&
+            (exponent[1] === 'ImaginaryUnit' ||
+              (Array.isArray(exponent[1]) &&
+                exponent[1][0] === 'Negate' &&
+                exponent[1][1] === 'ImaginaryUnit')) &&
+            ce.expr(exponent[2]).isReal
+          )
+            return true
+        }
+        return false
+      }
+      if (isUnitExponential(json)) return true
+      if (
+        Array.isArray(json) &&
+        ['Multiply', 'InvisibleOperator'].includes(json[0]) &&
+        json.length === 3
+      ) {
+        const [_, a, b] = json
+        if (ce.expr(a).isNonNegative && isUnitExponential(b)) return true
+      }
+      return false
+    },
+    isComplexPolar: () => {
+      function isUnitPolar(json: MathJsonExpression) {
+        if (Array.isArray(json) && ['Add', 'Subtract'].includes(json[0]) && json.length === 3) {
+          const [_, a, b] = json
+          if (
+            a[0] === 'Cos' &&
+            ce.expr(a[1]).isReal &&
+            ['InvisibleOperator', 'Multiply'].includes(b[0]) &&
+            b.length === 3 &&
+            b[1] === 'ImaginaryUnit' &&
+            b[2][0] === 'Sin' &&
+            ce.expr(b[2][1]).isReal &&
+            ce.expr(a[1]).isEqual(b[2][1])
+          )
+            return true
+        }
+        return false
+      }
+
+      if (isUnitPolar(json)) return true
+      if (
+        Array.isArray(json) &&
+        ['Multiply', 'InvisibleOperator'].includes(json[0]) &&
+        json.length === 3
+      ) {
+        const [_, a, b] = json
+        if (ce.expr(a).isNonNegative && isUnitPolar(b)) return true
+      }
+      return false
+    },
     isEquivalent: async (other: MaybeAsync<Math>) =>
       symapi.expr.equivalent({ expr1: json, expr2: v.parse(Math, await other).json }),
     isExpanded: () => symapi.expr.isExpanded({ expr: json }),
