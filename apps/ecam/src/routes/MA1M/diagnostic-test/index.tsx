@@ -87,7 +87,7 @@ function DiagnosticTest() {
             <>
               <p>Déterminez une solution de l'équation :</p>
               {tex`${ctx.data.equation}
-                `}
+              `}
               <p>
                 <Attempt class="justify-start">
                   {tex`x=`}
@@ -135,7 +135,7 @@ function DiagnosticTest() {
           }}
           grade={(ctx) =>
             expr(`u * v * \\cos(b)`)
-              .subs({ ...ctx.data, b: expr(`${ctx.data.a} * \\pi / 180`) })
+              .subs({ ...ctx.data, b: expr(`a * \\pi / 180`).subs(ctx.data) })
               .isEqual(ctx.inputs.attempt)
           }
           feedback={(ctx) => (
@@ -201,7 +201,7 @@ function DiagnosticTest() {
               </>
             )
           }}
-          grade={(ctx) => expr(`${ctx.inputs.attempt}`).isEqual(expr(`${ctx.data.a}`))}
+          grade={(ctx) => ctx.inputs.attempt.isEqual(ctx.data.a)}
         />
         <TrueOrFalse
           prompt={
