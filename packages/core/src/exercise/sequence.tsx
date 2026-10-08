@@ -77,7 +77,8 @@ type Props<T extends object> = Prettify<
 export function Sequence<T extends object>(props: Props<T> & { id: string }) {
   const exerciseContext = useExerciseContext()
   const optionsContext = useContext(OptionsContext)
-  const options = createMemo(() => v.parse(Options, { ...optionsContext(), ...props.options }))
+  const rawOptions = createMemo(() => ({ ...optionsContext(), ...props.options }))
+  const options = createMemo(() => v.parse(Options, rawOptions()))
   const sequence = createMemo(() => ({ url: useLocation().pathname, sequenceId: props.id }))
   const progress = createMemo(() => exerciseContext().getProgress(sequence()))
   const stepContext = (sequencePosition = 0) => ({
@@ -89,7 +90,7 @@ export function Sequence<T extends object>(props: Props<T> & { id: string }) {
     'children' in props ? props.children.length : Object.keys(progress()).length + 1,
   )
   return (
-    <OptionsContext value={options}>
+    <OptionsContext value={rawOptions}>
       <Pagination progress={progress()} showFeedback={options().showFeedback}>
         {range(length()).map((i) => () => (
           <StepContext value={() => stepContext(i)}>
