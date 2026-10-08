@@ -134,34 +134,34 @@ function expression(input: Math) {
       }
       return await symapi.expr.equal({ expr1: json, expr2: v.parse(Math, await other).json })
     },
-    isComplexAlgebraic: () => {
-      if (expression({ json }).isComplexPolar()) return false
-      if (Array.isArray(json) && json[0] === 'Complex') return true
-      // a + b i, a + i, a - i
-      if (Array.isArray(json) && ['Add', 'Subtract'].includes(json[0]) && ce.expr(json[1]).isReal) {
+    isComplexRectangular: () => {
+      const isReal = (expr: MathJsonExpression) => ce.expr(expr).isReal
+      const isImaginary = (expr: MathJsonExpression): boolean => {
+        if (expr === 'ImaginaryUnit') return true
         if (
-          ['InvisibleOperator', 'Multiply'].includes(json[2][0]) &&
-          json[2].length === 3 &&
-          ce.expr(json[2][1]).isReal &&
-          json[2][2] === 'ImaginaryUnit'
+          Array.isArray(expr) &&
+          ['InvisibleOperator', 'Multiply'].includes(expr[0]) &&
+          expr.length === 3 &&
+          isReal(expr[1]) &&
+          expr[2] === 'ImaginaryUnit'
         )
           return true
-        if (json[2] === 'ImaginaryUnit') return true
+        if (Array.isArray(expr) && expr[0] === 'Negate' && expr.length === 2)
+          return isImaginary(expr[1])
+        return false
       }
-      // a
-      if (ce.expr(json).isReal) return true
-      // b i
+
+      if (isReal(json) || isImaginary(json)) return true
       if (
         Array.isArray(json) &&
-        ['InvisibleOperator', 'Multiply'].includes(json[0]) &&
+        ['Add', 'Subtract'].includes(json[0]) &&
         json.length === 3 &&
-        ce.expr(json[1]).isReal &&
-        json[2] === 'ImaginaryUnit'
-      )
+        isReal(json[1]) &&
+        isImaginary(json[2])
+      ) {
         return true
-      // i
-      if (json === 'ImaginaryUnit') return true
-      if (Array.isArray(json) && json[0] === 'Negate' && json[1] === 'ImaginaryUnit') return true
+      }
+
       return false
     },
     isComplexExponential: () => {
