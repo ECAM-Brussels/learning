@@ -6,7 +6,7 @@ import { createMemo, useContext, type Component } from 'solid-js'
 import * as v from 'valibot'
 import { useExerciseContext } from './base'
 import { StepContext } from './context'
-import { ExerciseOptionsContext, Options } from './options'
+import { Options, OptionsContext } from './options'
 
 type Prettify<T> = {
   [K in keyof T]: T[K]
@@ -76,13 +76,11 @@ type Props<T extends object> = Prettify<
  */
 export function Sequence<T extends object>(props: Props<T> & { id: string }) {
   const exerciseContext = useExerciseContext()
-  const optionsContext = useContext(ExerciseOptionsContext)
-  const options = createMemo(() => v.parse(Options, { ...optionsContext(), ...props.options }))
+  const optionsContext = useContext(OptionsContext)
+  const rawOptions = createMemo(() => ({ ...optionsContext(), ...props.options }))
+  const options = createMemo(() => v.parse(Options, rawOptions()))
   const sequence = createMemo(() => ({ url: useLocation().pathname, sequenceId: props.id }))
-  const progress = createMemo(() => {
-    if (options().showFeedback === false) return {}
-    return exerciseContext().getProgress(sequence())
-  })
+  const progress = createMemo(() => exerciseContext().getProgress(sequence()))
   const stepContext = (sequencePosition = 0) => ({
     ...sequence(),
     sequencePosition,
@@ -92,8 +90,8 @@ export function Sequence<T extends object>(props: Props<T> & { id: string }) {
     'children' in props ? props.children.length : Object.keys(progress()).length + 1,
   )
   return (
-    <ExerciseOptionsContext value={options}>
-      <Pagination progress={progress()}>
+    <OptionsContext value={rawOptions}>
+      <Pagination progress={progress()} showFeedback={options().showFeedback}>
         {range(length()).map((i) => () => (
           <StepContext value={() => stepContext(i)}>
             <Boundary fallback="Chargement de l'exercice...">
@@ -113,6 +111,6 @@ export function Sequence<T extends object>(props: Props<T> & { id: string }) {
           </StepContext>
         ))}
       </Pagination>
-    </ExerciseOptionsContext>
+    </OptionsContext>
   )
 }
