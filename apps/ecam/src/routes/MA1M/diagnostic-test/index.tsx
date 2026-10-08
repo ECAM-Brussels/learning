@@ -201,7 +201,7 @@ function DiagnosticTest() {
               </>
             )
           }}
-          grade={(ctx) => expr(`${ctx.inputs.attempt}`).isEqual(expr(`${ctx.data.a}`))}
+          grade={(ctx) => ctx.inputs.attempt.isEqual(ctx.data.a)}
         />
         <TrueOrFalse
           prompt={
