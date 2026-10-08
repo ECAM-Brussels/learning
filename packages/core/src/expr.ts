@@ -3,6 +3,8 @@ import {
   ComputeEngine,
   type MathJsonExpression,
   N,
+  PythonTarget,
+  compile,
 } from '@cortex-js/compute-engine'
 import { mapAsync, mapValues, range, round } from 'es-toolkit'
 import stringify from 'safe-stable-stringify'
@@ -13,6 +15,7 @@ import symapi from './symapi'
 type MaybeAsync<T> = T | Promise<T>
 
 const ce = new ComputeEngine()
+ce.registerCompilationTarget('python', new PythonTarget({ includeImports: false }))
 
 const integrateParams = v.union([
   v.pipe(
@@ -148,6 +151,7 @@ function expression(input: Math) {
       }
     },
     matches: (other: Math) => symapi.expr.match({ expr1: json, expr2: v.parse(Math, other).json }),
+    python: () => compile(json, { to: 'python' }).code,
     roots: (complex = false) => symapi.expr.roots({ expr: json, complex }),
     simplify: () => expression({ json: ['Simplify', json] }),
     subs: (rawSubstitutions: Record<string, Math>) => {
