@@ -115,10 +115,8 @@ function expression(input: Math) {
     encrypt: async () => Promise.resolve(expression({ json }).latex()).then(encrypt),
     expand: () => expression({ json: ['Expand', json] }),
     evaluate: () => ce.expr(json).evaluate(),
-    N: (precision?: number) => {
-      const result = Number(N(expression({ json }).evaluate()))
-      return precision === undefined ? result : round(result, precision)
-    },
+    geq: (other: Math) => ce.expr(['Subtract', json, v.parse(Math, other).json]).isNonNegative,
+    gt: (other: Math) => ce.expr(['Subtract', json, v.parse(Math, other).json]).isPositive,
     factor: () => expression({ json: ['Factor', json] }),
     func: () => {
       if (!Array.isArray(json)) throw new Error(`Only arrays have the property func`)
@@ -241,7 +239,14 @@ function expression(input: Math) {
         return symapi.expr.latex({ expr: json })
       }
     },
+    leq: (other: Math) => ce.expr(['Subtract', json, v.parse(Math, other).json]).isNonPositive,
+    lt: (other: Math) => ce.expr(['Subtract', json, v.parse(Math, other).json]).isNegative,
     matches: (other: Math) => symapi.expr.match({ expr1: json, expr2: v.parse(Math, other).json }),
+    mod: (other: Math) => expression({ json: ['Mod', json, v.parse(Math, other).json] }),
+    N: (precision?: number) => {
+      const result = Number(N(expression({ json }).evaluate()))
+      return precision === undefined ? result : round(result, precision)
+    },
     python: () => python.compile(ce.expr(json)).code,
     real: () => expression({ json: ['Real', json] }),
     roots: (complex = false) => symapi.expr.roots({ expr: json, complex }),

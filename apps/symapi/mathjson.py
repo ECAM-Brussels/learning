@@ -67,6 +67,8 @@ def parse_expr(expr: MathJSON) -> sympy.Expr:
                 return sympy.Mul(*args, evaluate=False)
             case "Multiply":
                 return sympy.Mul(*args, evaluate=False)
+            case "Mod":
+                return sympy.Mod(*args, evaluate=False)
             case "Negate":
                 return -args[0]
             case "Normal":
