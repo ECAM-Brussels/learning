@@ -69,10 +69,19 @@ Le **quotient différentiel** de $f$ en $x$ est défini par
 {tex`\frac {f(x + h) - f(x)}{h},
 \quad h \neq 0.`}
 
-- La quantité $h$ est appelée le **pas**.
+- La quantité $|h|$ est appelée le **pas**.
 - Si $h > 0$, on parle de **quotient différentiel avant**.
 - Si $h < 0$, on parle de **quotient différentiel arrière**.
 
+:::
+
+:::remark[Formule alternative du quotient différentiel arrière]
+Vous verrez parfois le quotient différentiel _arrière_ exprimé avec $h > 0$,
+qui doit alors être remplacé par $-h$ dans la formule pour _aller en arrière_.
+On obtient alors:
+{tex`\frac {f(x + (-h)) - f(x)} {-h}
+= \frac {f(x - h) - f(x)} {-h}
+= \frac {f(x) - f(x - h)} {h}.`}
 :::
 
 :::example
@@ -95,12 +104,6 @@ La valeur théorique est
 {tex`f'(0)
 = \left. \frac{2x}{x^2 + 1} \right|_{x = 0}
 = 0.`}
-
-:::
-
-:::exercise
-
-<Exercise.Differences />
 
 :::
 
@@ -145,40 +148,9 @@ L'erreur se propage alors
 
 :::
 
-:::example
+:::exercise
 
-Tracez le graphe de la dérivée de $f(x) = e^{-x^2}$ pour $x \in [-1, 1]$,
-et celui du _quotient différentiel avant_ pour $h = 10^{-6}$ et $h = 10^{-20}$.
-
-```python run math
-import matplotlib.pyplot as plt
-import numpy as np
-
-def f(x):
-    return np.exp(-x**2)
-
-def diff(x, h = 1e-6):
-    return (f(x + h) - f(x)) / h
-
-x = np.linspace(-1, 1, 1000)
-
-plt.subplot(2, 1, 1)
-plt.title("h = 1e-6")
-plt.xlabel("x")
-plt.ylabel("y")
-plt.plot(x, -2*x*np.exp(-x**2), label="f'(x)")
-plt.plot(x, diff(x, 1e-6), label="diff(x)")
-plt.legend()
-
-plt.subplot(2, 1, 2)
-plt.title("h = 1e-20")
-plt.xlabel("x")
-plt.ylabel("y")
-plt.plot(x, -2*x*np.exp(-x**2), label="f'(x)")
-plt.plot(x, diff(x, 1e-20), label="diff(x)")
-plt.legend()
-plt.tight_layout()
-```
+<Exercise.Differences />
 
 :::
 
@@ -227,3 +199,42 @@ Pour $h > 0$, on distingue trois types de **quotients différentiels**:
 | En avant   | {tex`\displaystyle \frac {f(x + h) - f(x)} h`}         |
 | En arrière | {tex`\displaystyle \frac {f(x) - f(x - h)} h`}         |
 | Central    | {tex`\displaystyle \frac {f(x + h) - f(x - h)} {2 h}`} |
+
+# Fonctions dérivées
+
+:::example
+
+Tracez le graphe de la dérivée de $f(x) = e^{-x^2}$ pour $x \in [-1, 1]$,
+et celui du _quotient différentiel avant_ pour $h = 10^{-6}$ et $h = 10^{-20}$.
+
+```python run math
+import matplotlib.pyplot as plt
+import numpy as np
+
+def f(x):
+    return np.exp(-x**2)
+
+def diff(x, h = 1e-6):
+    return (f(x + h) - f(x)) / h
+
+x = np.linspace(-1, 1, 1000)
+
+plt.subplot(2, 1, 1)
+plt.title("h = 1e-6")
+plt.xlabel("x")
+plt.ylabel("y")
+plt.plot(x, -2*x*np.exp(-x**2), label="f'(x)")
+plt.plot(x, diff(x, 1e-6), label="diff(x)")
+plt.legend()
+
+plt.subplot(2, 1, 2)
+plt.title("h = 1e-20")
+plt.xlabel("x")
+plt.ylabel("y")
+plt.plot(x, -2*x*np.exp(-x**2), label="f'(x)")
+plt.plot(x, diff(x, 1e-20), label="diff(x)")
+plt.legend()
+plt.tight_layout()
+```
+
+:::
