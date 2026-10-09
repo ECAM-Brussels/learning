@@ -57,7 +57,10 @@ function DiagnosticTest() {
         </>
       }
     >
-      <ExerciseOptions showFeedback={showFeedback() ? true : endDate()} readOnly={endDate()}>
+      <ExerciseOptions
+        showFeedback={showFeedback() ? true : endDate()}
+        readOnly={isTeacher() ? false : endDate()}
+      >
         <Show when={isTeacher()}>
           <label>
             <input type="checkbox" onChange={(e) => setShowFeedback(e.target.checked)} /> Montrer le
