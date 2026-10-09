@@ -3,6 +3,10 @@
   "exports": {
     "./math/algebra/Expand": "./math/algebra/Expand.tsx",
     "./math/algebra/Factor": "./math/algebra/Factor.tsx",
+    "./math/calculus/Derivative": "./math/calculus/Derivative.tsx",
+    "./math/calculus/DerivativeAtPoint": "./math/calculus/DerivativeAtPoint.tsx",
+    "./math/Simple": "./math/Simple.tsx",
+    "./numerical/DifferentialQuotient": "./numerical/DifferentialQuotient.tsx",
     "./python/Code": "./python/Code.tsx",
     "./python/Function": "./python/Function.tsx",
     "./python/Matplotlib": "./python/Matplotlib.tsx",

@@ -1,57 +1,5 @@
-import { tex } from '@learning/core'
-
-# Rappels
-
-- Les nombres représentables par un ordinateur
-  forment un ensemble fini
-  et s'écrivent sous la forme $\frac {m} {2^n}$ avec $m, n \in \mathbb Z$.
-
-- Au plus on est proche de $0$, au plus on a de chance
-  qu'un nombre soit représentable.
-
-  <div class="grid grid-cols-2 gap-4">
-
-  ```python run
-  # Pas représentable car loin de 0
-  100 + 1e-15
-  ```
-
-  ```python run
-  # Représentable car proche de 0
-  1 + 1e-15
-  ```
-
-  </div>
-
-  Au plus on s'éloigne de $0$, au plus on perd en précision.
-
-- Pour définir une **fonction**,
-  on utilise le mot clé `def` suivi du nom de la fonction et de ses paramètres entre parenthèses.
-  Le corps de la fonction est **indenté**.
-
-  Par exemple, la fonction $f(x) = x^2 - 3x + 4$ se définit comme suit:
-
-  ```python
-  def f(x):
-      return x**2 - 3*x + 4
-  ```
-
-- Pour tracer un graphe,
-  on définit un vecteur des abscisses avec `np.linspace`,
-  et on applique une _fonction vectorisée_ à ce vecteur pour obtenir les ordonnées.
-
-  ```python run math
-  import matplotlib.pyplot as plt
-  import numpy as np
-
-  def f(x):
-      return x**2 - 3*x + 4
-
-  x = np.linspace(-5, 5, 100)
-  y = f(x)
-
-  plt.plot(x, y)
-  ```
+import { expr, tex } from '@learning/core'
+import * as Exercise from './03-diff.exercises'
 
 # Introduction
 
@@ -68,7 +16,42 @@ L'alternative sera de considérer une quantité mathématique
 qui se rapproche plus vite de la dérivée
 et de ne pas considérer des $h$ trop petits.
 
-# Différences finies
+Une tension surviendra:
+
+- D'un côté, les mathématiques nous disent que $h$ doit être aussi petit que possible.
+
+- De l'autre, le _calcul numérique_ nous dit que si $h$ est trop petit,
+  les erreurs d'arrondi deviennent trop importantes et faussent le résultat.
+
+# Pentes et droites
+
+Rappelons que la pente d'une droite passant par deux points $(x_1, y_1)$ et $(x_2, y_2)$ est donnée par
+
+{tex`\text{pente}
+= \frac{y_2 - y_1}{x_2 - x_1}.`}
+
+:::exercise[Pente d'une droite]
+
+<Exercise.Slope />
+
+:::
+
+:::remark
+
+Pour l'examen,
+vous devez pouvoir être capable de prédire
+quand le calcul de la pente d'une droite donnera $0$ alors que c'est incorrect.
+Nous sommes dans ce cas si $\Delta y$ nécessite plus que environ 15-16 chiffres significatifs.
+
+:::
+
+:::exercise[Sécante à un graphe]
+
+<Exercise.Secant />
+
+:::
+
+# Quotient différentiel
 
 La dérivée se définit comme ceci
 {tex`f'(x)
@@ -80,13 +63,46 @@ En particulier, si $h$ est petit
 
 Nous allons utiliser cette approximation pour calculer des dérivées.
 
-## Quotient différentiel
+:::definition[Quotient différentiel]
 
-On parle de **quotient différentiel en avant**
-la quantité
-{tex`
-\frac {f(x + h) - f(x)} h,
-\quad h > 0`}
+Le **quotient différentiel** de $f$ en $x$ est défini par
+{tex`\frac {f(x + h) - f(x)}{h},
+\quad h \neq 0.`}
+
+- La quantité $h$ est appelée le **pas**.
+- Si $h > 0$, on parle de **quotient différentiel avant**.
+- Si $h < 0$, on parle de **quotient différentiel arrière**.
+
+:::
+
+:::example
+
+Approximons la dérivée de $f(x) =\ln (x^2 + 1)$ en $x = 0$ avec le _quotient différentiel avant_ de pas $h = 10^{-6}$.
+
+```python run
+import numpy as np
+
+def f(x):
+    return np.log(x**2 + 1)
+
+h = 1e-6
+x = 0
+
+(f(x + h) - f(x)) / h
+```
+
+La valeur théorique est
+{tex`f'(0)
+= \left. \frac{2x}{x^2 + 1} \right|_{x = 0}
+= 0.`}
+
+:::
+
+:::exercise
+
+<Exercise.Differences />
+
+:::
 
 :::example
 
