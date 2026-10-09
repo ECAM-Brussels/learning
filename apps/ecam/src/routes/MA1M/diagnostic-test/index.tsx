@@ -4,6 +4,7 @@ import {
   Exercise,
   ExerciseOptions,
   expr,
+  getUser,
   hasPermissions,
   Sequence,
   tex,
@@ -42,13 +43,17 @@ function DiagnosticTest() {
     }, 1000)
     return () => clearInterval(interval)
   })
+  const user = createMemo(() => getUser())
 
   return (
     <Show
-      when={show() || isTeacher()}
+      when={(show() || isTeacher()) && user()}
       fallback={
         <>
-          <p>Le test diagnostic sera disponible à partir de {startDate().toLocaleString()}.</p>
+          <p>
+            Le test diagnostic sera disponible si vous êtes connecté à partir de{' '}
+            {startDate().toLocaleString()}.
+          </p>
         </>
       }
     >
