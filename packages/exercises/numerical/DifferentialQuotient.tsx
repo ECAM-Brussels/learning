@@ -1,4 +1,4 @@
-import { createDerivedStep, tex } from '@learning/core'
+import { createDerivedStep, ExerciseOptions, tex } from '@learning/core'
 import { DerivativeAtPoint } from '@learning/exercises/math/calculus/DerivativeAtPoint'
 import { python } from '@learning/repl'
 import { dedent } from 'es-toolkit/string'
@@ -54,10 +54,10 @@ export const DifferentialQuotient = createDerivedStep(
   }),
   {
     children: (ctx) => (
-      <>
+      <ExerciseOptions allowResubmissions={false}>
         <p>Comparons cela au résultat théorique.</p>
         <DerivativeAtPoint f={ctx.data.f} x={ctx.data.x} />
-      </>
+      </ExerciseOptions>
     ),
   },
 )

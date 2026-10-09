@@ -1,6 +1,7 @@
 import { Attempt } from '@learning/components'
 import { createStep, tex } from '@learning/core'
 import { Show } from 'solid-js'
+import { Simple } from '../Simple'
 import { Derivative } from './Derivative'
 
 export const DerivativeAtPoint = createStep({
@@ -25,9 +26,17 @@ export const DerivativeAtPoint = createStep({
       <Derivative f={ctx.data.f}>
         {(derivativeCtx) => (
           <>
-            <p>
-              Maintenant, évaluez {tex`${derivativeCtx.inputs.attempt}`} en {tex`x = ${ctx.data.x}`}
-            </p>
+            <Simple
+              prompt={
+                <p>
+                  Maintenant, évaluez {tex`${derivativeCtx.inputs.attempt}`} en{' '}
+                  {tex`x = ${ctx.data.x}`}
+                </p>
+              }
+              grade={(attempt) =>
+                derivativeCtx.inputs.attempt.subs({ x: ctx.data.x }).isEqual(attempt)
+              }
+            />
           </>
         )}
       </Derivative>
