@@ -74,7 +74,14 @@ export type Expression<T extends 'input' | 'output' = 'input'> = T extends 'inpu
 
 function expression(input: Math) {
   const { rawInput, json } = v.parse(Math, input)
-  const instructionOps = new Set(['Simplify', 'Expand', 'Factor', 'Derivative', 'Integrate'])
+  const instructionOps = new Set([
+    'Simplify',
+    'Expand',
+    'Factor',
+    'Derivative',
+    'Integrate',
+    'Subs',
+  ])
 
   const hasInstructionOp = (value: MathJsonExpression): boolean => {
     if (!Array.isArray(value)) return false
@@ -111,7 +118,11 @@ function expression(input: Math) {
       const f = (t: Math) => expression({ json }).subs({ [x]: t }).json
       return expression({ json: ['Subtract', f(b), f(a)] }).simplify()
     },
-    diff: (x = 'x') => expression({ json: ['Derivative', json, x] }),
+    diff: (x = 'x', at?: Math) => {
+      const derivative: MathJsonExpression = ['Derivative', json, x]
+      if (at === undefined) return expression({ json: derivative })
+      return expression({ json: ['Subs', derivative, x, v.parse(Math, at).json] })
+    },
     encrypt: async () => Promise.resolve(expression({ json }).latex()).then(encrypt),
     expand: () => expression({ json: ['Expand', json] }),
     evaluate: () => ce.expr(json).evaluate(),

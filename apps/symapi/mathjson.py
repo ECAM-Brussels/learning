@@ -49,6 +49,8 @@ def parse_expr(expr: MathJSON) -> sympy.Expr:
                 return sympy.diff(*args)
             case "Delimiter":
                 return args[0]
+            case "Subs":
+                return args[0].subs(args[1], args[2])
             case "Equal":
                 return cast(sympy.Expr, sympy.Eq(*args, evaluate=False))
             case "Expand":
