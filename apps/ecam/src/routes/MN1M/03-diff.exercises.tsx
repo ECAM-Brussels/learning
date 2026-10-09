@@ -1,5 +1,5 @@
 import { CheckMark, Code } from '@learning/components'
-import { tex } from '@learning/core'
+import { Sequence, tex } from '@learning/core'
 import { Simple } from '@learning/exercises/math/Simple'
 import { DifferentialQuotient } from '@learning/exercises/numerical/DifferentialQuotient'
 import { PythonFunction } from '@learning/exercises/python/Function'
@@ -115,5 +115,11 @@ export function Secant() {
 }
 
 export function Differences() {
-  return <DifferentialQuotient id="differential-quotient" type="forward" f="x^2" x="1" h="0.1" />
+  return (
+    <Sequence id="differential-quotients">
+      <DifferentialQuotient type="forward" f="x^2" x="1" h="0.1" />
+      <DifferentialQuotient type="backward" f="x^2" x="1" h="10^{-6}" />
+      <DifferentialQuotient type="forward" f="\sin x" x="0" h="10^{-20}" />
+    </Sequence>
+  )
 }
