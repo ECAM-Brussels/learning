@@ -14,18 +14,6 @@ type MaybeAsync<T> = T | Promise<T>
 
 const ce = new ComputeEngine()
 
-const integrateParams = v.union([
-  v.pipe(
-    v.strictTuple([]),
-    v.transform(() => ['x']),
-  ),
-  v.strictTuple([v.string()]),
-  v.pipe(
-    v.strictTuple([v.string(), v.number(), v.number()]),
-    v.transform(([x, a, b]) => [['Tuple', x, a, b]] as const),
-  ),
-])
-
 function sanitize<T extends CEExpressionInput>(json: T): T {
   if (json === 'CatalanConstant') return 'G' as T
   if (typeof json === 'number' || typeof json === 'string') return json
@@ -55,6 +43,18 @@ const Math = v.union([
   ),
 ])
 type Math = v.InferInput<typeof Math>
+
+const integrateParams = v.union([
+  v.pipe(
+    v.strictTuple([]),
+    v.transform(() => ['x']),
+  ),
+  v.strictTuple([v.string()]),
+  v.pipe(
+    v.strictTuple([v.string(), Math, Math]),
+    v.transform(([x, a, b]) => [['Tuple', x, a.json, b.json]] as const),
+  ),
+])
 
 export const Expression = v.union([
   v.pipe(
