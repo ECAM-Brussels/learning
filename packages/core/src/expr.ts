@@ -16,18 +16,6 @@ type MaybeAsync<T> = T | Promise<T>
 const ce = new ComputeEngine()
 const python = new PythonTarget()
 
-const integrateParams = v.union([
-  v.pipe(
-    v.strictTuple([]),
-    v.transform(() => ['x']),
-  ),
-  v.strictTuple([v.string()]),
-  v.pipe(
-    v.strictTuple([v.string(), v.number(), v.number()]),
-    v.transform(([x, a, b]) => [['Tuple', x, a, b]] as const),
-  ),
-])
-
 function sanitize<T extends CEExpressionInput>(json: T): T {
   if (json === 'CatalanConstant') return 'G' as T
   if (typeof json === 'number' || typeof json === 'string') return json
@@ -44,6 +32,16 @@ const Math = v.union([
     })),
   ),
   v.pipe(
+    v.tupleWithRest(
+      [v.string()],
+      v.custom<MathJsonExpression>(() => true),
+    ),
+    v.transform((json) => ({
+      rawInput: sanitize(json) as MathJsonExpression,
+      json: sanitize(json) as MathJsonExpression,
+    })),
+  ),
+  v.pipe(
     v.object({
       rawInput: v.optional(
         v.union([v.string(), v.number(), v.custom<MathJsonExpression>(() => true)]),
@@ -57,6 +55,18 @@ const Math = v.union([
   ),
 ])
 type Math = v.InferInput<typeof Math>
+
+const integrateParams = v.union([
+  v.pipe(
+    v.strictTuple([]),
+    v.transform(() => ['x']),
+  ),
+  v.strictTuple([v.string()]),
+  v.pipe(
+    v.strictTuple([v.string(), Math, Math]),
+    v.transform(([x, a, b]) => [['Tuple', x, a.json, b.json]] as const),
+  ),
+])
 
 export const Expression = v.union([
   v.pipe(
@@ -134,6 +144,7 @@ function expression(input: Math) {
       return json[0] as string
     },
     imaginary: () => expression({ json: ['Imaginary', json] }),
+    in: (set: Math) => symapi.expr.inSet({ expr1: json, expr2: v.parse(Math, set).json }),
     integrate: (...params: v.InferInput<typeof integrateParams>) =>
       expression({ json: ['Integrate', json, ...v.parse(integrateParams, params)] }),
     isEqual: async (other: MaybeAsync<Math>, error: number = 0) => {
@@ -356,22 +367,21 @@ export function quantity(...rawQuantity: v.InferInput<typeof QuantityInput>) {
   }
 }
 
-const MathSet = v.custom<[string, ...MathJsonExpression[]]>(() => true)
-type MathSet = v.InferInput<typeof MathSet>
-
-export function set(input: MathSet) {
-  const json = v.parse(MathSet, input)
+export function set(input: Math) {
+  const json = v.parse(Math, input).json
   return {
     json,
-    intersect: (other: MathSet) => set(['Intersect', json, v.parse(MathSet, other)]),
-    isEqual: async (other: MathSet) =>
-      symapi.expr.setEqual({ expr1: json, expr2: v.parse(MathSet, other) }),
+    intersect: (other: Math) => set(['Intersect', json, v.parse(Math, other).json]),
+    isSubset: async (other: Math) =>
+      symapi.expr.subset({ expr1: json, expr2: v.parse(Math, other).json }),
+    isEqual: async (other: Math) =>
+      symapi.expr.setEqual({ expr1: json, expr2: v.parse(Math, other).json }),
   }
 }
 
 const Vector = v.array(Math)
 
-function vector(rawComponents: Math[]) {
+export function vector(rawComponents: Math[]) {
   const components = v.parse(Vector, rawComponents)
   return {
     cross: (rawOther: Math[]) => {
@@ -439,13 +449,15 @@ function vector(rawComponents: Math[]) {
 
 export type Quantity = ReturnType<typeof quantity>
 
-export function expr(input: undefined, unit?: undefined): undefined
-export function expr(input: Math[], unit?: undefined): ReturnType<typeof vector>
-export function expr(input: Math, unit?: undefined): Expression<'output'>
-export function expr(input: Math, unit: string): Quantity
-export function expr(input?: Math | Math[], unit?: string) {
-  if (Array.isArray(input)) return vector(input)
+export function expr(input: undefined, type?: undefined): undefined
+export function expr(input: Math, type?: undefined): Expression<'output'>
+export function expr(input: Math, type: 'set'): ReturnType<typeof set>
+export function expr(input: Math[], type: 'vector'): ReturnType<typeof vector>
+export function expr(input: Math, type: string): Quantity
+export function expr(input?: Math | Math[], type?: string) {
   if (input === undefined) return undefined
-  if (unit === undefined) return expression(input)
-  return quantity(input, unit)
+  if (type === undefined) return expression(input as Math)
+  if (type === 'vector') return vector(input as Math[])
+  if (type === 'set') return set(input as Math)
+  return quantity(input as Math, type)
 }
