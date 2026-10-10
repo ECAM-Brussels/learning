@@ -1,3 +1,4 @@
+import { Geogebra } from '@learning/components'
 import { expr, tex } from '@learning/core'
 import * as Exercise from './03-diff.exercises'
 
@@ -194,19 +195,81 @@ quand et pourquoi le résultat devient $0$.
 
 Pour $h > 0$, on distingue trois types de **quotients différentiels**:
 
-| Type       | Formule                                                |
-| ---------- | ------------------------------------------------------ |
-| En avant   | {tex`\displaystyle \frac {f(x + h) - f(x)} h`}         |
-| En arrière | {tex`\displaystyle \frac {f(x) - f(x - h)} h`}         |
-| Central    | {tex`\displaystyle \frac {f(x + h) - f(x - h)} {2 h}`} |
+<div class="grid xl:grid-cols-3 justify-center items-center gap-8 bg-sky-50 rounded-xl py-8 my-4">
+  <div class="text-center">
+    **En avant**
+
+    {tex`\displaystyle \frac {f(x + h) - f(x)} h`}
+
+  </div>
+  <div class="text-center">
+    **En arrière**
+
+    {tex`\displaystyle \frac {f(x) - f(x - h)} h`}
+
+  </div>
+  <div class="text-center">
+    **Central**
+
+    {tex`\displaystyle \frac {f(x + h) - f(x - h)} {2 h}`}
+
+  </div>
+</div>
+
+Numériquement, le **quotient différentiel central** est plus précis que les deux autres.
+
+Pour vérifier cela, vous apprendrez plus tard au cours de maths qu'en utilisant le _développement de Taylor_,
+on obtient les formules suivantes:
+
+<div class="justify-around lg:flex">
+  {tex`f(x + h)
+    = f(x) + h f'(x) + \frac{h^2}{2} f''(x) + \dots`}
+  {tex`f(x - h)
+    = f(x) - h f'(x) + \frac{h^2}{2} f''(x) + \dots`}
+</div>
+
+Ce qui fait que
+
+{tex`\frac {f(x + h) - f(x)} {h}
+= f'(x) \underbrace{+ \frac{h}{2} f''(x) + \dots}_{\text{erreur}}`}
+{tex`\frac {f(x) - f(x - h)} {h}
+= f'(x) \underbrace{- \frac{h}{2} f''(x) + \dots}_{\text{erreur}}`}
+
+En analysant les deux formules,
+on verrait que **le premier terme d'erreur disparaîtrait**
+si on prenait **la moyenne** des quotients différentiels _avant_ et _arrière_.
+C'est exactement ce que fait le quotient différentiel _central_.
 
 # Fonctions dérivées
 
-<Exercise.Derivative />
+La _fonction dérivée_ d'une fonction $f$
+
+{tex`x \mapsto
+f'(x) = \lim_{h \to 0} \frac{f(x + h) - f(x)}{h}`}
+
+Nous feront en chaque point une _approximation numérique_ de la dérivée
+par un _quotient différentiel_.
+
+<Geogebra id="kT87vrax" />
+
+:::example[Approximation de la fonction dérivée]
+Approximons la fonction dérivée de {tex`f(x) = e^{-x^2}`} pour $x \in [-1, 1]$ avec le _quotient différentiel avant_ de pas $h = 10^{-6}$,
+
+```python run math
+import numpy as np
+
+def f(x):
+    return np.exp(-x**2)
+
+def diff(x, h = 1e-6):
+    return (f(x + h) - f(x)) / h
+```
+
+:::
 
 :::example
 
-Tracez le graphe de la dérivée de $f(x) = e^{-x^2}$ pour $x \in [-1, 1]$,
+Tracez le graphe de la dérivée de {tex`f(x) = e^{-x^2}`} pour $x \in [-1, 1]$,
 et celui du _quotient différentiel avant_ pour $h = 10^{-6}$ et $h = 10^{-20}$.
 
 ```python run math
