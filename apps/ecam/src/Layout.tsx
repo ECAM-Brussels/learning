@@ -4,6 +4,7 @@ import {
   Boundary,
   Code,
   Crumb,
+  Definition,
   Example,
   Exercise,
   Fa,
@@ -88,6 +89,9 @@ export const Layout: ParentComponent = (props) => {
       components={{
         div: (attrs) => (
           <Switch fallback={<div>{attrs.children}</div>}>
+            <Match when={attrs['data-type'] === 'definition'}>
+              <Definition {...attrs} title={attrs['data-label']} />
+            </Match>
             <Match when={attrs['data-type'] === 'example'}>
               <Example {...attrs} title={attrs['data-label']} />
             </Match>

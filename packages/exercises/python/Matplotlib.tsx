@@ -1,7 +1,7 @@
 import { createDerivedStep, omitFromJSON } from '@learning/core'
 import { dedent } from 'es-toolkit/string'
 import * as v from 'valibot'
-import { PythonCode } from './Code'
+import { PythonCode, Test as StandardTest } from './Code'
 
 const Test = v.variant('type', [
   v.object({
@@ -39,6 +39,10 @@ const Test = v.variant('type', [
   v.object({
     type: v.literal('title'),
     pattern: v.instance(RegExp),
+  }),
+  v.object({
+    type: v.literal('custom'),
+    ...StandardTest.options[0].entries,
   }),
 ])
 
@@ -176,6 +180,8 @@ export const Matplotlib = createDerivedStep(
             `,
             check: ({ result }) => t.pattern.test(result ?? ''),
           }
+        case 'custom':
+          return t
       }
     }),
   }),

@@ -1,0 +1,305 @@
+import { Geogebra } from '@learning/components'
+import { expr, tex } from '@learning/core'
+import * as Exercise from './03-diff.exercises'
+
+# Introduction
+
+L'objectif de ce chapitre est de calculer des **dérivées**.
+À cette fin, on rappelle que $f'(x)$ est définie par
+
+{tex`f'(x)
+= \lim_{h \to 0} \frac{\overbrace{f(x + h) - f(x)}^{\Delta y}} {\underbrace{h}_{\Delta x}}.`}
+
+Malheureusement,
+nous verrons que le concept de limite touche _aux limites du calcul numérique_,
+et que l'application stricte de la définition ci-dessus donnera $0$.
+L'alternative sera de considérer une quantité mathématique
+qui se rapproche plus vite de la dérivée
+et de ne pas considérer des $h$ trop petits.
+
+Une tension surviendra:
+
+- D'un côté, les mathématiques nous disent que $h$ doit être aussi petit que possible.
+
+- De l'autre, le _calcul numérique_ nous dit que si $h$ est trop petit,
+  les erreurs d'arrondi deviennent trop importantes et faussent le résultat.
+
+# Pentes et droites
+
+Rappelons que la pente d'une droite passant par deux points $(x_1, y_1)$ et $(x_2, y_2)$ est donnée par
+
+{tex`\text{pente}
+= \frac{y_2 - y_1}{x_2 - x_1}.`}
+
+:::exercise[Pente d'une droite]
+
+<Exercise.Slope />
+
+:::
+
+:::remark
+
+Pour l'examen,
+vous devez pouvoir être capable de prédire
+quand le calcul de la pente d'une droite donnera $0$ alors que c'est incorrect.
+Nous sommes dans ce cas si $\Delta y$ nécessite plus que environ 15-16 chiffres significatifs.
+
+:::
+
+:::exercise[Sécante à un graphe]
+
+<Exercise.Secant />
+
+:::
+
+# Quotient différentiel
+
+La dérivée se définit comme ceci
+{tex`f'(x)
+= \lim_{h \to 0} \frac {f(x + h) - f(x)} h.`}
+
+En particulier, si $h$ est petit
+{tex`f'(x)
+\approx \frac {f(x + h) - f(x)} h.`}
+
+Nous allons utiliser cette approximation pour calculer des dérivées.
+
+:::definition[Quotient différentiel]
+
+Le **quotient différentiel** de $f$ en $x$ est défini par
+{tex`\frac {f(x + h) - f(x)}{h},
+\quad h \neq 0.`}
+
+- La quantité $|h|$ est appelée le **pas**.
+- Si $h > 0$, on parle de **quotient différentiel avant**.
+- Si $h < 0$, on parle de **quotient différentiel arrière**.
+
+:::
+
+:::remark[Formule alternative du quotient différentiel arrière]
+Vous verrez parfois le quotient différentiel _arrière_ exprimé avec $h > 0$,
+qui doit alors être remplacé par $-h$ dans la formule pour _aller en arrière_.
+On obtient alors:
+{tex`\frac {f(x + (-h)) - f(x)} {-h}
+= \frac {f(x - h) - f(x)} {-h}
+= \frac {f(x) - f(x - h)} {h}.`}
+:::
+
+:::example
+
+Approximons la dérivée de $f(x) =\ln (x^2 + 1)$ en $x = 0$ avec le _quotient différentiel avant_ de pas $h = 10^{-6}$.
+
+```python run
+import numpy as np
+
+def f(x):
+    return np.log(x**2 + 1)
+
+h = 1e-6
+x = 0
+
+(f(x + h) - f(x)) / h
+```
+
+La valeur théorique est
+{tex`f'(0)
+= \left. \frac{2x}{x^2 + 1} \right|_{x = 0}
+= 0.`}
+
+:::
+
+:::example
+
+Approximons la dérivée de $f(x) = x^2 + 1$ en $x = 1$
+avec comme pas $h = 10^{-30}$.
+
+```python run
+import numpy as np
+
+def f(x):
+    return x**2 + 1
+
+def diff(x, h = 1e-6):
+    return (f(x + h) - f(x)) / h
+
+diff(1, 1e-30)
+```
+
+Le résultat n'est **absolument pas correct**,
+puisque nous aurions dû obtenir:
+{tex`f'(1)
+= \left. 2x \right|_{x = 1}
+= 2.
+`}
+
+Souvenez-vous que Python n'utilise qu'environ $15$ chiffres significatifs,
+ce qui signifie que pour Python, $1 + h = 0$:
+
+```python run
+h = 1e-30
+1 + h
+```
+
+L'erreur se propage alors
+
+{tex`\frac {(\overbrace{1 + h}^1)^2 - 1^2} h
+= \frac 0 h
+= 0
+`}
+
+:::
+
+:::exercise
+
+<Exercise.Differences />
+
+:::
+
+Lorsque $h$ est trop petit,
+on voit que le calcul numérique n'est pas fiable pour approximer la dérivée.
+
+:::example
+
+Approximons la dérivée de $f(x) = \sin x$ en $x = 0$.
+Le résultat théorique devrait être:
+{tex`f'(0)
+= \left. \cos x \right|_{x = 0}
+= 1`}
+
+```python run
+import numpy as np
+
+def f(x):
+    return np.sin(x)
+
+def diff(x, h = 1e-6):
+    return (f(x + h) - f(x)) / h
+
+diff(0, 1e-30)
+```
+
+Le résultat est ici **correct**.
+Ceci est dû au fait que en $x = 0$, $f(x) = 0$.
+Comme il y a plus de nombres représentables autour de $0$,
+il y a beaucoup moins de perte de précision lors du calcul de $f(x + h) - f(x)$.
+
+:::
+
+:::remark
+À l'examen,
+il est nécessaire de pouvoir expliquer
+quand et pourquoi le résultat devient $0$.
+:::
+
+## En avant, en arrière, ou central
+
+Pour $h > 0$, on distingue trois types de **quotients différentiels**:
+
+<div class="grid xl:grid-cols-3 justify-center items-center gap-8 bg-sky-50 rounded-xl py-8 my-4">
+  <div class="text-center">
+    **En avant**
+
+    {tex`\displaystyle \frac {f(x + h) - f(x)} h`}
+
+  </div>
+  <div class="text-center">
+    **En arrière**
+
+    {tex`\displaystyle \frac {f(x) - f(x - h)} h`}
+
+  </div>
+  <div class="text-center">
+    **Central**
+
+    {tex`\displaystyle \frac {f(x + h) - f(x - h)} {2 h}`}
+
+  </div>
+</div>
+
+Numériquement, le **quotient différentiel central** est plus précis que les deux autres.
+
+Pour vérifier cela, vous apprendrez plus tard au cours de maths qu'en utilisant le _développement de Taylor_,
+on obtient les formules suivantes:
+
+<div class="justify-around lg:flex">
+  {tex`f(x + h)
+    = f(x) + h f'(x) + \frac{h^2}{2} f''(x) + \dots`}
+  {tex`f(x - h)
+    = f(x) - h f'(x) + \frac{h^2}{2} f''(x) + \dots`}
+</div>
+
+Ce qui fait que
+
+{tex`\frac {f(x + h) - f(x)} {h}
+= f'(x) \underbrace{+ \frac{h}{2} f''(x) + \dots}_{\text{erreur}}`}
+{tex`\frac {f(x) - f(x - h)} {h}
+= f'(x) \underbrace{- \frac{h}{2} f''(x) + \dots}_{\text{erreur}}`}
+
+En analysant les deux formules,
+on verrait que **le premier terme d'erreur disparaîtrait**
+si on prenait **la moyenne** des quotients différentiels _avant_ et _arrière_.
+C'est exactement ce que fait le quotient différentiel _central_.
+
+# Fonctions dérivées
+
+La _fonction dérivée_ d'une fonction $f$
+
+{tex`x \mapsto
+f'(x) = \lim_{h \to 0} \frac{f(x + h) - f(x)}{h}`}
+
+Nous feront en chaque point une _approximation numérique_ de la dérivée
+par un _quotient différentiel_.
+
+<Geogebra id="kT87vrax" />
+
+:::example[Approximation de la fonction dérivée]
+Approximons la fonction dérivée de {tex`f(x) = e^{-x^2}`} pour $x \in [-1, 1]$ avec le _quotient différentiel avant_ de pas $h = 10^{-6}$,
+
+```python run math
+import numpy as np
+
+def f(x):
+    return np.exp(-x**2)
+
+def diff(x, h = 1e-6):
+    return (f(x + h) - f(x)) / h
+```
+
+:::
+
+:::example
+
+Tracez le graphe de la dérivée de {tex`f(x) = e^{-x^2}`} pour $x \in [-1, 1]$,
+et celui du _quotient différentiel avant_ pour $h = 10^{-6}$ et $h = 10^{-20}$.
+
+```python run math
+import matplotlib.pyplot as plt
+import numpy as np
+
+def f(x):
+    return np.exp(-x**2)
+
+def diff(x, h = 1e-6):
+    return (f(x + h) - f(x)) / h
+
+x = np.linspace(-1, 1, 1000)
+
+plt.subplot(2, 1, 1)
+plt.title("h = 1e-6")
+plt.xlabel("x")
+plt.ylabel("y")
+plt.plot(x, -2*x*np.exp(-x**2), label="f'(x)")
+plt.plot(x, diff(x, 1e-6), label="diff(x)")
+plt.legend()
+
+plt.subplot(2, 1, 2)
+plt.title("h = 1e-20")
+plt.xlabel("x")
+plt.ylabel("y")
+plt.plot(x, -2*x*np.exp(-x**2), label="f'(x)")
+plt.plot(x, diff(x, 1e-20), label="diff(x)")
+plt.legend()
+plt.tight_layout()
+```
+
+:::

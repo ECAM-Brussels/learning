@@ -5,6 +5,7 @@ import type { JSX } from '@solidjs/web'
 import { createMemo, Show } from 'solid-js'
 import { paths } from '../../router'
 import banner from './banner.jpg'
+import session3 from './differences.jpg'
 import session2 from './matplotlib.jpg'
 import session1 from './python.jpg'
 
@@ -69,6 +70,13 @@ export default () => (
         link="02-plots"
         img={session2}
         draft={new Date('2026-10-02 07:00')}
+      />
+      <SessionCard
+        index={3}
+        title="Différences finies"
+        link="03-diff"
+        img={session3}
+        draft={true}
       />
     </div>
   </>

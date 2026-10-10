@@ -2,6 +2,7 @@ import type { JSX } from '@solidjs/web'
 import { Show, type ComponentProps } from 'solid-js'
 
 const config = {
+  definition: { label: 'Definition', class: 'bg-sky-100 text-sky-900' },
   example: { label: 'Exemple', class: 'bg-sky-100 text-sky-900' },
   remark: { label: 'Remarque', class: 'bg-amber-100 text-amber-900' },
   exercise: { label: 'Exercice', class: 'bg-green-100 text-green-900' },
@@ -40,6 +41,7 @@ function makeEnvironment(type: keyof typeof config) {
 /**
  * Component to display an example
  */
+export const Definition = makeEnvironment('definition')
 export const Example = makeEnvironment('example')
 export const Exercise = makeEnvironment('exercise')
 export const Remark = makeEnvironment('remark')

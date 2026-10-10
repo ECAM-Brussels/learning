@@ -21,6 +21,7 @@ export type EditorProps = {
   class?: JSX.ClassValue | string
   lang: 'python'
   children: string
+  highlight?: number[]
   onChange?: (value: string) => void
   readOnly?: boolean
 }
@@ -48,6 +49,7 @@ export const Code: Component<Props> = (rawProps) => {
           component={editor() === 'monaco' ? Monaco : CodeMirror}
           children={value()}
           lang={props.lang}
+          highlight={props.highlight}
           onChange={(newValue) => {
             setValue(newValue)
             props.onChange?.(newValue)
