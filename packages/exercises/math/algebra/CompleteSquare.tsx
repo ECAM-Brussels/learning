@@ -1,6 +1,5 @@
 import { Attempt } from '@learning/components'
 import { createStep, tex } from '@learning/core'
-import { Match, Switch } from 'solid-js'
 
 export const CompleteSquare = createStep({
   name: 'math/algebra/complete-square',
@@ -20,11 +19,4 @@ export const CompleteSquare = createStep({
     if (ctx.inputs.attempt.count('x') !== 1) return false
     return ctx.data.expr.isEqual(ctx.inputs.attempt)
   },
-  feedback: (ctx) => (
-    <Switch>
-      <Match when={!ctx.correct}>
-        <ctx.Self />
-      </Match>
-    </Switch>
-  ),
 })
