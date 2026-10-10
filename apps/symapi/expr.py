@@ -58,6 +58,13 @@ def set_equal(input: TwoExpressions) -> bool:
     return set1.is_subset(set2) and set2.is_subset(set1)
 
 
+@router.post("/subset")
+def subset(input: TwoExpressions) -> bool:
+    set1 = input.expr1.expr
+    set2 = input.expr2.expr
+    return set1.is_subset(set2)
+
+
 @router.post("/equivalent")
 def equivalent(input: TwoExpressions) -> bool:
     eq1, eq2 = input.expr1.expr, input.expr2.expr
@@ -71,6 +78,12 @@ def equivalent(input: TwoExpressions) -> bool:
         return True
     quotient = sympy.simplify(eq1 / eq2)
     return quotient.is_constant() and quotient != 0
+
+
+@router.post("/inSet")
+def in_set(input: TwoExpressions) -> bool:
+    expr, set_expr = input.expr1.expr, input.expr2.expr
+    return expr in set_expr
 
 
 @router.post("/isExpanded")

@@ -133,6 +133,7 @@ function expression(input: Math) {
       return json[0] as string
     },
     imaginary: () => expression({ json: ['Imaginary', json] }),
+    in: (set: Math) => symapi.expr.inSet({ expr1: json, expr2: v.parse(Math, set).json }),
     integrate: (...params: v.InferInput<typeof integrateParams>) =>
       expression({ json: ['Integrate', json, ...v.parse(integrateParams, params)] }),
     isEqual: async (other: MaybeAsync<Math>, error: number = 0) => {
@@ -352,6 +353,8 @@ export function set(input: Math) {
   return {
     json,
     intersect: (other: Math) => set(['Intersect', json, v.parse(Math, other).json]),
+    isSubset: async (other: Math) =>
+      symapi.expr.subset({ expr1: json, expr2: v.parse(Math, other).json }),
     isEqual: async (other: Math) =>
       symapi.expr.setEqual({ expr1: json, expr2: v.parse(Math, other).json }),
   }
