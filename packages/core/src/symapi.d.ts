@@ -4,40 +4,6 @@
  */
 
 export interface paths {
-    "/chemistry/mass": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Mass */
-        post: operations["mass_chemistry_mass_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/chemistry/latex": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Latex */
-        post: operations["latex_chemistry_latex_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/expr/commonRoots": {
         parameters: {
             query?: never;
@@ -297,10 +263,6 @@ export interface components {
         OneExpression: {
             expr: components["schemas"]["Expression"];
         };
-        /** OneSubstance */
-        OneSubstance: {
-            substance: components["schemas"]["Substance"];
-        };
         /** RootsInput */
         RootsInput: {
             expr: components["schemas"]["Expression"];
@@ -310,8 +272,6 @@ export interface components {
              */
             complex: boolean | null;
         };
-        /** Substance */
-        Substance: string;
         /** TwoExpressions */
         TwoExpressions: {
             expr1: components["schemas"]["Expression"];
@@ -335,72 +295,6 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    mass_chemistry_mass_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OneSubstance"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": number;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    latex_chemistry_latex_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OneSubstance"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     common_roots_expr_commonRoots_post: {
         parameters: {
             query?: never;
