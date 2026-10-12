@@ -48,9 +48,10 @@ const Test = v.variant('type', [
 
 export const Matplotlib = createDerivedStep(
   PythonCode,
-  { prompt: 'jsx', tests: omitFromJSON(v.array(Test)) },
+  { prompt: 'jsx', tests: omitFromJSON(v.array(Test)), initialCode: v.optional(v.string(), '') },
   (props) => ({
     math: true,
+    initialCode: props.initialCode,
     prompt: props.prompt,
     tests: props.tests.map((t) => {
       switch (t.type) {

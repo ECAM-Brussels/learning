@@ -9,6 +9,7 @@ const translations = {
   forward: 'avant',
   backward: 'arrière',
   central: 'centrale',
+  undefined: '',
 } as const
 
 export const DifferentialQuotient = createDerivedStep(
@@ -17,15 +18,15 @@ export const DifferentialQuotient = createDerivedStep(
     f: 'expr',
     x: 'expr',
     h: 'expr',
-    type: v.union([v.literal('forward'), v.literal('backward'), v.literal('central')]),
+    type: v.optional(v.union([v.literal('forward'), v.literal('backward'), v.literal('central')])),
   },
   (props) => ({
     prompt: (
       <>
         <p>
           Avec l'aide de Python, calculez le{' '}
-          <em>quotient différentiel {translations[props.type]}</em> de {tex`${props.f}`} en{' '}
-          {tex`x = ${props.x}`} avec un pas {tex`h = ${props.h}`}.
+          <em>quotient différentiel {translations[props.type ?? 'undefined']}</em> de{' '}
+          {tex`f(x) = ${props.f}`} en {tex`x = ${props.x}`} avec un pas {tex`h = ${props.h}`}.
         </p>
       </>
     ),
@@ -39,7 +40,7 @@ export const DifferentialQuotient = createDerivedStep(
             f = lambda x: ${props.f.python()}
             x = ${props.x.python()}
             h = ${props.h.python()}
-            if "${props.type}" == "forward":
+            if "${props.type}" == "forward" || "${props.type}" == "undefined":
                 output = (f(x + h) - f(x)) / h
             elif "${props.type}" == "backward":
                 output = (f(x) - f(x - h)) / h

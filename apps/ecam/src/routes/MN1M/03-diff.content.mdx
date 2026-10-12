@@ -11,24 +11,23 @@ L'objectif de ce chapitre est de calculer des **dérivées**.
 = \lim_{h \to 0} \frac{\overbrace{f(x + h) - f(x)}^{\Delta y}} {\underbrace{h}_{\Delta x}}.`}
 
 Malheureusement,
-nous verrons que le concept de limite touche _aux limites du calcul numérique_,
-et que l'application stricte de la définition ci-dessus donnera $0$.
-L'alternative sera de considérer une quantité mathématique
-qui se rapproche plus vite de la dérivée
-et de ne pas considérer des $h$ trop petits.
+nous verrons que le concept de **limite** est _problématique en calcul numérique_,
+car la précision est limitée, surtout si on s'éloigne de $0$.
+Une tension apparaîtra:
 
-Une tension surviendra:
-
-- D'un côté, les mathématiques nous disent que $h$ doit être aussi petit que possible.
+- D'un côté, les mathématiques nous disent que $h$ doit être petit.
 
 - De l'autre, le _calcul numérique_ nous dit que si $h$ est trop petit,
   les erreurs d'arrondi deviennent trop importantes et faussent le résultat.
 
+Nous verrons que le problème s'empire si l'on calcule des dérivées d'ordre supérieur.
+
 # Pentes et droites
 
-Rappelons que la pente d'une droite passant par deux points $(x_1, y_1)$ et $(x_2, y_2)$ est donnée par
+Rappelons que la **pente** d'une droite passant par deux points $(x_1, y_1)$ et $(x_2, y_2)$ est donnée par
 
 {tex`\text{pente}
+= \frac{\Delta y}{\Delta x}
 = \frac{y_2 - y_1}{x_2 - x_1}.`}
 
 :::exercise[Pente d'une droite]
@@ -70,24 +69,12 @@ Le **quotient différentiel** de $f$ en $x$ est défini par
 {tex`\frac {f(x + h) - f(x)}{h},
 \quad h \neq 0.`}
 
-- La quantité $|h|$ est appelée le **pas**.
-- Si $h > 0$, on parle de **quotient différentiel avant**.
-- Si $h < 0$, on parle de **quotient différentiel arrière**.
-
-:::
-
-:::remark[Formule alternative du quotient différentiel arrière]
-Vous verrez parfois le quotient différentiel _arrière_ exprimé avec $h > 0$,
-qui doit alors être remplacé par $-h$ dans la formule pour _aller en arrière_.
-On obtient alors:
-{tex`\frac {f(x + (-h)) - f(x)} {-h}
-= \frac {f(x - h) - f(x)} {-h}
-= \frac {f(x) - f(x - h)} {h}.`}
+La quantité $|h|$ est appelée le **pas**.
 :::
 
 :::example
 
-Approximons la dérivée de $f(x) =\ln (x^2 + 1)$ en $x = 0$ avec le _quotient différentiel avant_ de pas $h = 10^{-6}$.
+Approximons la dérivée de $f(x) = \ln (x^2 + 1)$ en $x = 0$ avec le _quotient différentiel_ de pas $h = 10^{-6}$.
 
 ```python run
 import numpy as np
@@ -195,50 +182,21 @@ quand et pourquoi le résultat devient $0$.
 
 Pour $h > 0$, on distingue trois types de **quotients différentiels**:
 
-<div class="grid xl:grid-cols-3 justify-center items-center gap-8 bg-sky-50 rounded-xl py-8 my-4">
-  <div class="text-center">
-    **En avant**
+import differentialQuotients from './differential-quotients.jpg'
 
-    {tex`\displaystyle \frac {f(x + h) - f(x)} h`}
+<img
+  class="mx-auto rounded-xl border border-gray-200 shadow-lg"
+  src={differentialQuotients}
+  alt="Différence avant, arrière et centrale"
+/>
 
-  </div>
-  <div class="text-center">
-    **En arrière**
+Le **quotient différentiel central** est la **moyenne arithmétique** des quotients avant et arrière.
+Étant donné qu'il tient compte de ce qui se passe de part et d'autre de $x$,
+il se rapproche plus vite de la valeur théorique de la dérivée.
 
-    {tex`\displaystyle \frac {f(x) - f(x - h)} h`}
+Nous privilégierons dès lors l'emploi du **quotient différentiel central**.
 
-  </div>
-  <div class="text-center">
-    **Central**
-
-    {tex`\displaystyle \frac {f(x + h) - f(x - h)} {2 h}`}
-
-  </div>
-</div>
-
-Numériquement, le **quotient différentiel central** est plus précis que les deux autres.
-
-Pour vérifier cela, vous apprendrez plus tard au cours de maths qu'en utilisant le _développement de Taylor_,
-on obtient les formules suivantes:
-
-<div class="justify-around lg:flex">
-  {tex`f(x + h)
-    = f(x) + h f'(x) + \frac{h^2}{2} f''(x) + \dots`}
-  {tex`f(x - h)
-    = f(x) - h f'(x) + \frac{h^2}{2} f''(x) + \dots`}
-</div>
-
-Ce qui fait que
-
-{tex`\frac {f(x + h) - f(x)} {h}
-= f'(x) \underbrace{+ \frac{h}{2} f''(x) + \dots}_{\text{erreur}}`}
-{tex`\frac {f(x) - f(x - h)} {h}
-= f'(x) \underbrace{- \frac{h}{2} f''(x) + \dots}_{\text{erreur}}`}
-
-En analysant les deux formules,
-on verrait que **le premier terme d'erreur disparaîtrait**
-si on prenait **la moyenne** des quotients différentiels _avant_ et _arrière_.
-C'est exactement ce que fait le quotient différentiel _central_.
+<Exercise.Tangents />
 
 # Fonctions dérivées
 
@@ -253,17 +211,27 @@ par un _quotient différentiel_.
 <Geogebra id="kT87vrax" />
 
 :::example[Approximation de la fonction dérivée]
-Approximons la fonction dérivée de {tex`f(x) = e^{-x^2}`} pour $x \in [-1, 1]$ avec le _quotient différentiel avant_ de pas $h = 10^{-6}$,
+
+Approximons la fonction dérivée de {tex`f(x) = e^{-x^2}`} pour $x \in [-1, 1]$ avec le _quotient différentiel central_ de pas $h = 10^{-6}$,
+Ensuite, tracez le graphe de la fonction dérivée théorique et celui de l'approximation numérique.
 
 ```python run math
+import matplotlib.pyplot as plt
 import numpy as np
 
 def f(x):
     return np.exp(-x**2)
 
 def diff(x, h = 1e-6):
-    return (f(x + h) - f(x)) / h
+    return (f(x + h) - f(x - h)) / (2 * h)
+
+x = np.linspace(-1, 1, 100)
+plt.plot(x, -2*x*np.exp(-x**2), label="f'(x)")
+plt.plot(x, diff(x), '--', label="approximation numérique")
+plt.legend()
 ```
+
+On constate que l'approximation numérique est proche de la fonction dérivée théorique.
 
 :::
 
@@ -300,6 +268,112 @@ plt.plot(x, -2*x*np.exp(-x**2), label="f'(x)")
 plt.plot(x, diff(x, 1e-20), label="diff(x)")
 plt.legend()
 plt.tight_layout()
+```
+
+:::
+
+<Exercise.Derivatives />
+
+# Dérivées secondes
+
+En prenant la différence centrale de la différence centrale, on obtient une approximation de la dérivée seconde
+
+{tex.display`\approx \frac{f(x + 2h) - 2 f(x) + f(x - 2h)}{4 h^2}`}
+
+Dans le cadre de cette activité,
+nous privilégierons l'_application répétée_ de la différence centrale.
+
+:::remark
+
+En arithmétique exacte, il n'y a aucune différence entre
+
+{tex.display`\approx \frac{f(x + 2h) - 2 f(x) + f(x - 2h)}{4 h^2}`}
+
+et une double application de la différence centrale.
+Cependant, en pratique, la double application nécessite plus de calculs et est donc plus sensible aux erreurs d'arrondi.
+
+La formule ci-dessus, en revanche, a été simplifiée en _arithmétique exacte_
+pour réduire le nombre de calculs.
+
+:::
+
+:::example[Derivée seconde numérique]
+Approximons la dérivée seconde de {tex`f(x) = \sin x`}
+en appliquant deux fois la différence centrale
+avec $h = 10^{-6}$,
+et graphez le résultat sur $[-\pi, \pi]$.
+
+```python run math highlight="12,13"
+import matplotlib.pyplot as plt
+import numpy as np
+
+h = 1e-6
+
+def f(x):
+    return np.sin(x)
+
+def diff(x):
+    return (f(x + h) - f(x - h)) / (2 * h)
+
+def diff2(x):
+    return (diff(x + h) - diff(x - h)) / (2 * h)
+
+x = np.linspace(-np.pi, np.pi, 100)
+plt.plot(x, -np.sin(x), label="f''(x)")
+plt.plot(x, diff2(x), '--', label="approx f''")
+plt.legend()
+```
+
+:::
+
+:::remark[Récursion]
+Au lieu de définir une fonction pour chaque dérivée,
+où chaque fonction fait essentiellement la même chose,
+on peut faire en sorte qu'une fonction s'**appelle elle-même** autant de fois que nécessaire.
+
+On pourrait calculer la dérivée d'ordre $n$ de $f$ avec la fonction récursive suivante:
+
+```python run
+def diff(x, n):
+    if n == 0:
+        return f(x)
+    else:
+        return (diff(x + h, n - 1) - diff(x - h, n - 1)) / (2 * h)
+```
+
+L'idée est simple:
+
+- Pour la dérivée d'ordre $0$,
+  on retourne simplement $f(x)$
+  puisqu'il n'est pas nécessaire de dériver.
+
+- Pour les autres dérivées d'ordre $n$, on applique la _différence centrale_ à notre approximation de la dérivée d'ordre $n - 1$,
+  qui est elle-même calculée comme étant une différence centrale de la dérivée d'ordre $n - 2$, et ainsi de suite.
+
+:::
+
+:::example[Empirement de la précision]
+
+```python run math
+import matplotlib.pyplot as plt
+import numpy as np
+
+h = 1e-8
+
+def f(x):
+    return np.exp(x)
+
+def diff(x):
+    return (f(x + h) - f(x - h)) / (2 * h)
+
+def diff2(x):
+    return (diff(x + h) - diff(x - h)) / (2 * h)
+
+x = np.linspace(-1, 1, 100)
+plt.plot(x, f(x), label="f")
+plt.plot(x, diff(x), '--', label="approx f'")
+plt.plot(x, diff2(x), '--', label="approx f''")
+plt.legend()
 ```
 
 :::

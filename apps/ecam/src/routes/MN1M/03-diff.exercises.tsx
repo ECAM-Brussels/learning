@@ -22,6 +22,10 @@ export function Slope() {
             Vous pouvez appeler la fonction pour la tester, par exemple{' '}
             <code>pente([1, 2], [3, 4])</code> devrait retourner <code>1</code>.
           </p>
+          <p class="text-sm italic">
+            Remarque: cette exercice comporte deux parties. La deuxième apparaîtra après complétion
+            de la première.
+          </p>
         </>
       }
       tests={[
@@ -52,7 +56,11 @@ export function Slope() {
             }
           />
           <Simple
-            prompt={<p>Quel aurait dû être la réponse?</p>}
+            prompt={
+              <p>
+                Quel aurait dû être la réponse? Calculez la <strong>pente réelle</strong>.
+              </p>
+            }
             grade={(attempt) => attempt.isEqual(`\\frac{1}{10}`)}
           >
             <p>
@@ -91,35 +99,242 @@ export function Slope() {
 
 export function Secant() {
   return (
-    <Matplotlib
-      id="Secant"
-      prompt={
-        <>
+    <Sequence id="secant">
+      <Matplotlib
+        prompt={
+          <p>
+            Tracez le graphe de la droite ayant pour pente {tex`-2`} et passant par le point{' '}
+            {tex`(-3, -4)`}. Nommez les axes.
+          </p>
+        }
+        tests={[
+          { type: 'plot', x: [-5, 5], y: '-2 * (x + 3) - 4' },
+          { type: 'axisLabels', x: /x/, y: /y/ },
+        ]}
+      />
+      <Matplotlib
+        prompt={
           <p>
             Tracez le graphe de {tex`f(x) = \sin x`} sur {tex`[-\pi, \pi]`}, ainsi que de la droite
             qui croise le graphe en {tex`x = -2`} et {tex`x = 2`}. Nommez les axes.
           </p>
-        </>
-      }
-      tests={[
-        { type: 'plot', x: [-Math.PI, Math.PI], y: 'np.sin(x)' },
-        {
-          type: 'plot',
-          x: [-Math.PI, Math.PI],
-          y: 'np.sin(-2) + (np.sin(2) - np.sin(-2)) / 4 * (x - (-2))',
-        },
-        { type: 'axisLabels', x: /x/, y: /y/ },
-      ]}
-    />
+        }
+        tests={[
+          { type: 'plot', x: [-Math.PI, Math.PI], y: 'np.sin(x)' },
+          {
+            type: 'plot',
+            x: [-Math.PI, Math.PI],
+            y: 'np.sin(-2) + (np.sin(2) - np.sin(-2)) / 4 * (x - (-2))',
+          },
+          { type: 'axisLabels', x: /x/, y: /y/ },
+        ]}
+      />
+      <Matplotlib
+        prompt={
+          <p>
+            Tracez le graphe de {tex`f(x) = e^x`} sur {tex`[-1, 1]`}, ainsi que de la droite qui
+            croise le graphe en {tex`x = 0`} et {tex`x = 0.01`}. Nommez les axes.
+          </p>
+        }
+        tests={[
+          { type: 'plot', x: [-1, 1], y: 'np.exp(x)' },
+          {
+            type: 'plot',
+            x: [-1, 1],
+            y: '1 + (np.exp(0.01) - 1) / 0.01 * x',
+          },
+          { type: 'axisLabels', x: /x/, y: /y/ },
+        ]}
+      />
+      <Simple
+        prompt={
+          <p>
+            Quel est la pente de la droite passant par le graphe de {tex`y = f(x)`} aux abscisses{' '}
+            {tex`x = a`} et {tex`x = b`}?
+          </p>
+        }
+        grade={(attempt) => attempt.isEqual('\\frac{f(b) - f(a)}{b - a}')}
+        label="La pente vaut "
+      />
+      <Simple
+        prompt={
+          <p>
+            Quel est la pente de la droite passant par le graphe de {tex`y = f(x)`} aux abscisses{' '}
+            {tex`x`} et {tex`x + h`} ?
+          </p>
+        }
+        grade={(attempt) => attempt.isEqual('\\frac{f(x + h) - f(x)}{h}')}
+      />
+    </Sequence>
   )
 }
 
 export function Differences() {
   return (
     <Sequence id="differential-quotients">
-      <DifferentialQuotient type="forward" f="x^2" x="1" h="0.1" />
-      <DifferentialQuotient type="backward" f="x^2" x="1" h="10^{-6}" />
-      <DifferentialQuotient type="forward" f="\sin x" x="0" h="10^{-20}" />
+      <DifferentialQuotient f="x^2" x="1" h="0.1" />
+      <DifferentialQuotient f="x^2" x="1" h="10^{-6}" />
+      <DifferentialQuotient f="\sin x" x="0" h="10^{-20}" />
+    </Sequence>
+  )
+}
+
+export function Tangents() {
+  return (
+    <Sequence id="tangents">
+      <Matplotlib
+        prompt={
+          <>
+            <p>Sur l'intervalle {tex`[0.5, 1.5]`}, tracez le graphe des fonctions suivantes:</p>
+            <ul class="my-2 list-inside list-disc px-2">
+              <li>{tex`f(x) = \sin x`}</li>
+              <li>
+                la vraie tangente de {tex`f`} en {tex`x = 1`}
+              </li>
+              <li>
+                L'approximation de la tangente de {tex`f`} en {tex`x = 1`} obtenue par le{' '}
+                <em>quotient différentiel central</em> de pas {tex`h = 0.5`}.
+              </li>
+              <li>
+                L'approximation de la tangente de {tex`f`} en {tex`x = 1`} obtenue par le{' '}
+                <em>quotient différentiel avant</em> de pas {tex`h = 0.5`}.
+              </li>
+            </ul>
+            <p>Nommez les axes.</p>
+          </>
+        }
+        tests={[
+          { type: 'plot', x: [0.5, 1.5], y: 'np.sin(x)' },
+          { type: 'plot', x: [0.5, 1.5], y: 'np.cos(1) * (x - 1) + np.sin(1)' },
+          {
+            type: 'plot',
+            x: [0.5, 1.5],
+            y: '(np.sin(1 + 0.5) - np.sin(1 - 0.5)) / (2 * 0.5) * (x - 1) + np.sin(1)',
+          },
+          {
+            type: 'plot',
+            x: [0.5, 1.5],
+            y: '(np.sin(1 + 0.5) - np.sin(1)) / (0.5) * (x - 1) + np.sin(1)',
+          },
+          { type: 'axisLabels', x: /x/, y: /y/ },
+        ]}
+      >
+        <p>Comme vous le constatez, sur cet exemple, la différence centrale est plus précise.</p>
+      </Matplotlib>
+      <Matplotlib
+        prompt={
+          <>
+            <p>Sur l'intervalle {tex`[-0.5, 0.5]`}, tracez le graphe des fonctions suivantes:</p>
+            <ul class="my-2 list-inside list-disc px-2">
+              <li>{tex`f(x) = e^x`}</li>
+              <li>
+                la vraie tangente de {tex`f`} en {tex`x = 0`}
+              </li>
+              <li>
+                L'approximation de la tangente de {tex`f`} en {tex`x = 0`} obtenue par le{' '}
+                <em>quotient différentiel central</em> de pas {tex`h = 0.5`}.
+              </li>
+              <li>
+                L'approximation de la tangente de {tex`f`} en {tex`x = 0`} obtenue par le{' '}
+                <em>quotient différentiel arrière</em> de pas {tex`h = 0.5`}.
+              </li>
+            </ul>
+            <p>Nommez les axes.</p>
+          </>
+        }
+        tests={[
+          { type: 'plot', x: [-0.5, 0.5], y: 'np.exp(x)' },
+          { type: 'plot', x: [-0.5, 0.5], y: 'np.exp(0) * (x - 0) + np.exp(0)' },
+          {
+            type: 'plot',
+            x: [-0.5, 0.5],
+            y: '(np.exp(0 + 0.5) - np.exp(0 - 0.5)) / (2 * 0.5) * (x - 0) + np.exp(0)',
+          },
+          {
+            type: 'plot',
+            x: [-0.5, 0.5],
+            y: '(np.exp(0 + 0.5) - np.exp(0)) / (0.5) * (x - 0) + np.exp(0)',
+          },
+          { type: 'axisLabels', x: /x/, y: /y/ },
+        ]}
+      >
+        <p>Comme vous le constatez, sur cet exemple, la différence centrale est plus précise.</p>
+      </Matplotlib>
+    </Sequence>
+  )
+}
+
+export function Derivatives() {
+  return (
+    <Sequence id="derivatives">
+      <Matplotlib
+        prompt={
+          <>
+            <p>Sur l'intervalle {tex`[-1, 1]`}, tracez les courbes suivantes:</p>
+            <ul class="my-2 list-inside list-disc px-2">
+              <li>{tex`f(x) = e^x`}</li>
+              <li>
+                Une approximation de la dérivée de {tex`f`} utilisant le quotient différentiel{' '}
+                <strong>central</strong> de pas {tex`h = 0.5`}
+              </li>
+              <li>
+                Une approximation de la dérivée de {tex`f`} utilisant le quotient différentiel{' '}
+                <strong>avant</strong> de pas {tex`h = 0.5`}
+              </li>
+            </ul>
+            <p>Nommez les axes.</p>
+          </>
+        }
+        tests={[
+          { type: 'plot', x: [-1, 1], y: 'np.exp(x)' },
+          {
+            type: 'plot',
+            x: [-1, 1],
+            y: '(np.exp(x + 0.5) - np.exp(x - 0.5)) / (2 * 0.5)',
+          },
+          {
+            type: 'plot',
+            x: [-1, 1],
+            y: '(np.exp(x + 0.5) - np.exp(x)) / (0.5)',
+          },
+          { type: 'axisLabels', x: /x/, y: /y/ },
+        ]}
+      />
+      <Matplotlib
+        prompt={
+          <>
+            <p>Sur l'intervalle {tex`[-1, 1]`}, tracez les courbes suivantes:</p>
+            <ul class="my-2 list-inside list-disc px-2">
+              <li>
+                la <strong>dérivée</strong> de {tex`f(x) = e^{-x^2}`}
+              </li>
+              <li>
+                Une approximation de la dérivée de {tex`f`} utilisant le quotient différentiel{' '}
+                <strong>central</strong> de pas {tex`h = 10^{-6}`}
+              </li>
+              <li>
+                Une approximation de la dérivée de {tex`f`} utilisant le quotient différentiel{' '}
+                <strong>central</strong> de pas {tex`h = 10^{-20}`}
+              </li>
+            </ul>
+            <p>Nommez les axes.</p>
+          </>
+        }
+        tests={[
+          { type: 'plot', x: [-1, 1], y: '-2*x*np.exp(-x**2)' },
+          {
+            type: 'plot',
+            x: [-1, 1],
+            y: '(np.exp(-(x + 1e-6)**2) - np.exp(-(x - 1e-6)**2)) / (2 * 1e-6)',
+          },
+          {
+            type: 'plot',
+            x: [-1, 1],
+            y: '(np.exp(-(x + 1e-20)**2) - np.exp(-(x - 1e-20)**2)) / (2 * 1e-20)',
+          },
+          { type: 'axisLabels', x: /x/, y: /y/ },
+        ]}
+      />
     </Sequence>
   )
 }
