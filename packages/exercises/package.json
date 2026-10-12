@@ -3,6 +3,7 @@
   "exports": {
     "./math/algebra/Expand": "./math/algebra/Expand.tsx",
     "./math/algebra/Factor": "./math/algebra/Factor.tsx",
+    "./math/algebra/CompleteSquare": "./math/algebra/CompleteSquare.tsx",
     "./math/calculus/Derivative": "./math/calculus/Derivative.tsx",
     "./math/calculus/DerivativeAtPoint": "./math/calculus/DerivativeAtPoint.tsx",
     "./math/Simple": "./math/Simple.tsx",
