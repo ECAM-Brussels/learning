@@ -41,7 +41,7 @@ export function Slope() {
           <p>
             Votre fonction est correcte! <CheckMark value={true} /> Cependant, regardons ce qui se
             passe lorsque nous utilisons votre code avec deux points dont les ordonnées sont
-            proches, tels que {tex`(1, 1)`} et {tex`(1 + 10^{-8}, 1 + 10^{-16})`}.
+            proches, tels que {tex`(1, 1)`} et {tex`(1 + 10^{-15}, 1 + 10^{-16})`}.
           </p>
           <Code
             lang="python"
@@ -70,26 +70,6 @@ export function Slope() {
             {tex`
               \Delta y = \overbrace{(1 + 10^{-16})}^{\approx 1 \ \text{(15 ch. sig.)}} - 1 \approx 0
             `}
-            <p>
-              Remarquez que le problème ne se pose <em>presque pas</em> avec les points{' '}
-              {tex`(1, 0)`} et {tex`(1 + 10^{-15}, 10^{-16})`}.
-            </p>
-            <Code
-              lang="python"
-              run
-              highlight={[-1]}
-              children={
-                ctx.inputs.code +
-                '\n\n' +
-                dedent /* python */ `
-                pente([1, 0], [1 + 1e-15, 1e-16])
-              `
-              }
-            />
-            <p>
-              Dans ce cas-ci, la pente n'est pas exacte car Python ne peut pas représenter{' '}
-              {tex`0.1`} exactement, et l'erreur se propage.
-            </p>
           </Simple>
         </>
       )}
@@ -149,7 +129,7 @@ export function Secant() {
       <Simple
         prompt={
           <p>
-            Quel est la pente de la droite passant par le graphe de {tex`y = f(x)`} aux abscisses{' '}
+            Quelle est la pente de la droite passant par le graphe de {tex`y = f(x)`} aux abscisses{' '}
             {tex`x = a`} et {tex`x = b`}?
           </p>
         }
@@ -159,7 +139,7 @@ export function Secant() {
       <Simple
         prompt={
           <p>
-            Quel est la pente de la droite passant par le graphe de {tex`y = f(x)`} aux abscisses{' '}
+            Quelle est la pente de la droite passant par le graphe de {tex`y = f(x)`} aux abscisses{' '}
             {tex`x`} et {tex`x + h`} ?
           </p>
         }

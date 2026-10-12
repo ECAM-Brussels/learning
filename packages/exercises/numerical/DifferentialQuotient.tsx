@@ -26,7 +26,7 @@ export const DifferentialQuotient = createDerivedStep(
         <p>
           Avec l'aide de Python, calculez le{' '}
           <em>quotient différentiel {translations[props.type ?? 'undefined']}</em> de{' '}
-          {tex`f(x) = ${props.f}`} en {tex`x = ${props.x}`} avec un pas {tex`h = ${props.h}`}.
+          {tex`f(x) = ${props.f}`} en {tex`a = ${props.x}`} avec un pas {tex`h = ${props.h}`}.
         </p>
       </>
     ),
@@ -40,7 +40,7 @@ export const DifferentialQuotient = createDerivedStep(
             f = lambda x: ${props.f.python()}
             x = ${props.x.python()}
             h = ${props.h.python()}
-            if "${props.type}" == "forward" || "${props.type}" == "undefined":
+            if "${props.type}" == "forward" or "${props.type}" == "undefined":
                 output = (f(x + h) - f(x)) / h
             elif "${props.type}" == "backward":
                 output = (f(x) - f(x - h)) / h
