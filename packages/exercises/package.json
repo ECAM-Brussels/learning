@@ -3,6 +3,7 @@
   "exports": {
     "./math/algebra/Expand": "./math/algebra/Expand.tsx",
     "./math/algebra/Factor": "./math/algebra/Factor.tsx",
+    "./math/algebra/CompleteSquare": "./math/algebra/CompleteSquare.tsx",
     "./python/Code": "./python/Code.tsx",
     "./python/Function": "./python/Function.tsx",
     "./python/Matplotlib": "./python/Matplotlib.tsx",
