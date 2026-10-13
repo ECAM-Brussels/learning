@@ -1,5 +1,5 @@
 import { BreadCrumbs, Crumb, Page } from '@learning/components'
-import { getUser } from '@learning/core'
+import { ExerciseOptions, getUser } from '@learning/core'
 import { type RouteDefinition } from '@solidjs/router'
 import type { JSX } from '@solidjs/web/jsx-runtime'
 import { createMemo, Show } from 'solid-js'
@@ -23,8 +23,8 @@ export default function Layout(props: { children: JSX.Element }) {
           sur cet appareil.
         </p>
       </Show>
-      <Crumb href={paths.MN1M} title="Analyse numérique">
-        {props.children}
+      <Crumb href={paths.MN1M} title="MN1M: Méthodes numériques">
+        <ExerciseOptions allowResubmissions>{props.children}</ExerciseOptions>
       </Crumb>
     </Page>
   )

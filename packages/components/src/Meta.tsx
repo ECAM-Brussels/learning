@@ -8,19 +8,20 @@ type Meta = {
   authorized?: () => boolean | Promise<boolean>
 }
 
+export function Meta(props: Meta & { children: JSX.Element }) {
+  const location = useLocation()
+  const authorized = createMemo(() => props.authorized?.() ?? true)
+  return (
+    <Crumb title={props.title} href={location.pathname}>
+      <Show when={authorized()} fallback={<p>Vous n'avez pas l'autorisation de voir cette page</p>}>
+        {props.children}
+      </Show>
+    </Crumb>
+  )
+}
+
 export function defineMeta(meta: Meta) {
   return (props: { children: JSX.Element }) => {
-    const location = useLocation()
-    const authorized = createMemo(() => meta.authorized?.() ?? true)
-    return (
-      <Crumb title={meta.title} href={location.pathname}>
-        <Show
-          when={authorized()}
-          fallback={<p>Vous n'avez pas l'autorisation de voir cette page</p>}
-        >
-          {props.children}
-        </Show>
-      </Crumb>
-    )
+    return <Meta {...meta} {...props} />
   }
 }

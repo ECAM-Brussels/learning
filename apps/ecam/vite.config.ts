@@ -32,7 +32,7 @@ export default defineConfig({
       types: true,
       extensions: ['mdx', 'tsx', 'ts'],
       toPath: (file) => {
-        if (file.endsWith('.exercises')) return undefined
+        if (file.includes('.')) return undefined
         return routePathFromFile(file).replace(/\/_layout$/, '')
       },
     }) as any,

@@ -2,27 +2,35 @@ import { Boundary, Pagination, Scope } from '@learning/components'
 import { useLocation } from '@solidjs/router'
 import { Dynamic, type JSX } from '@solidjs/web'
 import { range } from 'es-toolkit'
-import { createMemo, refresh, type Component } from 'solid-js'
+import { createMemo, onSettled, refresh, useContext, type Component } from 'solid-js'
+import * as v from 'valibot'
 import { useExerciseContext } from './base'
 import { StepContext } from './context'
+import { Options, OptionsContext } from './options'
 
-type Props<T extends object> = {
-  id: string
-} & (
-  | {
-      exercise: Component<T>
-      next: (props: {
-        position: number
-        progress: Record<number, boolean | null | undefined>
-      }) => Promise<T> | T
-    }
-  | {
-      next: Component<{ position: number; progress: Record<number, boolean | null | undefined> }>
-    }
-  | {
-      children: JSX.Element[]
-    }
-)
+type Prettify<T> = {
+  [K in keyof T]: T[K]
+} & {}
+
+type Props<T extends object> = Prettify<
+  {
+    options?: Options<'input'>
+  } & (
+    | {
+        exercise: Component<T>
+        next: (props: {
+          position: number
+          progress: Record<number, boolean | null | undefined>
+        }) => Promise<T> | T
+      }
+    | {
+        next: Component<{ position: number; progress: Record<number, boolean | null | undefined> }>
+      }
+    | {
+        children: JSX.Element[]
+      }
+  )
+>
 
 /**
  * Create a sequence of exercises
@@ -66,41 +74,51 @@ type Props<T extends object> = {
  *   }}
  * />
  */
-export function Sequence<T extends object>(props: Props<T>) {
+export function Sequence<T extends object>(props: Props<T> & { id: string }) {
   const exerciseContext = useExerciseContext()
+
+  const optionsContext = useContext(OptionsContext)
+  const rawOptions = createMemo(() => ({ ...optionsContext(), ...props.options }))
+  const options = createMemo(() => v.parse(Options, rawOptions()))
+  onSettled(() => {
+    const interval = setInterval(() => {
+      refresh(options)
+    }, 1000)
+    return () => clearInterval(interval)
+  })
+
   const sequence = createMemo(() => ({ url: useLocation().pathname, sequenceId: props.id }))
   const progress = createMemo(() => exerciseContext().getProgress(sequence()))
   const stepContext = (sequencePosition = 0) => ({
     ...sequence(),
     sequencePosition,
     position: 0,
-    onAction: () => {
-      refresh(progress)
-    },
   })
   const length = createMemo(() =>
     'children' in props ? props.children.length : Object.keys(progress()).length + 1,
   )
   return (
-    <Pagination progress={progress()}>
-      {range(length()).map((i) => () => (
-        <StepContext value={() => stepContext(i)}>
-          <Boundary fallback="Chargement de l'exercice...">
-            {'children' in props ? (
-              props.children[i]
-            ) : 'exercise' in props ? (
-              <Scope>
-                {() => {
-                  const next = createMemo(() => props.next({ position: i, progress: progress() }))
-                  return <Dynamic component={props.exercise} {...next()} />
-                }}
-              </Scope>
-            ) : (
-              <Dynamic component={props.next} position={i} progress={progress()} />
-            )}
-          </Boundary>
-        </StepContext>
-      ))}
-    </Pagination>
+    <OptionsContext value={rawOptions}>
+      <Pagination progress={progress()} showFeedback={options().showFeedback}>
+        {range(length()).map((i) => () => (
+          <StepContext value={() => stepContext(i)}>
+            <Boundary fallback="Chargement de l'exercice...">
+              {'children' in props ? (
+                props.children[i]
+              ) : 'exercise' in props ? (
+                <Scope>
+                  {() => {
+                    const next = createMemo(() => props.next({ position: i, progress: progress() }))
+                    return <Dynamic component={props.exercise} {...next()} />
+                  }}
+                </Scope>
+              ) : (
+                <Dynamic component={props.next} position={i} progress={progress()} />
+              )}
+            </Boundary>
+          </StepContext>
+        ))}
+      </Pagination>
+    </OptionsContext>
   )
 }

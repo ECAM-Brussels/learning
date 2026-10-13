@@ -50,7 +50,7 @@ export default function Python(props: {
 
 function Output(props: { class?: string; type: string; children: JSX.Element }) {
   return (
-    <div class="not-prose flex items-center gap-2">
+    <div class="not-prose flex items-center gap-2 leading-none">
       <pre class="py-2 text-xs text-slate-700">{props.type}:</pre>
       <pre class={['grow rounded-xs border border-gray-200 p-2 shadow-xs', props.class]}>
         {props.children}

@@ -6,7 +6,7 @@ export function Card(props: { image: string; href: string | PathEnd; children: J
     <a class="not-prose" href={props.href}>
       <section class="rounded-xl bg-white shadow transition ease-in-out hover:scale-105">
         <img src={props.image} class="h-90 w-full rounded-t-xl object-cover" />
-        <div class="prose px-4 py-4">{props.children}</div>
+        <div class="prose px-4 py-4 font-semibold text-slate-800">{props.children}</div>
       </section>
     </a>
   )

@@ -8,6 +8,19 @@
   --font-sans: 'Fira Sans', sans-serif;
 }
 
+@keyframes loading-progress {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+.loading-progress {
+  animation: loading-progress 1.2s ease-in-out infinite;
+}
+
 body {
   @apply bg-slate-50;
 }

@@ -3,6 +3,7 @@ import {
   ComputeEngine,
   type MathJsonExpression,
   N,
+  PythonTarget,
 } from '@cortex-js/compute-engine'
 import { mapAsync, mapValues, range, round } from 'es-toolkit'
 import stringify from 'safe-stable-stringify'
@@ -13,21 +14,12 @@ import symapi from './symapi'
 type MaybeAsync<T> = T | Promise<T>
 
 const ce = new ComputeEngine()
-
-const integrateParams = v.union([
-  v.pipe(
-    v.strictTuple([]),
-    v.transform(() => ['x']),
-  ),
-  v.strictTuple([v.string()]),
-  v.pipe(
-    v.strictTuple([v.string(), v.number(), v.number()]),
-    v.transform(([x, a, b]) => [['Tuple', x, a, b]] as const),
-  ),
-])
+const python = new PythonTarget()
 
 function sanitize<T extends CEExpressionInput>(json: T): T {
   if (json === 'CatalanConstant') return 'G' as T
+  if (json === 'i') return 'ImaginaryUnit' as T
+  if (json === 'e') return 'ExponentialE' as T
   if (typeof json === 'number' || typeof json === 'string') return json
   if (Array.isArray(json)) return json.map(sanitize) as unknown as T
   return json
@@ -39,6 +31,16 @@ const Math = v.union([
     v.transform((input) => ({
       rawInput: input,
       json: sanitize(ce.parse(String(input), { form: 'raw' }).json),
+    })),
+  ),
+  v.pipe(
+    v.tupleWithRest(
+      [v.string()],
+      v.custom<MathJsonExpression>(() => true),
+    ),
+    v.transform((json) => ({
+      rawInput: sanitize(json) as MathJsonExpression,
+      json: sanitize(json) as MathJsonExpression,
     })),
   ),
   v.pipe(
@@ -56,6 +58,18 @@ const Math = v.union([
 ])
 type Math = v.InferInput<typeof Math>
 
+const integrateParams = v.union([
+  v.pipe(
+    v.strictTuple([]),
+    v.transform(() => ['x']),
+  ),
+  v.strictTuple([v.string()]),
+  v.pipe(
+    v.strictTuple([v.string(), Math, Math]),
+    v.transform(([x, a, b]) => [['Tuple', x, a.json, b.json]] as const),
+  ),
+])
+
 export const Expression = v.union([
   v.pipe(
     Math,
@@ -72,7 +86,14 @@ export type Expression<T extends 'input' | 'output' = 'input'> = T extends 'inpu
 
 function expression(input: Math) {
   const { rawInput, json } = v.parse(Math, input)
-  const instructionOps = new Set(['Simplify', 'Expand', 'Factor', 'Derivative', 'Integrate'])
+  const instructionOps = new Set([
+    'Simplify',
+    'Expand',
+    'Factor',
+    'Derivative',
+    'Integrate',
+    'Subs',
+  ])
 
   const hasInstructionOp = (value: MathJsonExpression): boolean => {
     if (!Array.isArray(value)) return false
@@ -85,6 +106,7 @@ function expression(input: Math) {
     rawInput,
     json,
     abs: () => expression({ json: ['Abs', json] }),
+    arg: () => expression({ json: ['Argument', json] }),
     args: () => {
       if (!Array.isArray(json)) throw new Error(`Only arrays have the property args`)
       return json.slice(1) as Math[]
@@ -93,24 +115,38 @@ function expression(input: Math) {
       expression({ json })
         .subs({ [x]: root })
         .isEqual(0),
+    conj: () => expression({ json: ['Conjugate', json] }),
+    count: (symol: string) => {
+      function _count(json: MathJsonExpression): number {
+        if (json === symol) return 1
+        if (!Array.isArray(json)) return 0
+        const [_func, ...args] = json
+        return args.reduce((sum, arg) => sum + _count(arg), 0)
+      }
+      return _count(json)
+    },
     degree: () => symapi.expr.degree({ expr: json }),
     delta: (x: string, a: Math, b: Math) => {
       const f = (t: Math) => expression({ json }).subs({ [x]: t }).json
       return expression({ json: ['Subtract', f(b), f(a)] }).simplify()
     },
-    diff: (x = 'x') => expression({ json: ['Derivative', json, x] }),
+    diff: (x = 'x', at?: Math) => {
+      const derivative: MathJsonExpression = ['Derivative', json, x]
+      if (at === undefined) return expression({ json: derivative })
+      return expression({ json: ['Subs', derivative, x, v.parse(Math, at).json] })
+    },
     encrypt: async () => Promise.resolve(expression({ json }).latex()).then(encrypt),
     expand: () => expression({ json: ['Expand', json] }),
     evaluate: () => ce.expr(json).evaluate(),
-    N: (precision?: number) => {
-      const result = Number(N(expression({ json }).evaluate()))
-      return precision === undefined ? result : round(result, precision)
-    },
+    geq: (other: Math) => ce.expr(['Subtract', json, v.parse(Math, other).json]).isNonNegative,
+    gt: (other: Math) => ce.expr(['Subtract', json, v.parse(Math, other).json]).isPositive,
     factor: () => expression({ json: ['Factor', json] }),
     func: () => {
       if (!Array.isArray(json)) throw new Error(`Only arrays have the property func`)
       return json[0] as string
     },
+    imaginary: () => expression({ json: ['Imaginary', json] }),
+    in: (set: Math) => symapi.expr.inSet({ expr1: json, expr2: v.parse(Math, set).json }),
     integrate: (...params: v.InferInput<typeof integrateParams>) =>
       expression({ json: ['Integrate', json, ...v.parse(integrateParams, params)] }),
     isEqual: async (other: MaybeAsync<Math>, error: number = 0) => {
@@ -121,6 +157,95 @@ function expression(input: Math) {
         return diff <= error
       }
       return await symapi.expr.equal({ expr1: json, expr2: v.parse(Math, await other).json })
+    },
+    isComplexRectangular: () => {
+      const isReal = (expr: MathJsonExpression) => ce.expr(expr).isReal
+      const isImaginary = (expr: MathJsonExpression): boolean => {
+        if (expr === 'ImaginaryUnit') return true
+        if (
+          Array.isArray(expr) &&
+          ['InvisibleOperator', 'Multiply'].includes(expr[0]) &&
+          expr.length === 3 &&
+          isReal(expr[1]) &&
+          expr[2] === 'ImaginaryUnit'
+        )
+          return true
+        if (Array.isArray(expr) && expr[0] === 'Negate' && expr.length === 2)
+          return isImaginary(expr[1])
+        return false
+      }
+
+      if (isReal(json) || isImaginary(json)) return true
+      if (
+        Array.isArray(json) &&
+        ['Add', 'Subtract'].includes(json[0]) &&
+        json.length === 3 &&
+        isReal(json[1]) &&
+        isImaginary(json[2])
+      ) {
+        return true
+      }
+
+      return false
+    },
+    isComplexExponential: () => {
+      function isUnitExponential(json: MathJsonExpression) {
+        if (Array.isArray(json) && json[0] === 'Power' && json.length === 3) {
+          const [_, base, exponent] = json
+          if (
+            base === 'exponentialE' &&
+            ['Multiply', 'InvisibleOperator'].includes(exponent[0]) &&
+            exponent.length === 3 &&
+            (exponent[1] === 'ImaginaryUnit' ||
+              (Array.isArray(exponent[1]) &&
+                exponent[1][0] === 'Negate' &&
+                exponent[1][1] === 'ImaginaryUnit')) &&
+            ce.expr(exponent[2]).isReal
+          )
+            return true
+        }
+        return false
+      }
+      if (isUnitExponential(json)) return true
+      if (
+        Array.isArray(json) &&
+        ['Multiply', 'InvisibleOperator'].includes(json[0]) &&
+        json.length === 3
+      ) {
+        const [_, a, b] = json
+        if (ce.expr(a).isNonNegative && isUnitExponential(b)) return true
+      }
+      return false
+    },
+    isComplexPolar: () => {
+      function isUnitPolar(json: MathJsonExpression) {
+        if (Array.isArray(json) && ['Add', 'Subtract'].includes(json[0]) && json.length === 3) {
+          const [_, a, b] = json
+          if (
+            a[0] === 'Cos' &&
+            ce.expr(a[1]).isReal &&
+            ['InvisibleOperator', 'Multiply'].includes(b[0]) &&
+            b.length === 3 &&
+            b[1] === 'ImaginaryUnit' &&
+            b[2][0] === 'Sin' &&
+            ce.expr(b[2][1]).isReal &&
+            ce.expr(a[1]).isEqual(b[2][1])
+          )
+            return true
+        }
+        return false
+      }
+
+      if (isUnitPolar(json)) return true
+      if (
+        Array.isArray(json) &&
+        ['Multiply', 'InvisibleOperator'].includes(json[0]) &&
+        json.length === 3
+      ) {
+        const [_, a, b] = json
+        if (ce.expr(a).isNonNegative && isUnitPolar(b)) return true
+      }
+      return false
     },
     isEquivalent: async (other: MaybeAsync<Math>) =>
       symapi.expr.equivalent({ expr1: json, expr2: v.parse(Math, await other).json }),
@@ -138,7 +263,16 @@ function expression(input: Math) {
         return symapi.expr.latex({ expr: json })
       }
     },
+    leq: (other: Math) => ce.expr(['Subtract', json, v.parse(Math, other).json]).isNonPositive,
+    lt: (other: Math) => ce.expr(['Subtract', json, v.parse(Math, other).json]).isNegative,
     matches: (other: Math) => symapi.expr.match({ expr1: json, expr2: v.parse(Math, other).json }),
+    mod: (other: Math) => expression({ json: ['Mod', json, v.parse(Math, other).json] }),
+    N: (precision?: number) => {
+      const result = Number(N(expression({ json }).evaluate()))
+      return precision === undefined ? result : round(result, precision)
+    },
+    python: () => python.compile(ce.expr(json)).code,
+    real: () => expression({ json: ['Real', json] }),
     roots: (complex = false) => symapi.expr.roots({ expr: json, complex }),
     simplify: () => expression({ json: ['Simplify', json] }),
     subs: (rawSubstitutions: Record<string, Math>) => {
@@ -148,6 +282,7 @@ function expression(input: Math) {
       )
       return expression({ json: ce.expr(json, { form: 'raw' }).subs(substitutions).json })
     },
+    solve: (x: Math = 'x') => set(['Solve', json, v.parse(Math, x).json]),
     taylor: (x: Math, a: Math, n: number) =>
       expression({
         json: ['Normal', ['Series', json, v.parse(Math, x).json, v.parse(Math, a).json, n]],
@@ -234,9 +369,21 @@ export function quantity(...rawQuantity: v.InferInput<typeof QuantityInput>) {
   }
 }
 
+export function set(input: Math) {
+  const json = v.parse(Math, input).json
+  return {
+    json,
+    intersect: (other: Math) => set(['Intersect', json, v.parse(Math, other).json]),
+    isSubset: async (other: Math) =>
+      symapi.expr.subset({ expr1: json, expr2: v.parse(Math, other).json }),
+    isEqual: async (other: Math) =>
+      symapi.expr.setEqual({ expr1: json, expr2: v.parse(Math, other).json }),
+  }
+}
+
 const Vector = v.array(Math)
 
-function vector(rawComponents: Math[]) {
+export function vector(rawComponents: Math[]) {
   const components = v.parse(Vector, rawComponents)
   return {
     cross: (rawOther: Math[]) => {
@@ -304,13 +451,15 @@ function vector(rawComponents: Math[]) {
 
 export type Quantity = ReturnType<typeof quantity>
 
-export function expr(input: undefined, unit?: undefined): undefined
-export function expr(input: Math[], unit?: undefined): ReturnType<typeof vector>
-export function expr(input: Math, unit?: undefined): Expression<'output'>
-export function expr(input: Math, unit: string): Quantity
-export function expr(input?: Math | Math[], unit?: string) {
-  if (Array.isArray(input)) return vector(input)
+export function expr(input: undefined, type?: undefined): undefined
+export function expr(input: Math, type?: undefined): Expression<'output'>
+export function expr(input: Math, type: 'set'): ReturnType<typeof set>
+export function expr(input: Math[], type: 'vector'): ReturnType<typeof vector>
+export function expr(input: Math, type: string): Quantity
+export function expr(input?: Math | Math[], type?: string) {
   if (input === undefined) return undefined
-  if (unit === undefined) return expression(input)
-  return quantity(input, unit)
+  if (type === undefined) return expression(input as Math)
+  if (type === 'vector') return vector(input as Math[])
+  if (type === 'set') return set(input as Math)
+  return quantity(input as Math, type)
 }

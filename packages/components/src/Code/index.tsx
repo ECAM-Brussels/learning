@@ -5,10 +5,13 @@ import {
   createMemo,
   createSignal,
   Loading,
+  merge,
   Show,
+  useContext,
   type Component,
   type ComponentProps,
 } from 'solid-js'
+import { FormState } from '../Form'
 import Python from '../Python'
 
 const Monaco = clientOnly(() => import('./Monaco'))
@@ -18,7 +21,9 @@ export type EditorProps = {
   class?: JSX.ClassValue | string
   lang: 'python'
   children: string
+  highlight?: number[]
   onChange?: (value: string) => void
+  readOnly?: boolean
 }
 
 type Props = Omit<EditorProps, 'lang'> & {
@@ -29,19 +34,27 @@ type Props = Omit<EditorProps, 'lang'> & {
   math?: boolean
 }
 
-export const Code: Component<Props> = (props) => {
+export const Code: Component<Props> = (rawProps) => {
+  const props = merge({ backend: 'monaco' }, rawProps)
   const [value, setValue] = createSignal(() => props.children)
+  const editor = createMemo(() => {
+    if (isMobile()) return 'codemirror'
+    return props.backend
+  })
+  const formState = useContext(FormState)
   return (
     <Loading fallback={<p>Chargement de l'éditeur...</p>}>
-      <div class="flex flex-col gap-0">
+      <div class="my-4 flex flex-col gap-0">
         <Dynamic
-          component={props.backend === 'monaco' ? Monaco : CodeMirror}
+          component={editor() === 'monaco' ? Monaco : CodeMirror}
           children={value()}
           lang={props.lang}
+          highlight={props.highlight}
           onChange={(newValue) => {
             setValue(newValue)
             props.onChange?.(newValue)
           }}
+          readOnly={props.readOnly ?? formState().readOnly}
         />
         <Show when={props.lang === 'python' && props.run}>
           <Python class="my-0 py-0" value={value()} math={props.math} />
@@ -58,4 +71,11 @@ export function code(props: Omit<ComponentProps<typeof Code>, 'children'>) {
     )
     return <Code {...props} children={code()} />
   }
+}
+
+function isMobile() {
+  return (
+    /Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent) ||
+    (navigator.maxTouchPoints > 0 && window.matchMedia('(pointer: coarse)').matches)
+  )
 }

@@ -1,5 +1,7 @@
+import { type CachedFunction } from '@solidjs/router'
 import { createContext, type Accessor } from 'solid-js'
 import type { StoredStep } from './base'
+import type { Options } from './options'
 
 export type StepContext = {
   url: string
@@ -8,19 +10,21 @@ export type StepContext = {
   position: number
 }
 
-export const StepContext = createContext<Accessor<
-  StepContext & {
-    onAction?: () => void
-  }
-> | null>(null)
+export const StepContext = createContext<Accessor<StepContext> | null>(null)
 
 export type ExerciseContext = {
-  fetchStep: (ctx: StepContext) => Promise<StoredStep | null>
-  getProgress: (
-    ctx: Omit<StepContext, 'position' | 'sequencePosition'>,
-  ) => Promise<Record<number, boolean | null | undefined>>
-  saveStep: (ctx: StepContext, step: StoredStep) => Promise<void>
-  reset: (ctx: Omit<StepContext, 'position'>) => Promise<void>
+  fetchSequence: CachedFunction<
+    (
+      ctx: Omit<StepContext, 'position' | 'sequencePosition'>,
+    ) => Promise<Record<number, Record<number, StoredStep | undefined | null>>>
+  >
+  getProgress: CachedFunction<
+    (
+      ctx: Omit<StepContext, 'position' | 'sequencePosition'>,
+    ) => Promise<Record<number, boolean | null | undefined>>
+  >
+  saveStep: (ctx: StepContext, step: StoredStep, options: Options) => Promise<void>
+  reset: (ctx: Omit<StepContext, 'position'>, options: Options) => Promise<void>
   getStats?: (
     ctx: Omit<StepContext, 'position'>,
   ) => Promise<

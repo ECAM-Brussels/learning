@@ -2,7 +2,12 @@ import pydantic
 import sympy
 from typing import cast
 
-type MathJSON = str | int | float | list["MathJSON"]
+
+class Num(pydantic.BaseModel):
+    num: str
+
+
+type MathJSON = str | int | float | list["MathJSON"] | Num
 
 
 def parse_expr(expr: MathJSON) -> sympy.Expr:
@@ -28,8 +33,12 @@ def parse_expr(expr: MathJSON) -> sympy.Expr:
                 return sympy.Abs(*args, evaluate=False)
             case "Add":
                 return sympy.Add(*args, evaluate=False)
+            case "Argument":
+                return sympy.arg(*args)
             case "Complex":
                 return sympy.Add(args[0], args[1] * sympy.I, evaluate=False)
+            case "Conjugate":
+                return sympy.conjugate(*args)
             case "Divide":
                 if len(args) != 2:
                     raise ValueError("Divide expects exactly 2 arguments")
@@ -40,18 +49,28 @@ def parse_expr(expr: MathJSON) -> sympy.Expr:
                 return sympy.diff(*args)
             case "Delimiter":
                 return args[0]
+            case "Subs":
+                return args[0].subs(args[1], args[2])
             case "Equal":
                 return cast(sympy.Expr, sympy.Eq(*args, evaluate=False))
             case "Expand":
                 return sympy.expand(args[0])
             case "Factor":
                 return sympy.factor(args[0])
+            case "Imaginary":
+                return sympy.im(args[0])
             case "Integrate":
                 return sympy.integrate(*args)
+            case "Interval":
+                return sympy.Interval(*args)
+            case "Intersect":
+                return sympy.Intersection(*args)
             case "InvisibleOperator":
                 return sympy.Mul(*args, evaluate=False)
             case "Multiply":
                 return sympy.Mul(*args, evaluate=False)
+            case "Mod":
+                return sympy.Mod(*args, evaluate=False)
             case "Negate":
                 return -args[0]
             case "Normal":
@@ -60,11 +79,17 @@ def parse_expr(expr: MathJSON) -> sympy.Expr:
                 return sympy.Pow(*args, evaluate=False)
             case "Rational":
                 return sympy.Rational(*args)
+            case "Real":
+                return sympy.re(args[0])
             case "Series":
                 args[3] = args[3] + 1
                 return sympy.series(*args)
+            case "Set":
+                return sympy.FiniteSet(*args)
             case "Simplify":
                 return sympy.simplify(args[0])
+            case "Solve":
+                return sympy.solveset(*args)
             case "Subtract":
                 return sympy.Add(args[0], -args[1], evaluate=False)
             case "Sqrt":
@@ -82,6 +107,11 @@ def parse_expr(expr: MathJSON) -> sympy.Expr:
                 return sympy.sin(*args, evaluate=False)
             case "Tan":
                 return sympy.tan(*args, evaluate=False)
+    if isinstance(expr, Num):
+        try:
+            return sympy.Rational(expr.num)
+        except:
+            raise ValueError(f"Invalid MathJSON number: {expr.num!r}")
     raise ValueError("Not a valid expression")
 
 

@@ -4,6 +4,7 @@ import {
   Boundary,
   Code,
   Crumb,
+  Definition,
   Example,
   Exercise,
   Fa,
@@ -15,7 +16,8 @@ import {
 } from '@learning/components'
 import { getUser, login, logout } from '@learning/core'
 import { MDXProvider } from '@learning/mdx'
-import type { PathEnd } from '@solidjs/router'
+import { useIsRouting, type PathEnd } from '@solidjs/router'
+import { Portal } from '@solidjs/web'
 import { createMemo, Match, Show, Switch, type ParentComponent } from 'solid-js'
 import { paths } from './router'
 
@@ -34,7 +36,7 @@ const NavLink: ParentComponent<{ class?: string; href: PathEnd | string }> = (pr
 function Navbar() {
   const user = createMemo(() => getUser())
   return (
-    <nav class="mx-auto mb-0.5 bg-white shadow-sm">
+    <nav class="mx-auto mb-0.5 bg-white shadow-sm print:hidden">
       <div class="container mx-auto flex items-center justify-between gap-8">
         <NavLink class="text-xl font-bold text-sky-800" href={paths()}>
           learning
@@ -80,44 +82,60 @@ function Navbar() {
   )
 }
 
-export const Layout: ParentComponent = (props) => (
-  <MDXProvider
-    components={{
-      div: (attrs) => (
-        <Switch fallback={<div>{attrs.children}</div>}>
-          <Match when={attrs['data-type'] === 'example'}>
-            <Example {...attrs} />
-          </Match>
-          <Match when={attrs['data-type'] === 'exercise'}>
-            <Exercise {...attrs} />
-          </Match>
-          <Match when={attrs['data-type'] === 'info'}>
-            <Info {...attrs} />
-          </Match>
-          <Match when={attrs['data-type'] === 'question'}>
-            <Question {...attrs} />
-          </Match>
-          <Match when={attrs['data-type'] === 'remark'}>
-            <Remark {...attrs} />
-          </Match>
-        </Switch>
-      ),
-      table: (attrs) => <table class="mx-auto max-w-4/5" {...attrs} />,
-      tr: (attrs) => <tr class="px-2 even:bg-slate-50" {...attrs} />,
-      td: (attrs) => <td class="px-2" {...attrs} />,
-      th: (attrs) => <th class="px-2" {...attrs} />,
-      Code,
-      Highlight,
-      Latex,
-    }}
-  >
-    <Navbar />
-    <div class="container mx-auto">
-      <Boundary>
-        <Crumb href="/" title="Accueil">
-          {props.children}
-        </Crumb>
-      </Boundary>
-    </div>
-  </MDXProvider>
-)
+export const Layout: ParentComponent = (props) => {
+  const routing = useIsRouting()
+  return (
+    <MDXProvider
+      components={{
+        div: (attrs) => (
+          <Switch fallback={<div>{attrs.children}</div>}>
+            <Match when={attrs['data-type'] === 'definition'}>
+              <Definition {...attrs} title={attrs['data-label']} />
+            </Match>
+            <Match when={attrs['data-type'] === 'example'}>
+              <Example {...attrs} title={attrs['data-label']} />
+            </Match>
+            <Match when={attrs['data-type'] === 'exercise'}>
+              <Exercise {...attrs} title={attrs['data-label']} />
+            </Match>
+            <Match when={attrs['data-type'] === 'info'}>
+              <Info {...attrs} title={attrs['data-label']} />
+            </Match>
+            <Match when={attrs['data-type'] === 'question'}>
+              <Question {...attrs} title={attrs['data-label']} />
+            </Match>
+            <Match when={attrs['data-type'] === 'remark'}>
+              <Remark {...attrs} title={attrs['data-label']} />
+            </Match>
+          </Switch>
+        ),
+        table: (attrs) => <table class="mx-auto max-w-4/5" {...attrs} />,
+        tr: (attrs) => <tr class="px-2 even:bg-slate-50" {...attrs} />,
+        td: (attrs) => <td class="px-2" {...attrs} />,
+        th: (attrs) => <th class="px-2" {...attrs} />,
+        Code,
+        Highlight,
+        Latex,
+      }}
+    >
+      <Navbar />
+      <Show when={routing()}>
+        <div class="h-0.5 w-full overflow-hidden rounded-full bg-slate-200">
+          <div class="loading-progress h-full w-1/3 rounded-full bg-sky-300" />
+        </div>
+        <Portal>
+          <div class="fixed inset-0 z-50 flex items-center justify-center bg-white/60">
+            <div class="h-16 w-16 animate-spin rounded-full border-4 border-sky-300 border-t-transparent" />
+          </div>
+        </Portal>
+      </Show>
+      <div class="container mx-auto">
+        <Boundary>
+          <Crumb href="/" title="Accueil" prefix="Learning - ">
+            <div>{props.children}</div>
+          </Crumb>
+        </Boundary>
+      </div>
+    </MDXProvider>
+  )
+}

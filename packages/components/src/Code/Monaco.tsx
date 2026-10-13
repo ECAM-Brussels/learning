@@ -1,5 +1,5 @@
 import * as monaco from 'monaco-editor'
-import { createEffect, createSignal, onSettled } from 'solid-js'
+import { createEffect, createSignal, deep, onSettled } from 'solid-js'
 import type { EditorProps } from './index'
 
 self.MonacoEnvironment = {
@@ -42,7 +42,8 @@ self.MonacoEnvironment = {
 export default function Code(props: EditorProps) {
   let container: HTMLDivElement | undefined
   let editor: monaco.editor.IStandaloneCodeEditor | undefined
-  const [value, setValue] = createSignal(() => props.children)
+  let decorations: monaco.editor.IEditorDecorationsCollection | undefined
+  const [value, setValue] = createSignal(() => props.children ?? '')
 
   createEffect(value, (value) => {
     if (editor?.getValue() !== value) {
@@ -57,24 +58,76 @@ export default function Code(props: EditorProps) {
       if (editor) monaco.editor.setModelLanguage(editor.getModel()!, lang)
     },
   )
+  createEffect(
+    () => props.readOnly,
+    (readOnly) => {
+      if (editor) editor.updateOptions({ readOnly: readOnly ?? false })
+    },
+  )
+
+  function highlight(lines: number[] = []) {
+    decorations?.set(
+      lines.map((line) => {
+        line = line >= 0 ? line : value().split('\n').length - line
+        return {
+          range: new monaco.Range(line, 1, line, 1),
+          options: {
+            isWholeLine: true,
+            className: 'bg-sky-100 bg-opacity-50',
+          },
+        }
+      }),
+    )
+  }
+  createEffect(
+    () => deep(props.highlight),
+    (lines) => {
+      highlight(lines)
+    },
+  )
+
+  function mount() {
+    if (editor || !container) return
+    editor = monaco.editor.create(container, {
+      value: value(),
+      language: props.lang,
+      automaticLayout: true,
+      minimap: { enabled: false },
+      scrollbar: {
+        alwaysConsumeMouseWheel: false,
+      },
+      readOnly: props.readOnly ?? false,
+    })
+    editor.onDidChangeModelContent(() => setValue(editor!.getValue()))
+    editor.updateOptions({ scrollBeyondLastLine: false })
+    editor.onDidContentSizeChange(() => {
+      const height = editor!.getModel()!.getLineCount() * 19 + 18
+      container.style.height = `${height}px`
+      editor!.layout()
+    })
+    decorations = editor.createDecorationsCollection()
+    highlight(props.highlight)
+  }
+
+  function unmount() {
+    editor?.dispose()
+    editor = undefined
+  }
 
   onSettled(() => {
-    if (container) {
-      editor = monaco.editor.create(container, {
-        value: props.children,
-        language: props.lang,
-        automaticLayout: true,
-        minimap: { enabled: false },
-      })
-      editor.onDidChangeModelContent(() => setValue(editor!.getValue()))
-      editor.updateOptions({ scrollBeyondLastLine: false })
-      editor.onDidContentSizeChange(() => {
-        const height = editor!.getModel()!.getLineCount() * 19 + 18
-        container.style.height = `${height}px`
-        editor!.layout()
-      })
+    if (!container) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) mount()
+        else unmount()
+      },
+      { rootMargin: '200px' },
+    )
+    observer.observe(container)
+    return () => {
+      observer.disconnect()
+      unmount()
     }
-    return () => editor?.dispose()
   })
   return <div ref={container!} id="container" class={props.class ?? 'my-0 shadow'} />
 }

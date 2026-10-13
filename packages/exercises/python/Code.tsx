@@ -1,25 +1,39 @@
 import { CheckMark, Code } from '@learning/components'
 import { createStep, omitFromJSON } from '@learning/core'
 import { python } from '@learning/repl'
-import type { JSX } from '@solidjs/web'
 import { allKeyed, mapAsync } from 'es-toolkit'
-import { createMemo, createProjection, For, Show } from 'solid-js'
+import { createEffect, createMemo, createProjection, For, Show } from 'solid-js'
 import * as v from 'valibot'
+
+export const Test = v.variant('test', [
+  v.object({
+    desc: v.optional(v.string()),
+    test: v.union([v.string(), v.null()]),
+    check: v.custom<Parameters<typeof python.test>[2]>(() => true),
+  }),
+  v.object({
+    desc: v.optional(v.string()),
+    test: v.custom<(code: string) => boolean | Promise<boolean>>(
+      (val) => typeof val === 'function',
+    ),
+  }),
+])
+
+async function runTest(code: string, test: v.InferInput<typeof Test>) {
+  if ('check' in test) {
+    return python.test(code, test.test, test.check)
+  } else {
+    const passed = await test.test(code)
+    return { ...test, passed, result: passed, stdout: '' }
+  }
+}
 
 export const PythonCode = createStep({
   name: 'python/code',
   schema: {
     data: {
-      prompt: omitFromJSON(v.custom<JSX.Element>(() => true)),
-      tests: omitFromJSON(
-        v.array(
-          v.object({
-            desc: v.optional(v.string()),
-            test: v.union([v.string(), v.null()]),
-            check: v.custom<Parameters<typeof python.test>[2]>(() => true),
-          }),
-        ),
-      ),
+      prompt: 'jsx',
+      tests: omitFromJSON(v.array(Test)),
       check: omitFromJSON(
         v.optional(v.custom<(code: string) => boolean | Promise<boolean>>(() => true)),
       ),
@@ -30,29 +44,39 @@ export const PythonCode = createStep({
   },
   grade: async (ctx) => {
     const { tests, codeCheck } = await allKeyed({
-      tests: mapAsync(ctx.data.tests, (t) => python.test(ctx.inputs.code, t.test, t.check)),
+      tests: mapAsync(ctx.data.tests, (t) => runTest(ctx.inputs.code, t)),
       codeCheck: ctx.data.check?.(ctx.inputs.code),
     })
     return tests.every((t) => t.passed) && codeCheck !== false
   },
-  prompt: (ctx) => (
-    <>
-      {ctx.data.prompt}
-      <Code
-        lang="python"
-        children={ctx.state.current.code ?? ctx.data.initialCode}
-        onChange={ctx.state.set.bind(null, 'code')}
-        math={ctx.data.math}
-        run
-      />
-    </>
-  ),
+  prompt: (ctx) => {
+    createEffect(
+      () => [ctx.state.current.code, ctx.data.initialCode] as const,
+      ([current, initial]) => {
+        if (current === undefined) {
+          ctx.state.set('code', initial)
+        }
+      },
+    )
+    return (
+      <>
+        {ctx.data.prompt}
+        <Code
+          lang="python"
+          children={ctx.state.current.code ?? ctx.data.initialCode}
+          onChange={ctx.state.set.bind(null, 'code')}
+          math={ctx.data.math}
+          run
+        />
+      </>
+    )
+  },
   feedback: (ctx) => {
     const tests = createProjection(
       () =>
         mapAsync(ctx.data.tests, async (t) => ({
           ...t,
-          ...(await python.test(ctx.inputs.code, t.test, t.check)),
+          ...(await runTest(ctx.inputs.code, t)),
         })),
       [],
     )
@@ -65,24 +89,26 @@ export const PythonCode = createStep({
           {tests.length}
           <CheckMark value={tests.every((t) => t.passed) && valid() !== false} />
         </summary>
-        <For each={tests}>
-          {(test) => (
-            <li>
-              <code>
-                {test.desc ?? test.test ?? 'Résultat final'} -&gt; {test.result}
-                {test.stdout}
-              </code>
-              <CheckMark value={test.passed} />
-            </li>
-          )}
-        </For>
-        <Show when={valid() !== undefined}>
-          {
-            <li>
-              Le code est valide <CheckMark value={valid()} />
-            </li>
-          }
-        </Show>
+        <ul class="list-disc pl-4">
+          <For each={tests}>
+            {(test) => (
+              <li>
+                <code>
+                  {test.desc ?? test.test ?? 'Résultat final'} -&gt; {test.result}
+                  {test.stdout}
+                </code>
+                <CheckMark value={test.passed} />
+              </li>
+            )}
+          </For>
+          <Show when={valid() !== undefined}>
+            {
+              <li>
+                Le code est valide <CheckMark value={valid()} />
+              </li>
+            }
+          </Show>
+        </ul>
       </details>
     )
   },

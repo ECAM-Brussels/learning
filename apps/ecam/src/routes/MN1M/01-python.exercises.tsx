@@ -1,10 +1,12 @@
 import { Attempt, CheckMark, Highlight, Question } from '@learning/components'
-import { Exercise, expr, Sequence, tex } from '@learning/core'
+import { createDerivedStep, Exercise, expr, omitFromJSON, Sequence, tex } from '@learning/core'
+import { MultipleChoice } from '@learning/exercises/MultipleChoice'
 import { PythonCode } from '@learning/exercises/python/Code'
 import { python, type FinalOutput } from '@learning/repl'
 import { type JSX } from '@solidjs/web'
 import { allKeyed, dedent } from 'es-toolkit'
 import { createMemo, createProjection, createSignal, For, merge, Show } from 'solid-js'
+import * as v from 'valibot'
 
 export function Integer(rawProps: {
   mode?: 'decimal' | 'base' | 'both'
@@ -173,19 +175,18 @@ export function Print(props: {
             }
           >
             <p>
-              Pour afficher le message{' '}
+              Malheureusement, la réponse est incorrecte. Pour afficher le message{' '}
               <input
-                class="border font-mono"
+                class="border p-1 font-mono"
                 value={message()}
                 onInput={(e) => setMessage(e.target.value)}
               />{' '}
               en Python, tapez:
             </p>
             <Highlight lang="python" code={`print('${message().replace("'", "\\'")}')`} />
-            <details class="text-sm">
-              <summary>Prêt.e à réessayer l'exercice?</summary>
-              <ctx.Self />
-            </details>
+            <p>
+              Cliquez sur <em>Recommencer l'exercice</em> pour soumettre une nouvelle tentative.
+            </p>
           </Show>
         )
       }}
@@ -198,252 +199,302 @@ export async function getRep(number: string) {
   return python.output(code).then((r) => r.result as string)
 }
 
-export function Calculator(props: {
-  children?: JSX.Element
-  prompt: string
-  answer: number | string
-  inexact?: string[]
-}) {
-  return (
-    <PythonCode
-      prompt={props.children ?? <p>Utilisez Python pour calculer {tex`${props.prompt}`}</p>}
-      tests={[
-        {
-          test: null,
-          check: ({ result }) => result === String(props.answer),
-        },
-      ]}
-      feedback={(ctx) => (
-        <Show when={!ctx.correct}>
-          <ctx.Self />
-        </Show>
-      )}
-    >
-      <Show when={props.inexact !== undefined}>
+export const Calculator = createDerivedStep(
+  PythonCode,
+  {
+    children: omitFromJSON(v.optional(v.custom<JSX.Element>(() => true))),
+    prompt: v.string(),
+    answer: v.union([v.number(), v.string()]),
+    inexact: v.optional(v.array(v.string())),
+    rounded: v.optional(v.boolean()),
+  },
+  (props) => ({
+    prompt: props.children ?? <p>Utilisez Python pour calculer {tex`${props.prompt}`}</p>,
+    tests: [
+      {
+        test: null,
+        check: ({ result }) => result === String(props.answer),
+      },
+    ],
+  }),
+  {
+    children: (props) => (
+      <Show when={props.data.inexact !== undefined || props.data.rounded}>
         <Exercise
           schema={{ data: {}, inputs: { attempt: 'expr' } }}
           data={{}}
           prompt={(ctx) => (
             <>
-              <p>Quel aurait été le résultat théorique?</p>
+              <p>Quel aurait dû être le résultat?</p>
               <Attempt>
-                {tex`${props.prompt} =`} {ctx.inputs.attempt}
+                {tex`${props.data.prompt} =`} {ctx.inputs.attempt}
               </Attempt>
             </>
           )}
-          grade={(ctx) => ctx.inputs.attempt.isEqual(props.prompt)}
+          grade={(ctx) => ctx.inputs.attempt.isEqual(props.data.prompt)}
           feedback={(ctx) => {
             const reps = createProjection(
-              () => allKeyed(Object.fromEntries(props.inexact!.map((n) => [n, getRep(n)]))),
+              () => allKeyed(Object.fromEntries(props.data.inexact!.map((n) => [n, getRep(n)]))),
               {},
             )
             return (
               <>
                 <Show when={!ctx.correct}>
                   <p>On vérifie que</p>
-                  {tex`${props.prompt} = ${expr(props.prompt).simplify()}`}
+                  {tex`${props.data.prompt} = ${expr(props.data.prompt).simplify()}`}
                 </Show>
                 <Question>Pourquoi la réponse de Python est-elle incorrecte?</Question>
-                <p>
-                  Puisque l'ordinateur utilise le <strong>binaire</strong>, certains des nombres du
-                  code ont été remplacés par des <strong>approximations</strong>. Dans ce cas-ci:
-                </p>
-                <table>
-                  <thead>
-                    <tr>
-                      <th class="text-right">Nombre entré</th>
-                      <th>
-                        Nombre réellement utilisé par <code>Python</code>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <For each={props.inexact}>
-                      {(n) => (
-                        <tr>
-                          <td class="text-right">{tex`${n}`}</td>
-                          <td>
-                            <code>{reps[n]}</code>
-                          </td>
-                        </tr>
-                      )}
-                    </For>
-                  </tbody>
-                </table>
-                <p>
-                  {props.inexact!.length > 0 ? 'Ces approximations' : 'Cette approximation'} se
-                  propage ensuite dans les calculs.
-                </p>
+                <Show when={props.data.rounded}>
+                  <p>
+                    Pour les nombres <strong>non entiers</strong>, Python travaille avec une
+                    précision d'environ <strong>15 chiffres significatifs</strong>.
+                  </p>
+                </Show>
+                <Show when={props.data.inexact?.length}>
+                  <p>
+                    Puisque l'ordinateur utilise le <strong>binaire</strong>, certains des nombres
+                    du code ont été remplacés par des <strong>approximations</strong>. Dans ce
+                    cas-ci:
+                  </p>
+                  <table class="mx-auto my-4">
+                    <thead>
+                      <tr class="border-b border-gray-200">
+                        <th class="px-4 text-right">Nombre entré</th>
+                        <th class="px-4 text-left">
+                          Nombre réellement utilisé par <code>Python</code>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <For each={props.data.inexact}>
+                        {(n) => (
+                          <tr>
+                            <td class="px-4 py-2">{tex`${n}`}</td>
+                            <td class="px-4 py-2">
+                              <code>{reps[n]}</code>
+                            </td>
+                          </tr>
+                        )}
+                      </For>
+                    </tbody>
+                  </table>
+                  <p>
+                    {props.data.inexact!.length > 0
+                      ? 'Ces approximations se propagent'
+                      : 'Cette approximation se propage'}{' '}
+                    ensuite dans les calculs. Nous verrons cela plus en détail plus tard.
+                  </p>
+                </Show>
               </>
             )
           }}
         />
       </Show>
-    </PythonCode>
-  )
-}
+    ),
+    feedback: (ctx) => (
+      <Show
+        when={!ctx.correct}
+        fallback={
+          <p>
+            Correct! <CheckMark value={true} />
+          </p>
+        }
+      >
+        <p>
+          La réponse est incorrecte. <CheckMark value={false} />
+        </p>
+      </Show>
+    ),
+  },
+)
 
-export function Variables(props: {
-  answer: string | number
-  calculate: JSX.Element
-  vars: Record<string, number>
-}) {
-  const tests = createMemo(() => [
-    ...Object.entries(props.vars).map(([name, value]) => ({
-      test: name,
-      check: ({ result }: FinalOutput) => result === String(value),
-    })),
+export const Variables = createDerivedStep(
+  PythonCode,
+  {
+    answer: v.union([v.number(), v.string()]),
+    calculate: omitFromJSON(v.custom<JSX.Element>(() => true)),
+    vars: v.record(v.string(), v.number()),
+  },
+  (props) => ({
+    prompt: (
+      <>
+        <p>Définissez:</p>
+        <ul class="list-disc pl-8">
+          <For each={Object.entries(props.vars)}>
+            {([name, value]) => (
+              <li>
+                la variable <code>{name}</code> avec comme valeur <code>{value}</code>
+              </li>
+            )}
+          </For>
+        </ul>
+        Ensuite, utilisez {Object.keys(props.vars).length > 1 ? 'ces variables' : 'cette variable'}{' '}
+        pour calculer {props.calculate}.
+      </>
+    ),
+    tests: [
+      ...Object.entries(props.vars).map(([name, value]) => ({
+        test: name,
+        check: ({ result }: FinalOutput) => result === String(value),
+      })),
+      {
+        desc: `La réponse finale est correcte`,
+        test: null,
+        check: ({ result }: FinalOutput) => result === String(props.answer),
+      },
+    ],
+  }),
+)
+
+export const LinearCombination = createDerivedStep(
+  PythonCode,
+  {
+    c: v.tuple([v.number(), v.number()]),
+    v: v.tuple([v.array(v.number()), v.array(v.number())]),
+  },
+  (props) => ({
+    prompt: (
+      <>
+        <p>
+          Calculez la combinaison linéaire suivante avec <code>numpy</code>:
+        </p>
+        {tex`
+          ${props.c[0]} ${expr(props.v[0])} ${props.c[1] > 0 ? '+' : ''} ${props.c[1]} ${expr(props.v[1])}
+        `}
+      </>
+    ),
+    tests: [
+      {
+        test: null,
+        check: async ({ result }) => {
+          const { result: answer } = await python.output(dedent /* python */ `
+            import numpy as np
+            (${props.c[0]}) * np.array([${props.v[0].join(',')}]) + (${props.c[1]}) * np.array([${props.v[1].join(',')}])
+          `)
+          return result === answer
+        },
+      },
+      {
+        desc: 'numpy est importé',
+        test: (code) => code.includes('numpy'),
+      },
+      {
+        desc: 'Le code comporte une addition ou soustraction',
+        test: (code) => code.includes('+') || code.includes('-'),
+      },
+      {
+        desc: 'Le code comporte au moins deux vecteurs',
+        test: (code) => (code.match(/array/g)?.length ?? 0) >= 2,
+      },
+    ],
+  }),
+)
+
+export const VectorProduct = createDerivedStep(
+  PythonCode,
+  {
+    type: v.picklist(['dot', 'cross']),
+    v: v.tuple([v.array(v.number()), v.array(v.number())]),
+  },
+  (props) => ({
+    prompt: (
+      <>
+        <p>
+          Avec l'aide de <code>numpy</code>, calculez le produit{' '}
+          {props.type === 'dot' ? 'scalaire' : 'vectoriel'}
+        </p>
+        {tex`
+          ${expr(props.v[0])} ${props.type === 'dot' ? `\\cdot` : `\\times`} ${expr(props.v[1])}
+        `}
+      </>
+    ),
+    tests: [
+      {
+        test: null,
+        check: async ({ result }) => {
+          const { result: answer } = await python.output(dedent /* python */ `
+            import numpy as np
+            np.${props.type}([${props.v[0].join(',')}], [${props.v[1].join(',')}])
+          `)
+          return result === answer
+        },
+      },
+    ],
+    check: (code) => code.includes('numpy') && (code.includes(props.type) || code.includes('@')),
+  }),
+)
+
+export const Vectorization = createDerivedStep(
+  PythonCode,
+  {
+    x: v.array(v.string()),
+    fn: v.string(),
+    latex: omitFromJSON(v.custom<(x: string) => string>(() => true)),
+  },
+  (props) => ({
+    prompt: (
+      <>
+        <p>
+          Avec l'aide de <code>numpy</code>, calculez les coordonnées du vecteur
+        </p>
+        {tex`
+          \begin{pmatrix}
+            ${props.x.map((x) => props.latex(x)).join('\\\\')}
+          \end{pmatrix}
+        `}
+      </>
+    ),
+    tests: [
+      {
+        test: null,
+        check: async ({ result }) => {
+          const { result: answer } = await python.output(dedent /* python */ `
+            import numpy as np
+            np.${props.fn}([${props.x.join(',')}])
+          `)
+          return result === answer
+        },
+      },
+    ],
+    check: (code) => code.includes('numpy') && code.split(props.fn).length < props.x.length,
+  }),
+)
+
+const Norm = createDerivedStep(PythonCode, { x: v.array(v.number()) }, (props) => ({
+  prompt: (
+    <>
+      <p>
+        Avec l'aide de <code>numpy</code>, calculez la norme du vecteur
+      </p>
+      {tex`
+        \begin{pmatrix}
+          ${props.x.join('\\\\')}
+        \end{pmatrix}
+      `}
+    </>
+  ),
+  tests: [
     {
-      desc: `La réponse finale est correcte`,
       test: null,
-      check: ({ result }: FinalOutput) => result === String(props.answer),
+      check: async ({ result }) => {
+        const { result: answer } = await python.output(dedent /* python */ `
+          import numpy as np
+          np.linalg.norm([${props.x.join(',')}])
+        `)
+        return result === answer
+      },
     },
-  ])
-  return (
-    <PythonCode
-      prompt={
-        <>
-          <p>Définissez:</p>
-          <ul>
-            <For each={Object.entries(props.vars)}>
-              {([name, value]) => (
-                <li>
-                  la variable <code>{name}</code> avec comme valeur <code>{value}</code>
-                </li>
-              )}
-            </For>
-          </ul>
-          Ensuite, utilisez ces variables pour calculer {props.calculate}.
-        </>
-      }
-      tests={tests()}
-    />
-  )
-}
+  ],
+}))
 
-export function LinearCombination(props: { c: [number, number]; v: [number[], number[]] }) {
-  return (
-    <PythonCode
-      prompt={
-        <>
-          <p>
-            Calculez la combinaison linéaire suivante avec <code>numpy</code>:
-          </p>
-          {tex`
-            ${props.c[0]} ${expr(props.v[0])} ${props.c[1] > 0 ? '+' : ''} ${props.c[1]} ${expr(props.v[1])}
-          `}
-        </>
-      }
-      tests={[
-        {
-          test: null,
-          check: async ({ result }) => {
-            const { result: answer } = await python.output(dedent /* python */ `
-              import numpy as np
-              (${props.c[0]}) * np.array([${props.v[0].join(',')}]) + (${props.c[1]}) * np.array([${props.v[1].join(',')}])
-            `)
-            return result === answer
-          },
-        },
-      ]}
-    />
-  )
-}
-
-export function VectorProduct(props: { v: [number[], number[]]; type: 'dot' | 'cross' }) {
-  return (
-    <PythonCode
-      prompt={
-        <>
-          <p>
-            Avec l'aide de <code>numpy</code>, calculez le produit{' '}
-            {props.type === 'dot' ? 'scalaire' : 'vectoriel'}
-          </p>
-          {tex`
-            ${expr(props.v[0])} ${props.type === 'dot' ? `\\cdot` : `\\times`} ${expr(props.v[1])}
-          `}
-        </>
-      }
-      tests={[
-        {
-          test: null,
-          check: async ({ result }) => {
-            const { result: answer } = await python.output(dedent /* python */ `
-              import numpy as np
-              np.${props.type}([${props.v[0].join(',')}], [${props.v[1].join(',')}])
-            `)
-            return result === answer
-          },
-        },
-      ]}
-      check={(code) => code.includes('numpy') && code.includes(props.type)}
-    />
-  )
-}
-
-export function Vectorization(props: { x: string[]; fn: string; latex: (x: string) => string }) {
-  return (
-    <PythonCode
-      prompt={
-        <>
-          <p>
-            Avec l'aide de <code>numpy</code>, calculez les coordonnées du vecteur
-          </p>
-          {tex`
-            \begin{pmatrix}
-              ${props.x.map((x) => props.latex(x)).join('\\\\')}
-            \end{pmatrix}
-          `}
-        </>
-      }
-      tests={[
-        {
-          test: null,
-          check: async ({ result }) => {
-            const { result: answer } = await python.output(dedent /* python */ `
-              import numpy as np
-              np.${props.fn}([${props.x.join(',')}])
-            `)
-            return result === answer
-          },
-        },
-      ]}
-      check={(code) => code.includes('numpy') && code.split(props.fn).length < props.x.length}
-    />
-  )
-}
-
-export function Norm(props: { x: number[] }) {
-  return (
-    <PythonCode
-      prompt={
-        <>
-          <p>
-            Avec l'aide de <code>numpy</code>, calculez la norme du vecteur
-          </p>
-          {tex`
-            \begin{pmatrix}
-              ${props.x.join('\\\\')}
-            \end{pmatrix}
-          `}
-        </>
-      }
-      tests={[
-        {
-          test: null,
-          check: async ({ result }) => {
-            const { result: answer } = await python.output(dedent /* python */ `
-              import numpy as np
-              np.linalg.norm([${props.x.join(',')}])
-            `)
-            return result === answer
-          },
-        },
-      ]}
-      check={(code) => code.includes('numpy') && code.includes('linalg.norm')}
-    />
-  )
-}
+export const NormSequence = () => (
+  <Sequence id="norm">
+    <Norm x={[-14, -13, 35]} />
+    <Norm x={[-3, -7, 8]} />
+    <Norm x={[-13, 23, 7, -15, 12]} />
+    <Norm x={[-13, 3, -27, -18, 24, 0.5]} />
+  </Sequence>
+)
 
 export function Review() {
   return (
@@ -452,8 +503,8 @@ export function Review() {
         prompt={
           <p>
             Avec l'aide de <code>numpy</code>, calculez le volume du parallélépipède engendré par
-            les vecteurs {tex`\vec a = (1, 2, 3)`}, {tex`\vec b = (4, 5, 6)`} et{' '}
-            {tex`\vec c = (7, 8, 9)`}.
+            les vecteurs {tex`\vec a = (1, -2, 3)`}, {tex`\vec b = (4, 5, -6)`} et{' '}
+            {tex`\vec c = (7, 8, -9)`}.
           </p>
         }
         tests={[
@@ -462,22 +513,26 @@ export function Review() {
             check: async ({ result }) => {
               const { result: answer } = await python.output(dedent /* python */ `
                 import numpy as np
-                a = np.array([1, 2, 3])
-                b = np.array([4, 5, 6])
-                c = np.array([7, 8, 9])
+                a = np.array([1, -2, 3])
+                b = np.array([4, 5, -6])
+                c = np.array([7, 8, -9])
                 np.abs(np.dot(a, np.cross(b, c)))
               `)
               return result === answer
             },
           },
         ]}
-        check={(code) => code.includes('numpy') && code.includes('cross') && code.includes('dot')}
+        check={(code) =>
+          code.includes('numpy') &&
+          code.includes('cross') &&
+          (code.includes('dot') || code.includes('@'))
+        }
       />
       <PythonCode
         prompt={
           <p>
-            Avec l'aide de <code>numpy</code>, calculez la distance entre les {tex`A(-1, 7, -8)`} et{' '}
-            {tex`B(4, -17, -6)`}.
+            Avec l'aide de <code>numpy</code>, calculez la distance entre les points{' '}
+            {tex`A(-1, 7, -8)`} et {tex`B(4, -17, -6)`}.
           </p>
         }
         tests={[
@@ -521,6 +576,129 @@ export function Review() {
         ]}
         check={(code) => code.includes('numpy') && code.includes('arccos')}
       />
+      <PythonCode
+        prompt={
+          <p>
+            À l'aide de <code>numpy</code>, calculez la <strong>norme</strong> du vecteur{' '}
+            {tex`\vec v = (3, -2, -4, 9)`},{' '}
+            <em>
+              sans utiliser <code>linalg.norm</code>.
+            </em>
+          </p>
+        }
+        tests={[
+          {
+            test: null,
+            check: async ({ result }) => {
+              const { result: answer } = await python.output(dedent /* python */ `
+                import numpy as np
+                np.linalg.norm([3, -2, -4, 9])
+              `)
+              return result === answer
+            },
+          },
+        ]}
+        check={(code) =>
+          code.includes('numpy') && code.includes('sqrt') && !code.includes('linalg')
+        }
+      />
+      <PythonCode
+        prompt={
+          <p>
+            À l'aide de <code>numpy</code>, calculez la <strong>projection vectorielle</strong> du
+            vecteur {tex`\vec a = (4, -3, 2, 9)`} sur le vecteur {tex`\vec b = (-6, 1, 13, -4)`}.
+          </p>
+        }
+        tests={[
+          {
+            test: null,
+            check: async ({ result }) => {
+              const { result: answer } = await python.output(dedent /* python */ `
+                import numpy as np
+                a = np.array([4, -3, 2, 9])
+                b = np.array([-6, 1, 13, -4])
+                (np.dot(a, b) / np.dot(b, b)) * b
+              `)
+              return result === answer
+            },
+          },
+        ]}
+        check={(code) => code.includes('numpy')}
+      />
     </Sequence>
+  )
+}
+
+export const Representable = createDerivedStep(
+  MultipleChoice,
+  { x: 'expr' },
+  (props) => ({
+    prompt: (
+      <p>Le nombre {tex`${props.x}`} est représentable en binaire avec un nombre fini de bits</p>
+    ),
+    choices: new Map([
+      ['true', 'Vrai'],
+      ['false', 'Faux'],
+    ]),
+    grade: (sel) => {
+      const expr = props.x.simplify().evaluate().json
+      if (!Array.isArray(expr) || !['Rational', 'Divide'].includes(expr[0]))
+        throw new Error('Expected a rational number')
+      const [_, m, n] = expr as [string, number, number]
+      const answer = n > 0 && (n & (n - 1)) === 0
+      return sel.equals([answer ? 'true' : 'false'])
+    },
+  }),
+  {
+    feedback: (ctx) => {
+      const frac = () => ctx.data.x.simplify().evaluate().json as [string, number, number]
+      const powerOfTwo = (n: number) => n > 0 && (n & (n - 1)) === 0
+      const representable = () => powerOfTwo(frac()[2])
+      const binary = () => (frac()[1] / frac()[2]).toString(2)
+      return (
+        <>
+          <Show when={ctx.correct}>
+            <p>
+              Correct! <CheckMark value={true} />
+            </p>
+          </Show>
+          <p>
+            Après simplification, on obtient {tex`\frac{${frac()[1]}}{${frac()[2]}}`}, et le
+            dénominateur {tex`${frac()[2]}`} {representable() ? 'est' : "n'est pas"} une puissance
+            de {tex`2`}. Dès lors, le nombre {tex`${ctx.data.x}`}{' '}
+            {representable() ? 'est' : "n'est pas"} représentable avec un nombre fini de bits.
+          </p>
+          <p>En fait,</p>
+          {tex`
+            ${ctx.data.x} = (${binary()}${representable() ? '' : '\\dots'})_{2}
+          `}
+        </>
+      )
+    },
+  },
+)
+
+export function Input(props: { number: number; onChange?: (n: number) => void }) {
+  return (
+    <input
+      class="rounded border border-gray-500 p-2"
+      value={props.number}
+      onInput={(e) => {
+        const newNumber = parseFloat(e.target.value)
+        if (!isNaN(newNumber)) {
+          props.onChange?.(newNumber)
+        }
+      }}
+    />
+  )
+}
+
+export const BinaryRepresentation = (props: { value: number }) => {
+  const binary = () => props.value.toString(2)
+  return (
+    <code>
+      {binary()}
+      {(binary().split('.').at(1)?.length ?? 0) > 10 ? '...' : ''}
+    </code>
   )
 }

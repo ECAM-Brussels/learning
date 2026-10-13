@@ -37,6 +37,10 @@ export type Input = {
 }
 
 async function* run(code: string, options?: { math: boolean }) {
+  if (!code) {
+    yield { id: crypto.randomUUID(), result: '' }
+    return
+  }
   const promiseId = crypto.randomUUID()
   const iterator = new EventIterator<Output>(({ push, stop }) => {
     const listener = (event: MessageEvent<Output>) => {

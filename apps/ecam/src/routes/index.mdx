@@ -1,17 +1,13 @@
 import { Card } from '@learning/components'
 import { paths } from '../router'
-import mathematicalModeling from './modeling/banner.jpg'
 import mathsBasics from './MA1M/banner.png'
 import numericalAnalysis from './MN1M/banner.jpg'
 
 <div class="mt-8 gap-8 lg:grid lg:grid-cols-2">
   <Card image={numericalAnalysis} href={paths.MN1M}>
-    Analyse numérique
+    Méthodes numériques
   </Card>
-  <Card image={mathsBasics} href={paths.mathsbasics}>
+  <Card image={mathsBasics} href={paths.MA1M}>
     Mathématiques de base
-  </Card>
-  <Card image={mathematicalModeling} href={paths.modeling}>
-    Modélisation mathématique
   </Card>
 </div>

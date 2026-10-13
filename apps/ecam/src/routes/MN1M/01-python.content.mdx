@@ -1,24 +1,6 @@
 import { createMemo, createSignal } from 'solid-js'
-import { hasPermissions, Sequence, tex } from '@learning/core'
-import { defineMeta } from '@learning/components'
-import { PythonCode } from '@learning/exercises/python/Code'
-import {
-  Calculator,
-  getRep,
-  Integer,
-  LinearCombination,
-  Norm,
-  Print,
-  Review,
-  Variables,
-  Vectorization,
-  VectorProduct,
-} from './01-python.exercises'
-
-export default defineMeta({
-  title: 'Séance 1: Introduction à Python',
-  authorized: () => hasPermissions(['draft:read']),
-})
+import { Sequence, tex } from '@learning/core'
+import * as Exercise from './01-python.exercises'
 
 # Introduction à Python
 
@@ -27,14 +9,15 @@ Nous vous invitons à modifier les morceaux de code,
 et à **soumettre les exercices**
 pour vérifier vos réponses et _sauvegarder votre progrès_.
 
-:::exercise
+:::exercise[Hello world]
 
 Pour votre premier exercice,
-nous allons commercer par afficher un message à l'écran.
+nous allons commencer par afficher un message à l'écran.
 
-<Print id="hello-world" message="Vive Python" initialCode="print('Hello world')">
-  Modifiez le code pour afficher le message `Vive Python` à la place de `Hello world`.
-</Print>
+<Exercise.Print id="hello-world" message="Vive Python" initialCode="print('Hello world')">
+  Modifiez le code pour afficher le message `Vive Python` à la place de `Hello world`. Ensuite,
+  cliquez sur le bouton **Soumettre** pour vérifier votre réponse.
+</Exercise.Print>
 
 :::
 
@@ -44,7 +27,7 @@ La première chose que nous apprendrons est d'_utiliser Python comme une simple 
 La syntaxe est relativement intuitive,
 comme le montre l'exemple suivant:
 
-:::example
+:::example[Opérations arithmétiques]
 
 ```python run
 (3 + 5) * 2
@@ -54,15 +37,16 @@ comme le montre l'exemple suivant:
 
 Voici un tableau récapitulatif des opérations de base en Python:
 
-| Concept            | Exemple mathématique | Code Python |
-| ------------------ | -------------------- | ----------- |
-| Addition           | $3 + 5$              | `3 + 5`     |
-| Soustraction       | $13 - 4$             | `13 - 4`    |
-| Multiplication     | $3 \cdot 4$          | `3 * 4`     |
-| Division           | $\frac 3 4$          | `3 / 4`     |
-| Exponentiation     | $3^4$                | `3 ** 4`    |
-| Séparateur décimal | {tex`3{,}14`}        | `3.14`      |
-| Nombre complexe    | $3 + 4i$             | `3 + 4j`    |
+| Concept               | Exemple mathématique | Code Python |
+| --------------------- | -------------------- | ----------- |
+| Addition              | $3 + 5$              | `3 + 5`     |
+| Soustraction          | $13 - 4$             | `13 - 4`    |
+| Multiplication        | $3 \cdot 4$          | `3 * 4`     |
+| Division              | $\frac 3 4$          | `3 / 4`     |
+| Exponentiation        | $3^4$                | `3 ** 4`    |
+| Séparateur décimal    | {tex`3{,}14`}        | `3.14`      |
+| Nombre complexe       | $3 + 4i$             | `3 + 4j`    |
+| Notation scientifique | $1.3 \cdot 10^{-9}$  | `1.3e-9`    |
 
 Nous attirons votre attention sur les points suivants:
 
@@ -73,23 +57,25 @@ Nous attirons votre attention sur les points suivants:
   Le `j` doit obligatoirement suivre un nombre,
   par exemple $i$ s'écrit `1j` et $-i$ s'écrit `-1j`.
 
-Nous vous invitons maintenant à résoudre les exercices suivants:
+Nous vous invitons maintenant à résoudre les exercices suivants.
+Si vous n'avez pas encore vu les nombres complexes,
+vous pouvez ignorer ces exercices et les faire plus tard.
 
-:::exercise
+:::exercise[Opérations arithmétiques]
 
 <Sequence id="python-as-calculator">
-  <Calculator prompt="0.1 \cdot 0.1" answer={0.1 * 0.1} inexact={['0.1']} />
-  <Calculator prompt="1.1 + 2.2" answer={1.1 + 2.2} inexact={['1.1', '2.2']} />
-  <Calculator
+  <Exercise.Calculator prompt="4^3" answer={4 ** 3} />
+  <Exercise.Calculator prompt="10^{15} + 0.01" answer={10 ** 15 + 0.01} rounded />
+  <Exercise.Calculator prompt="0.1 \cdot 0.1" answer={0.1 * 0.1} inexact={['0.1']} />
+  <Exercise.Calculator prompt="1.1 + 2.2" answer={1.1 + 2.2} inexact={['1.1', '2.2']} />
+  <Exercise.Calculator
     prompt="0.1 + 0.1 + 0.1 - 0.3"
     answer={0.1 + 0.1 + 0.1 - 0.3}
     inexact={['0.1', '0.3']}
   />
-  <Calculator prompt="i^2" answer="(-1+0j)" />
-  <Calculator prompt="(3 + 2i)^5" answer="(-597+122j)" />
-  <Calculator prompt="\sqrt[3]{5}" answer={5 ** (1 / 3)} />
-  <Calculator prompt="4^3" answer={4 ** 3} />
-  <Calculator prompt="10^{15} + 0.01" answer={10 ** 15 + 0.01} />
+  <Exercise.Calculator prompt="i^2" answer="(-1+0j)" />
+  <Exercise.Calculator prompt="\sqrt[3]{5}" answer={5 ** (1 / 3)} />
+  <Exercise.Calculator prompt="(3 + 2i)^5" answer="(-597+122j)" />
 </Sequence>
 
 :::
@@ -104,40 +90,17 @@ La raison est que l'ordinateur utilise le **binaire** pour stocker les nombres.
 Voici quelques exemples de nombres décimaux et leur représentation binaire:
 
 export const [number, setNumber] = createSignal(0.3)
-export const binary = () => number().toString(2)
-export const real = createMemo(() => getRep(number()))
-export const Input = () => (
-  <input
-    class="rounded border border-gray-500 p-2"
-    value={number()}
-    onInput={(e) => {
-      const newNumber = parseFloat(e.target.value)
-      if (!isNaN(newNumber)) {
-        setNumber(newNumber)
-      } else {
-        setNumber(0)
-      }
-    }}
-  />
-)
-export const BinaryRepresentation = () => {
-  return (
-    <code>
-      {binary()}
-      {(binary().split('.').at(1)?.length ?? 0) > 10 ? '...' : ''}
-    </code>
-  )
-}
+export const real = createMemo(() => Exercise.getRep(number()))
 
-| Nombre décimal (base $10$) | Représentation binaire (base $2$)                           |
-| -------------------------: | :---------------------------------------------------------- |
-|                        $0$ | `0`                                                         |
-|                        $1$ | `1`                                                         |
-|                        $2$ | `10`                                                        |
-|                       $10$ | `1010`                                                      |
-|                      $0.5$ | `0.1`                                                       |
-|                      $0.1$ | `0.0001100110011001100110011001100110011001100110011001101` |
-|                  <Input /> | <BinaryRepresentation />                                    |
+|                                Nombre décimal (base $10$) | Représentation binaire (base $2$)                              |
+| --------------------------------------------------------: | :------------------------------------------------------------- |
+|                                                       $0$ | `0`                                                            |
+|                                                       $1$ | `1`                                                            |
+|                                                       $2$ | `10`                                                           |
+|                                                      $10$ | `1010`                                                         |
+|                                                     $0.5$ | `0.1`                                                          |
+|                                                     $0.1$ | `0.0001100110011001100110011001100110011001100110011001101...` |
+| <Exercise.Input number={number()} onChange={setNumber} /> | <Exercise.BinaryRepresentation value={number()} />             |
 
 Nous verrons dans une prochaine section
 comment convertir en binaire.
@@ -147,16 +110,17 @@ une **infinité de bits** ($0$ et $1$) pour être représentés exactement en bi
 En pratique,
 l'ordinateur **arrondit** et on perd en précision.
 
-| Nombre entré | Nombre utilisé en pratique                                  |
-| ------------ | ----------------------------------------------------------- |
-| $0.1$        | `0.1000000000000000055511151231257827021181583404541015625` |
-| $0.5$        | `0.5`                                                       |
-| <Input />    | <code>{real()}</code>                                       |
+| Nombre entré                                              | Nombre utilisé en pratique                                  |
+| --------------------------------------------------------- | ----------------------------------------------------------- |
+| $0.1$                                                     | `0.1000000000000000055511151231257827021181583404541015625` |
+| $0.5$                                                     | `0.5`                                                       |
+| <Exercise.Input number={number()} onChange={setNumber} /> | <code>{real()}</code>                                       |
 
 Pour obtenir le nombre exact qui se cache derrière un nombre dans Python,
 vous pouvez utiliser le code suivant:
 
 ```python run
+# On importe la bibliothèque 'decimal' pour travailler en base 10
 import decimal
 
 decimal.Decimal(0.1)
@@ -179,9 +143,18 @@ decimal.Decimal('0.1') * decimal.Decimal('0.1')
 Les calculs impliquant les _nombres à virgules_ ont une précision _limitée_ de $53$ _bits significatifs_,
 ce qui correspond à environ $15$ _chiffres significatifs_.
 
+:::example
+Lorsque l'ordinateur calcule $10^{14} + 0.001$,
+l'ordinateur répond $10^{14}$.
+
 ```python run
 1e14 + 0.001
 ```
+
+Ceci est dû au fait que
+$100000000000000.001$ nécéssite plus de $15$ chiffres significatifs pour être représenté exactement.
+
+:::
 
 Ceci posera problème plus tard pour le calcul des limites, des dérivées et des intégrales.
 
@@ -198,7 +171,7 @@ Les instructions `import` ne doivent être écrites qu'une seule fois,
 et se trouvent généralement au début du code,
 comme le montre l'exemple ci-dessous.
 
-:::example
+:::example[Bibliothèque math]
 Pour calculer la racine carrée de $2$,
 on écrit:
 
@@ -231,18 +204,18 @@ Voici un tableau récapitulatif des fonctions mathématiques les plus courantes 
 | Le nombre $e$             | $e$                            | `math.e`          |
 | Notation scientifique     | $1.3 \cdot 10^{-9}$            | `1.3e-9`          |
 
-:::remark
+:::remark[Radians]
 Attention, les fonctions trigonométriques utilisent les **radians** par défaut.
 :::
 
-:::example
+:::example[Trigonométrie]
 
 Calculez le sinus de $30^\circ$.
 
 ```python run
 import math
 
-# On convertt 30 degrés en radians
+# On convertit 30 degrés en radians
 theta = math.radians(30)
 
 math.sin(theta)
@@ -250,22 +223,22 @@ math.sin(theta)
 
 :::
 
-:::exercice
+:::exercice[Bibliothèque math]
 
 <Sequence id="math-library">
-  <Calculator prompt="\sqrt{67}" answer={Math.sqrt(67)} />
-  <Calculator prompt="\sin {1}" answer={Math.sin(1)} />
-  <Calculator prompt="\sin{\frac \pi 4}" answer={Math.sin(Math.PI / 4)} />
-  <Calculator prompt={`\\log_{10}(85)`} answer={Math.log10(85)} />
-  <Calculator prompt="-\\log_{10} (1.05 \cdot 10^{-5})" answer={-Math.log10(1.05 * 10 ** -5)}>
-    Calculer le pH d'une solution de concentration $C = 1.05 \cdot 10^{-5}$ mol/L. Pour rappel, le
-    pH est défini par $\mathrm{pH} = -\log_{10} C$.
-  </Calculator>
+  <Exercise.Calculator prompt="\sqrt{67}" answer={Math.sqrt(67)} />
+  <Exercise.Calculator prompt="\cos {1}" answer={Math.cos(1)} />
+  <Exercise.Calculator prompt="\sin{\frac \pi 4}" answer={Math.sin(Math.PI / 4)} />
+  <Exercise.Calculator prompt={`\\log_{10}(85)`} answer={Math.log10(85)} />
+  <Exercise.Calculator
+    prompt="-\log_{10} (1.05 \cdot 10^{-5})"
+    answer={-Math.log10(1.05 * 10 ** -5)}
+  />
 </Sequence>
 
 :::
 
-:::remark
+:::remark[Imports]
 
 Il existe plusieurs manières d'importer les fonctions d'une bibliothèque en Python.
 
@@ -292,7 +265,7 @@ Ceci facilite la lecture pour les humains et pour les agents.
 Les variables permettent de stocker des valeurs pour les réutiliser plus tard.
 Elles jouent un rôle important pour rendre le code plus lisible et plus facile à maintenir.
 
-:::example
+:::example[Variables]
 Calculez le volume d'un cylindre de rayon $2$ et de hauteur $3$,
 en utilisant les variables `rayon` et `hauteur` pour le rayon et la hauteur.
 
@@ -305,10 +278,10 @@ rayon = 2
 hauteur = 3
 
 # On définit la variable V pour stocker le volume du cylindre
-Volume = math.pi * rayon**2 * hauteur
+volume = math.pi * rayon**2 * hauteur
 
 # On affiche le volume
-Volume
+volume
 ```
 
 Les avantages des variables sont les suivants:
@@ -321,7 +294,7 @@ Les avantages des variables sont les suivants:
 :::
 
 <Sequence id="variables">
-  <Variables
+  <Exercise.Variables
     vars={{ c: 5 }}
     answer={5 * 5}
     calculate={
@@ -330,7 +303,7 @@ Les avantages des variables sont les suivants:
       </>
     }
   />
-  <Variables
+  <Exercise.Variables
     vars={{ rayon: 7 }}
     answer={Math.PI * 7 ** 2}
     calculate={
@@ -339,7 +312,7 @@ Les avantages des variables sont les suivants:
       </>
     }
   />
-  <Variables
+  <Exercise.Variables
     vars={{ rayon: 4, hauteur: 10 }}
     answer={Math.PI * 4 ** 2 * 10}
     calculate={
@@ -348,7 +321,7 @@ Les avantages des variables sont les suivants:
       </>
     }
   />
-  <Variables
+  <Exercise.Variables
     vars={{ x: 3, y: 4, z: 5 }}
     answer={3 * 4 * 5}
     calculate={
@@ -386,7 +359,9 @@ liste = [2, 4, 6, 8, 10]
 liste[0] # Premier élément
 ```
 
-:::example
+:::example[Produit scalaire]
+
+Utilisons les indices pour calculer le produit scalaire entre deux vecteurs de dimension $3$.
 
 ```python run
 v = [1, 2, 3]
@@ -396,6 +371,8 @@ produit_scalaire = v[0] * w[0] + v[1] * w[1] + v[2] * w[2]
 
 produit_scalaire
 ```
+
+Nous verrons qu'il y a une manière plus simple de calculer le produit scalaire avec la bibliothèque `numpy`.
 
 :::
 
@@ -438,7 +415,7 @@ on utilise la fonction `numpy.array`,
 en lui passant une liste
 qui contient les coordonnées du vecteur.
 
-:::example
+:::example[Vecteurs avec numpy]
 Pour créer le vecteur $\vec v = (1, 2, 3)$,
 on écrit:
 
@@ -448,7 +425,8 @@ on écrit:
 import numpy as np
 
 # On définit un vecteur, en employant np.array
-# Ne pas oublier qu'il faut des parenthèses et des crochets
+# Ne pas oublier qu'il faut des parenthèses et des crochets,
+# puisque np.array prend une _liste_ comme argument.
 v = np.array([1, 2, 3])
 
 # On affiche le vecteur
@@ -466,7 +444,7 @@ Pour additionner des vecteurs,
 il suffit d'utiliser l'opérateur `+` comme pour les nombres,
 à condition que les vecteurs aient les _mêmes dimensions_.
 
-:::example
+:::example[Addition de vecteurs]
 
 Pour calculer la somme $\vec v + \vec w$ avec $\vec v = (1, 2, 3)$ et $\vec w = (4, 5, 6)$,
 on écrit:
@@ -482,12 +460,13 @@ v + w
 
 :::
 
-#### Multiplication scalaire
+#### Multiplication par un scalaire
 
-Pour la multiplication scalaire d'un vecteur,
+Pour la multiplication d'un vecteur _par un scalaire_
+(à ne pas confondre avec le _produit scalaire_),
 on peut multiplier le vecteur par un nombre avec l'opérateur `*`.
 
-:::example
+:::example[Multiplication d'un vecteur par un scalaire]
 
 Pour calculer $2 \vec v$ avec $\vec v = (1, 2, 3)$,
 on écrit:
@@ -506,7 +485,7 @@ v = np.array([1, 2, 3])
 
 On peut bien entendu combiner les deux opérations précédentes pour calculer des _combinaisons linéaires_ de vecteurs.
 
-:::example
+:::example[Combinaisons linéaires]
 Si $\vec v = (1, 2, 3)$ et $\vec w = (4, 5, 6)$,
 calcule $2 \vec v + 3 \vec w$.
 
@@ -522,35 +501,35 @@ w = np.array([4, 5, 6])
 :::
 
 <Sequence id="linear-combination">
-  <LinearCombination
+  <Exercise.LinearCombination
     c={[-2, 7]}
     v={[
       [1, -1, 0],
       [4, 3, 12],
     ]}
   />
-  <LinearCombination
+  <Exercise.LinearCombination
     c={[1, -1]}
     v={[
       [1, 2],
       [3, 4],
     ]}
   />
-  <LinearCombination
+  <Exercise.LinearCombination
     c={[0.5, 0.5]}
     v={[
       [1, 0],
       [0, 1],
     ]}
   />
-  <LinearCombination
+  <Exercise.LinearCombination
     c={[1, 2]}
     v={[
       [1, 2, 3],
       [4, 5, 6],
     ]}
   />
-  <LinearCombination
+  <Exercise.LinearCombination
     c={[3, -2]}
     v={[
       [1, 0, 0],
@@ -563,7 +542,7 @@ w = np.array([4, 5, 6])
 
 Les produits scalaires et vectoriels se calculent avec les fonctions `np.dot` et `np.cross` respectivement.
 
-:::example
+:::example[Produits scalaires et vectoriels]
 
 <div class="lg:grid lg:grid-cols-2 lg:gap-8">
 
@@ -591,7 +570,25 @@ np.cross(a, b)
 
 :::
 
-:::remark
+:::remark[Notations alternatives pour le produit scalaire]
+
+Il est également possible d'utiliser `a @ b` ou `a.dot(b)` pour calculer un produit scalaire.
+
+```python run
+import numpy as np
+
+a = np.array([1, 2, 3])
+b = np.array([4, 5, 6])
+
+# Produit scalaire entre a et b
+a @ b
+```
+
+Il n'y a pas de notation équivalente pour le produit vectoriel.
+
+:::
+
+:::remark[Conversions implicites]
 
 Pour les paresseux, `np.dot` et `np.cross` peuvent implicitement convertir en un vecteur si vous le souhaitez.
 L'exemple ci-dessus peut être réduit à:
@@ -605,18 +602,32 @@ np.cross([1, 2, 3], [4, 5, 6])
 :::
 
 <Sequence id="vector-products">
-  <VectorProduct
+  <Exercise.VectorProduct
     type="dot"
     v={[
       [3, -1, 2],
       [0, -5, -3],
     ]}
   />
-  <VectorProduct
+  <Exercise.VectorProduct
     type="cross"
     v={[
       [3, -1, 2],
       [0, -5, -3],
+    ]}
+  />
+  <Exercise.VectorProduct
+    type="dot"
+    v={[
+      [5, 3, 2],
+      [7, 8, -2],
+    ]}
+  />
+  <Exercise.VectorProduct
+    type="cross"
+    v={[
+      [5, 3, 2],
+      [7, 8, -2],
     ]}
   />
 </Sequence>
@@ -625,7 +636,7 @@ np.cross([1, 2, 3], [4, 5, 6])
 
 La norme d'un vecteur peut se calculer avec la fonction `np.linalg.norm`.
 
-:::example
+:::example[Norme d'un vecteur]
 Calculez la norme du vecteur $\vec v = (1, 2, 3)$.
 
 ```python run
@@ -641,7 +652,7 @@ norme
 
 :::
 
-:::remark
+:::remark[Conversion implicite]
 
 Encore une fois, `np.linalg.norm` peut s'occuper de la conversion en vecteurs,
 de sorte qu'on aurait pu écrire:
@@ -654,10 +665,7 @@ np.linalg.norm([1, 2, 3])
 
 :::
 
-<Sequence id="norm">
-  <Norm x={[0.1, 0.2, 0.3]} />
-  <Norm x={[1, -3, 4, 10, -7]} />
-</Sequence>
+<Exercise.NormSequence />
 
 ### Vectorisation
 
@@ -690,29 +698,29 @@ Calculer l'image de plusieurs points en une commande
 sera très utile pour tracer les graphes des fonctions.
 
 <Sequence id="vectorization">
-  <Vectorization
+  <Exercise.Vectorization
     fn="sqrt"
     x={['0', '0.1', '0.2', '0.3', '0.4', '0.5']}
     latex={(x) => `\\sqrt{${x}}`}
   />
-  <Vectorization
+  <Exercise.Vectorization
     fn="sin"
     x={['0', 'np.pi/6', 'np.pi/4', 'np.pi/3', 'np.pi/2']}
     latex={(x) => `\\sin{\\left(${x.replace('np.pi', '\\pi')}\\right)}`}
   />
-  <Vectorization
+  <Exercise.Vectorization
     fn="tan"
     x={['0', '0.1', '0.2', '0.3', '0.4', '0.5']}
     latex={(x) => `\\tan{${x}}`}
   />
-  <Vectorization
+  <Exercise.Vectorization
     fn="exp"
     x={['0', '0.01', '0.02', '0.03', '0.04', '0.05']}
     latex={(x) => `e^{${x}}`}
   />
-  <Vectorization
+  <Exercise.Vectorization
     fn="log"
-    x={['0', '0.1', '0.2', '0.3', '0.4', '0.5']}
+    x={['1', '1.1', '1.2', '1.3', '1.4', '1.5']}
     latex={(x) => `\\ln{${x}}`}
   />
 </Sequence>
@@ -726,7 +734,7 @@ on peut calculer l'angle entre deux vecteurs $\vec a$ et $\vec b$ via:
   = \frac{\vec a \cdot \vec b}{\|\vec a\| \|\vec b\|}
 `}
 
-:::example
+:::example[Angle entre deux vecteurs]
 Calculez l'angle entre les vecteurs $\vec a = (1, 2, 3)$ et $\vec b = (4, 5, 6)$.
 
 ```python run
@@ -743,7 +751,7 @@ theta
 
 :::
 
-<Review />
+<Exercise.Review />
 
 # Le binaire
 
@@ -762,7 +770,7 @@ Ceci signifie les choses suivantes:
   et est multipliée par une _puissance de $10$_.
 - Multiplier un nombre par $10$ revient à _décaler les chiffres d'une position vers la gauche_.
 
-<Integer mode="both" base={10} value={3674.5} showCalculation />
+<Exercise.Integer mode="both" base={10} value={3674.5} showCalculation />
 
 En _binaire_ (base $2$), la situation est similaire
 
@@ -771,7 +779,7 @@ En _binaire_ (base $2$), la situation est similaire
   et est multipliée par une _puissance de $2$_.
 - Multiplier un nombre par $2$ revient à _décaler les chiffres d'une position vers la gauche_.
 
-<Integer mode="both" showCalculation value={13.75} />
+<Exercise.Integer mode="both" showCalculation value={13.75} />
 
 Pour les nombres entiers, la base $10$ et la base $2$ sont essentiellement équivalentes,
 à la différence que la base $2$ nécessite plus de chiffres pour représenter un nombre.
@@ -787,6 +795,7 @@ $$
 $$
 
 Pour lever l'ambiguité, on écrira $(\texttt{10})_2$ pour insister qu'on est en base $2$.
+Remarquez que ce document utilise une autre police pour insister qu'on est en binaire.
 
 :::
 
@@ -818,8 +827,8 @@ qui a comme dénominateur **une puissance de $10$**.
 - Le nombre $0.375$ peut s'écrire comme la fraction $\displaystyle \frac{375}{10^3}$,
   la division par $10^3$ permettant de décaler la virgule de trois positions vers la gauche.
 
-- Le nombre $45.1234$ peut s'écrire comme la fraction $\displaystyle \frac{451234}{10^4}$.
-  la division par $10^4$ permettant de décaler la virgule de trois positions vers la gauche.
+- Le nombre $45.1234$ peut s'écrire comme la fraction $\displaystyle \frac{451234}{10^4}$,
+  la division par $10^4$ permettant de décaler la virgule de quatre positions vers la gauche.
 
 - Le nombre $\displaystyle \frac 1 3 = 0.33333\ldots$ n'est **pas représentable**
   puisqu'il faudrait une infinité de chiffres pour le stocker.
@@ -858,7 +867,23 @@ Par exemple,
 n'est pas représentable exactement en binaire,
 puisque sa forme fractionnelle simplifiée a pour dénominateur $10$,
 qui n'est **pas** une puissance de $2$.
+
+En revanche,
+{tex`0.1875
+  = \frac {3}{2^4}
+`}
+est représentable exactement en binaire,
+puisque sa forme fractionnelle simplifiée a pour dénominateur une puissance de $2$.
 :::
+
+<Sequence id="has-binary-representation">
+  <Exercise.Representable x={`\\frac{1}{3}`} />
+  <Exercise.Representable x={`\\frac{3}{4}`} />
+  <Exercise.Representable x={`\\frac{5}{10}`} />
+  <Exercise.Representable x={`\\frac{3}{10}`} />
+  <Exercise.Representable x={`\\frac{1}{14}`} />
+  <Exercise.Representable x={`\\frac{3}{5}`} />
+</Sequence>
 
 # Résumé
 
@@ -886,7 +911,7 @@ qui n'est **pas** une puissance de $2$.
 
 - `numpy` permet de travailler avec les vecturs
 
-  - `np.array` pour créer un vecteur pour lequel fonctionne l'addition et la multiplication scalaire
+  - `np.array` pour créer un vecteur pour lequel fonctionnent l'addition et la multiplication scalaire
   - `np.dot` pour le produit scalaire
   - `np.cross` pour le produit vectoriel
 
