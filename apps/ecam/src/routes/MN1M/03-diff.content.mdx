@@ -84,7 +84,7 @@ on procède comme suit:
 1. On calcule la pente:
    {tex.display`m = \frac{f(a + h) - f(a)}{(a + h) - a} = \frac{f(a + h) - f(a)}{h}.`}
 
-2. On translate $y = m x$ la droite passe par $(a, f(a))$:
+2. On translate $y = m x$ pour qu'elle passe par $(a, f(a))$:
    {tex.display`y - f(a) = m (x - a).`}
 
 3. On obtient la fonction correspondante à la sécante en isolant $y$:
@@ -377,8 +377,30 @@ L'idée est simple:
   on retourne simplement $f(x)$
   puisqu'il n'est pas nécessaire de dériver.
 
-- Pour les autres dérivées d'ordre $n$, on applique la _différence centrale_ à notre approximation de la dérivée d'ordre $n - 1$,
-  qui est elle-même calculée comme étant une différence centrale de la dérivée d'ordre $n - 2$, et ainsi de suite.
+- La dérivée première est bien calculée comme étant une différence centrale de `diff(x, 0)` qui est $f(x)$.
+  On a donc bien calculé la différence centrale de $f$.
+
+- La dérivée seconde est calculée comme étant une différence centrale de `diff(x, 1)`.
+  Par le point précédent, on a alors la différence centrale de la différence centrale de $f$.
+
+L'exemple ci-dessus peut alors être raccourci comme suit:
+
+```python run math highlight="7-10"
+import matplotlib.pyplot as plt
+import numpy as np
+
+h = 1e-6
+x = np.linspace(-np.pi, np.pi, 100)
+
+def diff(x, n):
+    if n == 0:
+        return np.sin(x)
+    return (diff(x + h, n - 1) - diff(x - h, n - 1)) / (2 * h)
+
+plt.plot(x, -np.sin(x), label="f''(x)")
+plt.plot(x, diff(x, 2), '--', label="approx f''")
+plt.legend()
+```
 
 :::
 
@@ -407,3 +429,5 @@ plt.legend()
 ```
 
 :::
+
+<Exercise.SecondDerivatives />

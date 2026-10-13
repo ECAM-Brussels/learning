@@ -126,24 +126,28 @@ export function Secant() {
           { type: 'axisLabels', x: /x/, y: /y/ },
         ]}
       />
-      <Simple
+      <Matplotlib
         prompt={
           <p>
-            Quelle est la pente de la droite passant par le graphe de {tex`y = f(x)`} aux abscisses{' '}
-            {tex`x = a`} et {tex`x = b`}?
+            Tracez le graphe de {tex`f(x) = \cos x`} sur {tex`[-1, 3]`}. Nommez les axes. Ensuite,
+            tracez les séquentes qui passent par {tex`a = 0.25`} et {tex`b = 0.25 + h`} pour{' '}
+            {tex`h = 1`} et {tex`h = 0.1`}.
           </p>
         }
-        grade={(attempt) => attempt.isEqual('\\frac{f(b) - f(a)}{b - a}')}
-        label="La pente vaut "
-      />
-      <Simple
-        prompt={
-          <p>
-            Quelle est la pente de la droite passant par le graphe de {tex`y = f(x)`} aux abscisses{' '}
-            {tex`x`} et {tex`x + h`} ?
-          </p>
-        }
-        grade={(attempt) => attempt.isEqual('\\frac{f(x + h) - f(x)}{h}')}
+        tests={[
+          { type: 'axisLabels', x: /x/, y: /y/ },
+          { type: 'plot', x: [-1, 3], y: 'np.cos(x)' },
+          {
+            type: 'plot',
+            x: [-1, 3],
+            y: 'np.cos(0.25) + (np.cos(1.25) - np.cos(0.25)) / 1 * (x - 0.25)',
+          },
+          {
+            type: 'plot',
+            x: [-1, 3],
+            y: 'np.cos(0.25) + (np.cos(0.35) - np.cos(0.25)) / 0.1 * (x - 0.25)',
+          },
+        ]}
       />
     </Sequence>
   )
@@ -155,6 +159,7 @@ export function Differences() {
       <DifferentialQuotient f="x^2" x="1" h="0.1" />
       <DifferentialQuotient f="x^2" x="1" h="10^{-6}" />
       <DifferentialQuotient f="\sin x" x="0" h="10^{-20}" />
+      <DifferentialQuotient f="\exponentialE^{-x}" x="1" h="10^{-8}" />
     </Sequence>
   )
 }
@@ -311,6 +316,91 @@ export function Derivatives() {
             type: 'plot',
             x: [-1, 1],
             y: '(np.exp(-(x + 1e-20)**2) - np.exp(-(x - 1e-20)**2)) / (2 * 1e-20)',
+          },
+          { type: 'axisLabels', x: /x/, y: /y/ },
+        ]}
+      />
+    </Sequence>
+  )
+}
+
+export function SecondDerivatives() {
+  return (
+    <Sequence id="second-derivatives">
+      <Matplotlib
+        prompt={
+          <>
+            <p>Sur l'intervalle {tex`[-1, 1]`}, tracez les courbes suivantes:</p>
+            <ul class="my-2 list-inside list-disc px-2">
+              <li>
+                la <strong>dérivée seconde</strong> de {tex`f(x) = \sin x`}
+              </li>
+              <li>
+                Une approximation de {tex`f''`} en utilisant le{' '}
+                <em>quotient différentiel central</em> deux fois, avec le pas {tex`h = 10^{-3}`}.
+              </li>
+            </ul>
+            <p>Nommez les axes.</p>
+          </>
+        }
+        tests={[
+          { type: 'plot', x: [-1, 1], y: '-np.sin(x)' },
+          {
+            type: 'plot',
+            x: [-1, 1],
+            y: '(np.sin(x + 2e-3) - 2 * np.sin(x) + np.sin(x - 2e-3)) / (2e-3**2)',
+          },
+          { type: 'axisLabels', x: /x/, y: /y/ },
+        ]}
+      />
+      <Matplotlib
+        prompt={
+          <>
+            <p>Sur l'intervalle {tex`[-1, 1]`}, tracez les courbes suivantes:</p>
+            <ul class="my-2 list-inside list-disc px-2">
+              <li>
+                la <strong>dérivée seconde</strong> de {tex`f(x) = \cos x`}
+              </li>
+              <li>
+                Une approximation de {tex`f''`} en utilisant le{' '}
+                <em>quotient différentiel central</em> deux fois, avec le pas {tex`h = 10^{-3}`}.
+              </li>
+            </ul>
+            <p>Nommez les axes.</p>
+          </>
+        }
+        tests={[
+          { type: 'plot', x: [-1, 1], y: '-np.cos(x)' },
+          {
+            type: 'plot',
+            x: [-1, 1],
+            y: '(np.cos(x + 2e-3) - 2 * np.cos(x) + np.cos(x - 2e-3)) / (2e-3**2)',
+          },
+          { type: 'axisLabels', x: /x/, y: /y/ },
+        ]}
+      />
+      <Matplotlib
+        prompt={
+          <>
+            <p>Sur l'intervalle {tex`[-1, 1]`}, tracez les courbes suivantes:</p>
+            <ul class="my-2 list-inside list-disc px-2">
+              <li>
+                la <strong>dérivée seconde</strong> de {tex`e^{-x}`}
+              </li>
+              <li>
+                Une approximation de {tex`f''`} en utilisant le{' '}
+                <em>quotient différentiel central</em> deux fois, avec le pas {tex`h = 10^{-3}`}.
+              </li>
+            </ul>
+            <p>Nommez les axes.</p>
+          </>
+        }
+        tests={[
+          { type: 'plot', x: [-1, 1], y: 'np.exp(-x)' },
+          {
+            type: 'plot',
+            x: [-1, 1],
+            y: '(np.exp(-(x + 2e-3)) - 2 * np.exp(-x) + np.exp(-(x - 2e-3))) / (2e-3**2)',
           },
           { type: 'axisLabels', x: /x/, y: /y/ },
         ]}
