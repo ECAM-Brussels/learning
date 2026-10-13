@@ -22,7 +22,9 @@ Une tension apparaîtra:
 
 Nous verrons que le problème s'empire si l'on calcule des dérivées d'ordre supérieur.
 
-# Pentes et droites
+# Droites
+
+## Pente d'une droite
 
 Rappelons que la **pente** d'une droite passant par deux points $(x_1, y_1)$ et $(x_2, y_2)$ est donnée par
 
@@ -59,7 +61,7 @@ on peut procéder comme suit:
 1. On calcule la pente:
    {tex.display`m = \frac{f(b) - f(a)}{b - a}.`}
 
-2. On s'assure que la droite passe par $(a, f(a))$:
+2. On translate $y = mx$ pour qu'elle passe passe par $(a, f(a))$:
    {tex.display`y - f(a) = m (x - a).`}
 
 3. On obtient la fonction correspondante à la sécante en isolant $y$:
@@ -70,19 +72,19 @@ Ce raisonnement peut être traduit en code Python comme suit:
 ```python
 def secante(a, b, x):
     m = (f(b) - f(a)) / (b - a)
-
     y = m * (x - a) + f(a)
     return y
 ```
 
 Souvent, on sera dans une conversation où $b$ nous est donné via $b = a + h$.
+La quantité $h$ est appelée le **pas**.
 Dans ce cas-ci, pour que notre droite passe par $(a, f(a))$ et $(a + h, f(a + h))$,
 on procède comme suit:
 
 1. On calcule la pente:
    {tex.display`m = \frac{f(a + h) - f(a)}{(a + h) - a} = \frac{f(a + h) - f(a)}{h}.`}
 
-2. On s'assure que la droite passe par $(a, f(a))$:
+2. On translate $y = m x$ la droite passe par $(a, f(a))$:
    {tex.display`y - f(a) = m (x - a).`}
 
 3. On obtient la fonction correspondante à la sécante en isolant $y$:
@@ -91,7 +93,6 @@ on procède comme suit:
 ```python
 def secante(a, h, x):
     m = (f(a + h) - f(a)) / h
-
     y = m * (x - a) + f(a)
     return y
 ```
@@ -321,32 +322,16 @@ pour $h = 10^{-6}$, mais complètement fausse pour $h = 10^{-20}$.
 
 # Dérivées secondes
 
-En prenant la différence centrale de la différence centrale, on obtient une approximation de la dérivée seconde
-
-{tex.display`\approx \frac{f(x + 2h) - 2 f(x) + f(x - 2h)}{4 h^2}`}
-
-Dans le cadre de cette activité,
-nous privilégierons l'_application répétée_ de la différence centrale.
-
-:::remark
-
-En arithmétique exacte, il n'y a aucune différence entre
-
-{tex.display`\approx \frac{f(x + 2h) - 2 f(x) + f(x - 2h)}{4 h^2}`}
-
-et une double application de la différence centrale.
-Cependant, en pratique, la double application nécessite plus de calculs et est donc plus sensible aux erreurs d'arrondi.
-
-La formule ci-dessus, en revanche, a été simplifiée en _arithmétique exacte_
-pour réduire le nombre de calculs.
-
-:::
+De nombreuses applications nécessitent de calculer la **dérivée seconde** d'une fonction $f$.
+Bien qu'il soit possible d'obtenir une formule théorique pour l'approximation de la dérivée seconde,
+nous nous contenterons d'appliquer le _quotient différentiel central_ **deux fois**.
 
 :::example[Derivée seconde numérique]
 Approximons la dérivée seconde de {tex`f(x) = \sin x`}
 en appliquant deux fois la différence centrale
 avec $h = 10^{-6}$,
 et graphez le résultat sur $[-\pi, \pi]$.
+Tracez également le graphe de la dérivée seconde théorique.
 
 ```python run math highlight="12,13"
 import matplotlib.pyplot as plt
