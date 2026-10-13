@@ -18,6 +18,8 @@ const python = new PythonTarget()
 
 function sanitize<T extends CEExpressionInput>(json: T): T {
   if (json === 'CatalanConstant') return 'G' as T
+  if (json === 'i') return 'ImaginaryUnit' as T
+  if (json === 'e') return 'ExponentialE' as T
   if (typeof json === 'number' || typeof json === 'string') return json
   if (Array.isArray(json)) return json.map(sanitize) as unknown as T
   return json
