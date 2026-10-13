@@ -2,7 +2,7 @@ import { Boundary, Pagination, Scope } from '@learning/components'
 import { useLocation } from '@solidjs/router'
 import { Dynamic, type JSX } from '@solidjs/web'
 import { range } from 'es-toolkit'
-import { createMemo, useContext, type Component } from 'solid-js'
+import { createMemo, onSettled, refresh, useContext, type Component } from 'solid-js'
 import * as v from 'valibot'
 import { useExerciseContext } from './base'
 import { StepContext } from './context'
@@ -76,9 +76,17 @@ type Props<T extends object> = Prettify<
  */
 export function Sequence<T extends object>(props: Props<T> & { id: string }) {
   const exerciseContext = useExerciseContext()
+
   const optionsContext = useContext(OptionsContext)
   const rawOptions = createMemo(() => ({ ...optionsContext(), ...props.options }))
   const options = createMemo(() => v.parse(Options, rawOptions()))
+  onSettled(() => {
+    const interval = setInterval(() => {
+      refresh(options)
+    }, 1000)
+    return () => clearInterval(interval)
+  })
+
   const sequence = createMemo(() => ({ url: useLocation().pathname, sequenceId: props.id }))
   const progress = createMemo(() => exerciseContext().getProgress(sequence()))
   const stepContext = (sequencePosition = 0) => ({
