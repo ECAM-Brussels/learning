@@ -186,6 +186,11 @@ export function Tangents() {
               </li>
             </ul>
             <p>Nommez les axes.</p>
+            <p class="text-sm italic">
+              Indication: pour distinguer les courbes, vous pouvez utiliser l'argument{' '}
+              <code>label</code> de <code>plt.plot</code> et ensuite appeler{' '}
+              <code>plt.legend()</code> pour afficher la légende.
+            </p>
           </>
         }
         tests={[
@@ -257,6 +262,39 @@ export function Derivatives() {
           <>
             <p>Sur l'intervalle {tex`[-1, 1]`}, tracez les courbes suivantes:</p>
             <ul class="my-2 list-inside list-disc px-2">
+              <li>{tex`f(x) = \sin x`}</li>
+              <li>
+                Une approximation de la dérivée de {tex`f`} utilisant le quotient différentiel{' '}
+                <strong>central</strong> de pas {tex`h = 0.5`}
+              </li>
+              <li>
+                Une approximation de la dérivée de {tex`f`} utilisant le quotient différentiel{' '}
+                <strong>avant</strong> de pas {tex`h = 0.5`}
+              </li>
+            </ul>
+            <p>Nommez les axes.</p>
+          </>
+        }
+        tests={[
+          { type: 'plot', x: [-1, 1], y: 'np.sin(x)' },
+          {
+            type: 'plot',
+            x: [-1, 1],
+            y: '(np.sin(x + 0.5) - np.sin(x - 0.5)) / (2 * 0.5)',
+          },
+          {
+            type: 'plot',
+            x: [-1, 1],
+            y: '(np.sin(x + 0.5) - np.sin(x)) / (0.5)',
+          },
+          { type: 'axisLabels', x: /x/, y: /y/ },
+        ]}
+      />
+      <Matplotlib
+        prompt={
+          <>
+            <p>Sur l'intervalle {tex`[-1, 1]`}, tracez les courbes suivantes:</p>
+            <ul class="my-2 list-inside list-disc px-2">
               <li>{tex`f(x) = e^x`}</li>
               <li>
                 Une approximation de la dérivée de {tex`f`} utilisant le quotient différentiel{' '}
@@ -291,7 +329,7 @@ export function Derivatives() {
             <p>Sur l'intervalle {tex`[-1, 1]`}, tracez les courbes suivantes:</p>
             <ul class="my-2 list-inside list-disc px-2">
               <li>
-                la <strong>dérivée</strong> de {tex`f(x) = e^{-x^2}`}
+                la <strong>dérivée</strong> de {tex`f(x) = e^{-x}`}
               </li>
               <li>
                 Une approximation de la dérivée de {tex`f`} utilisant le quotient différentiel{' '}
@@ -306,16 +344,16 @@ export function Derivatives() {
           </>
         }
         tests={[
-          { type: 'plot', x: [-1, 1], y: '-2*x*np.exp(-x**2)' },
+          { type: 'plot', x: [-1, 1], y: '-2*x*np.exp(-x)' },
           {
             type: 'plot',
             x: [-1, 1],
-            y: '(np.exp(-(x + 1e-6)**2) - np.exp(-(x - 1e-6)**2)) / (2 * 1e-6)',
+            y: '(np.exp(-(x + 1e-6)) - np.exp(-(x - 1e-6))) / (2 * 1e-6)',
           },
           {
             type: 'plot',
             x: [-1, 1],
-            y: '(np.exp(-(x + 1e-20)**2) - np.exp(-(x - 1e-20)**2)) / (2 * 1e-20)',
+            y: '(np.exp(-(x + 1e-20)) - np.exp(-(x - 1e-20))) / (2 * 1e-20)',
           },
           { type: 'axisLabels', x: /x/, y: /y/ },
         ]}

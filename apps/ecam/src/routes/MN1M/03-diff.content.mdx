@@ -228,10 +228,7 @@ h = 1e-30
 
 L'erreur se propage alors
 
-{tex`\frac {(\overbrace{1 + h}^1)^2 - 1^2} h
-= \frac 0 h
-= 0
-`}
+{tex.display`\frac {(\overbrace{1 + h}^1)^2 - 1^2} h = \frac 0 h = 0`}
 
 :::
 
@@ -277,7 +274,7 @@ f'(x) = \lim_{h \to 0} \frac{f(x + h) - f(x)}{h}`}
 Nous feront en chaque point une _approximation numérique_ de la dérivée
 par un _quotient différentiel_.
 
-<Geogebra id="kT87vrax" />
+<Geogebra id="kT87vrax" class="mx-auto" />
 
 En pratique,
 on peut simplement définir une fonction `diff` qui calcule le quotient différentiel en chaque foint
@@ -406,6 +403,8 @@ plt.legend()
 
 :::example[Empirement de la précision]
 
+Calculons les dérivées première et seconde de {tex`f(x) = e^x`} sur $[-1, 1]$ avec le _quotient différentiel central_ de pas $h = 10^{-8}$.
+
 ```python run math
 import matplotlib.pyplot as plt
 import numpy as np
@@ -428,6 +427,19 @@ plt.plot(x, diff2(x), '--', label="approx f''")
 plt.legend()
 ```
 
+Avec $h = 10^{-8}$, la dérivée première est approximée correctement mais pas la seconde.
+
 :::
 
 <Exercise.SecondDerivatives />
+
+# Résumé
+
+- La dérivée d'une fonction $f$ en $x = a$ s'approxime via le _quotient différentiel central_:
+  {tex.display`f'(a) \approx \frac{f(a + h) - f(a - h)}{2h}`}
+
+- Le calcul peut être complètement faussé pour des pas trop petits.
+
+- La dérivée seconde d'une fonction $f$ en $x = a$ s'approxime via le _quotient différentiel central_ appliqué deux fois.
+
+- Les dérivées secondes sont encore plus sensibles aux erreurs d'arrondi.

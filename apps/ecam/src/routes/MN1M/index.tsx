@@ -76,7 +76,7 @@ export default () => (
         title="Différences finies"
         link="03-diff"
         img={session3}
-        draft={true}
+        draft={new Date('2026-10-16 07:00')}
       />
     </div>
   </>
