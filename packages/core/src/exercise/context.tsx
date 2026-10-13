@@ -23,8 +23,8 @@ export type ExerciseContext = {
       ctx: Omit<StepContext, 'position' | 'sequencePosition'>,
     ) => Promise<Record<number, boolean | null | undefined>>
   >
-  saveStep: (ctx: StepContext, step: StoredStep, options?: Options) => Promise<void>
-  reset: (ctx: Omit<StepContext, 'position'>, options?: Options) => Promise<void>
+  saveStep: (ctx: StepContext, step: StoredStep, options: Options) => Promise<void>
+  reset: (ctx: Omit<StepContext, 'position'>, options: Options) => Promise<void>
   getStats?: (
     ctx: Omit<StepContext, 'position'>,
   ) => Promise<

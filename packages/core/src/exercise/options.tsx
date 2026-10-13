@@ -33,6 +33,7 @@ export const Options = v.object({
     ]),
     false,
   ),
+  softDelete: v.optional(v.boolean(), false),
 })
 export type Options<T extends 'input' | 'output' = 'input'> = T extends 'input'
   ? v.InferInput<typeof Options>

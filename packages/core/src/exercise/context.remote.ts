@@ -88,18 +88,18 @@ export const saveStep = async (rawCtx: StepContext, step: StoredStep, options: O
   )
   await db.transaction(async (tx) => {
     if (options.allowResubmissions) {
-      await tx
-        .update(tables.steps)
-        .set({ deleted: true })
-        .where(
-          and(
-            currentExercise,
-            gte(tables.steps.position, ctx.position),
-            eq(tables.steps.deleted, false),
-            eq(tables.steps.submitted, true),
-            eq(tables.steps.correct, false),
-          ),
-        )
+      const condition = and(
+        currentExercise,
+        gte(tables.steps.position, ctx.position),
+        eq(tables.steps.deleted, false),
+        eq(tables.steps.submitted, true),
+        eq(tables.steps.correct, false),
+      )
+      if (options.softDelete) {
+        await tx.update(tables.steps).set({ deleted: true }).where(condition)
+      } else {
+        await tx.delete(tables.steps).where(condition)
+      }
     }
     await tx
       .insert(tables.steps)
@@ -119,7 +119,7 @@ export const saveStep = async (rawCtx: StepContext, step: StoredStep, options: O
   })
 }
 
-export const reset = async (rawCtx: Omit<StepContext, 'position'>) => {
+export const reset = async (rawCtx: Omit<StepContext, 'position'>, options: Options) => {
   'use server'
   await ensurePermissions(['exercise:deleteOwn'])
   const ctx = v.parse(
@@ -144,7 +144,11 @@ export const reset = async (rawCtx: Omit<StepContext, 'position'>) => {
       .where(and(currentExercise, eq(tables.steps.position, 0)))
       .limit(1)
     if (!step) throw new Error('Initial step not found')
-    await tx.update(tables.steps).set({ deleted: true }).where(currentExercise)
+    if (options.softDelete) {
+      await tx.update(tables.steps).set({ deleted: true }).where(currentExercise)
+    } else {
+      await tx.delete(tables.steps).where(currentExercise)
+    }
     await tx.insert(tables.steps).values({
       ...step,
       id: undefined,

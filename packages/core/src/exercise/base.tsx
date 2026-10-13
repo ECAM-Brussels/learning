@@ -317,7 +317,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
       s.correct = undefined
     })
     const { position, ...ctx } = stepContext()
-    yield exerciseContext().reset(ctx)
+    yield exerciseContext().reset(ctx, options())
     revalidate([
       exerciseContext().fetchSequence.keyFor(sequenceContext()),
       exerciseContext().getProgress.keyFor(sequenceContext()),
