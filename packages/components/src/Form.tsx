@@ -7,11 +7,11 @@ export const FormState = createContext<() => { readOnly?: boolean }>(() => ({
 }))
 
 export function Form(props: JSX.IntrinsicElements['form'] & { readOnly?: boolean }) {
-  const attrs = omit(props, 'children')
+  const attrs = omit(props, 'children', 'class')
   return (
     <Boundary>
       <form {...attrs}>
-        <fieldset disabled={props.readOnly}>
+        <fieldset class={props.class} disabled={props.readOnly}>
           <FormState value={() => ({ readOnly: props.readOnly })}>{props.children}</FormState>
         </fieldset>
       </form>

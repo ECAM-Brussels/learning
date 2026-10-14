@@ -24,6 +24,7 @@ export * from './src/Scope'
 export * from './src/Slide'
 export * from './src/Slideshow'
 export * from './src/SymbolicRepresentation'
+export * from './src/Youtube'
 
 export const Board = clientOnly(() => import('./src/Board'))
 export const MathField = clientOnly(() => import('./src/MathField'))

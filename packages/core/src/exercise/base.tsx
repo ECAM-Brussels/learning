@@ -1,7 +1,7 @@
-import { Boundary, FeedbackContext, Form, MathField } from '@learning/components'
+import { Boundary, FeedbackContext, Form, MathField, Youtube } from '@learning/components'
 import { revalidate, useLocation } from '@solidjs/router'
 import { dynamic, Dynamic, type JSX } from '@solidjs/web'
-import { mapValues } from 'es-toolkit'
+import { allKeyed, mapValues } from 'es-toolkit'
 import {
   action,
   affects,
@@ -407,6 +407,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     <div class={['not-prose my-4', props.class]}>
       <StepBoundary fallback="Chargement de l'exercice...">
         <Form
+          class={{ flex: options().video !== undefined }}
           readOnly={!canSubmit()}
           ref={setForm}
           onSubmit={(e) => {
@@ -414,20 +415,23 @@ export function Step<S extends StepSchema, F extends JsonObject>(
             submit(state)
           }}
         >
-          <Dynamic
-            component={props.prompt}
-            data={step.data}
-            inputs={fields()}
-            state={promptState}
-          />
-          <Show when={canSubmit() && !resetting()}>
-            <button
-              class="my-4 block cursor-pointer rounded-lg bg-green-800 px-3 py-2 font-bold text-green-100 hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
-              disabled={isPending(() => step.submitted)}
-            >
-              {isPending(() => step.submitted) ? 'Soumission...' : 'Soumettre'}
-            </button>
-          </Show>
+          <div class="grow">
+            <Dynamic
+              component={props.prompt}
+              data={step.data}
+              inputs={fields()}
+              state={promptState}
+            />
+            <Show when={canSubmit() && !resetting()}>
+              <button
+                class="my-4 block cursor-pointer rounded-lg bg-green-800 px-3 py-2 font-bold text-green-100 hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+                disabled={isPending(() => step.submitted)}
+              >
+                {isPending(() => step.submitted) ? 'Soumission...' : 'Soumettre'}
+              </button>
+            </Show>
+          </div>
+          <Show when={options().video}>{(src) => <Youtube src={src()} zoom={0.8} />}</Show>
         </Form>
       </StepBoundary>
       <Show when={step.submitted && options().showFeedback}>
@@ -465,7 +469,7 @@ export function createStep<S extends StepSchema, F extends JsonObject>(
     { id?: string } & Pick<StepProps<S, F>, 'class' | 'feedback' | 'children' | 'options'> &
       (ObjectSchema<S['data'], 'input'> | { data: StepProps<S, F>['data'] })
   > = (props) => {
-    const data = omit(props, 'id', 'class', 'feedback', 'data', 'children') as
+    const data = omit(props, 'id', 'class', 'feedback', 'data', 'children', 'options') as
       ObjectSchema<S['data'], 'input'> | undefined
     return (
       <Step
@@ -475,7 +479,17 @@ export function createStep<S extends StepSchema, F extends JsonObject>(
         feedback={props.feedback ?? step.feedback}
         children={props.children ?? step.children}
         data={('data' in props ? props.data : data)!}
-        options={props.options ?? step.options}
+        options={async (data) => {
+          async function getOptions(opt: typeof props.options) {
+            if (!opt) return {}
+            return typeof opt === 'function' ? await opt(data) : opt
+          }
+          const { inherited, options } = await allKeyed({
+            inherited: getOptions(step.options),
+            options: getOptions(props.options),
+          })
+          return { ...inherited, ...options }
+        }}
       />
     )
   }

@@ -10,6 +10,9 @@ export const Factor = createStep({
     data: { expr: 'expr' },
     inputs: { attempt: 'expr' },
   },
+  options: {
+    video: 'https://youtube.com/embed/32u4Pr0-XDk',
+  },
   prompt: (ctx) => (
     <>
       <p>

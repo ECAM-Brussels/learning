@@ -34,6 +34,7 @@ export const Options = v.object({
     false,
   ),
   softDelete: v.optional(v.boolean(), false),
+  video: v.optional(v.string()),
 })
 export type Options<T extends 'input' | 'output' = 'input'> = T extends 'input'
   ? v.InferInput<typeof Options>
