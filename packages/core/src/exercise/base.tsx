@@ -166,7 +166,7 @@ type StepBaseProps<D, I extends v.ObjectSchema<any, any>, F extends JsonObject> 
         data: Infer<NoInfer<D>, 'output'>
         inputs: v.InferOutput<NoInfer<I>>
       }) => JSX.Element)
-  options?: Options<'input'>
+  options?: Options<'input'> | ((data: Infer<D, 'output'>) => MaybeAsync<Options<'input'>>)
 }
 
 type StepProps<S extends StepSchema, F extends JsonObject> = StepBaseProps<
@@ -186,6 +186,18 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   props: StepProps<S, F> & { id?: string },
 ) {
   /**
+   * Retrieve data from the source of truth (localStorage or database),
+   * merge it with the props, and validate.
+   *
+   * We need to be careful here,
+   * as some props are static and not serializable,
+   * therefore the source of truth should be layered on top of the supplied props.
+   */
+  const exerciseData = createMemo(() =>
+    typeof props.data === 'function' ? props.data() : props.data,
+  )
+
+  /**
    * Context information. Aims to answer the following questions:
    *
    * - How to fetch or save?
@@ -203,7 +215,12 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     position: inherited?.().position ?? 0,
   }))
   const optionsCtx = useContext(OptionsContext)
-  const rawOptions = createMemo(() => ({ ...optionsCtx(), ...props.options }))
+  const rawOptions = createMemo(async () => {
+    const inherited = optionsCtx()
+    const data = exerciseData()
+    const options = typeof props.options === 'function' ? await props.options(data) : props.options
+    return { ...inherited, ...options }
+  })
   const options = createMemo(() => v.parse(Options, rawOptions()))
   onSettled(() => {
     const interval = setInterval(() => {
@@ -214,18 +231,6 @@ export function Step<S extends StepSchema, F extends JsonObject>(
 
   const schema = () =>
     StoredStep(props.schema.data as S['data'], props.schema.inputs as S['inputs'])
-
-  /**
-   * Retrieve data from the source of truth (localStorage or database),
-   * merge it with the props, and validate.
-   *
-   * We need to be careful here,
-   * as some props are static and not serializable,
-   * therefore the source of truth should be layered on top of the supplied props.
-   */
-  const exerciseData = createMemo(() =>
-    typeof props.data === 'function' ? props.data() : props.data,
-  )
   const all = createMemo(() => exerciseContext().fetchSequence(sequenceContext()), {})
   const fetched = createMemo(
     () => all()[stepContext().sequencePosition]?.[stepContext().position] ?? null,
