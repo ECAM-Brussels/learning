@@ -198,7 +198,7 @@ const exercise = db
     `.as('correct'),
   })
   .from(tables.steps)
-  .where(and(eq(tables.steps.deleted, false), eq(tables.steps.submitted, true)))
+  .where(and(eq(tables.steps.deleted, false)))
   .groupBy(
     tables.steps.userEmail,
     tables.steps.url,

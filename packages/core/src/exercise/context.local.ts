@@ -31,10 +31,9 @@ export default {
         .filter((k) => k.startsWith(prefix))
         .map((k) => {
           const exercise = JSON.parse(localStorage.getItem(k) ?? '[]')
-          const answered = exercise.filter((part: StoredStep) => part.submitted)
           return [
             parseInt(k.split(':').at(-1)!),
-            answered.length > 0 ? answered.every((part: StoredStep) => part.correct) : undefined,
+            exercise.length > 0 ? exercise.every((part: StoredStep) => part.correct) : undefined,
           ]
         })
         .filter(([, correct]) => correct !== undefined),

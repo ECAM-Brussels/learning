@@ -289,9 +289,9 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   const [form, setForm] = createSignal<HTMLFormElement | null>(null)
   const visible = createIsVisible(form)
   createEffect(
-    () => [props.data, visible(), step.submitted, fetched()] as const,
-    ([data, isVisible, submitted, fetched]) => {
-      if (typeof data === 'function' && isVisible && fetched === null && !submitted) {
+    () => [visible(), step.submitted, fetched()] as const,
+    ([isVisible, submitted, fetched]) => {
+      if (isVisible && fetched === null && !submitted) {
         submit({})
       }
     },
