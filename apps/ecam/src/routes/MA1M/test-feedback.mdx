@@ -1,5 +1,15 @@
 import { CompleteSquare } from '@learning/exercises/math/algebra/CompleteSquare'
+import { expr } from '@learning/core'
+import { sample } from 'es-toolkit'
 
 # TestFeedback Carré parfait
 
-<CompleteSquare expr="(x + 3)^2 + 4" />
+<CompleteSquare
+  id="test"
+  data={() => {
+    const a = sample([1])
+    const b = sample([-3])
+    const c = sample([4])
+    return { expr: expr('a (x - b)^2 + c').subs({ a, b, c }) }
+  }}
+/>
