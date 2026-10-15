@@ -96,7 +96,7 @@ on procède comme suit:
    {tex.display`y - f(a) = m (x - a).`}
 
 3. On obtient la fonction correspondante à la sécante en isolant $y$:
-   {tex.display`y = m (x - a) + f(a), \quad m = \frac{f(b) - f(a)}{b - a}.`}
+   {tex.display`y = m (x - a) + f(a), \quad m = \frac{f(a + h) - f(a)}{h}.`}
 
 ```python
 def secante(a, h, x):
