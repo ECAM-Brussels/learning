@@ -1,7 +1,7 @@
 import { Attempt } from '@learning/components'
 import { createStep, tex } from '@learning/core'
 import { allKeyed } from 'es-toolkit/promise'
-import { Match, Switch } from 'solid-js'
+import { createMemo, Match, Switch } from 'solid-js'
 
 export const CompleteSquare = createStep({
   name: 'math/algebra/complete-square',
@@ -26,12 +26,15 @@ export const CompleteSquare = createStep({
       hasOneX: ctx.inputs.attempt.count('x') === 1,
       equal: ctx.inputs.attempt.isEqual(ctx.data.expr),
     })
-    return [hasOneX && equal, { hasOneX, equal }]
+    return hasOneX && equal
   },
   feedback: (ctx) => {
+    const hasOneX = createMemo(() => ctx.inputs.attempt.count('x') === 1)
+    const equal = createMemo(() => ctx.inputs.attempt.isEqual(ctx.data.expr))
+
     return (
       <Switch>
-        <Match when={!ctx.feedback.hasOneX}>
+        <Match when={!hasOneX()}>
           <p>
             L'objectif de l'exercice est d'écire l'expression donnée sous la forme
             {tex`
@@ -40,7 +43,7 @@ export const CompleteSquare = createStep({
           </p>
           <ctx.Self />
         </Match>
-        <Match when={ctx.feedback.hasOneX && ctx.feedback.equal}>
+        <Match when={hasOneX() && equal()}>
           <p> On dirait que c'est bon.</p>
         </Match>
       </Switch>
