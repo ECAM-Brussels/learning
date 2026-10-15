@@ -93,6 +93,7 @@ function expression(input: Math) {
     'Derivative',
     'Integrate',
     'Subs',
+    'Coefficient',
   ])
 
   const hasInstructionOp = (value: MathJsonExpression): boolean => {
@@ -115,6 +116,7 @@ function expression(input: Math) {
       expression({ json })
         .subs({ [x]: root })
         .isEqual(0),
+    coeff: (x: string, n: number) => expression({ json: ['Coefficient', json, x, n] }),
     conj: () => expression({ json: ['Conjugate', json] }),
     count: (symol: string) => {
       function _count(json: MathJsonExpression): number {

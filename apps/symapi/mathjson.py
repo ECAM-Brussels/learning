@@ -35,6 +35,8 @@ def parse_expr(expr: MathJSON) -> sympy.Expr:
                 return sympy.Add(*args, evaluate=False)
             case "Argument":
                 return sympy.arg(*args)
+            case "Coefficient":
+                return sympy.coeff(*args)
             case "Complex":
                 return sympy.Add(args[0], args[1] * sympy.I, evaluate=False)
             case "Conjugate":
