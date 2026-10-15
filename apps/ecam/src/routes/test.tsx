@@ -3,11 +3,10 @@ import { createStep, expr, tex } from '@learning/core'
 import { allKeyed } from 'es-toolkit'
 
 const PolarForm = createStep({
-  schema: { data: { complex: 'expr' }, inputs: { r: 'expr', theta: 'expr' } },
+  schema: { data: { expr: 'expr' }, inputs: { r: 'expr', theta: 'expr' } },
   prompt: (ctx) => (
     <>
-      <p>Exprimez le nombre complexe {tex`${ctx.data.complex}`} en forme polaire</p>
-
+      <p>Exprimez le nombre complexe {tex`${ctx.data.expr}`} en forme polaire</p>
       <Attempt>
         {tex`r = `}
         {ctx.inputs.r}
@@ -18,14 +17,10 @@ const PolarForm = createStep({
   ),
   grade: async (ctx) => {
     const checks = await allKeyed({
-      correctR: ctx.data.complex.abs().isEqual(ctx.inputs.r),
-      correctTheta: ctx.data.complex.arg().isEqual(ctx.inputs.theta),
-      wrongQuadrant1: ctx.data.complex
-        .arg()
-        .isEqual(expr('\\pi + t').subs({ t: ctx.inputs.theta })),
-      wrongQuadrant2: ctx.data.complex
-        .arg()
-        .isEqual(expr('t - \\pi').subs({ t: ctx.inputs.theta })),
+      correctR: ctx.data.expr.abs().isEqual(ctx.inputs.r),
+      correctTheta: ctx.data.expr.arg().isEqual(ctx.inputs.theta),
+      wrongQuadrant1: ctx.data.expr.arg().isEqual(expr('\\pi + t').subs({ t: ctx.inputs.theta })),
+      wrongQuadrant2: ctx.data.expr.arg().isEqual(expr('t - \\pi').subs({ t: ctx.inputs.theta })),
     })
     return [checks.correctR && checks.correctTheta, checks]
   },
@@ -36,7 +31,7 @@ export default function Page() {
   return (
     <>
       Contenu...
-      <PolarForm id="hello" complex="1 + \imaginaryI" />
+      <PolarForm id="hello" expr="1 + \imaginaryI" />
     </>
   )
 }
