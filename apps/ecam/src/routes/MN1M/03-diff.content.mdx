@@ -41,7 +41,7 @@ Rappelons que la **pente** d'une droite passant par deux points $(x_1, y_1)$ et 
 :::remark
 
 Pour l'examen,
-vous devez pouvoir être capable de prédire
+vous devez être capable de prédire
 quand le calcul de la pente d'une droite donnera faussement $0$.
 Nous sommes dans ce cas si $\Delta y$ nécessite plus que environ $15$ chiffres significatifs.
 
@@ -77,14 +77,14 @@ on peut procéder comme suit:
 
 Ce raisonnement peut être traduit en code Python comme suit:
 
-```python
+```python run
 def secante(a, b, x):
     m = (f(b) - f(a)) / (b - a)
     y = m * (x - a) + f(a)
     return y
 ```
 
-Souvent, on sera dans une conversation où $b$ nous est donné via $b = a + h$.
+Souvent, on sera dans une situation où $b$ nous est donné via $b = a + h$.
 La quantité $h$ est appelée le **pas**.
 Dans ce cas-ci, pour que notre droite passe par $(a, f(a))$ et $(a + h, f(a + h))$,
 on procède comme suit:
@@ -107,7 +107,7 @@ def secante(a, h, x):
 
 :::example[Sécantes à un graphe]
 
-Sur l'intervalle $[0, 2]$,
+Sur l'intervalle $[0, 2.5]$,
 tracez les fonctions suivantes:
 
 - la fonction {tex`f(x) = \sin x`}
@@ -127,14 +127,16 @@ def secante(a, h, x):
     m = (f(a + h) - f(a)) / h
     return m * (x - a) + f(a)
 
-x = np.linspace(0, 2, 100)
+x = np.linspace(0, 2.5, 100)
 plt.plot(x, f(x), label="f(x)")
 plt.plot(x, secante(1, 1, x), '--', label="g(x) (h = 1)")
 plt.plot(x, secante(1, 0.1, x), '--', label="h(x) (h = 0.1)")
 plt.legend()
 ```
 
-Accessoirement, on se rend compte que la sécante entre deux points proches du graphe est presque tangente au graphe.
+Accessoirement,
+on se rend compte que la sécante entre deux points proches du graphe
+se rapproche de la tangente à la fonction.
 
 :::
 
@@ -149,24 +151,24 @@ Accessoirement, on se rend compte que la sécante entre deux points proches du g
 À la section précédente,
 nous avons vu deux choses:
 
-1. La pente d'une droite sécante à un graphe d'une fonction $f$ en deux points $a$ et $a + h$ est donnée par
+1. La pente d'une droite sécante à un graphe d'une fonction $f$ en $a$ et $a + h$ est donnée par
    {tex.display`\frac{f(a + h) - f(a)}{h}.`}
 
-2. Si $h$ est petit, la sécante est presque _tangente_.
+2. Si $h$ est petit, la sécante se rapproche de la _tangente_ au graphe.
 
-La **dérivée** a pour objectif de représenter **pente de la tangente** au graphe de $f$ en $x = a$.
+La **dérivée** a pour objectif de représenter **la pente de la tangente** au graphe de $f$ en $x = a$.
 Les observations ci-dessus nous mènent à la définition suivante:
 
 :::definition[Dérivée]
 La **dérivée** de $f$ en $a$ est
 {tex`f'(a)
-= \lim_{h \to 0} \frac {f(a + h) - f(a)} h.`}
+= \lim_{h \to 0} \frac {f(a + h) - f(a)} h`}
 si cette limite existe et est réelle.
 :::
 
 En particulier, si $h$ est petit
 {tex`f'(a)
-\approx \frac {f(a + h) - f(a)} h.`}
+\approx \frac {f(a + h) - f(a)} h`}
 
 Nous allons utiliser cette approximation pour calculer des dérivées.
 
@@ -181,13 +183,14 @@ La quantité $|h|$ est appelée le **pas**.
 
 :::example
 
-Approximons la dérivée de $f(x) = \ln (x^2 + 1)$ en $a = 0$ avec le _quotient différentiel_ de pas $h = 10^{-6}$.
+Approximons la dérivée de $f(x) = \cos x$ en $a = 0$
+à l'aide du _quotient différentiel_ avec un pas $h = 10^{-6}$.
 
 ```python run
 import numpy as np
 
 def f(x):
-    return np.log(x**2 + 1)
+    return np.cos(x)
 
 h = 1e-6
 a = 0
@@ -197,7 +200,7 @@ a = 0
 
 La valeur théorique est
 {tex`f'(0)
-= \left. \frac{2x}{x^2 + 1} \right|_{x = 0}
+= \left. (-\sin x) \right|_{x = 0}
 = 0.`}
 
 :::
@@ -263,6 +266,10 @@ import differentialQuotients from './differential-quotients.jpg'
   src={differentialQuotients}
   alt="Différence avant, arrière et centrale"
 />
+<p class="text-center text-sm">
+  Image aimablement générée avec ChatGPT. Je n'avais plus de tokens pour afficher $\Delta y$ au bon
+  endroit.
+</p>
 
 Le **quotient différentiel central** est la **moyenne arithmétique** des quotients avant et arrière.
 Étant donné qu'il tient compte de ce qui se passe de part et d'autre de $x$,
@@ -274,12 +281,13 @@ Nous privilégierons dès lors l'emploi du **quotient différentiel central**.
 
 # Fonctions dérivées
 
-La _fonction dérivée_ d'une fonction $f$
+En calculant la limite du _quotient différentiel_ en chaque point,
+on obtient la **fonction dérivée** de $f$:
 
 {tex`x \mapsto
 f'(x) = \lim_{h \to 0} \frac{f(x + h) - f(x)}{h}`}
 
-Nous feront en chaque point une _approximation numérique_ de la dérivée
+Nous ferons en chaque point une _approximation numérique_ de la dérivée
 par un _quotient différentiel_.
 
 <Geogebra id="kT87vrax" class="mx-auto" />
@@ -311,6 +319,7 @@ def diff(x, h = 1e-6):
     return (f(x + h) - f(x - h)) / (2 * h)
 
 x = np.linspace(-1, 1, 100)
+plt.plot(x, f(x), label="f(x)")
 plt.plot(x, -2*x*np.exp(-x**2), label="f'(x)")
 plt.plot(x, diff(x), '--', label="diff(x, h=1e-6)")
 plt.plot(x, diff(x, 1e-15), '--', label="diff(x, h=1e-15)")
@@ -436,6 +445,8 @@ plt.legend()
 ```
 
 Avec $h = 10^{-8}$, la dérivée première est approximée correctement mais pas la seconde.
+À votre avis pourquoi?
+Quel choix du pas $h$ aurait garanti des bonnes approximations de la dérivée première et de la dérivée seconde?
 
 :::
 

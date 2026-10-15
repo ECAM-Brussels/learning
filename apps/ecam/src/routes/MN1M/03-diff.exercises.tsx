@@ -20,8 +20,11 @@ export function Slope() {
           </p>
           <p>
             Vous pouvez appeler la fonction pour la tester, par exemple{' '}
-            <code>pente([1, 2], [3, 4])</code> devrait retourner <code>1</code>.
+            <code>pente([1, 2], [3, 4])</code> devrait retourner
           </p>
+          {tex`
+            \frac{\Delta y}{\Delta x} = \frac{4 - 2}{3 - 1} = 1
+          `}
           <p class="text-sm italic">
             Remarque: cette exercice comporte deux parties. La deuxième apparaîtra après complétion
             de la première.
@@ -83,8 +86,8 @@ export function Secant() {
       <Matplotlib
         prompt={
           <p>
-            Tracez le graphe de la droite ayant pour pente {tex`-2`} et passant par le point{' '}
-            {tex`(-3, -4)`}. Nommez les axes.
+            Sur {tex`[-5, 5]`}, tracez le graphe de la droite ayant pour pente {tex`-2`} et passant
+            par le point {tex`(-3, -4)`}. Nommez les axes.
           </p>
         }
         tests={[
@@ -344,7 +347,7 @@ export function Derivatives() {
           </>
         }
         tests={[
-          { type: 'plot', x: [-1, 1], y: '-2*x*np.exp(-x)' },
+          { type: 'plot', x: [-1, 1], y: '-np.exp(-x)' },
           {
             type: 'plot',
             x: [-1, 1],
