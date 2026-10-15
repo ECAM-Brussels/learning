@@ -1,0 +1,39 @@
+import { tex } from '@learning/core'
+import * as Exercise from './04-automatic-differentiation.exercises'
+
+# Introduction
+
+Nous avons vu que l'approximation
+
+{tex.display`f'(a) \approx \frac{f(a + h) - f(a)} h`}
+
+est _numériquement instable_.
+Nous verrons aujourd'hui
+une méthode qui permet de calculer $f'(a)$ _automatiquement_,
+avec une réponse aussi _exacte_ que le permet l'arithmétique de l'ordinateur.
+
+# Nombres duaux
+
+## Un exemple introductif
+
+<Exercise.FirstExample />
+
+:::remark
+Si l'hypothèse $\epsilon \neq 0$ mais $\epsilon^2 = 0$, peut vous sembler absurde,
+mais elle a du sens dans le contexte du calcul numérique.
+
+Par exemple,
+
+```python run
+epsilon = 1e-10
+1 + epsilon
+```
+
+En revanche,
+
+```python run
+epsilon = 1e-10
+1 + epsilon**2
+```
+
+:::
