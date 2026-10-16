@@ -91,6 +91,7 @@ def is_expanded(input: OneExpression) -> bool:
     expr = input.expr.expr
     if expr.func != sympy.Add:
         expr = sympy.Add(0, expr, evaluate=False)
+    expr = flatten(expr, sympy.Add)
     for term in args(expr):
         if sympy.expand(term).func == sympy.Add:
             return False
