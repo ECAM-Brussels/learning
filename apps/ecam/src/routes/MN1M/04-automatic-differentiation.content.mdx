@@ -12,24 +12,25 @@ Nous verrons aujourd'hui
 une méthode qui permet de calculer $f'(a)$ _automatiquement_,
 avec une réponse aussi _exacte_ que le permet l'arithmétique de l'ordinateur.
 
-# Nombres duaux
+# Dérivation automatique
 
 ## Un exemple introductif
 
 <Exercise.FirstExample />
 
 :::remark
-Si l'hypothèse $\epsilon \neq 0$ mais $\epsilon^2 = 0$, peut vous sembler absurde,
-mais elle a du sens dans le contexte du calcul numérique.
 
-Par exemple,
+Si l'hypothèse $\epsilon \neq 0$ mais $\epsilon^2 = 0$ peut vous sembler absurde,
+elle a du sens dans le contexte du calcul numérique.
+En effet,
 
 ```python run
 epsilon = 1e-10
 1 + epsilon
 ```
 
-En revanche,
+Cependant $\epsilon^2$ n'est pas significatif par rapport à $1$,
+et vaut effectivement $0$ dans le calcul suivant:
 
 ```python run
 epsilon = 1e-10
@@ -37,3 +38,73 @@ epsilon = 1e-10
 ```
 
 :::
+
+Pour calculer $f'(a)$, le principe de la dérivation automatique est simple.
+
+1. Calculez $f(a + \epsilon)$
+
+2. Prenez le coefficient de $\epsilon$
+
+3. There is no step 3.
+
+:::example
+Calculez la dérivée de $f(x) = x^2 - 2x + 1$ en $a = 1$ par la dérivation automatique
+
+{tex`\begin{align*}
+  f(1 + \epsilon)
+  &= (1 + \epsilon)^2 - 2 (1 + \epsilon) + 1\\
+  &= 1 + 2\epsilon + \underbrace{\epsilon^2}_{0} - 2 - 2 \epsilon + 1\\
+  &= \underbrace{1}_{f(1)} + \underbrace{0}_{f'(1)} \epsilon
+\end{align*}`}
+
+En conséquence, $f'(1) = 0$.
+:::
+
+## Nombres duaux
+
+{tex`a + b \epsilon,
+\quad a, b \in \mathbb{R},
+\quad \epsilon^2 = 0`}
+
+### Règles de calcul
+
+| Règle                      | Explication                         |
+| -------------------------- | ----------------------------------- |
+| $\epsilon^2 = 0$           | Enlève les termes d'ordre supérieur |
+| $\sin \epsilon = \epsilon$ |                                     |
+| $\cos \epsilon = 1$        |                                     |
+
+:::example
+Calculons $\sin(x + \epsilon)$
+
+{tex`\begin{align*}
+  \sin(x + \epsilon)
+  &= \sin x \underbrace{\cos \epsilon}_{= 1} + \underbrace{\sin \epsilon}_{= \epsilon} \cos x\\
+  &= \sin x + \cos x \epsilon
+\end{align*}`}
+:::
+
+## Dérivation automatique
+
+$$
+f(x + \epsilon) = f(x) + f'(x) \epsilon
+$$
+
+En évaluant $f(a + \epsilon)$, on obtient donc $f(a)$ et $f'(a)$ en une seule évaluation.
+
+:::example
+
+Calculez la dérivée de $f(x) = \sin(x^2)$ en $x = 1$ en utilisant la dérivation automatique.
+
+```python run
+def f(x):
+    return np.sin(x**2)
+
+f(1 + epsilon)
+```
+
+:::
+
+## Fonctionnement
+
+## Newton-Raphson
