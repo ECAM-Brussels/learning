@@ -340,6 +340,8 @@ export function Step<S extends StepSchema, F extends JsonObject>(
       <OptionsContext
         value={() => ({
           ...rawOptions(),
+          // Some options need to be overriden or can't be inherited
+          video: undefined,
           ...(options().allowResubmissions && step.correct === false
             ? { allowResubmissions: false, readOnly: true }
             : {}),
