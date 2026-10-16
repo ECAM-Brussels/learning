@@ -246,7 +246,7 @@ export function Tangents() {
           {
             type: 'plot',
             x: [-0.5, 0.5],
-            y: '(np.exp(0 + 0.5) - np.exp(0)) / (0.5) * (x - 0) + np.exp(0)',
+            y: '(np.exp(0 - 0.5) - np.exp(0)) / (-0.5) * (x - 0) + np.exp(0)',
           },
           { type: 'axisLabels', x: /x/, y: /y/ },
         ]}
