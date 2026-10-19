@@ -1,11 +1,13 @@
 import { clientOnly } from '@solidjs/web'
 
 export * from './src/Attempt'
+export * from './src/Board'
 export * from './src/Boundary'
 export * from './src/Breadcrumbs'
 export * from './src/Card'
 export * from './src/CheckMark'
 export * from './src/Code'
+export * from './src/ComplexPlaneInput'
 export * from './src/Dot'
 export * from './src/Environment'
 export * from './src/Fa'
@@ -26,6 +28,5 @@ export * from './src/Slideshow'
 export * from './src/SymbolicRepresentation'
 export * from './src/Youtube'
 
-export const Board = clientOnly(() => import('./src/Board'))
 export const MathField = clientOnly(() => import('./src/MathField'))
 export const Python = clientOnly(() => import('./src/Python'))
