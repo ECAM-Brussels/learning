@@ -23,7 +23,7 @@ export function ComplexPlaneInput(rawProps: {
       axis
       defaultAxes={
         props.grid
-          ? undefined
+          ? {}
           : {
               x: {
                 ticks: { majorHeight: 0, visible: false },

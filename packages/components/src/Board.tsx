@@ -52,7 +52,7 @@ export const Board = Object.assign(
       >
         <div
           class={[
-            'mx-auto my-4 h-175 w-175 rounded-xl border border-slate-200 shadow',
+            'mx-auto my-4 h-175 w-175 rounded-xl border border-slate-200 bg-white shadow',
             props.class,
           ]}
           ref={setEl}
