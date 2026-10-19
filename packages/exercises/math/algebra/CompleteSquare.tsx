@@ -1,8 +1,8 @@
 import { Attempt, Scope } from '@learning/components'
-import { createStep, tex } from '@learning/core'
+import { createStep, expr, tex } from '@learning/core'
 import { Expand } from '@learning/exercises/math/algebra/Expand'
 import { allKeyed } from 'es-toolkit/promise'
-import { createMemo, Match, Switch } from 'solid-js'
+import { createMemo, Match, Show, Switch } from 'solid-js'
 
 export const CompleteSquare = createStep({
   name: 'math/algebra/complete-square',
@@ -12,7 +12,7 @@ export const CompleteSquare = createStep({
   },
   prompt: (ctx) => (
     <>
-      <p>Complétez le carré:</p>
+      <p>Complète le carré:</p>
       <Attempt>
         {tex`${ctx.data.expr.expand()} =`} {ctx.inputs.attempt}
       </Attempt>
@@ -26,78 +26,165 @@ export const CompleteSquare = createStep({
     return hasOneX && equal
   },
   feedback: (ctx) => {
-    const hasOneX = createMemo(() => ctx.inputs.attempt.count('x') === 1)
-    const equal = createMemo(() => ctx.inputs.attempt.isEqual(ctx.data.expr))
+    const attempt = () => ctx.inputs.attempt
+    const hasOneX = createMemo(() => attempt().count('x') === 1)
+    const degree = createMemo(() => attempt().degree())
+    const isExpanded = createMemo(() => attempt().isExpanded())
 
     return (
       <Switch>
-        <Match when={!hasOneX()}>
-          <p>
-            L'objectif de l'exercice est d'écire l'expression donnée sous la forme
+        <Match when={degree() !== 2 || !hasOneX() || isExpanded()}>
+          <p class="mt-4">
+            L'objectif de l'exercice est d'écrire l'expression donnée sous la forme
             {tex`
-            a(x - \alpha)^2 \pm \beta^2`}
-            Réessayez!
+            a(x - \alpha)^2 + \beta`}
+            Réessaie!
           </p>
           <ctx.Self />
         </Match>
-        <Match when={hasOneX()}>
+        <Match when={degree() === 2}>
           <Scope>
             {() => {
-              const correctXsquaredCoeff = createMemo(() =>
-                ctx.inputs.attempt.coeff('x', 2).isEqual(ctx.data.expr.coeff('x', 2)),
-              )
-              const correctXCoeff = createMemo(() =>
-                ctx.inputs.attempt.coeff('x', 1).isEqual(ctx.data.expr.coeff('x', 1)),
-              )
-              const correctZeroCoeff = createMemo(() =>
-                ctx.inputs.attempt.coeff('x', 0).isEqual(ctx.data.expr.coeff('x', 0)),
-              )
+              const coeff = (n: number) => ctx.data.expr.coeff('x', n)
+              const correctCoeff = (n: number) => attempt().coeff('x', n).isEqual(coeff(n))
+              const a = () => coeff(2)
+              const b = () => coeff(1)
+              const c = () => coeff(0)
+              const correctA = createMemo(() => correctCoeff(2))
+              const correctB = createMemo(() => correctCoeff(1))
+              const correctC = createMemo(() => correctCoeff(0))
+              const partialPoly = () => expr('x^2 + (b/a)x').subs({ a: a(), b: b() }).expand()
+              const testMonic = createMemo(() => a().isEqual(1))
               return (
-                <Switch>
-                  <Match when={!correctXsquaredCoeff()}>
+                <Switch fallback={<p class="mt-4">Parfait!</p>}>
+                  <Match when={!correctA()}>
                     <>
-                      <p>Le coefficient de {tex`x^2`} n'est pas correct!</p>
-                      <Expand expr={ctx.inputs.attempt}>
-                        {(expandCtx) => (
-                          <>
-                            <p>
-                              On voit que le développement de ta réponse{' '}
-                              {tex`${expandCtx.inputs.attempt}`} n'est pas égale à l'expression de
-                              départ. Réessaye!
-                            </p>
-                            <ctx.Self />
-                          </>
-                        )}
-                      </Expand>
-                    </>
-                  </Match>
-                  <Match when={correctXsquaredCoeff() && !correctXCoeff()}>Ton b est faux</Match>
-                  <Match when={correctXsquaredCoeff() && correctXCoeff() && !correctZeroCoeff()}>
-                    <>
-                      <p>
-                        Ton produit remarquable est correct, mais pas le terme constant. Vérifie:
+                      <p class="mt-4">
+                        Le coefficient de {tex`x^2`} n'est pas correct!{' '}
+                        <Show when={!testMonic()}>
+                          Indice: commence par mettre en évidence le coefficient de {tex`x^2`}.
+                        </Show>
                       </p>
-                      <Expand expr={ctx.inputs.attempt}>
+                      <ctx.Self />
+                    </>
+                  </Match>
+                  <Match when={!correctB() && testMonic()}>
+                    <>
+                      <p class="mt-4">Ton produit remarquable n'est pas correct.</p>
+                      <MakeSquaredBinomial expr={partialPoly()}>
+                        {(MakeSquaredBinomialCtx) => (
+                          <>
+                            <p class="mt-4">
+                              Super, tu as trouvé le bon produit remarquable:{' '}
+                              {tex`${expr('(x + b/2)^2').subs({ b: b() }).simplify()}`}. Réessaie
+                              maintenant!
+                            </p>
+                            <ctx.Self />
+                          </>
+                        )}
+                      </MakeSquaredBinomial>
+                    </>
+                  </Match>
+                  <Match when={!correctB()}>
+                    <>
+                      <p class="mt-4">
+                        Ton produit remarquable n'est pas correct. Indice: il faut d'abord mettre en
+                        évidence le facteur {tex`${a()}`}:{' '}
+                        {tex`
+                        ${ctx.data.expr.expand()} = ${a()}( ${partialPoly()} + \ldots )
+                        `}
+                      </p>
+                      <MakeSquaredBinomial expr={partialPoly()}>
+                        {(MakeSquaredBinomialCtx) => (
+                          <>
+                            <p class="mt-4">
+                              Super, tu as trouvé le bon produit remarquable:{' '}
+                              {tex`${expr('(x + b/(2a))^2').subs({ a: a(), b: b() }).simplify()}`}.
+                              Réessaie maintenant!
+                            </p>
+                            <ctx.Self />
+                          </>
+                        )}
+                      </MakeSquaredBinomial>
+                    </>
+                  </Match>
+                  <Match when={!correctC()}>
+                    <>
+                      <p class="mt-4">
+                        Ton produit remarquable est correct, mais pas le terme constant.
+                      </p>
+                      <Expand expr={attempt()}>
                         {(expandCtx) => (
                           <>
-                            <p>
+                            <p class="mt-4">
                               On voit que le développement de ta réponse{' '}
-                              {tex`${expandCtx.inputs.attempt}`} n'a pas le même terme constant que
-                              l'expression de départ. Réessaye!
+                              {tex`${expandCtx.inputs.attempt.simplify()}`} n'a pas le même terme
+                              constant que l'expression de départ. Réessaie!
                             </p>
                             <ctx.Self />
                           </>
                         )}
                       </Expand>
                     </>
-                  </Match>
-                  <Match when={correctXsquaredCoeff() && correctXCoeff() && correctZeroCoeff()}>
-                    Bravo, tu as la bonne réponse!
                   </Match>
                 </Switch>
               )
             }}
           </Scope>
+        </Match>
+      </Switch>
+    )
+  },
+})
+
+const MakeSquaredBinomial = createStep({
+  schema: {
+    data: { expr: 'expr' },
+    inputs: { attempt: 'expr' },
+  },
+  prompt: (ctx) => (
+    <>
+      <p>
+        Quel nombre permet de compléter l'expression:
+        {tex`
+        ${ctx.data.expr} + \ldots
+        `}
+      </p>
+      <p>afin que ce soit un produit remarquable?</p>
+      <Attempt>{ctx.inputs.attempt}</Attempt>
+    </>
+  ),
+  grade: async (ctx) => {
+    const answer = expr('(b / 2)^2').subs({ b: ctx.data.expr.coeff('x', 1) })
+    return ctx.inputs.attempt.isEqual(answer)
+  },
+  feedback: (ctx) => {
+    const answer = createMemo(() => expr('(b / 2)^2').subs({ b: ctx.data.expr.coeff('x', 1) }))
+    const correct = createMemo(() => ctx.inputs.attempt.isEqual(answer()))
+    const coeff = (n: number) => ctx.data.expr.coeff('x', n)
+    const a = () => coeff(2)
+    const b = () => coeff(1)
+    const completeExpr = () =>
+      expr('ax^2 + bx + c').subs({ a: a(), b: b(), c: ctx.inputs.attempt }).expand()
+    const rootAttempt = () => expr('\\sqrt{c}').subs({ c: ctx.inputs.attempt }).simplify()
+    const exprToExpand = () => expr('(x + r)^2').subs({ r: rootAttempt() })
+    return (
+      <Switch
+        fallback={<p>En effet, le term correct est {tex`${answer()}=${answer().simplify()}`} .</p>}
+      >
+        <Match when={!correct() && b().gt(0)}>
+          <p class="mt-4">
+            Cela voudrait dire que {tex`${completeExpr()} = (x + ${rootAttempt()})^2`}, ce qui est
+            faux! Fais attention au <em>double produit</em> !
+          </p>
+          <ctx.Self />
+        </Match>
+        <Match when={!correct() && b().lt(0)}>
+          <p>
+            Cela voudrait dire que {tex`${completeExpr()} = (x - ${rootAttempt()})^2`}, ce qui est
+            faux! Fais attention au <em>double produit</em> !
+          </p>
+          <ctx.Self />
         </Match>
       </Switch>
     )
