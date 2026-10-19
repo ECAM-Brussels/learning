@@ -1,7 +1,7 @@
 import { Attempt } from '@learning/components'
 import { createStep, tex } from '@learning/core'
 import { allKeyed } from 'es-toolkit'
-import { Match, Switch } from 'solid-js'
+import { createMemo, Match, Switch } from 'solid-js'
 
 export const Expand = createStep({
   name: 'math/algebra/expand',
@@ -26,11 +26,21 @@ export const Expand = createStep({
     })
     return [equal && expanded, { equal, expanded }]
   },
-  feedback: (ctx) => (
-    <Switch>
-      <Match when={!ctx.correct}>
-        <ctx.Self />
-      </Match>
-    </Switch>
-  ),
+  feedback: (ctx) => {
+    const equal = createMemo(() => ctx.inputs.attempt.isEqual(ctx.data.expr))
+    const expanded = createMemo(() => ctx.inputs.attempt.isExpanded())
+
+    return (
+      <Switch>
+        <Match when={!equal()}>
+          <p>Ton développement n'est pas correct.</p>
+          <ctx.Self />
+        </Match>
+        <Match when={!expanded()}>
+          <p>Tu n'as pas entièrement développé ta réponse.</p>
+          <ctx.Self />
+        </Match>
+      </Switch>
+    )
+  },
 })
