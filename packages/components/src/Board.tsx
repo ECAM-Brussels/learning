@@ -12,10 +12,11 @@ import {
   omit,
   onSettled,
   Show,
+  snapshot,
   useContext,
 } from 'solid-js'
 
-type Coordinate = number | (() => number)
+export type Coordinate = number | (() => number)
 
 export const BoardContext = createContext<() => JXG.Board | null>(() => null)
 
@@ -33,14 +34,12 @@ export const Board = Object.assign(
     const [el, setEl] = createSignal<HTMLDivElement>()
     const attrs = merge(
       {
-        boundingbox: [-10, 10, 10, -10],
-        axis: true,
         showCopyright: false,
       } satisfies Partial<JXG.BoardAttributes>,
       omit(props, 'children', 'class'),
     )
     onSettled(() => {
-      const board = JSXGraph.initBoard(el()!, attrs)
+      const board = JSXGraph.initBoard(el()!, { ...snapshot(attrs) })
       setBoard(board)
       return () => JXG.JSXGraph.freeBoard(board)
     })
@@ -53,7 +52,7 @@ export const Board = Object.assign(
       >
         <div
           class={[
-            'mx-auto my-4 h-175 w-175 rounded-xl border border-slate-200 shadow',
+            'mx-auto my-4 h-175 w-175 rounded-xl border border-slate-200 bg-white shadow',
             props.class,
           ]}
           ref={setEl}
@@ -171,11 +170,26 @@ export const Board = Object.assign(
       props: {
         position: [Coordinate, Coordinate]
         children?: (point: JXG.Point) => JSX.Element
+        onDrag?: (point: JXG.Point) => void
       } & JXG.PointAttributes,
     ) => {
       const attrs = omit(props, 'position', 'children')
       return (
-        <Element type="point" parent={props.position} attrs={attrs} children={props.children} />
+        <Element type="point" parent={props.position} attrs={attrs}>
+          {(point: JXG.Point) => {
+            createEffect(
+              () => props.onDrag,
+              (onDrag) => {
+                if (onDrag) {
+                  point.on('drag', () => {
+                    onDrag(point)
+                  })
+                }
+              },
+            )
+            return props.children?.(point)
+          }}
+        </Element>
       )
     },
     Plot: (
