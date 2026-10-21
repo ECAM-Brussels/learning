@@ -1,3 +1,4 @@
+import dedent from 'dedent'
 import { EventIterator } from 'event-iterator'
 const worker = new Worker(new URL('./python/worker.ts', import.meta.url), { type: 'module' })
 
@@ -65,7 +66,7 @@ async function output(code: string, options?: { math: boolean }): Promise<FinalO
   throw new Error('No output received')
 }
 
-async function test(
+async function runPythonTest(
   code: string,
   test: string | null,
   check: (output: FinalOutput) => boolean | Promise<boolean>,
@@ -74,8 +75,101 @@ async function test(
   return { ...out, passed: await check(out) }
 }
 
+function expect(code: string, desc?: string) {
+  function getMethods<T = string | number | boolean>(type: 'result' | 'stdout') {
+    return {
+      toBe: (expected: T) => ({
+        desc,
+        fn: async () => {
+          const res = await output(code)
+          return res[type]?.trim() === String(expected)
+        },
+      }),
+      toMatch: (regex: RegExp) => ({
+        desc,
+        fn: async () => {
+          const res = await output(code)
+          if (res[type] === undefined) return false
+          return regex.test(res[type])
+        },
+      }),
+      toSatisfy: (check: (result: string) => boolean | Promise<boolean>) => ({
+        desc,
+        fn: async () => {
+          const res = await output(code)
+          if (res[type] === undefined) return false
+          return check(res[type])
+        },
+      }),
+    }
+  }
+  return {
+    desc: (newDescription: string) => expect(code, newDescription),
+    matplotlib: () => ({
+      lineCount: expect(code, desc)
+        .with(
+          dedent /* python */ `
+            import matplotlib.pyplot as plt
+            ax = plt.gcf().axes[0]
+            plt.close("all")
+            len(ax.get_lines())
+          `,
+        )
+        .result<number>(),
+      sameScale: expect(code, desc)
+        .with(
+          dedent /* python */ `
+            import matplotlib.pyplot as plt
+            ax = plt.gcf().axes[0]
+            ax.get_aspect() == 1
+          `,
+        )
+        .result<boolean>(),
+      xLabel: expect(code, desc)
+        .with(
+          dedent /* python */ `
+            import matplotlib.pyplot as plt
+            ax = plt.gcf().axes[0]
+            ax.get_xlabel()
+          `,
+        )
+        .result<string>(),
+      yLabel: expect(code, desc)
+        .with(
+          dedent /* python */ `
+            import matplotlib.pyplot as plt
+            ax = plt.gcf().axes[0]
+            ax.get_ylabel()
+          `,
+        )
+        .result<string>(),
+    }),
+    result: <T extends string | number | boolean>() => getMethods<T>('result'),
+    stdout: <T extends string | number | boolean>() => getMethods<T>('stdout'),
+    toError: {
+      desc,
+      fn: async () => {
+        const res = await output(code)
+        return res.error !== undefined
+      },
+    },
+    toPrint: (expected: string | boolean | number) => ({
+      desc,
+      fn: async () => {
+        const res = await output(code)
+        return res.result?.trim() === String(expected)
+      },
+    }),
+    toReturn: (expected: string | boolean | number) => expect(code, desc).result().toBe(expected),
+    toSatisfy: (check: (code: string) => boolean | Promise<boolean>) =>
+      expect(code, desc).result().toSatisfy(check),
+    with: (t: string) => expect(`${code}\n${t}`, desc),
+  }
+}
+
 export const python = {
+  expect,
   run,
-  test,
+  test: runPythonTest,
   output,
 }
