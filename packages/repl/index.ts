@@ -105,45 +105,49 @@ function expect(code: string, desc?: string) {
   }
   return {
     desc: (newDescription: string) => expect(code, newDescription),
-    matplotlib: () => ({
-      lineCount: expect(code, desc)
-        .with(
-          dedent /* python */ `
-            import matplotlib.pyplot as plt
-            ax = plt.gcf().axes[0]
-            plt.close("all")
-            len(ax.get_lines())
-          `,
-        )
-        .result<number>(),
-      sameScale: expect(code, desc)
-        .with(
-          dedent /* python */ `
-            import matplotlib.pyplot as plt
-            ax = plt.gcf().axes[0]
-            ax.get_aspect() == 1
-          `,
-        )
-        .result<boolean>(),
-      xLabel: expect(code, desc)
-        .with(
-          dedent /* python */ `
-            import matplotlib.pyplot as plt
-            ax = plt.gcf().axes[0]
-            ax.get_xlabel()
-          `,
-        )
-        .result<string>(),
-      yLabel: expect(code, desc)
-        .with(
-          dedent /* python */ `
-            import matplotlib.pyplot as plt
-            ax = plt.gcf().axes[0]
-            ax.get_ylabel()
-          `,
-        )
-        .result<string>(),
-    }),
+    matplotlib: {
+      lineCount: () =>
+        expect(code, desc)
+          .with(
+            dedent /* python */ `
+              import matplotlib.pyplot as plt
+              ax = plt.gcf().axes[0]
+              plt.close("all")
+              len(ax.get_lines())
+            `,
+          )
+          .result<number>(),
+      sameScale: () =>
+        expect(code, desc)
+          .with(
+            dedent /* python */ `
+              import matplotlib.pyplot as plt
+              ax = plt.gcf().axes[0]
+              ax.get_aspect() == 1
+            `,
+          )
+          .result<boolean>(),
+      xLabel: () =>
+        expect(code, desc)
+          .with(
+            dedent /* python */ `
+              import matplotlib.pyplot as plt
+              ax = plt.gcf().axes[0]
+              ax.get_xlabel()
+            `,
+          )
+          .result<string>(),
+      yLabel: () =>
+        expect(code, desc)
+          .with(
+            dedent /* python */ `
+              import matplotlib.pyplot as plt
+              ax = plt.gcf().axes[0]
+              ax.get_ylabel()
+            `,
+          )
+          .result<string>(),
+    },
     result: <T extends string | number | boolean>() => getMethods<T>('result'),
     stdout: <T extends string | number | boolean>() => getMethods<T>('stdout'),
     toError: {
