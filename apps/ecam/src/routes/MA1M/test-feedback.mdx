@@ -1,18 +1,31 @@
 import { CompleteSquare } from '@learning/exercises/math/algebra/CompleteSquare'
-import { Expand } from '@learning/exercises/math/algebra/Expand'
-import { expr, createStep } from '@learning/core'
+import { VertexParabole } from '@learning/exercises/math/calculus/VertexParabole'
+
+import { expr, createStep, Sequence } from '@learning/core'
 import { sample } from 'es-toolkit'
 
 # Test Feedback Carré parfait
 
-<CompleteSquare
-  id="test"
+<VertexParabole
+  id="sommetparabole"
   data={() => {
     const a = sample([-5, -4, -3, -2, -1, 1, 2, 3, 4, 5])
     const b = sample([-5, -4, -3, -2, -1, 1, 2, 3, 4, 5])
     const c = sample([-5, -4, -3, -2, -1, 1, 2, 3, 4, 5])
-    return { expr: expr('a (x - b)^2 + c').subs({ a, b, c }) }
+    return { expr: expr('a (x - b)^2 + c').subs({ a, b, c }).expand() }
   }}
 />
 
-{/* <Expand expr="2(x-3)^2" /> */}
+<Sequence
+  id="complete-square"
+  next={() => (
+    <CompleteSquare
+      data={() => {
+        const a = sample([-5, -4, -3, -2, -1, 1, 2, 3, 4, 5])
+        const b = sample([-5, -4, -3, -2, -1, 1, 2, 3, 4, 5])
+        const c = sample([-5, -4, -3, -2, -1, 1, 2, 3, 4, 5])
+        return { expr: expr('a (x - b)^2 + c').subs({ a, b, c }) }
+      }}
+    />
+  )}
+/>
