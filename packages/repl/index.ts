@@ -75,14 +75,15 @@ async function runPythonTest(
   return { ...out, passed: await check(out) }
 }
 
-function expect(code: string, desc?: string) {
-  function getMethods<T = string | number | boolean>(type: 'result' | 'stdout') {
+function expect(code: string, state: { desc?: string; negate?: boolean } = {}) {
+  const { desc, negate } = state
+  function getMethods<T = string | number | boolean>(type: 'result' | 'stdout' | 'error') {
     return {
       toBe: (expected: T) => ({
         desc,
         fn: async () => {
           const res = await output(code)
-          return res[type]?.trim() === String(expected)
+          return (res[type]?.trim() === String(expected)) === !negate
         },
       }),
       toMatch: (regex: RegExp) => ({
@@ -90,7 +91,7 @@ function expect(code: string, desc?: string) {
         fn: async () => {
           const res = await output(code)
           if (res[type] === undefined) return false
-          return regex.test(res[type])
+          return regex.test(res[type]) === !negate
         },
       }),
       toSatisfy: (check: (result: string) => boolean | Promise<boolean>) => ({
@@ -98,16 +99,17 @@ function expect(code: string, desc?: string) {
         fn: async () => {
           const res = await output(code)
           if (res[type] === undefined) return false
-          return check(res[type])
+          return check(res[type]) === !negate
         },
       }),
     }
   }
   return {
-    desc: (newDescription: string) => expect(code, newDescription),
+    desc: (newDescription: string) => expect(code, { ...state, desc: newDescription }),
+    error: <T extends string | number | boolean>() => getMethods<T>('error'),
     matplotlib: {
       lineCount: () =>
-        expect(code, desc)
+        expect(code, state)
           .with(
             dedent /* python */ `
               import matplotlib.pyplot as plt
@@ -118,7 +120,7 @@ function expect(code: string, desc?: string) {
           )
           .result<number>(),
       sameScale: () =>
-        expect(code, desc)
+        expect(code, state)
           .with(
             dedent /* python */ `
               import matplotlib.pyplot as plt
@@ -128,7 +130,7 @@ function expect(code: string, desc?: string) {
           )
           .result<boolean>(),
       xLabel: () =>
-        expect(code, desc)
+        expect(code, state)
           .with(
             dedent /* python */ `
               import matplotlib.pyplot as plt
@@ -138,7 +140,7 @@ function expect(code: string, desc?: string) {
           )
           .result<string>(),
       yLabel: () =>
-        expect(code, desc)
+        expect(code, state)
           .with(
             dedent /* python */ `
               import matplotlib.pyplot as plt
@@ -148,26 +150,27 @@ function expect(code: string, desc?: string) {
           )
           .result<string>(),
     },
+    not: () => expect(code, { ...state, negate: !negate }),
     result: <T extends string | number | boolean>() => getMethods<T>('result'),
     stdout: <T extends string | number | boolean>() => getMethods<T>('stdout'),
-    toError: {
+    toError: () => ({
       desc,
       fn: async () => {
         const res = await output(code)
-        return res.error !== undefined
+        return (res.error !== undefined) !== negate
       },
-    },
+    }),
     toPrint: (expected: string | boolean | number) => ({
       desc,
       fn: async () => {
         const res = await output(code)
-        return res.result?.trim() === String(expected)
+        return (res.result?.trim() === String(expected)) !== negate
       },
     }),
-    toReturn: (expected: string | boolean | number) => expect(code, desc).result().toBe(expected),
+    toReturn: (expected: string | boolean | number) => expect(code, state).result().toBe(expected),
     toSatisfy: (check: (code: string) => boolean | Promise<boolean>) =>
-      expect(code, desc).result().toSatisfy(check),
-    with: (t: string) => expect(`${code}\n${t}`, desc),
+      expect(code, state).result().toSatisfy(check),
+    with: (t: string) => expect(`${code}\n${t}`, state),
   }
 }
 
