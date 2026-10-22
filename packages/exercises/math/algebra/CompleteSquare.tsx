@@ -55,21 +55,22 @@ export const CompleteSquare = createStep({
               const correctB = createMemo(() => correctCoeff(1))
               const correctC = createMemo(() => correctCoeff(0))
               const partialPoly = () => expr('x^2 + (b/a)x').subs({ a: a(), b: b() }).expand()
-              const testMonic = createMemo(() => a().isEqual(1))
+              const isMonic = createMemo(() => a().isEqual(1))
+              const isAntiMonic = createMemo(() => a().isEqual(-1))
               return (
                 <Switch fallback={<p class="mt-4">Parfait!</p>}>
                   <Match when={!correctA()}>
                     <>
                       <p class="mt-4">
                         Le coefficient de {tex`x^2`} n'est pas correct!{' '}
-                        <Show when={!testMonic()}>
+                        <Show when={!isMonic()}>
                           Indice: commence par mettre en évidence le coefficient de {tex`x^2`}.
                         </Show>
                       </p>
                       <ctx.Self />
                     </>
                   </Match>
-                  <Match when={!correctB() && testMonic()}>
+                  <Match when={!correctB() && isMonic()}>
                     <>
                       <p class="mt-4">Ton produit remarquable n'est pas correct.</p>
                       <MakeSquaredBinomial expr={partialPoly()}>
@@ -91,9 +92,16 @@ export const CompleteSquare = createStep({
                       <p class="mt-4">
                         Ton produit remarquable n'est pas correct. Indice: il faut d'abord mettre en
                         évidence le facteur {tex`${a()}`}:{' '}
-                        {tex`
-                        ${ctx.data.expr.expand()} = ${a()}( ${partialPoly()} + \ldots )
-                        `}
+                        <Show when={!isAntiMonic()}>
+                          {tex`
+                          ${ctx.data.expr.expand()} = ${a()}( ${partialPoly()} + \ldots )
+                          `}
+                        </Show>
+                        <Show when={isAntiMonic()}>
+                          {tex`
+                          ${ctx.data.expr.expand()} = -( ${partialPoly()} + \ldots )
+                          `}
+                        </Show>
                       </p>
                       <MakeSquaredBinomial expr={partialPoly()}>
                         {(MakeSquaredBinomialCtx) => (
