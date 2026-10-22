@@ -33,7 +33,9 @@ export default {
           const exercise = JSON.parse(localStorage.getItem(k) ?? '[]')
           return [
             parseInt(k.split(':').at(-1)!),
-            exercise.length > 0 ? exercise.every((part: StoredStep) => part.correct) : undefined,
+            exercise.filtered((part: StoredStep) => part.correct !== null).length > 0
+              ? exercise.every((part: StoredStep) => part.correct)
+              : undefined,
           ]
         })
         .filter(([, correct]) => correct !== undefined),
