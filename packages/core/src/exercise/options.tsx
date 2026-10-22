@@ -23,6 +23,7 @@ export const Options = v.object({
   ),
   allowResets: v.optional(v.boolean(), true),
   allowResubmissions: v.optional(v.boolean(), false),
+  depth: v.optional(v.number(), 0),
   readOnly: v.optional(
     v.union([
       v.boolean(),

@@ -359,7 +359,7 @@ export const LinearCombination = createDerivedStep(
           Calculez la combinaison linéaire suivante avec <code>numpy</code>:
         </p>
         {tex`
-          ${props.c[0]} ${expr(props.v[0])} ${props.c[1] > 0 ? '+' : ''} ${props.c[1]} ${expr(props.v[1])}
+          ${props.c[0]} ${expr(props.v[0], 'vector')} ${props.c[1] > 0 ? '+' : ''} ${props.c[1]} ${expr(props.v[1], 'vector')}
         `}
       </>
     ),
@@ -404,7 +404,7 @@ export const VectorProduct = createDerivedStep(
           {props.type === 'dot' ? 'scalaire' : 'vectoriel'}
         </p>
         {tex`
-          ${expr(props.v[0])} ${props.type === 'dot' ? `\\cdot` : `\\times`} ${expr(props.v[1])}
+          ${expr(props.v[0], 'vector')} ${props.type === 'dot' ? `\\cdot` : `\\times`} ${expr(props.v[1], 'vector')}
         `}
       </>
     ),
