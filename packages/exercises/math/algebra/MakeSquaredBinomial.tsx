@@ -3,6 +3,7 @@ import { createStep, expr, tex } from '@learning/core'
 import { createMemo, Match, Switch } from 'solid-js'
 
 export const MakeSquaredBinomial = createStep({
+  name: 'math/algebra/make-squared-binomial',
   schema: {
     data: { expr: 'expr' },
     inputs: { attempt: 'expr' },
