@@ -1,15 +1,15 @@
 import { CompleteSquare } from '@learning/exercises/math/algebra/CompleteSquare'
-import { VertexParabole } from '@learning/exercises/math/calculus/VertexParabole'
+import { ParabolaVertex } from '@learning/exercises/math/calculus/ParabolaVertex'
 
 import { expr, createStep, Sequence } from '@learning/core'
 import { sample } from 'es-toolkit'
 
 # Test Feedback Carré parfait
 
-<VertexParabole
+<ParabolaVertex
   id="sommetparabole"
   data={() => {
-    const a = sample([-5, -4, -3, -2, -1, 1, 2, 3, 4, 5])
+    const a = sample([-1])
     const b = sample([-5, -4, -3, -2, -1, 1, 2, 3, 4, 5])
     const c = sample([-5, -4, -3, -2, -1, 1, 2, 3, 4, 5])
     return { expr: expr('a (x - b)^2 + c').subs({ a, b, c }).expand() }

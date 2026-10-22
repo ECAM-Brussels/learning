@@ -90,8 +90,8 @@ export const CompleteSquare = createStep({
                   <Match when={!correctB()}>
                     <>
                       <p class="mt-4">
-                        Ton produit remarquable n'est pas correct. Indice: il faut d'abord mettre en
-                        évidence le facteur {tex`${a()}`}:{' '}
+                        Ton produit remarquable n'est pas correct. Indice&nbsp;: il faut d'abord
+                        mettre en évidence le facteur {tex`${a()}:`}
                         <Show when={!isAntiMonic()}>
                           {tex`
                           ${ctx.data.expr.expand()} = ${a()}( ${partialPoly()} + \ldots )

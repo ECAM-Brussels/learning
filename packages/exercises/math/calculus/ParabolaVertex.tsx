@@ -3,7 +3,7 @@ import { createStep, expr, tex } from '@learning/core'
 import { Show } from 'solid-js'
 import { CompleteSquare } from '../algebra/CompleteSquare'
 
-export const VertexParabole = createStep({
+export const ParabolaVertex = createStep({
   schema: {
     data: { expr: 'expr' },
     inputs: { attemptx: 'expr', attempty: 'expr' },
@@ -27,15 +27,18 @@ export const VertexParabole = createStep({
       .subs({ a: a(), b: ctx.inputs.attemptx, c: ctx.inputs.attempty })
       .isEqual(ctx.data.expr)
   },
-  feedback: (ctx) => (
-    <Show when={!ctx.correct} fallback={<p>Parfait!</p>}>
-      <CompleteSquare expr={ctx.data.expr}>
-        <p>
-          Tu as bien complété carré, ce qui fait apparaître les translations de la parabole.
-          Réessaie maintenant!
-        </p>
-        <ctx.Self />
-      </CompleteSquare>
-    </Show>
-  ),
+  feedback: (ctx) => {
+    const coeff = (n: number) => ctx.data.expr.coeff('x', n)
+    return (
+      <Show when={!ctx.correct} fallback={<p>Parfait!</p>}>
+        <CompleteSquare expr={ctx.data.expr}>
+          <p>
+            Tu as bien complété carré, ce qui fait apparaître les translations de la parabole.
+            Réessaie maintenant!
+          </p>
+          <ctx.Self />
+        </CompleteSquare>
+      </Show>
+    )
+  },
 })
