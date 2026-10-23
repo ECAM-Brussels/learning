@@ -36,17 +36,21 @@ export const MakeSquaredBinomial = createStep({
     const exprToExpand = () => expr('(x + r)^2').subs({ r: rootAttempt() })
     return (
       <Switch
-        fallback={<p>En effet, le terme correct est {tex`${answer()}=${answer().simplify()}`} .</p>}
+        fallback={
+          <p class="text-right">
+            En effet, le terme correct est {tex`${answer()}=${answer().simplify()}`} .
+          </p>
+        }
       >
         <Match when={!correct() && b().gt(0)}>
-          <p class="mt-4">
+          <p class="text-right">
             Cela voudrait dire que {tex`${completeExpr()} = (x + ${rootAttempt()})^2`}, ce qui est
             faux! Fais attention au <em>double produit</em> !
           </p>
           <ctx.Self />
         </Match>
         <Match when={!correct() && b().lt(0)}>
-          <p>
+          <p class="text-right">
             Cela voudrait dire que {tex`${completeExpr()} = (x - ${rootAttempt()})^2`}, ce qui est
             faux! Fais attention au <em>double produit</em> !
           </p>

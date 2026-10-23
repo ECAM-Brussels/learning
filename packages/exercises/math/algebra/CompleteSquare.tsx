@@ -58,7 +58,7 @@ export const CompleteSquare = createStep({
               const isMonic = createMemo(() => a().isEqual(1))
               const isAntiMonic = createMemo(() => a().isEqual(-1))
               return (
-                <Switch fallback={<p class="mt-4">Parfait!</p>}>
+                <Switch fallback={<p class="text-right">Parfait!</p>}>
                   <Match when={!correctA()}>
                     <>
                       <p class="mt-4">
@@ -89,7 +89,7 @@ export const CompleteSquare = createStep({
                   </Match>
                   <Match when={!correctB()}>
                     <>
-                      <p class="mt-4">
+                      <p class="text-right">
                         Ton produit remarquable n'est pas correct. Indice&nbsp;: il faut d'abord
                         mettre en évidence le facteur {tex`${a()}:`}
                         <Show when={!isAntiMonic()}>
@@ -106,7 +106,7 @@ export const CompleteSquare = createStep({
                       <MakeSquaredBinomial expr={partialPoly()}>
                         {(MakeSquaredBinomialCtx) => (
                           <>
-                            <p class="mt-4">
+                            <p class="text-right">
                               Super, tu as trouvé le bon produit remarquable:{' '}
                               {tex`${expr('(x + b/(2a))^2').subs({ a: a(), b: b() }).simplify()}`}.
                               Réessaie maintenant!
@@ -119,13 +119,13 @@ export const CompleteSquare = createStep({
                   </Match>
                   <Match when={!correctC()}>
                     <>
-                      <p class="mt-4">
+                      <p class="text-right">
                         Ton produit remarquable est correct, mais pas le terme constant.
                       </p>
                       <Expand expr={attempt()}>
                         {(expandCtx) => (
                           <>
-                            <p class="mt-4">
+                            <p class="text-right">
                               On voit que le développement de ta réponse{' '}
                               {tex`${expandCtx.inputs.attempt.simplify()}`} n'a pas le même terme
                               constant que l'expression de départ. Réessaie!
