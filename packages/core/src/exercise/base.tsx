@@ -1,7 +1,7 @@
-import { Boundary, FeedbackContext, MathField } from '@learning/components'
+import { Boundary, FeedbackContext, Form, MathField, Youtube } from '@learning/components'
 import { revalidate, useLocation } from '@solidjs/router'
 import { dynamic, Dynamic, type JSX } from '@solidjs/web'
-import { mapValues } from 'es-toolkit'
+import { allKeyed, mapValues } from 'es-toolkit'
 import {
   action,
   affects,
@@ -9,11 +9,12 @@ import {
   createMemo,
   createOptimistic,
   createOptimisticStore,
-  createProjection,
   createSignal,
   createStore,
   isPending,
   omit,
+  onSettled,
+  refresh,
   Show,
   useContext,
   type Component,
@@ -28,7 +29,7 @@ import { createIsVisible } from '../visibility'
 import { StepContext } from './context'
 import local from './context.local'
 import remote from './context.remote'
-import { ExerciseOptionsContext, Options } from './options'
+import { ExerciseOptions, Options, OptionsContext } from './options'
 
 type MaybeAsync<T> = T | Promise<T>
 type Json = string | number | boolean | null | { [key: string]: Json } | Json[]
@@ -165,7 +166,7 @@ type StepBaseProps<D, I extends v.ObjectSchema<any, any>, F extends JsonObject> 
         data: Infer<NoInfer<D>, 'output'>
         inputs: v.InferOutput<NoInfer<I>>
       }) => JSX.Element)
-  options?: Options<'input'>
+  options?: Options<'input'> | ((data: Infer<D, 'output'>) => MaybeAsync<Options<'input'>>)
 }
 
 type StepProps<S extends StepSchema, F extends JsonObject> = StepBaseProps<
@@ -185,6 +186,18 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   props: StepProps<S, F> & { id?: string },
 ) {
   /**
+   * Retrieve data from the source of truth (localStorage or database),
+   * merge it with the props, and validate.
+   *
+   * We need to be careful here,
+   * as some props are static and not serializable,
+   * therefore the source of truth should be layered on top of the supplied props.
+   */
+  const exerciseData = createMemo(() =>
+    typeof props.data === 'function' ? props.data() : props.data,
+  )
+
+  /**
    * Context information. Aims to answer the following questions:
    *
    * - How to fetch or save?
@@ -201,26 +214,26 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     sequencePosition: inherited?.().sequencePosition ?? 0,
     position: inherited?.().position ?? 0,
   }))
-  const optionsCtx = useContext(ExerciseOptionsContext)
-  const options = createMemo(() => v.parse(Options, { ...optionsCtx(), ...props.options }))
+  const optionsCtx = useContext(OptionsContext)
+  const rawOptions = createMemo(async () => {
+    const inherited = optionsCtx()
+    const data = exerciseData()
+    const options = typeof props.options === 'function' ? await props.options(data) : props.options
+    return { ...inherited, ...options }
+  })
+  const options = createMemo(() => v.parse(Options, rawOptions()))
+  onSettled(() => {
+    const interval = setInterval(() => {
+      refresh(options)
+    }, 1000)
+    return () => clearInterval(interval)
+  })
 
   const schema = () =>
     StoredStep(props.schema.data as S['data'], props.schema.inputs as S['inputs'])
-
-  /**
-   * Retrieve data from the source of truth (localStorage or database),
-   * merge it with the props, and validate.
-   *
-   * We need to be careful here,
-   * as some props are static and not serializable,
-   * therefore the source of truth should be layered on top of the supplied props.
-   */
-  const exerciseData = createMemo(() =>
-    typeof props.data === 'function' ? props.data() : props.data,
-  )
-  const all = createProjection(() => exerciseContext().fetchSequence(sequenceContext()), {})
+  const all = createMemo(() => exerciseContext().fetchSequence(sequenceContext()), {})
   const fetched = createMemo(
-    () => all[stepContext().sequencePosition]?.[stepContext().position] ?? null,
+    () => all()[stepContext().sequencePosition]?.[stepContext().position] ?? null,
   )
   const [step, setStep] = createOptimisticStore(() => {
     return v.parse(schema(), {
@@ -245,6 +258,10 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     {} as any,
   )
 
+  const canSubmit = createMemo(
+    () =>
+      !options().readOnly && (!step.submitted || (!step.correct && options().allowResubmissions)),
+  )
   /**
    * Handle submissions
    *
@@ -254,6 +271,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
    * - Save and refresh state
    */
   const submit = action(async function* (newState: Partial<ObjectSchema<S['inputs'], 'input'>>) {
+    if (!canSubmit()) return
     const state = v.parse(schema().entries.state, newState)
     const submitted = Object.keys(state).length > 0
     if (submitted) affects(step, 'submitted')
@@ -263,7 +281,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
       return normalizeGrade(gradeResult)
     })()
     const payload = { ...step, state, submitted, correct, feedback }
-    yield exerciseContext().saveStep(stepContext(), JSON.parse(JSON.stringify(payload)))
+    yield exerciseContext().saveStep(stepContext(), JSON.parse(JSON.stringify(payload)), options())
     revalidate([
       exerciseContext().fetchSequence.keyFor(sequenceContext()),
       exerciseContext().getProgress.keyFor(sequenceContext()),
@@ -276,24 +294,27 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   const [form, setForm] = createSignal<HTMLFormElement | null>(null)
   const visible = createIsVisible(form)
   createEffect(
-    () => [props.data, visible(), step.submitted, fetched()] as const,
-    ([data, isVisible, submitted, fetched]) => {
-      if (typeof data === 'function' && isVisible && fetched === null && !submitted) {
+    () => [visible(), step.submitted, fetched()] as const,
+    ([isVisible, submitted, fetched]) => {
+      if (isVisible && fetched === null && !submitted) {
         submit({})
       }
     },
   )
 
-  /**
-   * Handle resetting the whole exercise
-   */
   const canReset = createMemo(async () => {
+    if (canSubmit()) return false
+    if (options().readOnly) return false
     if (stepContext().position !== 0) return false
     if (!step.submitted) return false
     return options().allowResets && (await hasPermissions(['exercise:deleteOwn']))
   })
   const [resetting, setResetting] = createOptimistic(false)
+  /**
+   * Handle resetting the whole exercise
+   */
   const reset = action(async function* () {
+    if (!canReset()) return
     setResetting(true)
     setStep((s) => {
       s.feedback = {}
@@ -301,7 +322,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
       s.correct = undefined
     })
     const { position, ...ctx } = stepContext()
-    yield exerciseContext().reset(ctx)
+    yield exerciseContext().reset(ctx, options())
     revalidate([
       exerciseContext().fetchSequence.keyFor(sequenceContext()),
       exerciseContext().getProgress.keyFor(sequenceContext()),
@@ -316,15 +337,27 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     <StepContext
       value={() => ({ ...stepContext(), position: stepContext().position + (props.offset ?? 0) })}
     >
-      <FeedbackContext
-        value={{
-          get correct() {
-            return options().showFeedback ? step.correct : undefined
-          },
-        }}
+      <OptionsContext
+        value={() => ({
+          ...rawOptions(),
+          // Some options need to be overriden or can't be inherited
+          depth: options().depth + (props.offset ?? 0),
+          video: null,
+          ...(options().allowResubmissions && step.correct === false
+            ? { allowResubmissions: false, readOnly: true }
+            : {}),
+        })}
       >
-        <Boundary fallback={props.fallback}>{props.children}</Boundary>
-      </FeedbackContext>
+        <FeedbackContext
+          value={{
+            get correct() {
+              return options().showFeedback ? step.correct : undefined
+            },
+          }}
+        >
+          <Boundary fallback={props.fallback}>{props.children}</Boundary>
+        </FeedbackContext>
+      </OptionsContext>
     </StepContext>
   )
 
@@ -340,7 +373,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
               s[name] = e.target.value as any
             })
           }}
-          readonly={step.submitted}
+          readonly={!canSubmit()}
         />
       </Boundary>
     )),
@@ -363,7 +396,11 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     },
   } satisfies ComponentProps<typeof props.prompt>['state']
 
-  const Self = (attrs: Partial<StepProps<S, F>>) => <Step {...props} data={step.data} {...attrs} />
+  const Self = (attrs: Partial<StepProps<S, F>>) => (
+    <ExerciseOptions depth={options().depth}>
+      <Step {...props} data={step.data} {...attrs} />
+    </ExerciseOptions>
+  )
 
   const Next = (attrs: { children: typeof props.children }) => (
     <Show
@@ -376,28 +413,41 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   return (
     <div class={['not-prose my-4', props.class]}>
       <StepBoundary fallback="Chargement de l'exercice...">
-        <form
+        <Form
+          class={[
+            'my-4 rounded-xl bg-gray-50 p-4 shadow hover:bg-sky-50',
+            {
+              flex: options().video !== undefined,
+              'ml-6': options().depth === 1,
+              'ml-12': options().depth === 2,
+              'ml-18': options().depth === 3,
+            },
+          ]}
+          readOnly={!canSubmit()}
           ref={setForm}
           onSubmit={(e) => {
             e.preventDefault()
             submit(state)
           }}
         >
-          <Dynamic
-            component={props.prompt}
-            data={step.data}
-            inputs={fields()}
-            state={promptState}
-          />
-          <Show when={!step.submitted && !resetting()}>
-            <button
-              class="my-4 block cursor-pointer rounded-lg bg-green-800 px-3 py-2 font-bold text-green-100 hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
-              disabled={isPending(() => step.submitted)}
-            >
-              {isPending(() => step.submitted) ? 'Soumission...' : 'Soumettre'}
-            </button>
-          </Show>
-        </form>
+          <div class="grow">
+            <Dynamic
+              component={props.prompt}
+              data={step.data}
+              inputs={fields()}
+              state={promptState}
+            />
+            <Show when={canSubmit() && !resetting()}>
+              <button
+                class="my-4 block cursor-pointer rounded-lg bg-green-800 px-3 py-2 font-bold text-green-100 hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+                disabled={isPending(() => step.submitted)}
+              >
+                {isPending(() => step.submitted) ? 'Soumission...' : 'Soumettre'}
+              </button>
+            </Show>
+          </div>
+          <Show when={options().video}>{(src) => <Youtube src={src()} zoom={0.8} />}</Show>
+        </Form>
       </StepBoundary>
       <Show when={step.submitted && options().showFeedback}>
         <StepBoundary fallback="Chargement du feedback..." offset={1}>
@@ -410,9 +460,11 @@ export function Step<S extends StepSchema, F extends JsonObject>(
             Self={Self}
             next={<Next>{props.children}</Next>}
           />
-          <Show when={step.correct}>
-            <Next>{props.children}</Next>
-          </Show>
+          <ExerciseOptions depth={options().depth}>
+            <Show when={step.correct}>
+              <Next>{props.children}</Next>
+            </Show>
+          </ExerciseOptions>
         </StepBoundary>
       </Show>
       <Show when={canReset()}>
@@ -434,7 +486,7 @@ export function createStep<S extends StepSchema, F extends JsonObject>(
     { id?: string } & Pick<StepProps<S, F>, 'class' | 'feedback' | 'children' | 'options'> &
       (ObjectSchema<S['data'], 'input'> | { data: StepProps<S, F>['data'] })
   > = (props) => {
-    const data = omit(props, 'id', 'class', 'feedback', 'data', 'children') as
+    const data = omit(props, 'id', 'class', 'feedback', 'data', 'children', 'options') as
       ObjectSchema<S['data'], 'input'> | undefined
     return (
       <Step
@@ -444,7 +496,17 @@ export function createStep<S extends StepSchema, F extends JsonObject>(
         feedback={props.feedback ?? step.feedback}
         children={props.children ?? step.children}
         data={('data' in props ? props.data : data)!}
-        options={props.options ?? step.options}
+        options={async (data) => {
+          async function getOptions(opt: typeof props.options) {
+            if (!opt) return {}
+            return typeof opt === 'function' ? await opt(data) : opt
+          }
+          const { inherited, options } = await allKeyed({
+            inherited: getOptions(step.options),
+            options: getOptions(props.options),
+          })
+          return { ...inherited, ...options }
+        }}
       />
     )
   }

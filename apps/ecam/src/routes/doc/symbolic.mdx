@@ -1,0 +1,236 @@
+import { defineMeta, Highlight, MathField, SymbolicRepresentation } from '@learning/components'
+import { expr, tex } from '@learning/core'
+import { createMemo, createSignal } from 'solid-js'
+
+export default defineMeta({ title: 'Le calcul formel' })
+
+export const [expression, setExpression] = createSignal('x^2 - 5x + 6')
+export const simplified = createMemo(() => expr(expression()).simplify().json)
+
+# Le calcul formel
+
+La correction automatique consiste à **automatiser les interactions entre un·e étudiant·e et un système de calcul formel**.
+
+## Calcul numérique
+
+Les nombres flottants ne sont **pas adaptés** à la correction automatique pour les raisons suivantes:
+
+- Ils forment un un ensemble **fini**,
+  qui est un sous-ensemble de {tex`\{ \frac m {2^n} \, | \, m, n \in \mathbb{Z} \}`}
+
+- Les opérations sont approximatives, et ne respectent pas les propriétés de l'arithmétique.
+
+- La densité est **non uniforme**,
+  il y a plus de nombres flottants autour de zéro que loin de zéro.
+
+  ```python run
+  print(1 + 5e-15)      # Ce nombre existe
+  print(100 + 5e-15)    # Ce nombre n'existe pas
+  ```
+
+- Les nombres sont représentés en binaire, et sont tronqués à 53 bits de précision.
+  En particulier, certains nombres courants sont mal représentés
+
+  ```python run
+  from decimal import Decimal
+  print("0.1 est stocké comme", Decimal(0.1))
+
+  0.1 * 0.1
+  ```
+
+## Calcul symbolique
+
+Un CAS est un logiciel qui manipule des expressions mathématiques de manière **symbolique**,
+c'est-à-dire similaire à la manière dont un humain le ferait.
+
+Pour éviter les inconvénients des nombres flottants,
+le CAS utilise des structure de données plus complexes
+et ne se base que sur l'arithmétique entière.
+
+<div class="flex items-center justify-center gap-8">
+  <p class="text-right">
+    Entrez une expression:
+    <MathField
+      class="border border-gray-200"
+      value={expression()}
+      oninput={(e) => setExpression(e.target.value)}
+    />
+  </p>
+  <SymbolicRepresentation expr={expression()} />
+</div>
+
+### Simplification et égalité
+
+### Limitations
+
+- Déterminer si deux expressions sont symboliquement égales est un problème **indécidable**.
+
+- Les CAS n'ont pas été conçus pour être utilisés dans un contexte pédagogique,
+  et effectuent des **simplifications automatiques**.
+  Il y a une perte d'information.
+
+- Les CAS n'ont pas été conçus dans un contexte
+  où ils doivent servir plusieurs utilisateurs en même temps.
+
+- S'assurer que la saisie soit facile pour l'étudiant·e et sécurisée pour le serveur est un problème difficile
+  qui n'est souvent pas une préoccupation des développeurs de CAS.
+
+- Il n'y a pas de CAS fiable en JavaScript.
+  Cela introduit des problèmes de latence et de charge sur le serveur.
+
+# Fonctionnement de la plateforme
+
+Nous utilisons deux CAS:
+
+- [Compute Engine](https://mathlive.io/compute-engine/), écrit en JavaScript.
+  On l'utilise du côté de l'étudiant·e, pour la saisie d'expressions,
+  et toute autre interaction pour laquelle le système est fiable.
+
+  Etant écrit en JavaScript, il tourne dans le navigateur de l'étudiant·e,
+  ce qui permet de réduire la charge sur le serveur et d'éviter les problèmes de latence.
+  Il fait relativement peu de simplifications automatiques,
+  mais n'est pas suffisament mature.
+
+- [SymPy](https://www.sympy.org/en/index.html), écrit en Python.
+  On l'utilise du côté serveur.
+
+Un flux typique d'utilisation est le suivant:
+
+1. L'étudiant·e saisit une expression dans un champ de saisie,
+   qui est analysée par Compute Engine, qui extrait une représentation symbolique de l'expression
+   dans un format appelé **MathJSON**.
+
+   <div class="flex items-center justify-around gap-8">
+     <div class="text-right">
+       Entrez une expression:
+       <MathField
+         class="border border-gray-200"
+         value={expression()}
+         oninput={(e) => setExpression(e.target.value)}
+       />
+       <SymbolicRepresentation expr={expression()} />
+     </div>
+     <div>
+       <h4>MathJSON</h4>
+       <Highlight lang="json" code={JSON.stringify(expr(expression()).json, null, 2)} />
+     </div>
+   </div>
+
+   L'avantage du MathJSON est qu'il est transportable sur le réseau,
+   et peut être interprété par Compute Engine et SymPy.
+
+2. Dans la mesure du possible,
+   on n'emploie _aucun des deux CAS_ et on indique les opérations à effectuer **directement sur l'arbre**.
+   Par exemple, dans le cas où nous souhaiterions simplifier notre expression,
+   on rajoute `Simplify` à la racine de l'arbre.
+
+   <div class="flex items-center justify-around gap-8">
+     <SymbolicRepresentation expr={simplified()} />
+     <div>
+       <h4>MathJSON</h4>
+       <Highlight lang="json" code={JSON.stringify(simplified(), null, 2)} />
+     </div>
+   </div>
+
+   Cette approche _paresseuse_ permet de s'assurer que le plus d'opérations possibles soient _synchrones_,
+   ce qui permet le _chaînage_:
+
+   ```ts
+   expression.diff(x).subs({ x: 2 }) // Calcule f'(2)
+   ```
+
+   et de réduire le nombre d'appels au serveur.
+   À ce stade, aucun appel au serveur n'est effectué.
+
+3. Lorsqu'une _méthode terminale_ est appelée, l'arbre est envoyé au CAS le plus approprié pour effectuer l'opération.
+   Ce dernier recrée l'expression à partir de l'arbre, **effectue réellement** l'opération, et renvoie le résultat.
+
+   Par _méthode terminale_, on entend une opération
+   qu'on souhaite qu'elle soit _réellement effectuée_.
+   Des exemples de celles-ci sont `isEqual` (pour vérifier l'égalité symbolique) ou `latex` (pour obtenir la représentation $\LaTeX$ de l'expression).
+
+## En pratique
+
+Le coeur de la plateforme fournit deux méthodes pour travailler avec des expressions symboliques: `expr` et `tex`.
+La première permet de manipuler des expressions symboliques, tandis que la seconde permet de les afficher.
+Après application de `expr`,
+les méthodes suivantes sont disponibles pour manipuler les expressions.
+Cette liste n'est pas exhaustive, et d'autres méthodes peuvent être ajoutées au fur et à mesure des besoins.
+
+| Méthode               | Type      | Description                                    |
+| --------------------- | --------- | ---------------------------------------------- |
+| `abs()`               | chaînable | Indique que l'on souhaite la valeur absolue    |
+| `checkRoot(x)`        | terminale | Demande au CAS si `x` est une racine           |
+| `degree()`            | terminale | Retourne le degré d'un polynôme                |
+| `diff(x)`             | chaînable | Calcule la dérivée par rapport à `x`           |
+| `delta(x, a, b)`      | chaînable | Calcule $f(b) - f(a)$                          |
+| `integrate(x)`        | chaînable | Calcule la primitive par rapport à `x`         |
+| `integrate(x, a , b)` | chaînable | Calcule l'intégrale entre `a` et `b`           |
+| `isEqual()`           | terminale | Demande si deux expressions sont égales        |
+| `latex()`             | terminale | Retourne la représentation $\LaTeX$            |
+| `subs({ x: 2 })`      | chaînable | Effectue une substitution                      |
+| `simplify()`          | chaînable | Marque une expression comme étant à simplifier |
+
+:::example[Calcul d'intégrale]
+
+Pour calculer $\displaystyle \int_0^1 x^2 \, \mathrm{d} x$, on peut écrire:
+
+```ts
+expr('x^2').integrate('x', 0, 1).latex()
+```
+
+En pratique, on verra que le système peut en pratique _deviner_
+qu'il doit appeler `latex()`.
+
+:::
+
+:::example[Vérifier qu'un nombre est un point critique]
+Pour vérifier que $x = 2$ est un point critique de $f(x) = x^2 - 4x + 3$, on peut écrire:
+
+```ts
+expr('x^2 - 4x + 3').diff('x').checkRoot(2)
+```
+
+:::
+
+## Affichage
+
+La méthode `tex` peut être employée pour étiqueter une chaîne $\LaTeX$ et la transformer en une formule mathématique.
+Elle emploie la librairie [KaTeX](https://katex.org/) pour le rendu,
+qui comme son nom l'indique, est développée par l'équipe de [Khan Academy](https://www.khanacademy.org/).
+
+:::example[Formule mathématique]
+
+Le code
+
+```ts
+tex`\int_a^b f(x) \, \mathrm{d} x = f(b) - f(a)`
+```
+
+affiche la formule mathématique
+
+{tex`\int_a^b f(x) \, \mathrm{d} x
+= f(b) - f(a)
+`}
+
+:::
+
+La fonction `tex` a été conçue de telle sorte qu'elle puisse facilement être utilisée avec `expr`.
+On peut interpoler une chaîne $\LaTeX$ et y insérer une expression via `${...}`:
+
+```ts
+const f = expr('x^2')
+const [a, b] = [0, 1]
+
+tex`\int_{ ${a} }^{ ${b} } ${f} \, \mathrm{d}x
+  = \left[ ${expr('x^2').integrate('x')} \right]_{ ${a} }^{ ${b} }
+  = ${f.integrate('x', a, b)}`
+```
+
+donnera le résultat suivant:
+
+{tex`\int_0^1 ${expr('x^2')} \, \mathrm{d}x
+  = \left[ ${expr('x^2').integrate('x')} \right]_0^1
+  = ${expr('x^2').integrate('x', 0, 1)}`}
+
+Remarquez que les appels `.latex()` sont implicites.

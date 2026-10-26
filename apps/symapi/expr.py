@@ -1,7 +1,7 @@
 import pydantic
 import fastapi
 import sympy
-from typing import cast, Optional
+from typing import cast, Literal, Optional
 from mathjson import Expression
 
 router = fastapi.APIRouter(prefix="/expr")
@@ -14,6 +14,12 @@ class OneExpression(pydantic.BaseModel):
 class TwoExpressions(pydantic.BaseModel):
     expr1: Expression
     expr2: Expression
+
+
+class ComparisonInput(pydantic.BaseModel):
+    expr1: Expression
+    expr2: Expression
+    comparison: Literal["gt", "lt", "geq", "leq"]
 
 
 def args(expr: sympy.Expr) -> list[sympy.Expr]:
@@ -38,6 +44,21 @@ def common_roots(input: TwoExpressions) -> list[str]:
     return [sympy.latex(e) for e in expr]
 
 
+@router.post("/compare")
+def compare(input: ComparisonInput) -> bool:
+    diff = sympy.simplify(input.expr1.expr - input.expr2.expr)
+    if input.comparison == "gt":
+        return sympy.ask(sympy.Q.positive(diff))
+    elif input.comparison == "lt":
+        return sympy.ask(sympy.Q.negative(diff))
+    elif input.comparison == "geq":
+        return sympy.ask(sympy.Q.nonnegative(diff))
+    elif input.comparison == "leq":
+        return sympy.ask(sympy.Q.nonpositive(diff))
+    else:
+        raise ValueError("Invalid comparison")
+
+
 @router.post("/degree")
 def degree(input: OneExpression) -> int:
     return sympy.degree(input.expr.expr)
@@ -49,6 +70,20 @@ def equal(input: TwoExpressions) -> bool:
     if expr.is_complex:
         expr = sympy.expand_complex(expr)
     return sympy.simplify(expr) == 0
+
+
+@router.post("/setEqual")
+def set_equal(input: TwoExpressions) -> bool:
+    set1 = input.expr1.expr
+    set2 = input.expr2.expr
+    return set1.is_subset(set2) and set2.is_subset(set1)
+
+
+@router.post("/subset")
+def subset(input: TwoExpressions) -> bool:
+    set1 = input.expr1.expr
+    set2 = input.expr2.expr
+    return set1.is_subset(set2)
 
 
 @router.post("/equivalent")
@@ -66,11 +101,18 @@ def equivalent(input: TwoExpressions) -> bool:
     return quotient.is_constant() and quotient != 0
 
 
+@router.post("/inSet")
+def in_set(input: TwoExpressions) -> bool:
+    expr, set_expr = input.expr1.expr, input.expr2.expr
+    return expr in set_expr
+
+
 @router.post("/isExpanded")
 def is_expanded(input: OneExpression) -> bool:
     expr = input.expr.expr
     if expr.func != sympy.Add:
         expr = sympy.Add(0, expr, evaluate=False)
+    expr = flatten(expr, sympy.Add)
     for term in args(expr):
         if sympy.expand(term).func == sympy.Add:
             return False

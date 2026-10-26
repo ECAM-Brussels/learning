@@ -1,5 +1,5 @@
 import * as monaco from 'monaco-editor'
-import { createEffect, createSignal, onSettled } from 'solid-js'
+import { createEffect, createSignal, deep, onSettled } from 'solid-js'
 import type { EditorProps } from './index'
 
 self.MonacoEnvironment = {
@@ -42,6 +42,7 @@ self.MonacoEnvironment = {
 export default function Code(props: EditorProps) {
   let container: HTMLDivElement | undefined
   let editor: monaco.editor.IStandaloneCodeEditor | undefined
+  let decorations: monaco.editor.IEditorDecorationsCollection | undefined
   const [value, setValue] = createSignal(() => props.children ?? '')
 
   createEffect(value, (value) => {
@@ -64,6 +65,27 @@ export default function Code(props: EditorProps) {
     },
   )
 
+  function highlight(lines: number[] = []) {
+    decorations?.set(
+      lines.map((line) => {
+        line = line >= 0 ? line : value().split('\n').length - line
+        return {
+          range: new monaco.Range(line, 1, line, 1),
+          options: {
+            isWholeLine: true,
+            className: 'bg-sky-100 bg-opacity-50',
+          },
+        }
+      }),
+    )
+  }
+  createEffect(
+    () => deep(props.highlight),
+    (lines) => {
+      highlight(lines)
+    },
+  )
+
   function mount() {
     if (editor || !container) return
     editor = monaco.editor.create(container, {
@@ -83,6 +105,8 @@ export default function Code(props: EditorProps) {
       container.style.height = `${height}px`
       editor!.layout()
     })
+    decorations = editor.createDecorationsCollection()
+    highlight(props.highlight)
   }
 
   function unmount() {

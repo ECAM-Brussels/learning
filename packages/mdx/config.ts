@@ -47,9 +47,20 @@ const code = defineMdastPlugin({
   name: 'code-meta',
   code(node) {
     const run = node.meta?.includes('run') ?? false
+    const highlight: number[] = []
+    const match = node.meta?.match(/highlight="([^"]*)"/)
+    if (match && match[1]) {
+      const list = match[1].split(',').flatMap((item) => {
+        const [start, end] = item.split('-').map(Number) as [number, number | undefined]
+        return end !== undefined
+          ? Array.from({ length: end - start + 1 }, (_, i) => start + i)
+          : [start]
+      })
+      highlight.push(...list)
+    }
     if (node.lang === 'python' && run) {
       const math = node.meta?.includes('math') ?? false
-      return component('Code', { lang: node.lang, children: node.value, run, math })
+      return component('Code', { lang: node.lang, children: node.value, run, math, highlight })
     }
     return component('Highlight', {
       lang: node.lang === 'mdx' ? 'jsx' : node.lang,

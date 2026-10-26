@@ -1,0 +1,468 @@
+import { Geogebra, Youtube } from '@learning/components'
+import { expr, tex } from '@learning/core'
+import * as Exercise from './03-diff.exercises'
+
+# Introduction
+
+<Youtube src="https://youtube.com/embed/kkJjSgOYVpQ" class="mx-auto rounded-xl shadow" />
+
+L'objectif de ce chapitre est de calculer des **dérivées**,
+qui sont définies comme étant une **limite**:
+
+{tex`f'(x)
+= \lim_{h \to 0} \frac{\overbrace{f(x + h) - f(x)}^{\Delta y}} {\underbrace{h}_{\Delta x}}.`}
+
+Malheureusement,
+nous verrons que le concept de **limite** est _problématique en calcul numérique_,
+car la précision est limitée, surtout si on s'éloigne de $0$.
+Une tension apparaîtra:
+
+- D'un côté, les mathématiques nous disent que $h$ doit être petit.
+
+- De l'autre, le _calcul numérique_ nous dit que si $h$ est trop petit,
+  les erreurs d'arrondi deviennent trop importantes et faussent le résultat.
+
+Nous verrons que le problème s'empire si l'on calcule des dérivées d'ordre supérieur.
+
+# Droites
+
+## Pente d'une droite
+
+Rappelons que la **pente** d'une droite passant par deux points $(x_1, y_1)$ et $(x_2, y_2)$ est donnée par
+
+{tex`\text{pente}
+= \frac{\Delta y}{\Delta x}
+= \frac{y_2 - y_1}{x_2 - x_1}.`}
+
+:::exercise[Pente d'une droite]
+
+<Exercise.Slope />
+
+:::
+
+:::remark
+
+Pour l'examen,
+vous devez être capable de prédire
+quand le calcul de la pente d'une droite donnera faussement $0$.
+Nous sommes dans ce cas si $\Delta y$ nécessite plus que environ $15$ chiffres significatifs.
+
+:::
+
+## Sécantes à un graphe
+
+<Youtube src="https://youtube.com/embed/vZm-JaRvpao" class="mx-auto rounded-xl shadow" />
+
+import secant from './secant.png'
+
+<img
+  src={secant}
+  class="mx-auto max-w-4/5 rounded-xl border border-gray-200 shadow-lg"
+  alt="Sécante à un graphe"
+/>
+
+:::definition
+Une **sécante** à une fonction $f$ en $a$ et $b$ est une droite intersectant $f$ en $x = a$ et $x = b$.
+En d'autre termes, elle passe par $(a, f(a))$ et $(b, f(b))$.
+:::
+
+Mathématiquement, pour trouver l'équation
+qui passe par $(a, f(a))$ et $(b, f(b))$,
+on peut procéder comme suit:
+
+1. On calcule la pente:
+   {tex.display`m = \frac{f(b) - f(a)}{b - a}.`}
+
+2. On translate $y = mx$ pour qu'elle passe passe par $(a, f(a))$:
+   {tex.display`y - f(a) = m (x - a).`}
+
+3. On obtient la fonction correspondante à la sécante en isolant $y$:
+   {tex.display`y = m (x - a) + f(a), \quad m = \frac{f(b) - f(a)}{b - a}.`}
+
+Ce raisonnement peut être traduit en code Python comme suit:
+
+```python run
+def secante(a, b, x):
+    m = (f(b) - f(a)) / (b - a)
+    y = m * (x - a) + f(a)
+    return y
+```
+
+Souvent, on sera dans une situation où $b$ nous est donné via $b = a + h$.
+La quantité $h$ est appelée le **pas**.
+Dans ce cas-ci, pour que notre droite passe par $(a, f(a))$ et $(a + h, f(a + h))$,
+on procède comme suit:
+
+1. On calcule la pente:
+   {tex.display`m = \frac{f(a + h) - f(a)}{(a + h) - a} = \frac{f(a + h) - f(a)}{h}.`}
+
+2. On translate $y = m x$ pour qu'elle passe par $(a, f(a))$:
+   {tex.display`y - f(a) = m (x - a).`}
+
+3. On obtient la fonction correspondante à la sécante en isolant $y$:
+   {tex.display`y = m (x - a) + f(a), \quad m = \frac{f(a + h) - f(a)}{h}.`}
+
+```python
+def secante(a, h, x):
+    m = (f(a + h) - f(a)) / h
+    y = m * (x - a) + f(a)
+    return y
+```
+
+:::example[Sécantes à un graphe]
+
+Sur l'intervalle $[0, 2.5]$,
+tracez les fonctions suivantes:
+
+- la fonction {tex`f(x) = \sin x`}
+
+- la droite $y = g(x)$ passant par $(1, f(1))$ et $(2, f(2))$ (c'est-à-dire $h = 1$)
+
+- la droite $y = h(x)$ passant par $(1, f(1))$ et $(1.1, f(1.1))$ (c'est-à-dire $h = 0.1$)
+
+```python run math
+import matplotlib.pyplot as plt
+import numpy as np
+
+def f(x):
+    return np.sin(x)
+
+def secante(a, h, x):
+    m = (f(a + h) - f(a)) / h
+    return m * (x - a) + f(a)
+
+x = np.linspace(0, 2.5, 100)
+plt.plot(x, f(x), label="f(x)")
+plt.plot(x, secante(1, 1, x), '--', label="g(x) (h = 1)")
+plt.plot(x, secante(1, 0.1, x), '--', label="h(x) (h = 0.1)")
+plt.legend()
+```
+
+Accessoirement,
+on se rend compte que la sécante entre deux points proches du graphe
+se rapproche de la tangente à la fonction.
+
+:::
+
+:::exercise[Sécante à un graphe]
+
+<Exercise.Secant />
+
+:::
+
+# Quotient différentiel
+
+À la section précédente,
+nous avons vu deux choses:
+
+1. La pente d'une droite sécante à un graphe d'une fonction $f$ en $a$ et $a + h$ est donnée par
+   {tex.display`\frac{f(a + h) - f(a)}{h}.`}
+
+2. Si $h$ est petit, la sécante se rapproche de la _tangente_ au graphe.
+
+La **dérivée** a pour objectif de représenter **la pente de la tangente** au graphe de $f$ en $x = a$.
+Les observations ci-dessus nous mènent à la définition suivante:
+
+:::definition[Dérivée]
+La **dérivée** de $f$ en $a$ est
+{tex`f'(a)
+= \lim_{h \to 0} \frac {f(a + h) - f(a)} h`}
+si cette limite existe et est réelle.
+:::
+
+En particulier, si $h$ est petit
+{tex`f'(a)
+\approx \frac {f(a + h) - f(a)} h`}
+
+Nous allons utiliser cette approximation pour calculer des dérivées.
+
+:::definition[Quotient différentiel]
+
+Le **quotient différentiel** de $f$ en $a$ est défini par
+{tex`\frac {f(a + h) - f(a)}{h},
+\quad h \neq 0.`}
+
+La quantité $|h|$ est appelée le **pas**.
+:::
+
+:::example
+
+Approximons la dérivée de $f(x) = \cos x$ en $a = 0$
+à l'aide du _quotient différentiel_ avec un pas $h = 10^{-6}$.
+
+```python run
+import numpy as np
+
+def f(x):
+    return np.cos(x)
+
+h = 1e-6
+a = 0
+
+(f(a + h) - f(a)) / h
+```
+
+La valeur théorique est
+{tex`f'(0)
+= \left. (-\sin x) \right|_{x = 0}
+= 0.`}
+
+:::
+
+:::example
+
+Approximons la dérivée de $f(x) = x^2 + 1$ en $a = 1$
+avec comme pas $h = 10^{-30}$.
+
+```python run
+import numpy as np
+
+def f(x):
+    return x**2 + 1
+
+a = 1
+h = 1e-30
+
+(f(a + h) - f(a)) / h
+```
+
+Le résultat n'est **absolument pas correct**,
+puisque nous aurions dû obtenir:
+{tex`f'(1)
+= \left. 2x \right|_{x = 1}
+= 2.
+`}
+
+Souvenez-vous que Python n'utilise qu'environ $15$ chiffres significatifs,
+ce qui signifie que pour Python, $1 + h = 1$:
+
+```python run
+h = 1e-30
+1 + h
+```
+
+L'erreur se propage alors
+
+{tex.display`\frac {(\overbrace{1 + h}^1)^2 - 1^2} h = \frac 0 h = 0`}
+
+:::
+
+:::exercise
+
+<Exercise.Differences />
+
+:::
+
+:::remark
+À l'examen,
+il est nécessaire de pouvoir expliquer
+quand et pourquoi le résultat devient $0$.
+:::
+
+## En avant, en arrière, ou central
+
+Pour $h > 0$, on distingue trois types de **quotients différentiels**:
+
+import differentialQuotients from './differential-quotients.jpg'
+
+<img
+  class="mx-auto rounded-xl border border-gray-200 shadow-lg"
+  src={differentialQuotients}
+  alt="Différence avant, arrière et centrale"
+/>
+<p class="text-center text-sm">
+  Image aimablement générée avec ChatGPT. Je n'avais plus de tokens pour afficher $\Delta y$ au bon
+  endroit.
+</p>
+
+Le **quotient différentiel central** est la **moyenne arithmétique** des quotients avant et arrière.
+Étant donné qu'il tient compte de ce qui se passe de part et d'autre de $x$,
+il se rapproche plus vite de la valeur théorique de la dérivée.
+
+Nous privilégierons dès lors l'emploi du **quotient différentiel central**.
+
+<Exercise.Tangents />
+
+# Fonctions dérivées
+
+En calculant la limite du _quotient différentiel_ en chaque point,
+on obtient la **fonction dérivée** de $f$:
+
+{tex`x \mapsto
+f'(x) = \lim_{h \to 0} \frac{f(x + h) - f(x)}{h}`}
+
+Nous ferons en chaque point une _approximation numérique_ de la dérivée
+par un _quotient différentiel_.
+
+<Geogebra id="kT87vrax" class="mx-auto" />
+
+En pratique,
+on peut simplement définir une fonction `diff` qui calcule le quotient différentiel en chaque foint
+d'une fonction `f` donnée avec un pas `h`.
+
+```python
+def diff(x, h = 1e-6):
+    return (f(x + h) - f(x - h)) / (2 * h)
+```
+
+:::example[Approximation de la fonction dérivée]
+
+Approximons la fonction dérivée de {tex`f(x) = e^{-x^2}`} pour $x \in [-1, 1]$
+avec le _quotient différentiel central_ de pas $h = 10^{-6}$.
+Ensuite, tracez le graphe de la fonction dérivée théorique et celui de l'approximation numérique.
+Ajoutez également le graphe de l'approximation numérique avec les pas $h = 10^{-15}$ et $h = 10^{-20}$.
+
+```python run math
+import matplotlib.pyplot as plt
+import numpy as np
+
+def f(x):
+    return np.exp(-x**2)
+
+def diff(x, h = 1e-6):
+    return (f(x + h) - f(x - h)) / (2 * h)
+
+x = np.linspace(-1, 1, 100)
+plt.plot(x, f(x), label="f(x)")
+plt.plot(x, -2*x*np.exp(-x**2), label="f'(x)")
+plt.plot(x, diff(x), '--', label="diff(x, h=1e-6)")
+plt.plot(x, diff(x, 1e-15), '--', label="diff(x, h=1e-15)")
+plt.plot(x, diff(x, 1e-20), '--', label="diff(x, h=1e-20)")
+plt.legend()
+```
+
+On constate que l'approximation numérique est proche de la fonction dérivée théorique
+pour $h = 10^{-6}$, mais complètement fausse pour $h = 10^{-20}$.
+
+:::
+
+<Exercise.Derivatives />
+
+# Dérivées secondes
+
+De nombreuses applications nécessitent de calculer la **dérivée seconde** d'une fonction $f$.
+Bien qu'il soit possible d'obtenir une formule théorique pour l'approximation de la dérivée seconde,
+nous nous contenterons d'appliquer le _quotient différentiel central_ **deux fois**.
+
+:::example[Derivée seconde numérique]
+Approximons la dérivée seconde de {tex`f(x) = \sin x`}
+en appliquant deux fois la différence centrale
+avec $h = 10^{-6}$,
+et graphez le résultat sur $[-\pi, \pi]$.
+Tracez également le graphe de la dérivée seconde théorique.
+
+```python run math highlight="12,13"
+import matplotlib.pyplot as plt
+import numpy as np
+
+h = 1e-6
+
+def f(x):
+    return np.sin(x)
+
+def diff(x):
+    return (f(x + h) - f(x - h)) / (2 * h)
+
+def diff2(x):
+    return (diff(x + h) - diff(x - h)) / (2 * h)
+
+x = np.linspace(-np.pi, np.pi, 100)
+plt.plot(x, -np.sin(x), label="f''(x)")
+plt.plot(x, diff2(x), '--', label="approx f''")
+plt.legend()
+```
+
+:::
+
+:::remark[Récursion]
+Au lieu de définir une fonction pour chaque dérivée,
+où chaque fonction fait essentiellement la même chose,
+on peut faire en sorte qu'une fonction s'**appelle elle-même** autant de fois que nécessaire.
+
+On pourrait calculer la dérivée d'ordre $n$ de $f$ avec la fonction récursive suivante:
+
+```python run
+def diff(x, n):
+    if n == 0:
+        return f(x)
+    else:
+        return (diff(x + h, n - 1) - diff(x - h, n - 1)) / (2 * h)
+```
+
+L'idée est simple:
+
+- Pour la dérivée d'ordre $0$,
+  on retourne simplement $f(x)$
+  puisqu'il n'est pas nécessaire de dériver.
+
+- La dérivée première est bien calculée comme étant une différence centrale de `diff(x, 0)` qui est $f(x)$.
+  On a donc bien calculé la différence centrale de $f$.
+
+- La dérivée seconde est calculée comme étant une différence centrale de `diff(x, 1)`.
+  Par le point précédent, on a alors la différence centrale de la différence centrale de $f$.
+
+L'exemple ci-dessus peut alors être raccourci comme suit:
+
+```python run math highlight="7-10"
+import matplotlib.pyplot as plt
+import numpy as np
+
+h = 1e-6
+x = np.linspace(-np.pi, np.pi, 100)
+
+def diff(x, n):
+    if n == 0:
+        return np.sin(x)
+    return (diff(x + h, n - 1) - diff(x - h, n - 1)) / (2 * h)
+
+plt.plot(x, -np.sin(x), label="f''(x)")
+plt.plot(x, diff(x, 2), '--', label="approx f''")
+plt.legend()
+```
+
+:::
+
+:::example[Empirement de la précision]
+
+Calculons les dérivées première et seconde de {tex`f(x) = e^x`} sur $[-1, 1]$ avec le _quotient différentiel central_ de pas $h = 10^{-8}$.
+
+```python run math
+import matplotlib.pyplot as plt
+import numpy as np
+
+h = 1e-8
+
+def f(x):
+    return np.exp(x)
+
+def diff(x):
+    return (f(x + h) - f(x - h)) / (2 * h)
+
+def diff2(x):
+    return (diff(x + h) - diff(x - h)) / (2 * h)
+
+x = np.linspace(-1, 1, 100)
+plt.plot(x, f(x), label="f")
+plt.plot(x, diff(x), '--', label="approx f'")
+plt.plot(x, diff2(x), '--', label="approx f''")
+plt.legend()
+```
+
+Avec $h = 10^{-8}$, la dérivée première est approximée correctement mais pas la seconde.
+À votre avis pourquoi?
+Quel choix du pas $h$ aurait garanti des bonnes approximations de la dérivée première et de la dérivée seconde?
+
+:::
+
+<Exercise.SecondDerivatives />
+
+# Résumé
+
+- La dérivée d'une fonction $f$ en $x = a$ s'approxime via le _quotient différentiel central_:
+  {tex.display`f'(a) \approx \frac{f(a + h) - f(a - h)}{2h}`}
+
+- Le calcul peut être complètement faussé pour des pas trop petits.
+
+- La dérivée seconde d'une fonction $f$ en $x = a$ s'approxime via le _quotient différentiel central_ appliqué deux fois.
+
+- Les dérivées secondes sont encore plus sensibles aux erreurs d'arrondi.

@@ -14,7 +14,11 @@ type Substitution =
   | { json: Extract<Parameters<typeof expr>[0], { json: any }>['json'] }
   | { latex: () => MaybePromise<string> }
 
-function Tex(props: { strings: TemplateStringsArray; values: Substitution[] }) {
+function Tex(props: {
+  strings: TemplateStringsArray
+  values: Substitution[]
+  displayMode?: boolean
+}) {
   const parsed = createMemo(() => {
     return mapAsync(props.values, async (value) => {
       if (!value) return ''
@@ -40,7 +44,7 @@ function Tex(props: { strings: TemplateStringsArray; values: Substitution[] }) {
       }
     >
       <Loading>
-        <Latex value={latex()} displayMode={displayMode()} />
+        <Latex value={latex()} displayMode={displayMode() || props.displayMode} />
       </Loading>
     </Errored>
   )
@@ -62,6 +66,12 @@ export const tex = Object.assign(
     return <Tex strings={strings} values={values} />
   },
   {
+    display: (strings: TemplateStringsArray, ...values: Substitution[]) => {
+      return <Tex strings={strings} values={values} displayMode />
+    },
+    inline: (strings: TemplateStringsArray, ...values: Substitution[]) => {
+      return <Tex strings={strings} values={values} displayMode={false} />
+    },
     raw: String.raw,
   },
 )

@@ -2,11 +2,11 @@ import { Boundary, Pagination, Scope } from '@learning/components'
 import { useLocation } from '@solidjs/router'
 import { Dynamic, type JSX } from '@solidjs/web'
 import { range } from 'es-toolkit'
-import { createMemo, useContext, type Component } from 'solid-js'
+import { createMemo, onSettled, refresh, useContext, type Component } from 'solid-js'
 import * as v from 'valibot'
 import { useExerciseContext } from './base'
 import { StepContext } from './context'
-import { ExerciseOptionsContext, Options } from './options'
+import { Options, OptionsContext } from './options'
 
 type Prettify<T> = {
   [K in keyof T]: T[K]
@@ -76,24 +76,35 @@ type Props<T extends object> = Prettify<
  */
 export function Sequence<T extends object>(props: Props<T> & { id: string }) {
   const exerciseContext = useExerciseContext()
-  const optionsContext = useContext(ExerciseOptionsContext)
-  const options = createMemo(() => v.parse(Options, { ...optionsContext(), ...props.options }))
-  const sequence = createMemo(() => ({ url: useLocation().pathname, sequenceId: props.id }))
-  const progress = createMemo(() => {
-    if (options().showFeedback === false) return {}
-    return exerciseContext().getProgress(sequence())
+
+  const optionsContext = useContext(OptionsContext)
+  const rawOptions = createMemo(() => ({ ...optionsContext(), ...props.options }))
+  const options = createMemo(() => v.parse(Options, rawOptions()))
+  onSettled(() => {
+    const interval = setInterval(() => {
+      refresh(options)
+    }, 1000)
+    return () => clearInterval(interval)
   })
+
+  const sequence = createMemo(() => ({ url: useLocation().pathname, sequenceId: props.id }))
+  const progress = createMemo(() => exerciseContext().getProgress(sequence()))
+  const filteredProgress = createMemo(() =>
+    Object.fromEntries(
+      Object.entries(progress()).filter(([_pos, value]) => typeof value === 'boolean'),
+    ),
+  )
   const stepContext = (sequencePosition = 0) => ({
     ...sequence(),
     sequencePosition,
     position: 0,
   })
   const length = createMemo(() =>
-    'children' in props ? props.children.length : Object.keys(progress()).length + 1,
+    'children' in props ? props.children.length : Object.keys(filteredProgress()).length + 1,
   )
   return (
-    <ExerciseOptionsContext value={options}>
-      <Pagination progress={progress()}>
+    <OptionsContext value={rawOptions}>
+      <Pagination progress={progress()} showFeedback={options().showFeedback}>
         {range(length()).map((i) => () => (
           <StepContext value={() => stepContext(i)}>
             <Boundary fallback="Chargement de l'exercice...">
@@ -113,6 +124,6 @@ export function Sequence<T extends object>(props: Props<T> & { id: string }) {
           </StepContext>
         ))}
       </Pagination>
-    </ExerciseOptionsContext>
+    </OptionsContext>
   )
 }
