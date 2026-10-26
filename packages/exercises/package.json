@@ -6,6 +6,7 @@
     "./math/algebra/CompleteSquare": "./math/algebra/CompleteSquare.tsx",
     "./math/calculus/Derivative": "./math/calculus/Derivative.tsx",
     "./math/calculus/DerivativeAtPoint": "./math/calculus/DerivativeAtPoint.tsx",
+    "./math/calculus/Integrate": "./math/calculus/Integrate.tsx",
     "./math/Simple": "./math/Simple.tsx",
     "./numerical/DifferentialQuotient": "./numerical/DifferentialQuotient.tsx",
     "./python/Code": "./python/Code.tsx",
