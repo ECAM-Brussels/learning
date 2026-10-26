@@ -111,6 +111,7 @@ function expression(input: Math) {
       if (!Array.isArray(json)) throw new Error(`Only arrays have the property args`)
       return json.slice(1) as Math[]
     },
+    apply: async () => expr(await expression({ json }).latex()),
     checkRoot: (root: Math, x = 'x') =>
       expression({ json })
         .subs({ [x]: root })

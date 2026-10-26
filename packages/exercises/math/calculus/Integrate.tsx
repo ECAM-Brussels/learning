@@ -1,11 +1,11 @@
 import { Attempt } from '@learning/components'
-import { createStep, expr, tex } from '@learning/core'
+import { createStep, tex } from '@learning/core'
 import { allKeyed } from 'es-toolkit'
 import { createMemo, Match, Switch } from 'solid-js'
 import { Derivative } from './Derivative'
 
-export const Primitive = createStep({
-  name: 'math/algebra/primitive',
+export const Antiderivative = createStep({
+  name: 'math/calculus/antiderivative',
   schema: {
     data: { expr: 'expr' },
     inputs: { attempt: 'expr' },
@@ -23,23 +23,29 @@ export const Primitive = createStep({
   async grade(ctx) {
     const answer = ctx.data.expr.integrate('x')
     const { isAntiderivative, hasSymbol } = await allKeyed({
-      hasSymbol: (async () =>
-        expr(await ctx.inputs.attempt.subtract(answer).simplify().latex()).hasSymbol())(),
+      hasSymbol: ctx.inputs.attempt
+        .subtract(answer)
+        .simplify()
+        .apply()
+        .then((e) => e.hasSymbol()),
       isAntiderivative: ctx.inputs.attempt.diff('x').isEqual(ctx.data.expr),
     })
     return isAntiderivative && hasSymbol
   },
   feedback: (ctx) => {
     const answer = () => ctx.data.expr.integrate('x')
-    const hasSymbol = createMemo(async () => {
-      const latex = await ctx.inputs.attempt.subtract(answer()).simplify().latex()
-      return expr(latex).hasSymbol()
-    })
+    const hasSymbol = createMemo(async () =>
+      ctx.inputs.attempt
+        .subtract(answer())
+        .simplify()
+        .apply()
+        .then((e) => e.hasSymbol()),
+    )
     const isAntiderivative = createMemo(() => ctx.inputs.attempt.diff('x').isEqual(ctx.data.expr))
     return (
       <Switch>
         <Match when={isAntiderivative() && !hasSymbol()}>
-          <p>N'as-tu pas oublié quelque chose ?</p>
+          <p>Est-ce l'unique solution ?</p>
         </Match>
         <Match when={!ctx.correct}>
           <Derivative f={ctx.inputs.attempt}>
@@ -52,7 +58,7 @@ export const Primitive = createStep({
 })
 
 export const Integrate = createStep({
-  name: 'math/algebra/integrate',
+  name: 'math/calculus/integrate',
   schema: {
     data: { expr: 'expr', low: 'expr', high: 'expr' },
     inputs: { attempt: 'expr' },
@@ -60,7 +66,7 @@ export const Integrate = createStep({
   prompt: (ctx) => (
     <>
       <p>
-        Calcule <strong>l'intégrale</strong> suivante&nbsp;:
+        Calcule l'<strong>intégrale définie</strong> suivante&nbsp;:
       </p>
       <Attempt>
         {tex.display`\int_{${ctx.data.low}}^{${ctx.data.high}} ${ctx.data.expr} \, \mathrm{d}x =`}{' '}
@@ -69,17 +75,17 @@ export const Integrate = createStep({
     </>
   ),
   async grade(ctx) {
-    const { equal } = await allKeyed({
-      equal: ctx.inputs.attempt.isEqual(ctx.data.expr.integrate('x', ctx.data.low, ctx.data.high)),
-    })
+    const equal = await ctx.inputs.attempt.isEqual(
+      ctx.data.expr.integrate('x', ctx.data.low, ctx.data.high),
+    )
     return [equal, { equal }]
   },
   feedback: (ctx) => (
     <Switch>
       <Match when={!ctx.correct}>
-        <Primitive expr={ctx.data.expr}>
+        <Antiderivative expr={ctx.data.expr}>
           <ctx.Self />
-        </Primitive>
+        </Antiderivative>
       </Match>
     </Switch>
   ),
