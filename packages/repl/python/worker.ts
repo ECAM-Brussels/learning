@@ -3,6 +3,8 @@
 import dedent from 'dedent'
 import { loadPyodide, version as pyodideVersion } from 'pyodide'
 import type { Input, Output } from '..'
+// @ts-ignore
+import DualNumbers from './automatic_diff.py?raw'
 
 let pyodidePromise: ReturnType<typeof loadPyodide> | null = null
 
@@ -29,6 +31,10 @@ self.onmessage = async (event: MessageEvent<Input>) => {
         import os
         os.environ["MPLBACKEND"] = "AGG"
       `)
+    }
+    if (event.data.options?.math) {
+      await pyodide.loadPackage('numpy')
+      pyodide.runPython(DualNumbers)
     }
     pyodide.runPython(dedent`
       import sys
