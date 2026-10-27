@@ -24,12 +24,11 @@ export const Factor = createStep({
     </>
   ),
   async grade(ctx) {
-    const { equal, factored, ...data } = await allKeyed({
+    const { equal, factored } = await allKeyed({
       equal: ctx.inputs.attempt.isEqual(ctx.data.expr),
-      squaredSum: ctx.inputs.attempt.matches('(a + b)^2'),
       factored: ctx.inputs.attempt.isFactored(),
     })
-    return [equal && factored, { equal, factored, ...data }]
+    return equal && factored
   },
   feedback: (ctx) => (
     <Switch>

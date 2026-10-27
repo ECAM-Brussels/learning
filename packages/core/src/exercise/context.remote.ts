@@ -73,7 +73,9 @@ export const getProgress = query(async (rawSequence: SequenceContext) => {
       ),
     )
     .orderBy(exercise.sequencePosition)
-  return Object.fromEntries(rows.map((r) => [r.i, r.correct] as const))
+  return Object.fromEntries(
+    rows.map((r) => [r.i, r.correct] as const).filter(([_i, correct]) => correct !== null),
+  )
 }, 'getProgress')
 
 export const saveStep = async (rawCtx: StepContext, step: StoredStep, options: Options) => {

@@ -14,7 +14,7 @@ export const DerivativeAtPoint = createStep({
       <Attempt>
         {tex`
           \frac{\mathrm d}{\mathrm d x}
-          \left. ${ctx.data.f} \right|_{x = ${ctx.data.x}} =
+          \left. \left( ${ctx.data.f} \right) \right|_{x = ${ctx.data.x}} =
         `}{' '}
         {ctx.inputs.attempt}
       </Attempt>

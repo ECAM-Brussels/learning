@@ -1,3 +1,4 @@
+import type { JSX } from '@solidjs/web'
 import { createContext, useContext, type Component, type ParentComponent } from 'solid-js'
 
 type LowercaseKey = `${Lowercase<string>}${string}`
@@ -18,6 +19,9 @@ type Components = Partial<
     Latex: Component<{
       value: string
       displayMode?: boolean
+    }>
+    Steps: Component<{
+      children: JSX.Element[]
     }>
   } & {
     [K in LowercaseKey]?: ParentComponent
@@ -44,6 +48,7 @@ export const MDXContext = createContext<Components>({
   ol: (props) => <ol {...props} />,
   p: (props) => <p {...props} />,
   pre: (props) => <pre {...props} />,
+  section: (props) => <section {...props} />,
   strong: (props) => <strong {...props} />,
   summary: (props) => <summary {...props} />,
   table: (props) => <table {...props} />,

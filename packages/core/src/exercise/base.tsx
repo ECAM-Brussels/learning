@@ -29,7 +29,7 @@ import { createIsVisible } from '../visibility'
 import { StepContext } from './context'
 import local from './context.local'
 import remote from './context.remote'
-import { Options, OptionsContext } from './options'
+import { ExerciseOptions, Options, OptionsContext } from './options'
 
 type MaybeAsync<T> = T | Promise<T>
 type Json = string | number | boolean | null | { [key: string]: Json } | Json[]
@@ -340,6 +340,9 @@ export function Step<S extends StepSchema, F extends JsonObject>(
       <OptionsContext
         value={() => ({
           ...rawOptions(),
+          // Some options need to be overriden or can't be inherited
+          depth: options().depth + (props.offset ?? 0),
+          video: null,
           ...(options().allowResubmissions && step.correct === false
             ? { allowResubmissions: false, readOnly: true }
             : {}),
@@ -393,7 +396,11 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     },
   } satisfies ComponentProps<typeof props.prompt>['state']
 
-  const Self = (attrs: Partial<StepProps<S, F>>) => <Step {...props} data={step.data} {...attrs} />
+  const Self = (attrs: Partial<StepProps<S, F>>) => (
+    <ExerciseOptions depth={options().depth}>
+      <Step {...props} data={step.data} {...attrs} />
+    </ExerciseOptions>
+  )
 
   const Next = (attrs: { children: typeof props.children }) => (
     <Show
@@ -407,7 +414,15 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     <div class={['not-prose my-4', props.class]}>
       <StepBoundary fallback="Chargement de l'exercice...">
         <Form
-          class={{ flex: options().video !== undefined }}
+          class={[
+            'my-4 rounded-xl bg-gray-50 p-4 shadow hover:bg-sky-50',
+            {
+              flex: options().video !== undefined,
+              'ml-6': options().depth === 1,
+              'ml-12': options().depth === 2,
+              'ml-18': options().depth === 3,
+            },
+          ]}
           readOnly={!canSubmit()}
           ref={setForm}
           onSubmit={(e) => {
@@ -445,9 +460,11 @@ export function Step<S extends StepSchema, F extends JsonObject>(
             Self={Self}
             next={<Next>{props.children}</Next>}
           />
-          <Show when={step.correct}>
-            <Next>{props.children}</Next>
-          </Show>
+          <ExerciseOptions depth={options().depth}>
+            <Show when={step.correct}>
+              <Next>{props.children}</Next>
+            </Show>
+          </ExerciseOptions>
         </StepBoundary>
       </Show>
       <Show when={canReset()}>

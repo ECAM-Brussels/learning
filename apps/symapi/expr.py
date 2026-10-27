@@ -1,7 +1,7 @@
 import pydantic
 import fastapi
 import sympy
-from typing import cast, Optional
+from typing import cast, Literal, Optional
 from mathjson import Expression
 
 router = fastapi.APIRouter(prefix="/expr")
@@ -14,6 +14,12 @@ class OneExpression(pydantic.BaseModel):
 class TwoExpressions(pydantic.BaseModel):
     expr1: Expression
     expr2: Expression
+
+
+class ComparisonInput(pydantic.BaseModel):
+    expr1: Expression
+    expr2: Expression
+    comparison: Literal["gt", "lt", "geq", "leq"]
 
 
 def args(expr: sympy.Expr) -> list[sympy.Expr]:
@@ -36,6 +42,21 @@ def flatten(expr: sympy.Expr, op=sympy.Mul) -> sympy.Expr:
 def common_roots(input: TwoExpressions) -> list[str]:
     expr = sympy.solveset(input.expr1.expr).intersect(sympy.solveset(input.expr2.expr))
     return [sympy.latex(e) for e in expr]
+
+
+@router.post("/compare")
+def compare(input: ComparisonInput) -> bool:
+    diff = sympy.simplify(input.expr1.expr - input.expr2.expr)
+    if input.comparison == "gt":
+        return sympy.ask(sympy.Q.positive(diff))
+    elif input.comparison == "lt":
+        return sympy.ask(sympy.Q.negative(diff))
+    elif input.comparison == "geq":
+        return sympy.ask(sympy.Q.nonnegative(diff))
+    elif input.comparison == "leq":
+        return sympy.ask(sympy.Q.nonpositive(diff))
+    else:
+        raise ValueError("Invalid comparison")
 
 
 @router.post("/degree")

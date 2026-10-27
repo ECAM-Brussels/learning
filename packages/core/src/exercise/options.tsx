@@ -23,6 +23,7 @@ export const Options = v.object({
   ),
   allowResets: v.optional(v.boolean(), true),
   allowResubmissions: v.optional(v.boolean(), false),
+  depth: v.optional(v.number(), 0),
   readOnly: v.optional(
     v.union([
       v.boolean(),
@@ -34,7 +35,7 @@ export const Options = v.object({
     false,
   ),
   softDelete: v.optional(v.boolean(), false),
-  video: v.optional(v.string()),
+  video: v.optional(v.union([v.string(), v.null()])),
 })
 export type Options<T extends 'input' | 'output' = 'input'> = T extends 'input'
   ? v.InferInput<typeof Options>

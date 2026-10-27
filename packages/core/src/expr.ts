@@ -5,7 +5,7 @@ import {
   N,
   PythonTarget,
 } from '@cortex-js/compute-engine'
-import { mapAsync, mapValues, range, round } from 'es-toolkit'
+import { isEqual, mapAsync, mapValues, range, round } from 'es-toolkit'
 import stringify from 'safe-stable-stringify'
 import * as v from 'valibot'
 import { encrypt } from './crypto'
@@ -138,8 +138,10 @@ function expression(input: Math) {
     encrypt: async () => Promise.resolve(expression({ json }).latex()).then(encrypt),
     expand: () => expression({ json: ['Expand', json] }),
     evaluate: () => ce.expr(json).evaluate(),
-    geq: (other: Math) => ce.expr(['Subtract', json, v.parse(Math, other).json]).isNonNegative,
-    gt: (other: Math) => ce.expr(['Subtract', json, v.parse(Math, other).json]).isPositive,
+    geq: (other: Math) =>
+      symapi.expr.compare({ expr1: json, expr2: v.parse(Math, other).json, comparison: 'geq' }),
+    gt: (other: Math) =>
+      symapi.expr.compare({ expr1: json, expr2: v.parse(Math, other).json, comparison: 'gt' }),
     factor: () => expression({ json: ['Factor', json] }),
     func: () => {
       if (!Array.isArray(json)) throw new Error(`Only arrays have the property func`)
@@ -218,6 +220,15 @@ function expression(input: Math) {
       return false
     },
     isComplexPolar: () => {
+      function unwrap(json: MathJsonExpression): MathJsonExpression {
+        if (Array.isArray(json) && json.length > 1) {
+          const [func, ...args] = json
+          if (func === 'Delimiter') return unwrap(args[0])
+          return [func, ...args.map(unwrap)] as MathJsonExpression
+        }
+        return json
+      }
+
       function isUnitPolar(json: MathJsonExpression) {
         if (Array.isArray(json) && ['Add', 'Subtract'].includes(json[0]) && json.length === 3) {
           const [_, a, b] = json
@@ -228,21 +239,22 @@ function expression(input: Math) {
             b.length === 3 &&
             b[1] === 'ImaginaryUnit' &&
             b[2][0] === 'Sin' &&
-            ce.expr(b[2][1]).isReal &&
-            ce.expr(a[1]).isEqual(b[2][1])
-          )
-            return true
+            ce.expr(b[2][1]).isReal
+          ) {
+            return isEqual(a[1], b[2][1])
+          }
         }
         return false
       }
 
-      if (isUnitPolar(json)) return true
+      const _json = unwrap(json)
+      if (isUnitPolar(_json)) return true
       if (
-        Array.isArray(json) &&
-        ['Multiply', 'InvisibleOperator'].includes(json[0]) &&
-        json.length === 3
+        Array.isArray(_json) &&
+        ['Multiply', 'InvisibleOperator'].includes(_json[0]) &&
+        _json.length === 3
       ) {
-        const [_, a, b] = json
+        const [_, a, b] = _json
         if (ce.expr(a).isNonNegative && isUnitPolar(b)) return true
       }
       return false
@@ -263,8 +275,10 @@ function expression(input: Math) {
         return symapi.expr.latex({ expr: json })
       }
     },
-    leq: (other: Math) => ce.expr(['Subtract', json, v.parse(Math, other).json]).isNonPositive,
-    lt: (other: Math) => ce.expr(['Subtract', json, v.parse(Math, other).json]).isNegative,
+    leq: (other: Math) =>
+      symapi.expr.compare({ expr1: json, expr2: v.parse(Math, other).json, comparison: 'leq' }),
+    lt: (other: Math) =>
+      symapi.expr.compare({ expr1: json, expr2: v.parse(Math, other).json, comparison: 'lt' }),
     matches: (other: Math) => symapi.expr.match({ expr1: json, expr2: v.parse(Math, other).json }),
     mod: (other: Math) => expression({ json: ['Mod', json, v.parse(Math, other).json] }),
     N: (precision?: number) => {
