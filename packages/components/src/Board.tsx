@@ -192,23 +192,37 @@ export const Board = Object.assign(
     },
     Glider: (
       props: {
-        start: [number, number] | JXG.Point
+        position: [number, number] | JXG.Point
         on: JXG.GeometryElement
         children?: (glider: JXG.Glider) => JSX.Element
+        onDrag?: (glider: JXG.Glider) => void
       } & JXG.GliderAttributes,
     ) => {
-      const attrs = omit(props, 'start', 'on', 'children')
+      const attrs = omit(props, 'position', 'on', 'children', 'onDrag')
       return (
         <Element
           type="glider"
-          parent={[...(Array.isArray(props.start) ? props.start : [props.start]), props.on]}
+          parent={[
+            ...(Array.isArray(props.position) ? props.position : [props.position]),
+            props.on,
+          ]}
           attrs={attrs}
         >
           {(glider: JXG.Glider) => {
             createEffect(
-              () => props.start,
-              (start) => {
-                glider.moveTo(start)
+              () => props.onDrag,
+              (onDrag) => {
+                if (onDrag) {
+                  glider.on('drag', () => {
+                    onDrag(glider)
+                  })
+                }
+              },
+            )
+            createEffect(
+              () => props.position,
+              (position) => {
+                glider.moveTo(position)
               },
             )
             return props.children?.(glider)
@@ -396,6 +410,7 @@ function Element<T extends JXG.GeometryElement>(props: {
     () => deep(props.attrs ?? {}),
     (attrs) => {
       el()?.setAttribute(attrs)
+      el()?.update()
     },
   )
 
