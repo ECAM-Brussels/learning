@@ -72,57 +72,79 @@ Calculez la dérivée de $f(x) = x^2$ en $x = 3$ par la **dérivation automatiqu
 
 :::
 
-## Principe général
-
-Pour calculer $f'(a)$, on procède de la manière suivante:
-
-1. Calculez $f(a + \epsilon)$
-
-2. Utilisez $\epsilon^2 = 0$ pour simplifier l'expression.
-
-3. Le coefficient de $\epsilon$ est $f'(a)$.
-
-:::example
-Calculez la dérivée de $f(x) = x^2 - 2x + 1$ en $a = 1$ par la dérivation automatique
-
-{tex`\begin{align*}
-  f(1 + \epsilon)
-  &= (1 + \epsilon)^2 - 2 (1 + \epsilon) + 1\\
-  &= 1 + 2\epsilon + \underbrace{\epsilon^2}_{0} - 2 - 2 \epsilon + 1\\
-  &= \underbrace{1}_{f(1)} + \underbrace{0}_{f'(1)} \epsilon
-\end{align*}`}
-
-En conséquence, $f'(1) = 0$.
-:::
-
 ## Nombres duaux
 
+Un **nombre dual** est un nombre sous la forme
+
 {tex`a + b \epsilon,
-\quad a, b \in \mathbb{R},
-\quad \epsilon^2 = 0`}
+\quad a, b \in \mathbb{R}`}
+
+1. Les règles arithmétiques usuelles s'appliquent avec comme seule différence que $\epsilon^2 = 0$.
+
+2. Si $f$ est une fonction réelle dérivable,
+   on l'étend sur les nombres duaux via $$f(a + b \epsilon) = f(a) + f'(a) b \epsilon$$
+
+:::remark[Redondance]
+Si $f(x) = x^2$, alors $f'(x) = 2x$, et donc
+
+{tex.display`\underbrace{\epsilon^2}_{f(\epsilon)} = f(0 + 1 \epsilon) = f(0) + f'(0) \epsilon = 0`}
+
+:::
+
+:::example
+Si $g(x) = \sin(x^2)$,
+calculons $g(x + \epsilon)$.
+
+**Première manière**. On emploie la seconde règle de calcul directement
+{tex.display`g(x + \epsilon) = g(x) + g'(x) \epsilon = \sin(x^2) + (2x\cos(x^2)) \epsilon`}
+
+**Seconde manière** (via la composition). On calcule d'abord le carré
+{tex`g(x + \epsilon)
+  = \sin((x + \epsilon)^2)
+  = \sin(x^2 + 2x\epsilon + \underbrace{\epsilon^2}_0)
+`}
+
+En utilisant $\sin(a + b \epsilon) = \sin(a) + b \cos(a) \epsilon$, on obtient
+{tex.display`g(x + \epsilon) = \underbrace{\sin(x^2)}_{g(x)} + \underbrace{(2x\cos(x^2))}_{g'(x)} \epsilon`}
+:::
+
+:::remark[Règle de composée]
+La deuxième manière est plus longue,
+mais elle révèle un fait important:
+la règle de dérivée est **automatiquement appliquée**.
+Plus de détails dans la sous-section suivante.
+:::
+
+<Exercise.FunctionExtensionSequence />
 
 ### Règles de calcul
 
-| Règle                                                 | Explication                         |
-| ----------------------------------------------------- | ----------------------------------- |
-| $\epsilon^2 = 0$                                      | Enlève les termes d'ordre supérieur |
-| $\sin (a + b\epsilon) = \sin a + (b \cos a) \epsilon$ | Dérive $\sin$ correctement          |
-| $\cos \epsilon = 1$                                   |                                     |
+<Exercise.Rules />
 
-:::example
-Calculons $\sin(x + \epsilon)$
+:::remark[Dérivée de composée]
+La règle $f(a + b \epsilon) = f(a) + f'(a) b \epsilon$ applique automatiquement la **règle de la composée**.
 
-{tex`\begin{align*}
-  \sin(x + \epsilon)
-  &= \sin x \underbrace{\cos \epsilon}_{= 1} + \underbrace{\sin \epsilon}_{= \epsilon} \cos x\\
-  &= \sin x + \cos x \epsilon
+{tex.display`g(x + \epsilon) = g(x) + g'(x) \epsilon`}
+
+En appliquant $f$ des deux côtés, on obtient:
+
+{tex.display`\begin{align*}
+f(g(x + \epsilon))
+  &= f(\underbrace{g(x)}_a + \underbrace{g'(x)}_b \epsilon)\\
+  &= f(\underbrace{g(x)}_a) + f'(\underbrace{g(x)}_a) \underbrace{g'(x)}_b \epsilon\\
 \end{align*}`}
+
+On obtient alors
+{tex.display`(f \circ g)(x + \epsilon)) = f(g(x)) + f'(g(x)) g'(x) \epsilon`}
 :::
 
 ## Dérivation automatique avec Python
 
 $$
+
 f(x + \epsilon) = f(x) + f'(x) \epsilon
+
+
 $$
 
 En évaluant $f(a + \epsilon)$, on obtient donc $f(a)$ et $f'(a)$ en une seule évaluation.
@@ -185,6 +207,8 @@ Calculez la dérivée de $f(x) = \sin(x^2)$ en $x = 1$ en utilisant la dérivati
 ::::
 
 :::
+
+<Exercise.AutomaticDifferentiation />
 
 ### Dérivée de fonctions
 
@@ -375,3 +399,113 @@ Déterminez une racine approchée de {tex`f(x) = e^{-x^2} - \frac{1}{2}`} en app
 
 ::::
 :::
+
+# Implémentation Python (non-examinable)
+
+L'implémentation des nombres duaux dépasse le cadre de ce cours,
+mais nous la mettons à disposition des intéressé·es.
+Le code contient des concepts que vous verrez plus tard dans vos études,
+mais vous pouvez vous concentrer sur la logique générale.
+
+:::steps
+
+1. On définit un type de données, appelé `Dual`, pour représenter les nombres duaux.
+   Il prend en argument la _partie réelle_ et la _partie duale_.
+   Par exemple, le nombre dual $1 + 2 \epsilon$ est représenté par `Dual(1, 2)`.
+
+   ```python run
+   import dataclasses
+
+   # Dual est un "type de données". Vous reviendrez sur ce concept plus tard dans vos études.
+   @dataclasses.dataclass
+   class Dual:
+
+       # Stocke la partie réelle, accessible via `self.real`
+       real: float
+       # Stocke la partie duale, accessible via `self.dual`
+       dual: float
+
+       # Explique à Python comment afficher un nombre dual
+       def __repr__(self):
+           return f"{self.real} + {self.dual} ε"
+
+   # Créons un nombre dual 1 + 2 ε, déclenche __repr__
+   Dual(1, 2)
+   ```
+
+2. Apprenons à Python à multiplier deux nombres duaux.
+   Rappelons que
+   $$(a + b\epsilon)(c + d\epsilon) = ac + (ad + bc) \epsilon,$$
+   ce qui en particulier implique que $\epsilon^2 = 0$.
+
+   ```python run highlight="11-19"
+   import dataclasses
+
+   @dataclasses.dataclass
+   class Dual:
+       real: float
+       dual: float
+
+       def __repr__(self):
+           return f"{self.real} + {self.dual} ε"
+
+       def __mul__(self, other):
+           # Multiplication d'un nombre dual par un réel
+           if isinstance(other, (int, float)):
+               return Dual(self.real * other, self.dual * other)
+           # Multiplication de deux nombres duaux
+           return Dual(
+               self.real * other.real, # ac
+               self.real * other.dual + self.dual * other.real # ad + bc
+           )
+
+   # Testons la multiplication de deux nombres duaux
+   epsilon = Dual(0, 1)
+   epsilon * epsilon
+   ```
+
+   Il faudrait implémenter l'addition (`__add__`), la soustraction (`__sub__`), la division (`__truediv__`) et la puissance (`__pow__`)
+   pour que l'arithmétique des nombres duaux soit complète.
+
+3. Apprenons maintenant à Python à calculer le sinus d'un nombre dual.
+   Rappelons que
+   $$\sin(a + b\epsilon) = \sin(a) + b \cos(a) \epsilon$$
+
+   ```python run highlight="2,20-25"
+   import dataclasses
+   import math
+
+   @dataclasses.dataclass
+   class Dual:
+       real: float
+       dual: float
+
+       def __repr__(self):
+           return f"{self.real} + {self.dual} ε"
+
+       def __mul__(self, other):
+           if isinstance(other, (int, float)):
+               return Dual(self.real * other, self.dual * other)
+           return Dual(
+               self.real * other.real,
+               self.real * other.dual + self.dual * other.real
+           )
+
+   def sin(x):
+       # Si x est un nombre réel, on utilise la fonction math.sin
+       if isinstance(x, (int, float)):
+           return math.sin(x)
+       # Sinon, sin(a + b ε) = sin(a) + b cos(a) ε
+       return Dual(math.sin(x.real), x.dual * math.cos(x.real))
+
+   # Testons le sinus d'un nombre dual
+   x = Dual(math.pi, 1)
+   sin(x)
+   ```
+
+   Il faut également implémenter les autres fonctions mathématiques usuelles.
+
+:::
+
+$$
+$$
