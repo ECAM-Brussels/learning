@@ -57,12 +57,13 @@ const CustomSchemas = {
     ),
     Expression,
   ]),
-  jsx: omitFromJSON(v.custom<JSX.Element>(() => true)),
-  optionalJsx: omitFromJSON(v.optional(v.custom<JSX.Element>(() => true))),
+  jsx: v.union([v.string(), omitFromJSON(v.custom<JSX.Element>(() => true))]),
   string: v.string(),
   number: v.number(),
 } as const
 type CustomSchemas = typeof CustomSchemas
+
+export const schemas = CustomSchemas
 
 type ResolveSchema<T> =
   T extends v.BaseSchema<any, any, any>
