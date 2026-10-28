@@ -67,10 +67,10 @@ const DiffAtPoint = createDerivedStep(
   }),
   {
     children: (props) => (
-      <>
+      <Show when={props.data.check}>
         <p>Vérifions que cela correspond au résultat théorique: {tex`${props.data.expr}`}</p>
         <DerivativeAtPoint f={props.data.expr} x={props.data.a} />
-      </>
+      </Show>
     ),
   },
 )
@@ -79,7 +79,7 @@ export function PolynomialSequence() {
   return (
     <Sequence id="polynomial-sequence">
       <DiffAtPoint expr="x^3" a={2} check />
-      <DiffAtPoint expr="x^2 + 2x + 1" a={1} />
+      <DiffAtPoint expr="x^2 + 2x + 1" a={1} check />
       <DiffAtPoint expr="(x^3 + 3x^2 + 1) (x^2 + 1)" a={3} />
     </Sequence>
   )
@@ -179,5 +179,22 @@ export function NewtonRaphsonAnimation(props: { twoIterations?: boolean }) {
         {tex`x = ${props.twoIterations ? root2() : root()}`}
       </p>
     </>
+  )
+}
+
+function Test() {
+  return (
+    <PythonCode
+      prompt={<p>Définir la fonction {tex`f(x) = x^2`} en Python</p>}
+      tests={(expect) => ({
+        'f(0) = 0': expect.with('f(0)').toReturn(0),
+        'f(1) = 1': expect.with('f(1)').toReturn(1),
+        'f(2) = 4': expect.with('f(2)').toReturn(4),
+        'f(3) = 9': expect.with('f(3)').toReturn(9),
+        'f(-1) = 1': expect.with('f(-1)').toReturn(1),
+        'f(-2) = 4': expect.with('f(-2)').toReturn(4),
+        'f(-3) = 9': expect.with('f(-3)').toReturn(9),
+      })}
+    />
   )
 }
