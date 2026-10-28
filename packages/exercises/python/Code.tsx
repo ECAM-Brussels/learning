@@ -1,39 +1,60 @@
 import { CheckMark, Code } from '@learning/components'
 import { createStep, omitFromJSON } from '@learning/core'
 import { python } from '@learning/repl'
+import type { MaybePromise } from 'bun'
 import { allKeyed, mapAsync } from 'es-toolkit'
 import { createEffect, createMemo, createProjection, For, Show } from 'solid-js'
 import * as v from 'valibot'
 
-export const Test = v.variant('test', [
-  v.object({
-    desc: v.optional(v.string()),
-    test: v.union([v.string(), v.null()]),
-    check: v.custom<Parameters<typeof python.test>[2]>(() => true),
-  }),
-  v.object({
-    desc: v.optional(v.string()),
-    test: v.custom<(code: string) => boolean | Promise<boolean>>(
-      (val) => typeof val === 'function',
+export const Tests = v.union([
+  v.pipe(
+    v.array(
+      v.object({
+        desc: v.optional(v.string()),
+        test: v.union([v.string(), v.null()]),
+        check: v.custom<Parameters<typeof python.test>[2]>(() => true),
+      }),
     ),
-  }),
+    v.transform((tests) => {
+      return (code: string) =>
+        tests.map((t) => ({
+          desc: t.desc,
+          fn: () => python.test(code, t.test, t.check).then((res) => res.passed),
+        }))
+    }),
+  ),
+  v.pipe(
+    v.array(
+      v.object({
+        desc: v.optional(v.string()),
+        test: v.custom<(code: string) => MaybePromise<boolean>>((val) => typeof val === 'function'),
+      }),
+    ),
+    v.transform((tests) => {
+      return (code: string) => tests.map((t) => ({ desc: t.desc, fn: () => t.test(code) }))
+    }),
+  ),
+  v.pipe(
+    v.custom<
+      (
+        expect: (desc: string) => ReturnType<typeof python.expect>,
+      ) => { desc?: string; fn: () => MaybePromise<boolean> }[]
+    >((val) => typeof val === 'function'),
+    v.transform((generator) => {
+      return (code: string, options?: { math: boolean }) => {
+        const expect = (desc: string) => python.expect(code, options).desc(desc)
+        return generator(expect)
+      }
+    }),
+  ),
 ])
-
-async function runTest(code: string, test: v.InferInput<typeof Test>) {
-  if ('check' in test) {
-    return python.test(code, test.test, test.check)
-  } else {
-    const passed = await test.test(code)
-    return { ...test, passed, result: passed, stdout: '' }
-  }
-}
 
 export const PythonCode = createStep({
   name: 'python/code',
   schema: {
     data: {
       prompt: 'jsx',
-      tests: omitFromJSON(v.array(Test)),
+      tests: omitFromJSON(Tests),
       check: omitFromJSON(
         v.optional(v.custom<(code: string) => boolean | Promise<boolean>>(() => true)),
       ),
@@ -44,10 +65,13 @@ export const PythonCode = createStep({
   },
   grade: async (ctx) => {
     const { tests, codeCheck } = await allKeyed({
-      tests: mapAsync(ctx.data.tests, (t) => runTest(ctx.inputs.code, t)),
+      tests: mapAsync(
+        ctx.data.tests(ctx.inputs.code, { math: ctx.data.math ?? false }),
+        async (t) => t.fn(),
+      ),
       codeCheck: ctx.data.check?.(ctx.inputs.code),
     })
-    return tests.every((t) => t.passed) && codeCheck !== false
+    return tests.every(Boolean) && codeCheck !== false
   },
   prompt: (ctx) => {
     createEffect(
@@ -74,9 +98,9 @@ export const PythonCode = createStep({
   feedback: (ctx) => {
     const tests = createProjection(
       () =>
-        mapAsync(ctx.data.tests, async (t) => ({
-          ...t,
-          ...(await runTest(ctx.inputs.code, t)),
+        mapAsync(ctx.data.tests(ctx.inputs.code, { math: ctx.data.math ?? false }), async (t) => ({
+          desc: t.desc,
+          passed: await t.fn(),
         })),
       [],
     )
@@ -93,11 +117,7 @@ export const PythonCode = createStep({
           <For each={tests}>
             {(test) => (
               <li>
-                <code>
-                  {test.desc ?? test.test ?? 'Résultat final'} -&gt; {test.result}
-                  {test.stdout}
-                </code>
-                <CheckMark value={test.passed} />
+                <code>{test.desc ?? 'Résultat final'}</code> <CheckMark value={test.passed} />
               </li>
             )}
           </For>
