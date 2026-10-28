@@ -6,32 +6,39 @@ import { allKeyed, mapAsync } from 'es-toolkit'
 import { createEffect, createMemo, createProjection, For, Show } from 'solid-js'
 import * as v from 'valibot'
 
-export const Tests = v.union([
+// Old test format, deprecated
+export const Test = v.union([
   v.pipe(
-    v.array(
-      v.object({
-        desc: v.optional(v.string()),
-        test: v.union([v.string(), v.null()]),
-        check: v.custom<Parameters<typeof python.test>[2]>(() => true),
-      }),
-    ),
-    v.transform((tests) => {
-      return (code: string) =>
-        tests.map((t) => ({
-          desc: t.desc,
-          fn: () => python.test(code, t.test, t.check).then((res) => res.passed),
-        }))
+    v.object({
+      desc: v.optional(v.string()),
+      test: v.union([v.string(), v.null()]),
+      check: v.custom<Parameters<typeof python.test>[2]>(() => true),
+    }),
+    v.transform((test) => {
+      return {
+        desc: test.desc,
+        test: (code: string) => python.test(code, test.test, test.check).then((res) => res.passed),
+      }
     }),
   ),
-  v.pipe(
-    v.array(
-      v.object({
-        desc: v.optional(v.string()),
-        test: v.custom<(code: string) => MaybePromise<boolean>>((val) => typeof val === 'function'),
-      }),
+  v.object({
+    desc: v.optional(v.string()),
+    test: v.custom<(code: string) => boolean | Promise<boolean>>(
+      (val) => typeof val === 'function',
     ),
+  }),
+])
+
+export const Tests = v.union([
+  v.pipe(
+    v.array(Test),
     v.transform((tests) => {
-      return (code: string) => tests.map((t) => ({ desc: t.desc, fn: () => t.test(code) }))
+      return (code: string) => {
+        return tests.map((t) => ({
+          desc: t.desc,
+          fn: () => t.test(code),
+        }))
+      }
     }),
   ),
   v.pipe(
