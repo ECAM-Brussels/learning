@@ -1,5 +1,7 @@
 import dedent from 'dedent'
+import { allKeyed } from 'es-toolkit'
 import { EventIterator } from 'event-iterator'
+
 const worker = new Worker(new URL('./python/worker.ts', import.meta.url), { type: 'module' })
 
 export type FinalOutput = {
@@ -75,21 +77,33 @@ async function runPythonTest(
   return { ...out, passed: await check(out) }
 }
 
-function expect(code: string, state: { desc?: string; negate?: boolean } = {}) {
+function expect(code: string, state: { desc?: string; negate?: boolean; math?: boolean } = {}) {
   const { desc, negate } = state
   function getMethods<T = string | number | boolean>(type: 'result' | 'stdout' | 'error') {
     return {
+      toEqualThatOf(modelAnswer: string) {
+        return {
+          desc,
+          fn: async () => {
+            const { res1, res2 } = await allKeyed({
+              res1: output(code, { math: state.math ?? false }),
+              res2: output(modelAnswer, { math: state.math ?? false }),
+            })
+            return (res1[type]?.trim() === res2[type]?.trim()) === !negate
+          },
+        }
+      },
       toBe: (expected: T) => ({
         desc,
         fn: async () => {
-          const res = await output(code)
+          const res = await output(code, { math: state.math ?? false })
           return (res[type]?.trim() === String(expected)) === !negate
         },
       }),
       toMatch: (regex: RegExp) => ({
         desc,
         fn: async () => {
-          const res = await output(code)
+          const res = await output(code, { math: state.math ?? false })
           if (res[type] === undefined) return false
           return regex.test(res[type]) === !negate
         },
@@ -97,7 +111,7 @@ function expect(code: string, state: { desc?: string; negate?: boolean } = {}) {
       toSatisfy: (check: (result: string) => boolean | Promise<boolean>) => ({
         desc,
         fn: async () => {
-          const res = await output(code)
+          const res = await output(code, { math: state.math ?? false })
           if (res[type] === undefined) return false
           return check(res[type]) === !negate
         },
@@ -105,6 +119,12 @@ function expect(code: string, state: { desc?: string; negate?: boolean } = {}) {
     }
   }
   return {
+    code: () => ({
+      toMatch: (regex: RegExp) => ({
+        desc,
+        fn: () => regex.test(code) === !negate,
+      }),
+    }),
     desc: (newDescription: string) => expect(code, { ...state, desc: newDescription }),
     error: <T extends string | number | boolean>() => getMethods<T>('error'),
     matplotlib: {
@@ -156,14 +176,14 @@ function expect(code: string, state: { desc?: string; negate?: boolean } = {}) {
     toError: () => ({
       desc,
       fn: async () => {
-        const res = await output(code)
+        const res = await output(code, { math: state.math ?? false })
         return (res.error !== undefined) !== negate
       },
     }),
     toPrint: (expected: string | boolean | number) => ({
       desc,
       fn: async () => {
-        const res = await output(code)
+        const res = await output(code, { math: state.math ?? false })
         return (res.result?.trim() === String(expected)) !== negate
       },
     }),
