@@ -54,6 +54,32 @@ export const Tests = v.union([
   ),
 ])
 
+/**
+ * Allow students to write Python code which will be tested against a set of tests
+ *
+ * Two props are required:
+ *
+ * - `prompt`: JSX element that will be displayed above the code editor,
+ *    explaining what the student is expected to do.
+ *
+ * - `tests`: a function that returns a record of tests.
+ *    Each key is a description of the test,
+ *    while the test itself is a function that returns a boolean or a promise thereof.
+ *    To help you write tests, an `expect` function is provided as a parameter,
+ *    as shown in the example below.
+ *
+ * Currently, the `tests` props also allows a legacy format, but it is deprecated and will be removed in the future.
+ *
+ * @example
+ * <PythonCode
+ *   prompt={<p>Write a function <code>square</code> that returns the square of a number.</p>}
+ *   tests={(expect) => ({
+ *     'square(0) -> 0': expect.with('square(0)').toReturn(0),
+ *     'square(1) -> 1': expect.with('square(1)').toReturn(1),
+ *     'square(2) -> 4': expect.with('square(2)').toReturn(4),
+ *   })}
+ * />
+ */
 export const PythonCode = createStep({
   name: 'python/code',
   schema: {
