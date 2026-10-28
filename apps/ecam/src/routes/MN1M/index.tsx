@@ -4,6 +4,7 @@ import { type RouteDefinition } from '@solidjs/router'
 import type { JSX } from '@solidjs/web'
 import { createMemo, Show } from 'solid-js'
 import { paths } from '../../router'
+import session4 from './automatic-differentiation.jpg'
 import banner from './banner.jpg'
 import session3 from './differences.jpg'
 import session2 from './matplotlib.jpg'
@@ -77,6 +78,13 @@ export default () => (
         link="03-diff"
         img={session3}
         draft={new Date('2026-10-16 07:00')}
+      />
+      <SessionCard
+        index={4}
+        title="Dérivation automatique"
+        link="04-automatic-differentiation"
+        img={session4}
+        draft={new Date('2026-11-05 07:00')}
       />
     </div>
   </>
