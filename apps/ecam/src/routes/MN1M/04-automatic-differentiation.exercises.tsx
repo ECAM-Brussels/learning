@@ -1,8 +1,12 @@
+import { Board } from '@learning/components'
 import { createDerivedStep, expr, Sequence, tex } from '@learning/core'
 import { Expand } from '@learning/exercises/math/algebra/Expand'
+import { DerivativeAtPoint } from '@learning/exercises/math/calculus/DerivativeAtPoint'
 import { Simple } from '@learning/exercises/math/Simple'
 import { PythonCode } from '@learning/exercises/python/Code'
 import dedent from 'dedent'
+import { createMemo, createSignal, Show } from 'solid-js'
+import * as v from 'valibot'
 
 export function FirstExample() {
   return (
@@ -36,32 +40,52 @@ export function FirstExample() {
   )
 }
 
-export function Rules() {
+const DiffAtPoint = createDerivedStep(
+  PythonCode,
+  { expr: 'expr', a: 'number', check: v.optional(v.boolean()) },
+  (props) => ({
+    math: true,
+    prompt: (
+      <p>
+        Calculez la dérivée de {tex`\displaystyle f(x) = ${props.expr}`} en{' '}
+        {tex`\displaystyle x = ${props.a}`} avec la <strong>dérivation automatique</strong>.
+      </p>
+    ),
+    tests: (expect) => [
+      expect('La variable epsilon est utilisée')
+        .code()
+        .toMatch(/epsilon/),
+      expect('La propriété `dual` est utilisée')
+        .code()
+        .toMatch(/\.dual/),
+      expect("Le code s'execute sans erreur").not().toError(),
+      expect('Le résultat final est correct').result().toEqualThatOf(dedent /*python */ `
+        import numpy as np
+
+        def f(x):
+            return ${props.expr.python()}
+        
+        f(${props.a} + epsilon).dual
+      `),
+    ],
+  }),
+  {
+    children: (props) => (
+      <>
+        <p>Vérifions que cela correspond au résultat théorique: {tex`${props.data.expr}`}</p>
+        <DerivativeAtPoint f={props.data.expr} x={props.data.a} />
+      </>
+    ),
+  },
+)
+
+export function PolynomialSequence() {
   return (
-    <Simple
-      id="product-rule"
-      prompt={
-        <p>
-          Calculez le produit {tex`(a + b \epsilon)(c + d \epsilon)`} en utilisant{' '}
-          {tex`\epsilon^2 = 0`}
-        </p>
-      }
-      grade={(attempt) => attempt.isEqual('ac + (ad+bc) \\epsilon')}
-    >
-      <p>
-        Remarquez que si {tex`a = f(x)`}, {tex`b = f'(x)`}, {tex`c = g(x)`} et {tex`d = g'(x)`},
-        alors on a en fait
-      </p>
-      {tex`
-        \underbrace{(f(x) + f'(x) \epsilon)}_{a + b \epsilon}
-        \underbrace{(g(x) + g'(x) \epsilon)}_{c + d \epsilon}
-        = \underbrace{f(x) g(x)}_{a c} + \underbrace{\color{green} (f'(x) g(x) + f(x) g'(x))}_{a d + b c} \epsilon
-      `}
-      <p>
-        En imposant {tex`\epsilon^2 = 0`}, on enseigne à l'ordinateur à calculer la dérivée d'un
-        produit automatiquement.
-      </p>
-    </Simple>
+    <Sequence id="polynomial-sequence">
+      <DiffAtPoint expr="x^3" a={2} check />
+      <DiffAtPoint expr="x^2 + 2x + 1" a={1} />
+      <DiffAtPoint expr="(x^3 + 3x^2 + 1) (x^2 + 1)" a={3} />
+    </Sequence>
   )
 }
 
@@ -101,53 +125,63 @@ export function FunctionExtensionSequence() {
 }
 
 export function AutomaticDifferentiation() {
-  const DiffAtPoint = createDerivedStep(PythonCode, { expr: 'expr', a: 'number' }, (props) => ({
-    math: true,
-    prompt: (
-      <p>
-        Calculez la dérivée de {tex`f(x) = ${props.expr}`} en {tex`x = ${props.a}`}
-      </p>
-    ),
-    tests: (expect) => [
-      expect('La variable epsilon est utilisée')
-        .code()
-        .toMatch(/epsilon/),
-      expect('La propriété `dual` est utilisée')
-        .code()
-        .toMatch(/\.dual/),
-      expect("Le code s'execute sans erreur").not().toError(),
-      expect('Le résultat final est correct').result().toEqualThatOf(dedent /*python */ `
-        import numpy as np
-
-        def f(x):
-            return ${props.expr.python()}
-        
-        f(${props.a} + epsilon).dual
-      `),
-    ],
-  }))
   return (
     <Sequence id="automatic-differentiation-with-python">
       <DiffAtPoint expr="\cos(x^3)" a={2} />
       <DiffAtPoint expr="e^{-x^2}" a={1} />
+      <DiffAtPoint expr="\frac{x^2 + 1}{x - 1}" a={3} />
     </Sequence>
   )
 }
 
-export function RootFormula() {
+export function NewtonRaphsonAnimation(props: { twoIterations?: boolean }) {
+  const [a, setA] = createSignal(1.5)
+  const f = (x: number) => 0.5 * (x ** 2 - 9)
+  const df = (x: number) => x
+  const t = createMemo(() => (x: number) => f(a()) + df(a()) * (x - a()))
+  const t2 = createMemo(() => (x: number) => f(root()) + df(root()) * (x - root()))
+  const root = () => a() - f(a()) / df(a())
+  const root2 = () => root() - f(root()) / df(root())
   return (
-    <Simple
-      id="root-formula"
-      prompt={
-        <p>
-          Déterminez la racine {tex`x_1`} de {tex`\displaystyle y = m (x - x_0) + y_0`}
-        </p>
-      }
-      label="x_1 ="
-      tex
-      grade={(attempt) => expr('x_0 - y_0 / m').isEqual(attempt)}
-    >
-      <p>La racine de la fonction est {tex`\displaystyle x = x_0 - \frac{y_0}{m}`}.</p>
-    </Simple>
+    <>
+      <h4 class="text-center">
+        <Show when={props.twoIterations} fallback="Première itération">
+          Deux itérations
+        </Show>{' '}
+        de la méthode de Newton-Raphson
+      </h4>
+      <Board axis>
+        <Board.Plot fn={t()} color="green" />
+        <Board.Point position={[a(), 0]} fixed name="x_0" color="gray" />
+        <Board.Segment from={[a(), 0]} to={[a(), f(a())]} color="gray" dash={1} />
+        <Board.Plot fn={(x) => 0.5 * (x ** 2 - 9)}>
+          {(curve) => (
+            <Board.Glider
+              position={[a(), f(a())]}
+              on={curve}
+              onDrag={(P) => setA(P.X())}
+              name="\text{(bougez-moi)}"
+            />
+          )}
+        </Board.Plot>
+        <Board.Point
+          position={[root(), 0]}
+          fixed
+          name="x_1"
+          color={props.twoIterations ? 'gray' : 'red'}
+          withLabel={props.twoIterations}
+        />
+        <Show when={props.twoIterations}>
+          <Board.Point position={[root(), f(root())]} fixed withLabel={false} color="gray" />
+          <Board.Plot fn={t2()} color="green" />
+          <Board.Segment from={[root(), 0]} to={[root(), f(root())]} color="gray" dash={1} />
+          <Board.Point position={[root2(), 0]} fixed name="x_2" color="red" />
+        </Show>
+      </Board>
+      <p class="text-center">
+        Utilisation de la tangente en {tex`x = ${a()}`} pour trouver l'approximation de la racine{' '}
+        {tex`x = ${props.twoIterations ? root2() : root()}`}
+      </p>
+    </>
   )
 }

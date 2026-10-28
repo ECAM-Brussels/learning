@@ -40,103 +40,145 @@ epsilon = 1e-10
 
 :::
 
-## Un exemple plus représentatif
+En rajoutant la règle $\epsilon^2 = 0$ à l'arithmétique des nombres réels,
+on a dérivé $x^2$ _automatiquement_.
+Nous verrons aujourd'hui que calculer $f(x + \epsilon)$ calcule **automatiquement** $f(x)$ et $f'(x)$ en une seule évaluation.
 
-Imaginons que nous souhaitions calculer la dérivée de $f(x) = x^2$ en $x = 3$.
-Dans un cours de mathématiques classique,
-nous procédons généralement en deux étapes:
+## Dérivée automatique de fonctions polynomiales
 
-1. On calcule la _fonction dérivée_: $f'(x) = 2x$
+Ce que nous avons observé pour $f(x) = x^2$ est vrai pour tout polynôme,
+puisque la [formule du binôme de Newton](https://fr.wikipedia.org/wiki/Formule_du_bin%C3%B4me_de_Newton) implique que
 
-2. On remplace $x$ par $3$ pour obtenir $f'(3) = 6$
+{tex.display`\underbrace{(a + \epsilon)^n}_{f(a + \epsilon)} = \underbrace{a^n}_{f(a)} + \underbrace{\color{green} n a^{n-1}}_{f'(a)} \epsilon + \underbrace{\binom{n}{2} a^{n-2} \epsilon^2 + \dots + \epsilon^n}_{0}`}
 
-En dérivation automatique, le calcul de la _fonction dérivée_ n'est pas nécessaire,
-puisqu'il suffit de calculer $f(3 + \epsilon)$:
+Dès lors, si $f(x)$ est une **fonction polynômiale**, alors
+
+{tex.display`f(a + \epsilon) = f(a) + f'(a) \epsilon.`}
+
+Évaluer $f$ en $a + \epsilon$ calcule donc **automatiquement** $f(a)$ et $f'(a)$ en **une seule évaluation**,
+et en théorie, de manière **exacte**,
+contrairement aux quotients différentiels finis.
+
+Le nombre $\epsilon$ ne fait pas normalement pas partie de Python,
+mais nous l'avons intégré dans notre environnement de calcul.
+
+```python run math
+epsilon ** 2 # devrait afficher 0
+```
 
 :::example
-Calculez la dérivée de $f(x) = x^2$ en $x = 3$ par la **dérivation automatique**:
+Calculez la dérivée de $f(x) = x^3 + 2x^2 - 5x + 1$ en $x = 2$ en utilisant $\epsilon \neq 0$ tel que $\epsilon^2 = 0$.
 
-1. Dans $f(x)$, on remplace $x$ par $3 + \epsilon$:
+::::steps
 
-{tex.display`\begin{align*}
-  f(3 + \epsilon)
-    &= (3 + \epsilon)^2\\
-    &= 9 + 6\epsilon + \epsilon^2
-\end{align*}`}
+1. On définit la fonction $f(x)$ en Python
 
-2. En utilisant $\epsilon^2 = 0$, on obtient
+   ```python run math
+   def f(x):
+       return x**3 + 2*x**2 - 5*x + 1
+   ```
 
-{tex.display`f(3 + \epsilon) = \underbrace{9}_{f(3)} + \underbrace{6}_{f'(3)} \epsilon`}
+2. Puisque $f$ est un polynôme,
 
-3. On lit $f'(3) = 6$.
+   {tex.display`f(2 + \epsilon) = f(2) + f'(2) \epsilon,`}
+
+   donc calculer `f(2 + epsilon)` devrait me donner la réponse
+
+   ```python run math highlight="4"
+   def f(x):
+       return x**3 + 2*x**2 - 5*x + 1
+
+   f(2 + epsilon)
+   ```
+
+   En analysant la sortie, on remarque que $f(2) = 7$ et $f'(2) = 15$.
+
+3. Pour extraire le coefficient de $\epsilon$, on peut utiliser `.dual`:
+
+   ```python run math highlight="4"
+   def f(x):
+       return x**3 + 2*x**2 - 5*x + 1
+
+   f(2 + epsilon).dual
+   ```
+
+::::
+
+:::
+
+<Exercise.PolynomialSequence />
+
+:::remark
+Un aspect remarquable de la dérivation automatique est qu'en appliquant $\epsilon^2 = 0$,
+l'ordinateur applique automatiquement la **règle de la composée**:
+
+```python run math
+def f(x):
+    return x**2 + 1
+
+def g(x):
+    return x + 5
+
+f(g(2 + epsilon))
+```
+
+et également la **règle du produit**:
+
+```python run math
+def f(x):
+    return x**2 + 1
+
+def g(x):
+    return x + 5
+
+f(2 + epsilon) * g(2 + epsilon)
+```
 
 :::
 
 ## Nombres duaux
 
-Un **nombre dual** est un nombre sous la forme
+Dans la section précédente,
+nous avons vu que évaluer $f(a + \epsilon)$ calcule **automatiquement** $f(a)$ et $f'(a)$ en une seule évaluation
+pour tout polynôme $f$:
+{tex.display`f(a + \epsilon) = f(a) + f'(a) \epsilon.`}
+
+Nous aimerions que la relation ci-dessus soit vraie pour d'autres types de fonctions,
+mais cela implique de **donner du sens** à des expressions telles que
+
+{tex.display`\sin(2 + \epsilon)`}
+
+qui ne sont pas couvertes par $\epsilon^2 = 0$.
+Il faut donc **étendre** les fonctions usuelles pour qu'ils acceptent $\epsilon$ comme argument.
+
+:::definition[Nombres duaux]
+
+Un **nombre dual** est un nombre qui s'écrit formellement sous la forme
 
 {tex`a + b \epsilon,
 \quad a, b \in \mathbb{R}`}
 
-1. Les règles arithmétiques usuelles s'appliquent avec comme seule différence que $\epsilon^2 = 0$.
+1. Les règles arithmétiques du calcul littéral s'appliquent.
 
-2. Si $f$ est une fonction réelle dérivable,
-   on l'étend sur les nombres duaux via $$f(a + b \epsilon) = f(a) + f'(a) b \epsilon$$
-
-:::remark[Redondance]
-Si $f(x) = x^2$, alors $f'(x) = 2x$, et donc
-
-{tex.display`\underbrace{\epsilon^2}_{f(\epsilon)} = f(0 + 1 \epsilon) = f(0) + f'(0) \epsilon = 0`}
+2. On étend les fonctions dérivables sur les nombres duaux via
+   {tex.display`f(a + b \epsilon) = f(a) + f'(a) b \epsilon`}
 
 :::
 
-:::example
-Si $g(x) = \sin(x^2)$,
-calculons $g(x + \epsilon)$.
+:::remark
 
-**Première manière**. On emploie la seconde règle de calcul directement
-{tex.display`g(x + \epsilon) = g(x) + g'(x) \epsilon = \sin(x^2) + (2x\cos(x^2)) \epsilon`}
+1. En prenant $f(x) = x^2$, on vérifie que la deuxième règle redonne bien $\epsilon^2 = 0$:
+   {tex.display`  \epsilon^2 = f(0 + 1 \epsilon) = f(0) + f'(0) \epsilon = 0 + 0 \epsilon = 0`}
 
-**Seconde manière** (via la composition). On calcule d'abord le carré
-{tex`g(x + \epsilon)
-  = \sin((x + \epsilon)^2)
-  = \sin(x^2 + 2x\epsilon + \underbrace{\epsilon^2}_0)
-`}
+2. En prenant $b = 1$, on retrouve
+   {tex.display`f(a + \epsilon) = f(a) + f'(a) \epsilon,`}
+   qui est bien la formule que nous avons utilisée pour calculer $f'(a)$ automatiquement pour les polynômes.
 
-En utilisant $\sin(a + b \epsilon) = \sin(a) + b \cos(a) \epsilon$, on obtient
-{tex.display`g(x + \epsilon) = \underbrace{\sin(x^2)}_{g(x)} + \underbrace{(2x\cos(x^2))}_{g'(x)} \epsilon`}
-:::
+3. Les règles de dérivées que vous connaissez (quotient, produit, composition) sont **appliquées automatiquement**.
 
-:::remark[Règle de composée]
-La deuxième manière est plus longue,
-mais elle révèle un fait important:
-la règle de dérivée est **automatiquement appliquée**.
-Plus de détails dans la sous-section suivante.
 :::
 
 <Exercise.FunctionExtensionSequence />
-
-### Règles de calcul
-
-<Exercise.Rules />
-
-:::remark[Dérivée de composée]
-La règle $f(a + b \epsilon) = f(a) + f'(a) b \epsilon$ applique automatiquement la **règle de la composée**.
-
-{tex.display`g(x + \epsilon) = g(x) + g'(x) \epsilon`}
-
-En appliquant $f$ des deux côtés, on obtient:
-
-{tex.display`\begin{align*}
-f(g(x + \epsilon))
-  &= f(\underbrace{g(x)}_a + \underbrace{g'(x)}_b \epsilon)\\
-  &= f(\underbrace{g(x)}_a) + f'(\underbrace{g(x)}_a) \underbrace{g'(x)}_b \epsilon\\
-\end{align*}`}
-
-On obtient alors
-{tex.display`(f \circ g)(x + \epsilon)) = f(g(x)) + f'(g(x)) g'(x) \epsilon`}
-:::
 
 ## Dérivation automatique avec Python
 
@@ -208,8 +250,6 @@ Calculez la dérivée de $f(x) = \sin(x^2)$ en $x = 1$ en utilisant la dérivati
 
 :::
 
-<Exercise.AutomaticDifferentiation />
-
 ### Dérivée de fonctions
 
 La vectorisation permet facilement de calculer la dérivée d'une fonction sur un intervalle.
@@ -262,6 +302,8 @@ ensuite tracez la fonction et sa dérivée.
 
 ::::
 :::
+
+<Exercise.AutomaticDifferentiation />
 
 ### Tangentes
 
@@ -335,15 +377,13 @@ Graphez la fonction et sa tangente sur l'intervalle $[0, 2]$.
 
 # Newton-Raphson
 
+## Première itération
+
 L'idée derrière la méthode de Newton-Raphson est la suivante:
 si trouver la racine de $f(x)$ est difficile,
 remplaçons $f(x)$ par sa tangente.
 
-<Exercise.RootFormula />
-
-Dans l'illustration ci-dessous,
-on ne connaît pas la racine de $f(x)$,
-mais
+<Exercise.NewtonRaphsonAnimation />
 
 :::example
 Déterminez une racine approchée de {tex`f(x) = e^{-x^2} - \frac{1}{2}`} en approximant $f(x)$ par sa tangente autour de $x_0 = 0.8$.
@@ -359,46 +399,252 @@ Déterminez une racine approchée de {tex`f(x) = e^{-x^2} - \frac{1}{2}`} en app
        return np.exp(-x**2) - 0.5
    ```
 
-2. On calcule la tangente $t(x) = f'(x_0)(x - x_0) + f(x_0)$ en $x_0 = 0.8$.
+2. On calcule la pente $m = f'(x_0)$ et l'ordonnée $y_0 = f(x_0)$ de la tangente en $x_0 = 0.8$
+   grâce à la _dérivation automatique_.
 
-   ```python run math highlight="6-11"
+   ```python run math highlight="6-12"
    import numpy as np
 
    def f(x):
        return np.exp(-x**2) - 0.5
 
-   result = f(0.8 + epsilon)
+   x0 = 0.8
+   result = f(x0 + epsilon)
    m = result.dual
    y0 = result.real
-   0.8 - y0 / m
    ```
 
-3. On trace le graphe
+   Avec cette notation, l'équation de la tangente est $y - y_0 = m (x - x_0)$.
 
-   ```python run math highlight="1"
-   import matplotlib.pyplot as plt
+3. On cherche la racine de la tangente $y - y_0 = m (x - x_0)$.
+   Puisque $y = 0$ à la racine, on obtient
+
+   {tex.display`- y_0 = m (x - x_0) \quad \implies \quad x = x_0 - \frac{y_0}{m}`}
+
+   ```python run math highlight="10"
    import numpy as np
 
    def f(x):
        return np.exp(-x**2) - 0.5
 
-   result = f(0.8 + epsilon)
+   x0 = 0.8
+   result = f(x0 + epsilon)
    m = result.dual
    y0 = result.real
-   x1 = 0.8 - y0 / m
-
-   x = np.linspace(0, 1.5, 100)
-   t = m * (x - 0.8) + y0
-   plt.axhline(0, color="black")
-   plt.axvline(0, color="black")
-   plt.plot(x, f(x), label="f(x)")
-   plt.plot(x, t, label="t(x)")
-   plt.scatter(x1, 0, color="red", label=x1)
-   plt.legend()
+   x0 - y0 / m
    ```
 
 ::::
 :::
+
+## Deuxième itération
+
+<Exercise.NewtonRaphsonAnimation twoIterations />
+
+:::example
+
+Déterminez une racine approchée de {tex`f(x) = e^{-x^2} - \frac{1}{2}`} en appliquant la méthode de Newton-Raphson **deux fois** à partir de $x_0 = 0.8$.
+
+::::steps
+
+1. On part de l'exemple précédent et on appelle notre réponse $x_1$
+
+   ```python run math highlight="10-11"
+   import numpy as np
+
+   def f(x):
+       return np.exp(-x**2) - 0.5
+
+   x0 = 0.8
+   result = f(x0 + epsilon)
+   m = result.dual
+   y0 = result.real
+   x1 = x0 - y0 / m
+   x1
+   ```
+
+2. On réapplique le même calcul mais sur $x_1$.
+
+   ```python run math highlight="6-15"
+   import numpy as np
+
+   def f(x):
+       return np.exp(-x**2) - 0.5
+
+   x0 = 0.8
+   result = f(x0 + epsilon)
+   m = result.dual
+   y0 = result.real
+   x1 = x0 - y0 / m
+
+   result = f(x1 + epsilon)
+   m = result.dual
+   y1 = result.real
+   x2 = x1 - y1 / m
+
+   x2
+   ```
+
+   Remarquez qu'il y a beaucoup de **répétitions** dans le code ci-dessus.
+
+3. On crée une fonction pour éviter la répétition:
+
+   ```python run math highlight="6-14"
+   import numpy as np
+
+   def f(x):
+       return np.exp(-x**2) - 0.5
+
+   def tangent_root(x):
+       result = f(x + epsilon)
+       m = result.dual
+       y = result.real
+       return x - y / m
+
+   x0 = 0.8
+   x1 = tangent_root(x0)
+   x2 = tangent_root(x1)
+
+   x2
+   ```
+
+::::
+:::
+
+On peut bien entendu répéter l'itération autant de fois que l'on souhaite pour améliorer notre approximation de la racine.
+Prenez un instant pour regarder l'animation ci-dessous.
+
+import NewtonRaphson from './newton_raphson.gif'
+
+<img src={NewtonRaphson} alt="Animation de la méthode de Newton-Raphson" class="mx-auto" />
+
+## Boucles
+
+Pour répéter une instruction un certain nombre de fois, on peut utiliser une boucle `for`:
+
+```python run
+for i in range(10):
+    print("Hello", i)
+```
+
+:::remark
+Seules les instructions **indentées** (précédées de 4 espaces) sont répétées.
+
+```python run
+for i in range(5):
+    print("Ceci est répété")
+    print("Ceci aussi")
+
+print("Ceci n'est pas répété")
+```
+
+:::
+
+## Newton-Raphson avec $n$ itérations
+
+:::example
+En utilisant $10$ itérations de la méthode de Newton-Raphson,
+approximez $\sqrt{2}$.
+
+::::steps
+
+1. On définit la fonction {tex`f(x) = x^2 - 2`},
+   puisque une de ses racines est $\sqrt{2}$.
+
+   ```python run math
+   def f(x):
+       return x**2 - 2
+   ```
+
+2. On définit l'itération de Newton-Raphson,
+   qui, à partir d'une approximation de la racine calcule une meilleure approximation.
+
+   ```python run math highlight="4-8"
+   def f(x):
+       return x**2 - 2
+
+   def improve_root_estimate(x):
+       result = f(x + epsilon)
+       m = result.dual
+       y = result.real
+       return x - y / m
+   ```
+
+3. On applique la fonction `improve_root_estimate` $10$ fois à partir de $x_0 = 1$.
+
+   ```python run math highlight="10-12,14"
+   def f(x):
+       return x**2 - 2
+
+   def improve_root_estimate(x):
+       result = f(x + epsilon)
+       m = result.dual
+       y = result.real
+       return x - y / m
+
+   x = 1
+   for i in range(10):
+       x = improve_root_estimate(x)
+
+   x
+   ```
+
+::::
+:::
+
+# Pourquoi ça marche? (non-examinable)
+
+Le but de cette section est de fournir une explication plus profonde de la dérivation automatique.
+En particulier, nous répondrons à la question suivante:
+
+:::question
+Comment les règles de dérivation telles que le quotient, le produit et la composée sont-elles appliquées automatiquement?
+:::
+
+## La règle du produit
+
+Démontrons la règle du produit:
+
+:::steps
+
+1. On s'intéresse à $f(a + \epsilon) g(a + \epsilon)$.
+
+   En se souvenant que $f(a + \epsilon) = f(a) + f'(a) \epsilon$ et $g(a + \epsilon) = g(a) + g'(a) \epsilon$,
+   on obtient
+
+   {tex.display`f(a + \epsilon) g(a + \epsilon) = (f(a) + f'(a) \epsilon)(g(a) + g'(a) \epsilon)`}
+
+2. En développant le produit à droite on obtient
+
+   {tex.display`\begin{align*} f(a + \epsilon) g(a + \epsilon) &= (f(a) + f'(a) \epsilon)(g(a) + g'(a) \epsilon) \\ &= f(a) g(a) + f(a) g'(a) \epsilon + f'(a) g(a) \epsilon + \underbrace{f'(a) g'(a) \epsilon^2}_{= 0} \\ \end{align*}`}
+
+3. En utilisant $\epsilon^2 = 0$ et en réécrivant sous forme $\dots + \dots \epsilon$,
+
+   {tex.display`\begin{align*} f(a + \epsilon) g(a + \epsilon) &= (f(a) + f'(a) \epsilon)(g(a) + g'(a) \epsilon) \\ &= f(a) g(a) + f(a) g'(a) \epsilon + f'(a) g(a) \epsilon + \underbrace{f'(a) g'(a) \epsilon^2}_{= 0} \\ &= f(a) g(a) + (f(a) g'(a) + f'(a) g(a)) \epsilon \end{align*}`}
+
+4. On reconnaît la formule de la dérivée du produit:
+
+   {tex.display`f(a + \epsilon) g(a + \epsilon) = f(a) g(a) + \underbrace{\color{blue} (f(a) g'(a) + f'(a) g(a))}_{\text{dérivée du produit}} \epsilon`}
+
+:::
+
+## La règle de la composée
+
+Démontrons la règle de la composée:
+
+:::steps
+
+1. On s'intéresse à $f(g(a + \epsilon))$.
+
+   En se souvenant que $g(a + \epsilon) = g(a) + g'(a) \epsilon$,
+   on obtient
+
+   {tex.display`f(g(a + \epsilon)) = f(g(a) + g'(a) \epsilon)`}
+
+2. On applique maintenant $f(x + b \epsilon) = f(x) + f'(x) b \epsilon$
+
+   {tex.display`\begin{align*}f(g(a + \epsilon)) &= f(\underbrace{g(a)}_x + \underbrace{g'(a)}_b \epsilon)\\ &= f(g(a)) + \underbrace{f'(g(a)) g'(a)}_{\text{dérivée de la composée}} \epsilon \end{align*}`}
+   :::
 
 # Implémentation Python (non-examinable)
 
