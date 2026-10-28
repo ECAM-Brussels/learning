@@ -77,55 +77,39 @@ async function runPythonTest(
   return { ...out, passed: await check(out) }
 }
 
-function expect(code: string, state: { desc?: string; negate?: boolean; math?: boolean } = {}) {
-  const { desc, negate } = state
+function expect(code: string, state: { negate?: boolean; math?: boolean } = {}) {
+  const { negate } = state
   function getMethods<T = string | number | boolean>(type: 'result' | 'stdout' | 'error') {
     return {
       toEqualThatOf(modelAnswer: string) {
-        return {
-          desc,
-          fn: async () => {
-            const { res1, res2 } = await allKeyed({
-              res1: output(code, { math: state.math ?? false }),
-              res2: output(modelAnswer, { math: state.math ?? false }),
-            })
-            return (res1[type]?.trim() === res2[type]?.trim()) === !negate
-          },
+        return async () => {
+          const { res1, res2 } = await allKeyed({
+            res1: output(code, { math: state.math ?? false }),
+            res2: output(modelAnswer, { math: state.math ?? false }),
+          })
+          return (res1[type]?.trim() === res2[type]?.trim()) === !negate
         }
       },
-      toBe: (expected: T) => ({
-        desc,
-        fn: async () => {
-          const res = await output(code, { math: state.math ?? false })
-          return (res[type]?.trim() === String(expected)) === !negate
-        },
-      }),
-      toMatch: (regex: RegExp) => ({
-        desc,
-        fn: async () => {
-          const res = await output(code, { math: state.math ?? false })
-          if (res[type] === undefined) return false
-          return regex.test(res[type]) === !negate
-        },
-      }),
-      toSatisfy: (check: (result: string) => boolean | Promise<boolean>) => ({
-        desc,
-        fn: async () => {
-          const res = await output(code, { math: state.math ?? false })
-          if (res[type] === undefined) return false
-          return check(res[type]) === !negate
-        },
-      }),
+      toBe: (expected: T) => async () => {
+        const res = await output(code, { math: state.math ?? false })
+        return (res[type]?.trim() === String(expected)) === !negate
+      },
+      toMatch: (regex: RegExp) => async () => {
+        const res = await output(code, { math: state.math ?? false })
+        if (res[type] === undefined) return false
+        return regex.test(res[type]) === !negate
+      },
+      toSatisfy: (check: (result: string) => boolean | Promise<boolean>) => async () => {
+        const res = await output(code, { math: state.math ?? false })
+        if (res[type] === undefined) return false
+        return check(res[type]) === !negate
+      },
     }
   }
   return {
-    code: () => ({
-      toMatch: (regex: RegExp) => ({
-        desc,
-        fn: () => regex.test(code) === !negate,
-      }),
-    }),
-    desc: (newDescription: string) => expect(code, { ...state, desc: newDescription }),
+    code: {
+      toMatch: (regex: RegExp) => () => regex.test(code) === !negate,
+    },
     error: <T extends string | number | boolean>() => getMethods<T>('error'),
     matplotlib: {
       lineCount: () =>
@@ -173,20 +157,14 @@ function expect(code: string, state: { desc?: string; negate?: boolean; math?: b
     not: () => expect(code, { ...state, negate: !negate }),
     result: <T extends string | number | boolean>() => getMethods<T>('result'),
     stdout: <T extends string | number | boolean>() => getMethods<T>('stdout'),
-    toError: () => ({
-      desc,
-      fn: async () => {
-        const res = await output(code, { math: state.math ?? false })
-        return (res.error !== undefined) !== negate
-      },
-    }),
-    toPrint: (expected: string | boolean | number) => ({
-      desc,
-      fn: async () => {
-        const res = await output(code, { math: state.math ?? false })
-        return (res.result?.trim() === String(expected)) !== negate
-      },
-    }),
+    toError: () => async () => {
+      const res = await output(code, { math: state.math ?? false })
+      return (res.error !== undefined) !== negate
+    },
+    toPrint: (expected: string | boolean | number) => async () => {
+      const res = await output(code, { math: state.math ?? false })
+      return (res.result?.trim() === String(expected)) !== negate
+    },
     toReturn: (expected: string | boolean | number) => expect(code, state).result().toBe(expected),
     toSatisfy: (check: (code: string) => boolean | Promise<boolean>) =>
       expect(code, state).result().toSatisfy(check),

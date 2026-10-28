@@ -43,14 +43,12 @@ export const Tests = v.union([
   ),
   v.pipe(
     v.custom<
-      (
-        expect: (desc: string) => ReturnType<typeof python.expect>,
-      ) => { desc?: string; fn: () => MaybePromise<boolean> }[]
+      (expect: ReturnType<typeof python.expect>) => Record<string, () => MaybePromise<boolean>>
     >((val) => typeof val === 'function'),
     v.transform((generator) => {
       return (code: string, options?: { math: boolean }) => {
-        const expect = (desc: string) => python.expect(code, options).desc(desc)
-        return generator(expect)
+        const expect = python.expect(code, options)
+        return Object.entries(generator(expect)).map(([desc, fn]) => ({ desc, fn }))
       }
     }),
   ),

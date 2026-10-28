@@ -51,15 +51,11 @@ const DiffAtPoint = createDerivedStep(
         {tex`\displaystyle x = ${props.a}`} avec la <strong>dérivation automatique</strong>.
       </p>
     ),
-    tests: (expect) => [
-      expect('La variable epsilon est utilisée')
-        .code()
-        .toMatch(/epsilon/),
-      expect('La propriété `dual` est utilisée')
-        .code()
-        .toMatch(/\.dual/),
-      expect("Le code s'execute sans erreur").not().toError(),
-      expect('Le résultat final est correct').result().toEqualThatOf(dedent /*python */ `
+    tests: (expect) => ({
+      'Epsilon est utilisé': expect.code.toMatch(/epsilon/),
+      '`.dual` est utilisé': expect.code.toMatch(/\.dual/),
+      "Le code s'execute sans erreur": expect.not().toError(),
+      'Le résultat final est correct': expect.result().toEqualThatOf(dedent /*python */ `
         import numpy as np
 
         def f(x):
@@ -67,7 +63,7 @@ const DiffAtPoint = createDerivedStep(
         
         f(${props.a} + epsilon).dual
       `),
-    ],
+    }),
   }),
   {
     children: (props) => (
