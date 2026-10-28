@@ -58,6 +58,7 @@ const CustomSchemas = {
     Expression,
   ]),
   jsx: omitFromJSON(v.custom<JSX.Element>(() => true)),
+  optionalJsx: omitFromJSON(v.optional(v.custom<JSX.Element>(() => true))),
   string: v.string(),
   number: v.number(),
 } as const
