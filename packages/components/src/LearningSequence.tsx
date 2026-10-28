@@ -38,15 +38,20 @@ export function Steps(props: { children: JSX.Element[] }) {
         {() => {
           const resolved = children(() => props.children)
           return (
-            <div class="mx-4 my-4 rounded-xl bg-white shadow-md">
-              <h3 class="flex justify-around rounded-t-xl bg-blue-200 px-4 py-2 font-bold">
-                <button onClick={() => setStep(step() - 1)} disabled={step() === 0}>
+            <div class="not-prose mx-4 my-4 rounded-xl bg-white shadow-md">
+              <h3 class="flex justify-center gap-4 rounded-t-xl bg-gray-100 px-4 py-1 text-sm font-bold text-gray-600">
+                <button
+                  class="rounded px-4 enabled:cursor-pointer enabled:hover:bg-gray-200 disabled:text-gray-300"
+                  onClick={() => setStep(step() - 1)}
+                  disabled={step() === 0}
+                >
                   ←
                 </button>
                 <span>
                   Étape {step() + 1}/{resolved.toArray().length}
                 </span>
                 <button
+                  class="rounded px-4 enabled:cursor-pointer enabled:hover:bg-gray-200 disabled:text-gray-300"
                   onClick={() => setStep(step() + 1)}
                   disabled={step() === resolved.toArray().length - 1}
                 >
@@ -58,6 +63,25 @@ export function Steps(props: { children: JSX.Element[] }) {
                   {(i) => <Show when={i === step()}>{resolved.toArray()[i]}</Show>}
                 </Repeat>
               </div>
+              <h3 class="flex justify-center gap-4 rounded-b-xl bg-gray-100 px-4 py-1 text-sm font-bold text-gray-600">
+                <button
+                  class="rounded px-4 enabled:cursor-pointer enabled:hover:bg-gray-200 disabled:text-gray-300"
+                  onClick={() => setStep(step() - 1)}
+                  disabled={step() === 0}
+                >
+                  ←
+                </button>
+                <span>
+                  Étape {step() + 1}/{resolved.toArray().length}
+                </span>
+                <button
+                  class="rounded px-4 enabled:cursor-pointer enabled:hover:bg-gray-200 disabled:text-gray-300"
+                  onClick={() => setStep(step() + 1)}
+                  disabled={step() === resolved.toArray().length - 1}
+                >
+                  →
+                </button>
+              </h3>
             </div>
           )
         }}
