@@ -111,6 +111,7 @@ function expression(input: Math) {
       if (!Array.isArray(json)) throw new Error(`Only arrays have the property args`)
       return json.slice(1) as Math[]
     },
+    apply: async () => expr(await expression({ json }).latex()),
     checkRoot: (root: Math, x = 'x') =>
       expression({ json })
         .subs({ [x]: root })
@@ -142,6 +143,16 @@ function expression(input: Math) {
       symapi.expr.compare({ expr1: json, expr2: v.parse(Math, other).json, comparison: 'geq' }),
     gt: (other: Math) =>
       symapi.expr.compare({ expr1: json, expr2: v.parse(Math, other).json, comparison: 'gt' }),
+    hasSymbol: () => {
+      function findSymbol(json: MathJsonExpression): boolean {
+        if (Array.isArray(json) && json.length > 1) {
+          const [_func, ...args] = json
+          return args.map(findSymbol).some((v) => v === true)
+        }
+        return typeof json === 'string'
+      }
+      return findSymbol(json)
+    },
     factor: () => expression({ json: ['Factor', json] }),
     func: () => {
       if (!Array.isArray(json)) throw new Error(`Only arrays have the property func`)
@@ -262,6 +273,7 @@ function expression(input: Math) {
     isEquivalent: async (other: MaybeAsync<Math>) =>
       symapi.expr.equivalent({ expr1: json, expr2: v.parse(Math, await other).json }),
     isExpanded: () => symapi.expr.isExpanded({ expr: json }),
+    isSymbol: () => typeof json === 'string',
     isTrue: () => symapi.expr.isTrue({ expr: json }),
     isFactored: () => symapi.expr.isFactored({ expr: json }),
     isPartialFractionDecomposition: () =>
@@ -297,6 +309,7 @@ function expression(input: Math) {
       return expression({ json: ce.expr(json, { form: 'raw' }).subs(substitutions).json })
     },
     solve: (x: Math = 'x') => set(['Solve', json, v.parse(Math, x).json]),
+    subtract: (other: Math) => expression({ json: ['Subtract', json, v.parse(Math, other).json] }),
     taylor: (x: Math, a: Math, n: number) =>
       expression({
         json: ['Normal', ['Series', json, v.parse(Math, x).json, v.parse(Math, a).json, n]],
