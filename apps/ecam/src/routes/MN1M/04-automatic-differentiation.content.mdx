@@ -218,7 +218,7 @@ Définissez une fonction `sin` qui étend le sinus sur les nombres duaux.
        if isinstance(x, (int, float)):
            return np.sin(x)
        else:
-           a, b = x.real, x.dual
+           a, b = x # On extrait la partie réelle et la partie duale
            return np.sin(a) + b * np.cos(a) * epsilon
 
    # On vérifie
@@ -359,6 +359,17 @@ ensuite tracez la fonction et sa dérivée.
 
 ### Tangentes
 
+Rappelons que la tangente à la courbe $f(x)$ en $x = x_0$
+a pour pente $f'(x_0)$ et passe par le point $(x_0, f(x_0))$:
+
+{tex.display`y = \underbrace{f'(x_0)}_m (x - x_0) + \underbrace{f(x_0)}_{y_0}`}
+
+La dérivation automatique permet de calculer $y_0 = f(x_0)$ et $m = f'(x_0)$ en une seule évaluation:
+
+```python
+y0, m = f(x0 + epsilon)
+```
+
 :::example
 Calculez la tangente à la courbe $f(x) = \sin(x^2)$ en $x = 1$.
 Graphez la fonction et sa tangente sur l'intervalle $[0, 2]$.
@@ -390,22 +401,20 @@ Graphez la fonction et sa tangente sur l'intervalle $[0, 2]$.
 
 3. On définit la fonction de la tangente $t(x) = f'(1)(x - 1) + f(1)$.
 
-   ```python run math highlight="6-10"
+   ```python run math highlight="6-8"
    import numpy as np
 
    def f(x):
        return np.sin(x**2)
 
    def t(x):
-       result = f(1 + epsilon) # f(1) + f'(1) ε
-       m = result.dual # f'(1)
-       y0 = result.real # f(1)
+       y0, m = f(1 + epsilon) # f(1) + f'(1) ε
        return m * (x - 1) + y0
    ```
 
 4. On trace le graphique de $f(x)$ et de sa tangente $t(x)$ sur l'intervalle $[0, 2]$.
 
-   ```python run math highlight="1,13-16"
+   ```python run math highlight="1,11-14"
    import matplotlib.pyplot as plt
    import numpy as np
 
@@ -413,9 +422,7 @@ Graphez la fonction et sa tangente sur l'intervalle $[0, 2]$.
        return np.sin(x**2)
 
    def t(x):
-       result = f(1 + epsilon)
-       m = result.dual
-       y0 = result.real
+       y0, m = f(1 + epsilon)
        return m * (x - 1) + y0
 
    x = np.linspace(0, 2, 100)
@@ -454,16 +461,14 @@ Déterminez une racine approchée de {tex`f(x) = e^{-x^2} - \frac{1}{2}`} en app
 2. On calcule la pente $m = f'(x_0)$ et l'ordonnée $y_0 = f(x_0)$ de la tangente en $x_0 = 0.8$
    grâce à la _dérivation automatique_.
 
-   ```python run math highlight="6-12"
+   ```python run math highlight="6-7"
    import numpy as np
 
    def f(x):
        return np.exp(-x**2) - 0.5
 
    x0 = 0.8
-   result = f(x0 + epsilon)
-   m = result.dual
-   y0 = result.real
+   y0, m = f(x0 + epsilon)
    ```
 
    Avec cette notation, l'équation de la tangente est $y - y_0 = m (x - x_0)$.
@@ -473,16 +478,14 @@ Déterminez une racine approchée de {tex`f(x) = e^{-x^2} - \frac{1}{2}`} en app
 
    {tex.display`- y_0 = m (x - x_0) \quad \implies \quad x = x_0 - \frac{y_0}{m}`}
 
-   ```python run math highlight="10"
+   ```python run math highlight="8"
    import numpy as np
 
    def f(x):
        return np.exp(-x**2) - 0.5
 
    x0 = 0.8
-   result = f(x0 + epsilon)
-   m = result.dual
-   y0 = result.real
+   y0, m = f(x0 + epsilon)
    x0 - y0 / m
    ```
 
@@ -501,37 +504,31 @@ Déterminez une racine approchée de {tex`f(x) = e^{-x^2} - \frac{1}{2}`} en app
 
 1. On part de l'exemple précédent et on appelle notre réponse $x_1$
 
-   ```python run math highlight="10-11"
+   ```python run math highlight="8-9"
    import numpy as np
 
    def f(x):
        return np.exp(-x**2) - 0.5
 
    x0 = 0.8
-   result = f(x0 + epsilon)
-   m = result.dual
-   y0 = result.real
+   y0, m = f(x0 + epsilon)
    x1 = x0 - y0 / m
    x1
    ```
 
 2. On réapplique le même calcul mais sur $x_1$.
 
-   ```python run math highlight="6-15"
+   ```python run math highlight="10-13"
    import numpy as np
 
    def f(x):
        return np.exp(-x**2) - 0.5
 
    x0 = 0.8
-   result = f(x0 + epsilon)
-   m = result.dual
-   y0 = result.real
+   y0, m = f(x0 + epsilon)
    x1 = x0 - y0 / m
 
-   result = f(x1 + epsilon)
-   m = result.dual
-   y1 = result.real
+   y1, m = f(x1 + epsilon)
    x2 = x1 - y1 / m
 
    x2
@@ -541,16 +538,14 @@ Déterminez une racine approchée de {tex`f(x) = e^{-x^2} - \frac{1}{2}`} en app
 
 3. On crée une fonction pour éviter la répétition:
 
-   ```python run math highlight="6-14"
+   ```python run math highlight="6-12"
    import numpy as np
 
    def f(x):
        return np.exp(-x**2) - 0.5
 
    def tangent_root(x):
-       result = f(x + epsilon)
-       m = result.dual
-       y = result.real
+       y, m = f(x + epsilon)
        return x - y / m
 
    x0 = 0.8
@@ -611,27 +606,23 @@ approximez $\sqrt{2}$.
 2. On définit l'itération de Newton-Raphson,
    qui, à partir d'une approximation de la racine calcule une meilleure approximation.
 
-   ```python run math highlight="4-8"
+   ```python run math highlight="4-6"
    def f(x):
        return x**2 - 2
 
    def improve_root_estimate(x):
-       result = f(x + epsilon)
-       m = result.dual
-       y = result.real
+       y, m = f(x + epsilon)
        return x - y / m
    ```
 
 3. On applique la fonction `improve_root_estimate` $10$ fois à partir de $x_0 = 1$.
 
-   ```python run math highlight="10-12,14"
+   ```python run math highlight="8-10,12"
    def f(x):
        return x**2 - 2
 
    def improve_root_estimate(x):
-       result = f(x + epsilon)
-       m = result.dual
-       y = result.real
+       y, m = f(x + epsilon)
        return x - y / m
 
    x = 1
@@ -804,6 +795,3 @@ mais vous pouvez vous concentrer sur la logique générale.
    Il faut également implémenter les autres fonctions mathématiques usuelles.
 
 :::
-
-$$
-$$

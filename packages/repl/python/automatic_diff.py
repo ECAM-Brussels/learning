@@ -12,6 +12,10 @@ class Dual:
     def __repr__(self):
         return f"{self.real} + {self.dual}ε"
 
+    def __iter__(self):
+        yield self.real
+        yield self.dual
+
     @staticmethod
     def _coerce(x):
         return x if isinstance(x, Dual) else Dual(x)
