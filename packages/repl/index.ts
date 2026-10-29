@@ -1,6 +1,7 @@
 import dedent from 'dedent'
 import { allKeyed } from 'es-toolkit'
 import { EventIterator } from 'event-iterator'
+import type { Expression } from '../core'
 
 const worker = new Worker(new URL('./python/worker.ts', import.meta.url), { type: 'module' })
 
@@ -31,6 +32,7 @@ export type Output =
 
 type Options = {
   math?: boolean
+  test?: boolean
 }
 
 export type Input = {
@@ -39,7 +41,7 @@ export type Input = {
   options?: Options
 }
 
-async function* run(code: string, options?: { math: boolean }) {
+async function* run(code: string, options?: Options) {
   if (!code) {
     yield { id: crypto.randomUUID(), result: '' }
     return
@@ -59,7 +61,7 @@ async function* run(code: string, options?: { math: boolean }) {
   }
 }
 
-async function output(code: string, options?: { math: boolean }): Promise<FinalOutput> {
+async function output(code: string, options?: Options): Promise<FinalOutput> {
   for await (const chunk of run(code, options)) {
     if (!chunk.status) {
       return chunk as FinalOutput
@@ -84,23 +86,28 @@ function expect(code: string, state: { negate?: boolean; math?: boolean } = {}) 
       toEqualThatOf(modelAnswer: string) {
         return async () => {
           const { res1, res2 } = await allKeyed({
-            res1: output(code, { math: state.math ?? false }),
-            res2: output(modelAnswer, { math: state.math ?? false }),
+            res1: output(code, { math: state.math ?? false, test: true }),
+            res2: output(modelAnswer, { math: state.math ?? false, test: true }),
           })
           return (res1[type]?.trim() === res2[type]?.trim()) === !negate
         }
       },
       toBe: (expected: T) => async () => {
-        const res = await output(code, { math: state.math ?? false })
-        return (res[type]?.trim() === String(expected)) === !negate
+        const res = await output(code, { math: state.math ?? false, test: true })
+        let [out, ans] = [res[type]?.trim() ?? '', String(expected).trim()]
+        if (typeof expected === 'boolean') {
+          out = out.toLowerCase()
+          ans = String(expected).toLowerCase()
+        }
+        return (out === ans) === !negate
       },
       toMatch: (regex: RegExp) => async () => {
-        const res = await output(code, { math: state.math ?? false })
+        const res = await output(code, { math: state.math ?? false, test: true })
         if (res[type] === undefined) return false
         return regex.test(res[type]) === !negate
       },
       toSatisfy: (check: (result: string) => boolean | Promise<boolean>) => async () => {
-        const res = await output(code, { math: state.math ?? false })
+        const res = await output(code, { math: state.math ?? false, test: true })
         if (res[type] === undefined) return false
         return check(res[type]) === !negate
       },
@@ -112,6 +119,20 @@ function expect(code: string, state: { negate?: boolean; math?: boolean } = {}) 
     },
     error: <T extends string | number | boolean>() => getMethods<T>('error'),
     matplotlib: {
+      grid: () =>
+        expect(code, state)
+          .with(
+            dedent /* python */ `
+              import matplotlib.pyplot as plt
+              ax = plt.gcf().axes[0]
+              x = any(line.get_visible() for line in ax.get_xgridlines())
+              y = any(line.get_visible() for line in ax.get_ygridlines())
+              plt.close("all")
+              x and y
+            `,
+          )
+          .result<boolean>()
+          .toBe(true),
       lineCount: () =>
         expect(code, state)
           .with(
@@ -123,22 +144,64 @@ function expect(code: string, state: { negate?: boolean; math?: boolean } = {}) 
             `,
           )
           .result<number>(),
+      plot: (fn: string | Expression<'output'>, a: number, b: number, n: number = 40) => {
+        const fnCode = typeof fn === 'string' ? fn : fn.python()
+        return expect(code, state)
+          .with(
+            dedent /* python */ `
+              import matplotlib.pyplot as plt
+              import numpy as np
+              ax = plt.gcf().axes[0]
+              result = False
+
+              for line in ax.get_lines():
+                x = np.array(line.get_xdata())
+                y = np.array(line.get_ydata())
+                checks = [
+                  bool(x[0] == ${a} and x[-1] == ${b}),
+                  len(x) > ${n},
+                  np.allclose(y, ${fnCode}),
+                ]
+                print("Checks:", checks)
+                if all(checks):
+                  result = True
+                  break
+
+              plt.close("all")
+              result
+            `,
+          )
+          .toReturn(true)
+      },
       sameScale: () =>
         expect(code, state)
           .with(
             dedent /* python */ `
               import matplotlib.pyplot as plt
               ax = plt.gcf().axes[0]
+              plt.close('all')
               ax.get_aspect() == 1
             `,
           )
           .result<boolean>(),
+      title: () =>
+        expect(code, state)
+          .with(
+            dedent /* python */ `
+              import matplotlib.pyplot as plt
+              ax = plt.gcf().axes[0]
+              plt.close('all')
+              ax.get_title()
+            `,
+          )
+          .result<string>(),
       xLabel: () =>
         expect(code, state)
           .with(
             dedent /* python */ `
               import matplotlib.pyplot as plt
               ax = plt.gcf().axes[0]
+              plt.close('all')
               ax.get_xlabel()
             `,
           )
@@ -149,6 +212,7 @@ function expect(code: string, state: { negate?: boolean; math?: boolean } = {}) 
             dedent /* python */ `
               import matplotlib.pyplot as plt
               ax = plt.gcf().axes[0]
+              plt.close('all')
               ax.get_ylabel()
             `,
           )
@@ -158,11 +222,11 @@ function expect(code: string, state: { negate?: boolean; math?: boolean } = {}) 
     result: <T extends string | number | boolean>() => getMethods<T>('result'),
     stdout: <T extends string | number | boolean>() => getMethods<T>('stdout'),
     toError: () => async () => {
-      const res = await output(code, { math: state.math ?? false })
+      const res = await output(code, { math: state.math ?? false, test: true })
       return (res.error !== undefined) !== negate
     },
     toPrint: (expected: string | boolean | number) => async () => {
-      const res = await output(code, { math: state.math ?? false })
+      const res = await output(code, { math: state.math ?? false, test: true })
       return (res.result?.trim() === String(expected)) !== negate
     },
     toReturn: (expected: string | boolean | number) => expect(code, state).result().toBe(expected),

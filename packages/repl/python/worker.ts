@@ -61,7 +61,7 @@ self.onmessage = async (event: MessageEvent<Input>) => {
           buffer.seek(0)
           base64.b64encode(buffer.read()).decode('utf-8')
         `)
-        if (image) {
+        if (image && !event.data.options?.test) {
           output.result = `data:image/png;base64,${image}`
           output.format = 'image'
         }
