@@ -297,7 +297,13 @@ function expression(input: Math) {
       const result = Number(N(expression({ json }).evaluate()))
       return precision === undefined ? result : round(result, precision)
     },
-    python: () => python.compile(ce.expr(json)).code,
+    python: <T extends boolean = false>(sympy?: T): T extends false ? string : Promise<string> => {
+      if (!sympy) return python.compile(ce.expr(json)).code as any
+      else
+        return expr({ json })
+          .apply()
+          .then((e) => e.python(false)) as any
+    },
     real: () => expression({ json: ['Real', json] }),
     roots: (complex = false) => symapi.expr.roots({ expr: json, complex }),
     simplify: () => expression({ json: ['Simplify', json] }),

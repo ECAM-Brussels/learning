@@ -1,4 +1,4 @@
-import { Board, Boundary } from '@learning/components'
+import { Board, Boundary, Scope } from '@learning/components'
 import { createDerivedStep, expr, Sequence, tex } from '@learning/core'
 import { Expand } from '@learning/exercises/math/algebra/Expand'
 import { DerivativeAtPoint } from '@learning/exercises/math/calculus/DerivativeAtPoint'
@@ -170,12 +170,7 @@ export function DerivativeSequence() {
           })}
         >
           {(ctx) => {
-            const derivative = createMemo(() =>
-              expr(ex.latex)
-                .diff()
-                .apply()
-                .then((e) => e.python()),
-            )
+            const derivative = createMemo(() => expr(ex.latex).diff().python(true))
             return (
               <Boundary>
                 <PythonCode
@@ -199,6 +194,51 @@ export function DerivativeSequence() {
             )
           }}
         </PythonCode>
+      ))}
+    </Sequence>
+  )
+}
+
+export function TangentSequence() {
+  const exercises: { f: string; a: number; I: [number, number] }[] = [
+    { f: 'e^{-x^2}', a: 1, I: [0, 2] },
+    { f: '\\sin(e^{-x})', a: 2, I: [0, 4] },
+    { f: '\\ln x', a: 1, I: [0.5, 1.5] },
+  ]
+  return (
+    <Sequence id="tangent-sequence">
+      {exercises.map(({ f, a, I }) => (
+        <Scope>
+          {() => {
+            const tangent = createMemo(() =>
+              expr('m (x - x_0) + y_0')
+                .subs({
+                  m: expr(f).diff('x', a),
+                  x_0: a,
+                  y_0: expr(f).subs({ x: a }),
+                })
+                .python(true),
+            )
+            return (
+              <PythonCode
+                math
+                prompt={
+                  <p>
+                    En utilisant la <strong>dérivation automatique</strong>, tracez le graphe de la
+                    fonction {tex`\displaystyle f(x) = ${f}`} et de sa tangente en {tex`x = ${a}`}{' '}
+                    sur l'intervalle {tex`[${I[0]}, ${I[1]}]`}. Nommez correctement les axes.
+                  </p>
+                }
+                tests={(expect) => ({
+                  'Le graphe de f est tracé': expect.matplotlib.plot(expr(f).python(), ...I),
+                  'La tangente est tracée': expect.matplotlib.plot(tangent(), ...I),
+                  "L'axe x est nommé": expect.matplotlib.xLabel().toMatch(/x/i),
+                  "L'axe y est nommé": expect.matplotlib.yLabel().toMatch(/y/i),
+                })}
+              />
+            )
+          }}
+        </Scope>
       ))}
     </Sequence>
   )
