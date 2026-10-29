@@ -53,11 +53,24 @@ class Dual:
     def __pow__(self, power):
         p = self._coerce(power)
         value = self.real**p.real
-        deriv = (
-            value * (p.dual * _np.log(self.real) + p.real * self.dual / self.real)
-            if self.real > 0
-            else (p.real * self.real ** (p.real - 1) * self.dual)
-        )
+        positive = self.real > 0
+
+        if _np.isscalar(positive):
+            if positive:
+                with _np.errstate(divide="ignore", invalid="ignore"):
+                    deriv = value * (
+                        p.dual * _np.log(self.real) + p.real * self.dual / self.real
+                    )
+            else:
+                deriv = p.real * self.real ** (p.real - 1) * self.dual
+            return Dual(value, deriv)
+
+        with _np.errstate(divide="ignore", invalid="ignore"):
+            deriv_positive = value * (
+                p.dual * _np.log(self.real) + p.real * self.dual / self.real
+            )
+        deriv_non_positive = p.real * self.real ** (p.real - 1) * self.dual
+        deriv = _np.where(positive, deriv_positive, deriv_non_positive)
         return Dual(value, deriv)
 
     def __rpow__(self, base):
@@ -104,11 +117,20 @@ class Dual:
         return NotImplemented
 
     def __abs__(self):
-        if self.real > 0:
-            return self
-        if self.real < 0:
-            return -self
-        return Dual(0, _np.nan)
+        if _np.isscalar(self.real):
+            if self.real > 0:
+                return self
+            if self.real < 0:
+                return -self
+            return Dual(0, _np.nan)
+
+        real = _np.abs(self.real)
+        dual = _np.where(
+            self.real > 0,
+            self.dual,
+            _np.where(self.real < 0, -self.dual, _np.nan),
+        )
+        return Dual(real, dual)
 
 
 epsilon = Dual(0, 1)

@@ -91,7 +91,9 @@ Calculez la dérivée de $f(x) = x^3 + 2x^2 - 5x + 1$ en $x = 2$ en utilisant $\
    f(2 + epsilon)
    ```
 
-   En analysant la sortie, on remarque que $f(2) = 7$ et $f'(2) = 15$.
+   En analysant la sortie, on remarque que
+   {tex.display`\underbrace{7 + 15 \epsilon}_{f(2 + \epsilon)} = \underbrace{7}_{f(2)} + \underbrace{15}_{f'(2)} \epsilon,`}
+   donc $f'(2) = 15$.
 
 3. Pour extraire le coefficient de $\epsilon$, on peut utiliser `.dual`:
 
@@ -161,7 +163,7 @@ Un **nombre dual** est un nombre qui s'écrit formellement sous la forme
 1. Les règles arithmétiques du calcul littéral s'appliquent.
 
 2. On étend les fonctions dérivables sur les nombres duaux via
-   {tex.display`f(a + b \epsilon) = f(a) + f'(a) b \epsilon`}
+   {tex.display`f(a + b \epsilon) = f(a) + b f'(a) \epsilon`}
 
 :::
 
@@ -175,10 +177,58 @@ Un **nombre dual** est un nombre qui s'écrit formellement sous la forme
    qui est bien la formule que nous avons utilisée pour calculer $f'(a)$ automatiquement pour les polynômes.
 
 3. Les règles de dérivées que vous connaissez (quotient, produit, composition) sont **appliquées automatiquement**.
+   Ceci est démontré en fin de ce document pour les plus curieux·ses d'entre vous.
 
 :::
 
 <Exercise.FunctionExtensionSequence />
+
+Nous avons étendu les fonctions de `numpy` pour qu'elles fonctionnent avec les nombres duaux.
+Par exemple,
+voici une version simplifiée de comment nous avons étendu la fonction $\sin$:
+
+:::example[Extension de la fonction sinus sur les nombres duaux]
+Définissez une fonction `sin` qui étend le sinus sur les nombres duaux.
+
+::::steps
+
+1. Pour un nombre réel $x$, on retourne le sinus habituel.
+
+   ```python run math highlight="4"
+   import numpy as np
+
+   def sin(x):
+       if isinstance(x, (int, float)):
+           return np.sin(x)
+   ```
+
+   Le mot `if` signifie "si" en anglais.
+   En l'occurence, ici on regarde si `x` est un entier (`int`) ou un nombre à virgule flottante (`float`),
+   auquel cas on retourne le sinus habituel.
+
+   Les instructions à exécuter si la condition est vraie doivent être **indentées** (précédées de 4 espaces).
+
+2. Pour un nombre dual $a + b \epsilon$, on retourne
+   {tex.display`\sin(a + b \epsilon) = \sin(a) + b \cos(a) \epsilon`}
+
+   ```python run math highlight="6-8"
+   import numpy as np
+
+   def sin(x):
+       if isinstance(x, (int, float)):
+           return np.sin(x)
+       else:
+           a, b = x.real, x.dual
+           return np.sin(a) + b * np.cos(a) * epsilon
+
+   # On vérifie
+   sin(0 + epsilon)
+   ```
+
+::::
+:::
+
+La réelle implémentation est plus complexe et est détaillée en fin de ce document.
 
 ## Dérivation automatique avec Python
 
@@ -250,6 +300,8 @@ Calculez la dérivée de $f(x) = \sin(x^2)$ en $x = 1$ en utilisant la dérivati
 
 :::
 
+<Exercise.AutomaticDifferentiation />
+
 ### Dérivée de fonctions
 
 La vectorisation permet facilement de calculer la dérivée d'une fonction sur un intervalle.
@@ -303,7 +355,7 @@ ensuite tracez la fonction et sa dérivée.
 ::::
 :::
 
-<Exercise.AutomaticDifferentiation />
+<Exercise.DerivativeSequence />
 
 ### Tangentes
 

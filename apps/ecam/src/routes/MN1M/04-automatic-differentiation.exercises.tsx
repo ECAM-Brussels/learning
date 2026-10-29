@@ -1,4 +1,4 @@
-import { Board } from '@learning/components'
+import { Board, Boundary } from '@learning/components'
 import { createDerivedStep, expr, Sequence, tex } from '@learning/core'
 import { Expand } from '@learning/exercises/math/algebra/Expand'
 import { DerivativeAtPoint } from '@learning/exercises/math/calculus/DerivativeAtPoint'
@@ -68,7 +68,7 @@ const DiffAtPoint = createDerivedStep(
   {
     children: (props) => (
       <Show when={props.data.check}>
-        <p>Vérifions que cela correspond au résultat théorique: {tex`${props.data.expr}`}</p>
+        <p>Vérifions que cela correspond au résultat théorique.</p>
         <DerivativeAtPoint f={props.data.expr} x={props.data.a} />
       </Show>
     ),
@@ -126,6 +126,80 @@ export function AutomaticDifferentiation() {
       <DiffAtPoint expr="\cos(x^3)" a={2} />
       <DiffAtPoint expr="e^{-x^2}" a={1} />
       <DiffAtPoint expr="\frac{x^2 + 1}{x - 1}" a={3} />
+    </Sequence>
+  )
+}
+
+export function DerivativeSequence() {
+  const schema = v.object({
+    latex: v.string(),
+    name: v.optional(v.string(), 'diff'),
+    a: v.number(),
+    b: v.number(),
+  })
+  const exercises = v.parse(v.array(schema), [
+    { latex: '\\sin(x^2 + 1)', a: 0, b: 2 },
+    { latex: 'e^{-x^2}', a: -1, b: 1 },
+    { latex: '\\frac{x^2 + 1}{x - 1}', a: 2, b: 4 },
+  ] satisfies v.InferInput<typeof schema>[])
+  return (
+    <Sequence id="derivative-sequence">
+      {exercises.map((ex) => (
+        <PythonCode
+          math
+          prompt={
+            <p>
+              Définir la fonction <code>{ex.name}</code> qui correspond à la dérivée de{' '}
+              {tex`\displaystyle f(x) = ${ex.latex}`} en Python.
+            </p>
+          }
+          tests={(expect) => ({
+            ...Object.fromEntries(
+              [1, 2, 3].map((n) => [
+                `${ex.name}(${n}) = f'(${n})`,
+                expect.with(`${ex.name}(${n})`).result().toEqualThatOf(dedent /*python */ `
+                  import numpy as np
+
+                  def f(x):
+                      return ${expr(ex.latex).python()}
+                  
+                  f(${n} + epsilon).dual
+                `),
+              ]),
+            ),
+          })}
+        >
+          {(ctx) => {
+            const derivative = createMemo(() =>
+              expr(ex.latex)
+                .diff()
+                .apply()
+                .then((e) => e.python()),
+            )
+            return (
+              <Boundary>
+                <PythonCode
+                  math
+                  initialCode={ctx.inputs.code}
+                  prompt={
+                    <p>
+                      Modifiez maintenant votre code pour afficher le graphe de{' '}
+                      {tex`\displaystyle f(x) = ${ex.latex}`} et de sa dérivée sur l'intervalle{' '}
+                      {tex`[${ex.a}, ${ex.b}]`}
+                    </p>
+                  }
+                  tests={(expect) => ({
+                    'graphe de f': expect.matplotlib.plot(expr(ex.latex).python(), ex.a, ex.b),
+                    'graphe de la dérivée': expect.matplotlib.plot(derivative(), ex.a, ex.b),
+                    "l'axe x est nommé": expect.matplotlib.xLabel().toMatch(/x/i),
+                    "l'axe y est nommé": expect.matplotlib.yLabel().toMatch(/y/i),
+                  })}
+                />
+              </Boundary>
+            )
+          }}
+        </PythonCode>
+      ))}
     </Sequence>
   )
 }
