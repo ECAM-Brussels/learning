@@ -66,6 +66,17 @@ mais nous l'avons intégré dans notre environnement de calcul.
 epsilon ** 2 # devrait afficher 0
 ```
 
+Lorsque nous avons un nombre $a + b \epsilon$,
+nous pouvons extraire la partie réelle $a$
+et la partie duale $b$ en utilisant `.real` et `.dual` respectivement:
+
+```python run math
+x = 2 + 3 * epsilon
+x.real
+```
+
+Parfois, nous voudrons
+
 :::example
 Calculez la dérivée de $f(x) = x^3 + 2x^2 - 5x + 1$ en $x = 2$ en utilisant $\epsilon \neq 0$ tel que $\epsilon^2 = 0$.
 
@@ -152,6 +163,7 @@ mais cela implique de **donner du sens** à des expressions telles que
 
 qui ne sont pas couvertes par $\epsilon^2 = 0$.
 Il faut donc **étendre** les fonctions usuelles pour qu'ils acceptent $\epsilon$ comme argument.
+En fait, la règle $\epsilon^2 = 0$ permet d'**étendre** la multiplication aux nombres duaux.
 
 :::definition[Nombres duaux]
 

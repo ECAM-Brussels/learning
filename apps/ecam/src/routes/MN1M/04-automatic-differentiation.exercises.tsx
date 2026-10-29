@@ -255,20 +255,3 @@ export function NewtonRaphsonAnimation(props: { twoIterations?: boolean }) {
     </>
   )
 }
-
-function Test() {
-  return (
-    <PythonCode
-      prompt={<p>Définir la fonction {tex`f(x) = x^2`} en Python</p>}
-      tests={(expect) => ({
-        'f(0) = 0': expect.with('f(0)').toReturn(0),
-        'f(1) = 1': expect.with('f(1)').toReturn(1),
-        'f(2) = 4': expect.with('f(2)').toReturn(4),
-        'f(3) = 9': expect.with('f(3)').toReturn(9),
-        'f(-1) = 1': expect.with('f(-1)').toReturn(1),
-        'f(-2) = 4': expect.with('f(-2)').toReturn(4),
-        'f(-3) = 9': expect.with('f(-3)').toReturn(9),
-      })}
-    />
-  )
-}
