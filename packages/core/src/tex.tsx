@@ -21,6 +21,7 @@ function Tex(props: {
 }) {
   const parsed = createMemo(() => {
     return mapAsync(props.values, async (value) => {
+      if (typeof value === 'number' || typeof value === 'string') return value
       if (!value) return ''
       if (typeof value === 'object' && 'rawInput' in value && typeof value.rawInput === 'string')
         return value.rawInput
