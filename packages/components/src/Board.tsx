@@ -7,7 +7,6 @@ import {
   createEffect,
   createSignal,
   deep,
-  Errored,
   merge,
   omit,
   onSettled,
@@ -15,8 +14,20 @@ import {
   snapshot,
   useContext,
 } from 'solid-js'
+import { Boundary } from './Boundary'
 
-export type Coordinate = number | (() => number)
+declare global {
+  namespace JXG {
+    interface Angle {
+      radiuspoint: JXG.Point
+      anglepoint: JXG.Point
+    }
+
+    interface Circle {
+      setRadius(radius: string | number | (() => number)): this
+    }
+  }
+}
 
 export const BoardContext = createContext<() => JXG.Board | null>(() => null)
 
@@ -45,11 +56,7 @@ export const Board = Object.assign(
     })
 
     return (
-      <Errored
-        fallback={(error) => (
-          <div class="text-red-500">Failed to load the board: {String(error)}</div>
-        )}
-      >
+      <Boundary>
         <div
           class={[
             'mx-auto my-4 h-175 w-175 rounded-xl border border-slate-200 bg-white shadow',
@@ -60,29 +67,43 @@ export const Board = Object.assign(
         <BoardContext value={board}>
           <Show when={board()}>{props.children}</Show>
         </BoardContext>
-      </Errored>
+      </Boundary>
     )
   },
   {
     Angle: (
       props: {
         points: [
-          [Coordinate, Coordinate] | JXG.Point,
-          [Coordinate, Coordinate] | JXG.Point,
-          [Coordinate, Coordinate] | JXG.Point,
+          [number, number] | JXG.Point,
+          [number, number] | JXG.Point,
+          [number, number] | JXG.Point,
         ]
         children?: (angle: JXG.Angle) => JSX.Element
       } & JXG.AngleAttributes,
     ) => {
       const attrs = omit(props, 'points', 'children')
-      return <Element type="angle" parent={props.points} attrs={attrs} children={props.children} />
+      return (
+        <Element type="angle" parent={props.points} attrs={attrs}>
+          {(angle: JXG.Angle) => {
+            createEffect(
+              () => deep(props.points),
+              ([p1, p2, p3]) => {
+                angle.radiuspoint.moveTo(p1)
+                angle.center.moveTo(p2)
+                angle.anglepoint.moveTo(p3)
+              },
+            )
+            return props.children?.(angle)
+          }}
+        </Element>
+      )
     },
     Arc: (
       props: {
         points: [
-          [Coordinate, Coordinate] | JXG.Point,
-          [Coordinate, Coordinate] | JXG.Point,
-          [Coordinate, Coordinate] | JXG.Point,
+          [number, number] | JXG.Point,
+          [number, number] | JXG.Point,
+          [number, number] | JXG.Point,
         ]
         children?: (arc: JXG.Arc) => JSX.Element
       } & JXG.ArcAttributes,
@@ -93,14 +114,25 @@ export const Board = Object.assign(
           type="arc"
           parent={props.points}
           attrs={{ withLabel: attrs.name ? true : false, ...attrs }}
-          children={props.children}
-        />
+        >
+          {(arc: JXG.Arc) => {
+            createEffect(
+              () => props.points,
+              ([p1, p2, p3]) => {
+                arc.radiuspoint.moveTo(p1)
+                arc.center.moveTo(p2)
+                arc.anglepoint.moveTo(p3)
+              },
+            )
+            return props.children?.(arc)
+          }}
+        </Element>
       )
     },
     Arrow: (
       props: {
-        from: [Coordinate, Coordinate] | JXG.Point
-        to: [Coordinate, Coordinate] | JXG.Point
+        from: [number, number] | JXG.Point
+        to: [number, number] | JXG.Point
         children?: (arrow: JXG.Arrow) => JSX.Element
       } & JXG.ArrowAttributes,
     ) => {
@@ -110,39 +142,57 @@ export const Board = Object.assign(
           type="arrow"
           parent={[props.from, props.to]}
           attrs={{ withLabel: attrs.name ? true : false, ...attrs }}
-          children={props.children}
-        />
+        >
+          {(arrow: JXG.Arrow) => {
+            createEffect(
+              () => [props.from, props.to] as const,
+              ([from, to]) => {
+                arrow.point1.moveTo(from)
+                arrow.point2.moveTo(to)
+              },
+            )
+            return props.children?.(arrow)
+          }}
+        </Element>
       )
     },
     Circle: (
       props: {
-        center: [Coordinate, Coordinate] | JXG.Point
+        center: [number, number] | JXG.Point
         children?: (circle: JXG.Circle) => JSX.Element
       } & Omit<JXG.CircleAttributes, 'center'> &
         (
           | {
-              radius: Coordinate
+              radius: number
               through?: never
             }
           | {
               radius?: never
-              through: [Coordinate, Coordinate] | JXG.Point
+              through: [number, number] | JXG.Point
             }
         ),
     ) => {
       const attrs = omit(props, 'center', 'radius', 'through', 'children')
       return (
-        <Element
-          type="circle"
-          parent={[props.center, props.radius ?? props.through]}
-          children={props.children}
-          attrs={attrs}
-        />
+        <Element type="circle" parent={[props.center, props.radius ?? props.through]} attrs={attrs}>
+          {(circle: JXG.Circle) => {
+            createEffect(
+              () => [props.center, props.radius, props.through] as const,
+              ([center, radius, through]) => {
+                circle.center.moveTo(center)
+                if (radius) {
+                  circle.setRadius(radius)
+                }
+              },
+            )
+            return props.children?.(circle)
+          }}
+        </Element>
       )
     },
     Glider: (
       props: {
-        start: [Coordinate, Coordinate] | JXG.Point
+        start: [number, number] | JXG.Point
         on: JXG.GeometryElement
         children?: (glider: JXG.Glider) => JSX.Element
       } & JXG.GliderAttributes,
@@ -153,22 +203,44 @@ export const Board = Object.assign(
           type="glider"
           parent={[...(Array.isArray(props.start) ? props.start : [props.start]), props.on]}
           attrs={attrs}
-          children={props.children}
-        />
+        >
+          {(glider: JXG.Glider) => {
+            createEffect(
+              () => props.start,
+              (start) => {
+                glider.moveTo(start)
+              },
+            )
+            return props.children?.(glider)
+          }}
+        </Element>
       )
     },
     Line: (
       props: {
-        points: [[Coordinate, Coordinate] | JXG.Point, [Coordinate, Coordinate] | JXG.Point]
+        points: [[number, number] | JXG.Point, [number, number] | JXG.Point]
         children?: (line: JXG.Line) => JSX.Element
       } & JXG.LineAttributes,
     ) => {
       const attrs = omit(props, 'points', 'children')
-      return <Element type="line" parent={props.points} attrs={attrs} children={props.children} />
+      return (
+        <Element type="line" parent={props.points} attrs={attrs}>
+          {(line: JXG.Line) => {
+            createEffect(
+              () => props.points,
+              ([p1, p2]) => {
+                line.point1.moveTo(p1)
+                line.point2.moveTo(p2)
+              },
+            )
+            return props.children?.(line)
+          }}
+        </Element>
+      )
     },
     Point: (
       props: {
-        position: [Coordinate, Coordinate]
+        position: [number, number]
         children?: (point: JXG.Point) => JSX.Element
         onDrag?: (point: JXG.Point) => void
       } & JXG.PointAttributes,
@@ -187,6 +259,12 @@ export const Board = Object.assign(
                 }
               },
             )
+            createEffect(
+              () => props.position,
+              (position) => {
+                point.moveTo(position)
+              },
+            )
             return props.children?.(point)
           }}
         </Element>
@@ -200,37 +278,67 @@ export const Board = Object.assign(
     ) => {
       const attrs = omit(props, 'fn', 'children')
       return (
-        <Element type="functiongraph" parent={[props.fn]} children={props.children} attrs={attrs} />
+        <Element type="functiongraph" parent={[props.fn]} attrs={attrs}>
+          {(plot: JXG.Functiongraph) => {
+            return props.children?.(plot)
+          }}
+        </Element>
       )
     },
     Polygon: (
       props: {
-        points: Array<[Coordinate, Coordinate] | JXG.Point>
+        points: Array<[number, number] | JXG.Point>
         children?: (polygon: JXG.Polygon) => JSX.Element
       } & JXG.PolygonAttributes,
     ) => {
       const attrs = omit(props, 'points', 'children')
       return (
-        <Element type="polygon" parent={props.points} attrs={attrs} children={props.children} />
+        <Element type="polygon" parent={props.points} attrs={attrs}>
+          {(polygon: JXG.Polygon) => {
+            createEffect(
+              () => props.points,
+              (points) => {
+                for (let i = 0; i < Math.min(points.length, polygon.vertices.length); i++) {
+                  polygon.vertices[i]!.moveTo(points[i]!)
+                }
+              },
+            )
+            return props.children?.(polygon)
+          }}
+        </Element>
       )
     },
     Sector: (
       props: {
         points: [
-          [Coordinate, Coordinate] | JXG.Point,
-          [Coordinate, Coordinate] | JXG.Point,
-          [Coordinate, Coordinate] | JXG.Point,
+          [number, number] | JXG.Point,
+          [number, number] | JXG.Point,
+          [number, number] | JXG.Point,
         ]
         children?: (sector: JXG.Sector) => JSX.Element
       } & JXG.SectorAttributes,
     ) => {
       const attrs = omit(props, 'points', 'children')
-      return <Element type="sector" parent={props.points} attrs={attrs} children={props.children} />
+      return (
+        <Element type="sector" parent={props.points} attrs={attrs}>
+          {(sector: JXG.Sector) => {
+            createEffect(
+              () => props.points,
+              ([p1, p2, p3]) => {
+                sector.radiusPoint.moveTo(p1)
+                sector.center.moveTo(p2)
+                sector.anglePoint.moveTo(p3)
+              },
+            )
+            return props.children?.(sector)
+          }}
+        </Element>
+      )
     },
     Segment: (
       props: {
-        from: [Coordinate, Coordinate] | JXG.Point
-        to: [Coordinate, Coordinate] | JXG.Point
+        from: [number, number] | JXG.Point
+        to: [number, number] | JXG.Point
         children?: (line: JXG.Segment) => JSX.Element
       } & JXG.SegmentAttributes,
     ) => {
@@ -240,8 +348,18 @@ export const Board = Object.assign(
           type="segment"
           parent={[props.from, props.to]}
           attrs={{ withLabel: attrs.name ? true : false, ...attrs }}
-          children={props.children}
-        />
+        >
+          {(segment: JXG.Segment) => {
+            createEffect(
+              () => [props.from, props.to] as const,
+              ([from, to]) => {
+                segment.point1.moveTo(from)
+                segment.point2.moveTo(to)
+              },
+            )
+            return props.children?.(segment)
+          }}
+        </Element>
       )
     },
   },

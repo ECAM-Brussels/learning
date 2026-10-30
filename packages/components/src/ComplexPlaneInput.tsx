@@ -1,16 +1,13 @@
 import { createMemo, merge } from 'solid-js'
-import { Board, type Coordinate } from './Board'
+import { Board } from './Board'
 
 export function ComplexPlaneInput(rawProps: {
   grid?: boolean
-  value?: [Coordinate, Coordinate]
+  value?: [number, number]
   onChange?: (value: [number, number]) => void
   snapSize?: number
 }) {
-  const props = merge(
-    { grid: true, value: [1, 0] as [Coordinate, Coordinate], snapSize: 1 },
-    rawProps,
-  )
+  const props = merge({ grid: true, value: [1, 0] as [number, number], snapSize: 1 }, rawProps)
   const attrs = createMemo(() => {
     return {
       snapSizeX: props.snapSize,
