@@ -46,6 +46,9 @@ const Test = v.variant('type', [
   }),
 ])
 
+/**
+ * @deprecated Use `PythonCode` directly, with `expect`
+ */
 export const Matplotlib = createDerivedStep(
   PythonCode,
   { prompt: 'jsx', tests: omitFromJSON(v.array(Test)), initialCode: v.optional(v.string(), '') },
