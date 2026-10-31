@@ -1,5 +1,5 @@
 import { Board, Boundary, Scope } from '@learning/components'
-import { createDerivedStep, expr, Sequence, tex } from '@learning/core'
+import { createDerivedStep, expr, schemas, Sequence, tex } from '@learning/core'
 import { Expand } from '@learning/exercises/math/algebra/Expand'
 import { DerivativeAtPoint } from '@learning/exercises/math/calculus/DerivativeAtPoint'
 import { Simple } from '@learning/exercises/math/Simple'
@@ -293,5 +293,60 @@ export function NewtonRaphsonAnimation(props: { twoIterations?: boolean }) {
         {tex`x = ${props.twoIterations ? root2() : root()}`}
       </p>
     </>
+  )
+}
+
+export const NewtonRaphson = createDerivedStep(
+  PythonCode,
+  {
+    expr: 'expr',
+    x0: 'number',
+    n: 'number',
+    loop: v.optional(v.boolean(), true),
+    prompt: v.optional(schemas.jsx),
+  },
+  (props) => ({
+    math: true,
+    prompt: props.prompt ?? (
+      <p>
+        Appliquez {props.n} itération{props.n > 1 ? 's' : ''} de la méthode de Newton-Raphson à la
+        fonction {tex`f(x) = ${props.expr}`} en partant de {tex`x = ${props.x0}`}.
+      </p>
+    ),
+    tests: (expect) => ({
+      "Le code s'exécute sans erreur": expect.not().toError(),
+      'Le code utilise epsilon': expect.code.toMatch(/epsilon/),
+      'Le code utilise la dérivation automatique': expect.code.toMatch(/\.dual/),
+      ...(props.loop && props.n > 1
+        ? {
+            'Le code utilise une boucle': expect.code.toMatch(/^for /m),
+            "Le nombre d'itérations est correct": expect.code.toMatch(
+              new RegExp(`range\\(${props.n}\\)`),
+            ),
+          }
+        : {}),
+      'Le résultat final est correct': expect.result().toEqualThatOf(dedent /*python */ `
+        import numpy as np
+
+        def f(x):
+            return ${props.expr.python()}
+
+        x = ${props.x0}
+        for _ in range(${props.n}):
+            x = x - f(x) / f(x + epsilon).dual
+
+        x
+      `),
+    }),
+  }),
+)
+
+export function NewtonRaphsonSequence() {
+  return (
+    <Sequence id="newton-raphson-sequence">
+      <NewtonRaphson expr="\ln{x}" x0={2} n={5} />
+      <NewtonRaphson expr="\sin{x}" x0={3} n={5} />
+      <NewtonRaphson expr="x^3 - 5x - 2" x0={2} n={10} />
+    </Sequence>
   )
 }
