@@ -712,6 +712,34 @@ approximez $\sqrt{2}$.
 
 <Exercise.NewtonRaphsonSequence />
 
+# Résumé
+
+- Un nombre dual s'exprime sous la forme $a + b \epsilon$
+  Les règles arithmétiques du calcul littéral s'appliquent, avec $\epsilon^2 = 0$.
+
+- Une fonction dérivable $f$ s'étend sur les nombres duaux
+  {tex.display`f(a + b \epsilon) = f(a) + b f'(a) \epsilon`}
+
+  En particulier, pour $b = 1$, on a
+  {tex.display`f(a + \epsilon) = f(a) + f'(a) \epsilon`}
+
+- On peut calculer $f(x)$ et $f'(x)$ en une seule évaluation via $f(x + \epsilon)$.
+
+- En Python, pour calculer $f'(x)$ on utilise simplement `f(x + epsilon).dual`.
+
+- La méthode de Newton-Raphson permet d'améliorer une racine de $f$
+  en approximant $f$ par sa tangente en $x_0$.
+  La tangente de la racine est donnée par
+
+  {tex.display`x = x_0 - \frac{f(x_0)}{f'(x_0)}, \qquad \text{En Python:} \quad \texttt{x = x - f(x) / f(x + epsilon).dual}`}
+
+- On peut répéter l'itération autant de fois que nécessaire avec une boucle `for`:
+
+  ```python
+  for i in range(n):
+      x = x - f(x) / f(x + epsilon).dual
+  ```
+
 # Pourquoi ça marche? (non-examinable)
 
 Le but de cette section est de fournir une explication plus profonde de la dérivation automatique.
