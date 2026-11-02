@@ -168,6 +168,7 @@ type StepBaseProps<D, I extends v.ObjectSchema<any, any>, F extends JsonObject> 
         data: Infer<NoInfer<D>, 'output'>
         inputs: v.InferOutput<NoInfer<I>>
       }) => JSX.Element)
+  onChange?: (exercise: Record<number, StoredStep | null | undefined>) => void
   options?: Options<'input'> | ((data: Infer<D, 'output'>) => MaybeAsync<Options<'input'>>)
 }
 
@@ -248,6 +249,13 @@ export function Step<S extends StepSchema, F extends JsonObject>(
       },
     })
   }, {} as any)
+
+  createEffect(
+    () => [all(), stepContext().sequencePosition, props.onChange] as const,
+    ([all, sequencePosition, onChange]) => {
+      onChange?.(all[sequencePosition] ?? {})
+    },
+  )
 
   /**
    * Draft state, edited by the user prior to submission.
@@ -485,11 +493,22 @@ export function createStep<S extends StepSchema, F extends JsonObject>(
   step: Omit<StepProps<S, F>, 'data'>,
 ) {
   const StepComponent: Component<
-    { id?: string } & Pick<StepProps<S, F>, 'class' | 'feedback' | 'children' | 'options'> &
+    { id?: string } & Pick<
+      StepProps<S, F>,
+      'class' | 'feedback' | 'children' | 'options' | 'onChange'
+    > &
       (ObjectSchema<S['data'], 'input'> | { data: StepProps<S, F>['data'] })
   > = (props) => {
-    const data = omit(props, 'id', 'class', 'feedback', 'data', 'children', 'options') as
-      ObjectSchema<S['data'], 'input'> | undefined
+    const data = omit(
+      props,
+      'id',
+      'class',
+      'feedback',
+      'data',
+      'children',
+      'options',
+      'onChange',
+    ) as ObjectSchema<S['data'], 'input'> | undefined
     return (
       <Step
         {...step}
@@ -509,6 +528,7 @@ export function createStep<S extends StepSchema, F extends JsonObject>(
           })
           return { ...inherited, ...options }
         }}
+        onChange={props.onChange ?? step.onChange}
       />
     )
   }
