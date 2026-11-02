@@ -16,7 +16,7 @@
     "@solidjs/diagnostics": "next",
     "@solidjs/meta": "next",
     "@solidjs/router": "next",
-    "@solidjs/vite-plugin": "next",
+    "@solidjs/vite-plugin": "latest",
     "@solidjs/web": "next",
     "better-auth": "1.7.1",
     "drizzle-orm": "^1.0.0-rc.4",

@@ -11,9 +11,9 @@ export default defineConfig({
     satteri(saterriConfig),
     solidPlugin({
       diagnostics: true,
+      env: './env.ts',
       extensions: ['.mdx'],
       start: {
-        env: './env.ts',
         middleware: 'src/middleware.ts',
       },
       serverFunctions: {
@@ -30,7 +30,7 @@ export default defineConfig({
     }),
     fileRoutes({
       types: true,
-      extensions: ['mdx', 'tsx', 'ts'],
+      extensions: ['mdx', 'tsx', 'ts', 'tsrx'],
       toPath: (file) => {
         if (file.includes('.')) return undefined
         return routePathFromFile(file).replace(/\/_layout$/, '')

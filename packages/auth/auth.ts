@@ -1,7 +1,9 @@
 import { db, schema } from '@learning/db'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { betterAuth } from 'better-auth/minimal'
-import { env } from 'virtual:env/server'
+import { type env as serverEnv } from 'virtual:solid-env/server'
+
+const env = process.env as unknown as typeof serverEnv
 
 const createAuth = () =>
   betterAuth({

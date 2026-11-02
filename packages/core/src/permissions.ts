@@ -1,6 +1,6 @@
 import { query } from '@solidjs/router'
 import { getRequestEvent, respond } from '@solidjs/web'
-import { env } from 'virtual:env/server'
+import { env } from 'virtual:solid-env/server'
 
 const permissions = {
   exercise: ['readOwn', 'read', 'answerOwn', 'delete', 'deleteOwn'],
