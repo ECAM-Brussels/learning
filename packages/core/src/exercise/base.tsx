@@ -57,11 +57,13 @@ const CustomSchemas = {
     ),
     Expression,
   ]),
-  jsx: omitFromJSON(v.custom<JSX.Element>(() => true)),
+  jsx: v.union([v.string(), omitFromJSON(v.custom<JSX.Element>(() => true))]),
   string: v.string(),
   number: v.number(),
 } as const
 type CustomSchemas = typeof CustomSchemas
+
+export const schemas = CustomSchemas
 
 type ResolveSchema<T> =
   T extends v.BaseSchema<any, any, any>
@@ -524,15 +526,19 @@ export function createDerivedStep<R extends RawShape, S extends StepSchema, F ex
   patch: Partial<StepProps<{ data: R; inputs: S['inputs'] }, F>> = {},
 ) {
   const step = component.config
+  function fullTransform(data: ObjectSchema<NoInfer<R>, 'output'>) {
+    const transformed = transform(data)
+    return v.parse(ObjectSchema(step.schema.data as S['data']), transformed)
+  }
   return createStep<{ data: R; inputs: S['inputs'] }, F>({
     ...step,
     schema: { data: schema, inputs: step.schema.inputs },
     prompt: (props) => {
       const Prompt = dynamic(() => step.prompt)
-      const data = createMemo(() => transform(props.data))
+      const data = createMemo(() => fullTransform(props.data))
       return <Prompt {...props} data={data()} />
     },
-    grade: (ctx) => step.grade({ ...ctx, data: transform(ctx.data) }),
+    grade: (ctx) => step.grade({ ...ctx, data: fullTransform(ctx.data) }),
     feedback: (props) => {
       const Self: ComponentProps<NonNullable<typeof step.feedback>>['Self'] = (attrs) => {
         const Component = dynamic(() => props.Self)
@@ -545,7 +551,7 @@ export function createDerivedStep<R extends RawShape, S extends StepSchema, F ex
                 ? (feedbackProps) =>
                     attrs.feedback?.({
                       ...feedbackProps,
-                      data: transform(feedbackProps.data),
+                      data: fullTransform(feedbackProps.data),
                       Self,
                     })
                 : undefined
@@ -554,7 +560,7 @@ export function createDerivedStep<R extends RawShape, S extends StepSchema, F ex
         )
       }
       const Feedback = dynamic(() => step.feedback)
-      return <Feedback {...props} Self={Self} data={transform(props.data)} />
+      return <Feedback {...props} Self={Self} data={fullTransform(props.data)} />
     },
     ...patch,
   })

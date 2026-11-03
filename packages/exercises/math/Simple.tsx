@@ -1,5 +1,5 @@
 import { Attempt } from '@learning/components'
-import { createStep, tex, type Expression } from '@learning/core'
+import { createStep, schemas, tex, type Expression } from '@learning/core'
 import { Show } from 'solid-js'
 import * as v from 'valibot'
 
@@ -7,18 +7,16 @@ export const Simple = createStep({
   schema: {
     data: {
       prompt: 'jsx',
-      label: v.optional(v.string()),
+      label: v.optional(schemas.jsx),
       tex: v.optional(v.boolean()),
-      grade: v.custom<(attempt: Expression<'output'>) => boolean | Promise<boolean>>(
-        (value) => true,
-      ),
+      grade: v.custom<(attempt: Expression<'output'>) => boolean | Promise<boolean>>(() => true),
     },
     inputs: { attempt: 'expr' },
   },
   prompt: (ctx) => {
     const isTex = () => {
       if (ctx.data.tex !== undefined) return ctx.data.tex
-      return ctx.data.label?.includes('=') ?? false
+      return typeof ctx.data.label === 'string' && (ctx.data.label?.includes('=') ?? false)
     }
     return (
       <>
@@ -27,7 +25,7 @@ export const Simple = createStep({
           <Show
             when={isTex()}
             fallback={ctx.data.label ?? 'Réponse:'}
-          >{tex`${ctx.data.label}`}</Show>
+          >{tex`${ctx.data.label as string}`}</Show>
           {ctx.inputs.attempt}
         </Attempt>
       </>

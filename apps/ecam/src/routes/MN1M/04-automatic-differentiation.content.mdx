@@ -1,0 +1,890 @@
+import { tex } from '@learning/core'
+import { Simple } from '@learning/exercises/math/Simple'
+import * as Exercise from './04-automatic-differentiation.exercises'
+
+# Introduction
+
+Nous avons vu que l'approximation
+
+{tex.display`f'(a) \approx \frac{f(a + h) - f(a)} h`}
+
+est _numériquement instable_.
+Nous verrons aujourd'hui
+une méthode qui permet de calculer $f'(a)$ _automatiquement_,
+avec une réponse aussi _exacte_ que le permet l'arithmétique de l'ordinateur.
+
+Les algorithmes de _dérivation automatique_ (même si une autre implémentation que celle présentée ici est privilégiée) sont cruciaux en optimisation,
+et par conséquent dans l'_intelligence artificielle_.
+
+# Dérivation automatique
+
+## Un exemple introductif
+
+<Exercise.FirstExample />
+
+:::remark
+
+Si l'hypothèse $\epsilon \neq 0$ mais $\epsilon^2 = 0$ peut vous sembler absurde,
+elle a du sens dans le contexte du calcul numérique.
+En effet,
+
+```python run
+epsilon = 1e-10
+1 + epsilon
+```
+
+Cependant $\epsilon^2$ n'est pas significatif par rapport à $1$,
+et vaut effectivement $0$ dans le calcul suivant:
+
+```python run
+epsilon = 1e-10
+1 + epsilon**2
+```
+
+:::
+
+En rajoutant la règle $\epsilon^2 = 0$ à l'arithmétique des nombres réels,
+on a dérivé $x^2$ _automatiquement_.
+Nous verrons aujourd'hui que calculer $f(x + \epsilon)$ calcule **automatiquement** $f(x)$ et $f'(x)$ en une seule évaluation.
+
+## Dérivée automatique de fonctions polynomiales
+
+Ce que nous avons observé pour $f(x) = x^2$ est vrai pour tout polynôme,
+puisque la [formule du binôme de Newton](https://fr.wikipedia.org/wiki/Formule_du_bin%C3%B4me_de_Newton) implique que
+
+{tex.display`\underbrace{(a + \epsilon)^n}_{f(a + \epsilon)} = \underbrace{a^n}_{f(a)} + \underbrace{\color{green} n a^{n-1}}_{f'(a)} \epsilon + \underbrace{\binom{n}{2} a^{n-2} \epsilon^2 + \dots + \epsilon^n}_{0}`}
+
+Dès lors, si $f(x)$ est une **fonction polynômiale**, alors
+
+{tex.display`f(a + \epsilon) = f(a) + f'(a) \epsilon.`}
+
+Évaluer $f$ en $a + \epsilon$ calcule donc **automatiquement** $f(a)$ et $f'(a)$ en **une seule évaluation**,
+et en théorie, de manière **exacte**,
+contrairement aux quotients différentiels finis.
+
+Le nombre $\epsilon$ ne fait pas normalement pas partie de Python,
+mais nous l'avons intégré dans notre environnement de calcul.
+
+```python run math
+epsilon ** 2 # devrait afficher 0
+```
+
+Lorsque nous avons un nombre $a + b \epsilon$,
+nous pouvons extraire la partie réelle $a$
+et la partie duale $b$ en utilisant `.real` et `.dual` respectivement:
+
+```python run math
+x = 2 + 3 * epsilon
+x.real
+```
+
+Parfois, nous voudrons
+
+:::example
+Calculez la dérivée de $f(x) = x^3 + 2x^2 - 5x + 1$ en $x = 2$ en utilisant $\epsilon \neq 0$ tel que $\epsilon^2 = 0$.
+
+::::steps
+
+1. On définit la fonction $f(x)$ en Python
+
+   ```python run math
+   def f(x):
+       return x**3 + 2*x**2 - 5*x + 1
+   ```
+
+2. Puisque $f$ est un polynôme,
+
+   {tex.display`f(2 + \epsilon) = f(2) + f'(2) \epsilon,`}
+
+   donc calculer `f(2 + epsilon)` devrait me donner la réponse
+
+   ```python run math highlight="4"
+   def f(x):
+       return x**3 + 2*x**2 - 5*x + 1
+
+   f(2 + epsilon)
+   ```
+
+   En analysant la sortie, on remarque que
+   {tex.display`\underbrace{7 + 15 \epsilon}_{f(2 + \epsilon)} = \underbrace{7}_{f(2)} + \underbrace{15}_{f'(2)} \epsilon,`}
+   donc $f'(2) = 15$.
+
+3. Pour extraire le coefficient de $\epsilon$, on peut utiliser `.dual`:
+
+   ```python run math highlight="4"
+   def f(x):
+       return x**3 + 2*x**2 - 5*x + 1
+
+   f(2 + epsilon).dual
+   ```
+
+::::
+
+:::
+
+<Exercise.PolynomialSequence />
+
+:::remark
+Un aspect remarquable de la dérivation automatique est qu'en appliquant $\epsilon^2 = 0$,
+l'ordinateur applique automatiquement la **règle de la composée**:
+
+```python run math
+def f(x):
+    return x**2 + 1
+
+def g(x):
+    return x + 5
+
+f(g(2 + epsilon))
+```
+
+et également la **règle du produit**:
+
+```python run math
+def f(x):
+    return x**2 + 1
+
+def g(x):
+    return x + 5
+
+f(2 + epsilon) * g(2 + epsilon)
+```
+
+:::
+
+## Nombres duaux
+
+Dans la section précédente,
+nous avons vu que évaluer $f(a + \epsilon)$ calcule **automatiquement** $f(a)$ et $f'(a)$ en une seule évaluation
+pour tout polynôme $f$:
+{tex.display`f(a + \epsilon) = f(a) + f'(a) \epsilon.`}
+
+Nous aimerions que la relation ci-dessus soit vraie pour d'autres types de fonctions,
+mais cela implique de **donner du sens** à des expressions telles que
+
+{tex.display`\sin(2 + \epsilon)`}
+
+qui ne sont pas couvertes par $\epsilon^2 = 0$.
+Il faut donc **étendre** les fonctions usuelles pour qu'ils acceptent $\epsilon$ comme argument.
+En fait, la règle $\epsilon^2 = 0$ permet d'**étendre** la multiplication aux nombres duaux.
+
+:::definition[Nombres duaux]
+
+Un **nombre dual** est un nombre qui s'écrit formellement sous la forme
+
+{tex`a + b \epsilon,
+\quad a, b \in \mathbb{R}`}
+
+1. Les règles arithmétiques du calcul littéral s'appliquent.
+
+2. On étend les fonctions dérivables sur les nombres duaux via
+   {tex.display`f(a + b \epsilon) = f(a) + b f'(a) \epsilon`}
+
+:::
+
+:::remark
+
+1. En prenant $f(x) = x^2$, on vérifie que la deuxième règle redonne bien $\epsilon^2 = 0$:
+   {tex.display`  \epsilon^2 = f(0 + 1 \epsilon) = f(0) + f'(0) \epsilon = 0 + 0 \epsilon = 0`}
+
+2. En prenant $b = 1$, on retrouve
+   {tex.display`f(a + \epsilon) = f(a) + f'(a) \epsilon,`}
+   qui est bien la formule que nous avons utilisée pour calculer $f'(a)$ automatiquement pour les polynômes.
+
+3. Les règles de dérivées que vous connaissez (quotient, produit, composition) sont **appliquées automatiquement**
+   car elles sont une conséquence immédiate de la seconde règle.
+   Ceci est démontré en fin de ce document pour les plus curieux·ses d'entre vous.
+
+   Par exemple, en appliquant l'extension de $\sin$ aux deux membres de
+   {tex.inline`(x + \epsilon)^2 = x^2 + 2 x \epsilon`},
+   on obtient
+
+   {tex.display`\sin \left((x + \epsilon)^2\right) = \sin(\underbrace{x^2}_a + \underbrace{2 x}_b \epsilon) = \sin(\underbrace{x^2}_a) + \underbrace{2 x}_b \cos(\underbrace{x^2}_a) \epsilon`}
+
+   Le résultat est exactement la dérivée de $\sin(x^2)$ par la règle de la composée:
+   {tex.display`\sin \left((x + \epsilon)^2\right) = \underbrace{\sin(x^2)}_{f(x)} + \underbrace{2 x \cos(x^2)}_{f'(x)} \epsilon`}
+
+:::
+
+:::example
+Calculez $f(x) = \cos(x)$ en $x = 2 - 4 \epsilon$.
+
+Par la formule d'extension $\displaystyle \cos(a + b \epsilon) = \cos(a) + b \cos'(a) \epsilon$, on a
+
+{tex.display`\cos(\underbrace{2}_{a} \underbrace{- 4}_b \epsilon) = \cos(2) + \underbrace{(-4)}_b \underbrace{(-\sin(2))}_{\cos'(a)} \epsilon = \cos(2) + 4 \sin(2) \epsilon`}
+:::
+
+<Exercise.FunctionExtensionSequence />
+
+Nous avons étendu les fonctions de `numpy` pour qu'elles fonctionnent avec les nombres duaux.
+Par exemple,
+voici une version simplifiée de comment nous avons étendu la fonction $\sin$:
+
+:::example[Extension de la fonction sinus sur les nombres duaux]
+Définissez une fonction `sin` qui étend le sinus sur les nombres duaux.
+
+::::steps
+
+1. Pour un nombre réel $x$, on retourne le sinus habituel.
+
+   ```python run math highlight="4-5"
+   import numpy as np
+
+   def sin(x):
+       if isinstance(x, (int, float)):
+           return np.sin(x)
+   ```
+
+   Le mot `if` signifie "si" en anglais.
+   En l'occurence, ici on regarde si `x` est un entier (`int`) ou un nombre à virgule flottante (`float`),
+   auquel cas on retourne le sinus habituel.
+
+   Les instructions à exécuter si la condition est vraie doivent être **indentées** (précédées de 4 espaces).
+
+2. Pour un nombre dual $a + b \epsilon$, on retourne
+   {tex.display`\sin(a + b \epsilon) = \sin(a) + b \cos(a) \epsilon`}
+
+   ```python run math highlight="6-8"
+   import numpy as np
+
+   def sin(x):
+       if isinstance(x, (int, float)):
+           return np.sin(x)
+       else:
+           a, b = x # On extrait la partie réelle et la partie duale
+           return np.sin(a) + b * np.cos(a) * epsilon
+
+   # On vérifie
+   sin(0 + epsilon)
+   ```
+
+::::
+:::
+
+La réelle implémentation est plus complexe et est détaillée en fin de ce document.
+
+## Dérivation automatique avec Python
+
+$$
+
+f(x + \epsilon) = f(x) + f'(x) \epsilon
+
+
+$$
+
+En évaluant $f(a + \epsilon)$, on obtient donc $f(a)$ et $f'(a)$ en une seule évaluation.
+
+:::example
+
+Calculez la dérivée de $f(x) = \sin(x^2)$ en $x = 1$ en utilisant la dérivation automatique.
+
+::::steps
+
+1. On définit la fonction $f(x) = \sin(x^2)$.
+
+   ```python run math
+   import numpy as np
+
+   def f(x):
+       return np.sin(x**2)
+   ```
+
+2. On évalue notre fonction $f$ en $x = 1 + \epsilon$.
+
+   ```python run math highlight="6"
+   import numpy as np
+
+   def f(x):
+       return np.sin(x**2)
+
+   f(1 + epsilon)
+   ```
+
+   En regardant **uniquement la sortie du code** ci-dessus,
+   répondez aux questions suivantes:
+
+   <Simple
+     id="sin-x2-image-at-1"
+     label="f(1) ="
+     tex
+     prompt={<p>Que vaut {tex`f(1)`} ?</p>}
+     grade={(attempt) => attempt.isEqual(0.8414709848078965)}
+   />
+   <Simple
+     id="sin-x2-derivative-at-1"
+     label="f'(1) ="
+     tex
+     prompt={<p>Que vaut {tex`f'(1)`} ?</p>}
+     grade={(attempt) => attempt.isEqual(1.0806046117362795)}
+   />
+
+3. On prend la _partie duale_ pour obtenir $f'(1)$.
+
+   ```python run math highlight="6"
+   import numpy as np
+
+   def f(x):
+       return np.sin(x**2)
+
+   f(1 + epsilon).dual
+   ```
+
+::::
+
+:::
+
+<Exercise.AutomaticDifferentiation />
+
+### Dérivée de fonctions
+
+La vectorisation permet facilement de calculer la dérivée d'une fonction sur un intervalle.
+
+:::example
+
+Calculez la dérivée de $f(x) = \sin(x)$ sur l'intervalle $[-\pi, \pi]$,
+ensuite tracez la fonction et sa dérivée.
+
+::::steps
+
+1. On définit la fonction $f(x) = \sin(x)$.
+
+   ```python run math
+   import numpy as np
+
+   def f(x):
+       return np.sin(x)
+   ```
+
+2. On calcule la dérivée $f'(x)$ grâce à la dérivation automatique.
+
+   ```python run math highlight="6-7"
+   import numpy as np
+
+   def f(x):
+       return np.sin(x)
+
+   def diff(x):
+       return f(x + epsilon).dual
+   ```
+
+3. On trace le graphique de $f(x)$ et $f'(x)$ sur l'intervalle $[-\pi, \pi]$.
+
+   ```python run math highlight="1,10-13"
+   import matplotlib.pyplot as plt
+   import numpy as np
+
+   def f(x):
+       return np.sin(x)
+
+   def diff(x):
+       return f(x + epsilon).dual
+
+   x = np.linspace(-np.pi, np.pi, 100)
+   plt.plot(x, f(x), label="f(x)")
+   plt.plot(x, diff(x), label="f'(x)")
+   plt.legend()
+   ```
+
+::::
+:::
+
+<Exercise.DerivativeSequence />
+
+### Tangentes
+
+Rappelons que la tangente à la courbe $f(x)$ en $x = x_0$
+a pour pente $f'(x_0)$ et passe par le point $(x_0, f(x_0))$:
+
+{tex.display`y = f'(x_0) (x - x_0) + f(x_0)`}
+
+:::example
+Calculez la tangente à la courbe $f(x) = \sin(x^2)$ en $x = 1$.
+Graphez la fonction et sa tangente sur l'intervalle $[0, 2]$.
+
+::::steps
+
+1. On définit la fonction $f(x) = \sin(x^2)$.
+
+   ```python run math
+   import numpy as np
+
+   def f(x):
+       return np.sin(x**2)
+   ```
+
+2. On calcule la dérivée $f'(1)$ grâce à la dérivation automatique.
+
+   ```python run math highlight="6-7"
+   import numpy as np
+
+   def f(x):
+       return np.sin(x**2)
+
+   # f(1) + f'(1) ε
+   f(1 + epsilon)
+   ```
+
+   Dans la sortie, la partie réelle est $f(1)$ et la partie duale est $f'(1)$.
+
+3. On définit la fonction de la tangente $t(x) = f'(1)(x - 1) + f(1)$.
+
+   ```python run math highlight="6-7"
+   import numpy as np
+
+   def f(x):
+       return np.sin(x**2)
+
+   def t(x):
+       return f(1 + epsilon).dual * (x - 1) + f(1)
+   ```
+
+4. On trace le graphique de $f(x)$ et de sa tangente $t(x)$ sur l'intervalle $[0, 2]$.
+
+   ```python run math highlight="1,10-13"
+   import matplotlib.pyplot as plt
+   import numpy as np
+
+   def f(x):
+       return np.sin(x**2)
+
+   def t(x):
+       return f(1 + epsilon).dual * (x - 1) + f(1)
+
+   x = np.linspace(0, 2, 100)
+   plt.plot(x, f(x), label="f(x)")
+   plt.plot(x, t(x), label="t(x)")
+   plt.legend()
+   ```
+
+::::
+:::
+
+<Exercise.TangentSequence />
+
+# Newton-Raphson
+
+La méthode de Newton-Raphson est une méthode pour trouvez une **racine** d'une fonction $f(x)$.
+Par extension, elle permet de résoudre de nombreuses équations de la forme
+
+{tex.display`f(x) = g(x) \quad \iff \quad f(x) - g(x) = 0`}
+
+## Première itération
+
+L'idée derrière la méthode de Newton-Raphson est la suivante:
+si trouver la racine de $f(x)$ est difficile,
+remplaçons $f(x)$ par sa tangente.
+
+Prenez un instant pour regardez l'animation ci-dessous.
+En partant de $x_0$, on dessine la tangente et on trouve sa racine
+(en rouge sur le dessin).
+On s'est alors approché de la racine réelle de $f(x)$.
+
+<Exercise.NewtonRaphsonAnimation />
+
+:::example
+Déterminez une racine approchée de {tex`f(x) = e^{-x^2} - \frac{1}{2}`} en approximant $f(x)$ par sa tangente autour de $x_0 = 0.8$.
+
+::::steps
+
+1. On définit la fonction {tex`f(x) = e^{-x^2} - \frac{1}{2}`}.
+
+   ```python run math
+   import numpy as np
+
+   def f(x):
+       return np.exp(-x**2) - 0.5
+   ```
+
+2. On cherche la racine de la tangente $y - f(x_0) = f'(x_0) (x - x_0)$.
+   Puisque $y = 0$ à la racine, on obtient
+
+   {tex.display`- f(x_0) = f'(x_0) (x - x_0) \quad \implies \quad x = x_0 - \frac{f(x_0)}{f'(x_0)}`}
+
+   ```python run math highlight="6-7"
+   import numpy as np
+
+   def f(x):
+       return np.exp(-x**2) - 0.5
+
+   x0 = 0.8
+   x0 - f(x0) / f(x0 + epsilon).dual
+   ```
+
+::::
+:::
+
+:::exercise
+Essayons d'approximer {tex`\sqrt{3} \approx ${Math.sqrt(3)}`}.
+
+<Exercise.NewtonRaphson
+  prompt={
+    <>
+      <p>
+        Déterminez une racine approchée de {tex`f(x) = x^2 - 3`} en utilisant une approximation de{' '}
+        {tex`f(x)`} par sa tangente en {tex`x_0 = 1.5`}.
+      </p>
+    </>
+  }
+  id="newton-raphson-sqrt3"
+  expr="x^2 - 3"
+  x0={1.5}
+  n={1}
+/>
+
+:::
+
+## Deuxième itération
+
+En utilisant la _racine de la tangente_,
+nous sommes passés d'une approximation de la racine
+à une _meilleure approximation_ de la racine.
+Il est bien entendu possible de répéter la procédure,
+et obtenir une approximation de plus en plus précise de la racine.
+
+Prenez un moment pour regarder le graphe ci-dessous.
+En utilisant la tangente en $x_0$,
+on trouve une meilleure approximation de la racine $x_1$.
+On prend ensuite la tangente en $x_1$ pour trouver une approximation encore meilleure $x_2$.
+
+<Exercise.NewtonRaphsonAnimation twoIterations />
+
+:::example
+
+Déterminez une racine approchée de {tex`f(x) = e^{-x^2} - \frac{1}{2}`} en appliquant la méthode de Newton-Raphson **deux fois** à partir de $x_0 = 0.8$.
+
+::::steps
+
+1. On part de l'exemple précédent et on appelle notre réponse $x_1$
+
+   ```python run math highlight="7-8"
+   import numpy as np
+
+   def f(x):
+       return np.exp(-x**2) - 0.5
+
+   x0 = 0.8
+   x1 = x0 - f(x0) / f(x0 + epsilon).dual
+   x1
+   ```
+
+2. On réapplique le même calcul mais sur $x_1$.
+
+   ```python run math highlight="8,10"
+   import numpy as np
+
+   def f(x):
+       return np.exp(-x**2) - 0.5
+
+   x0 = 0.8
+   x1 = x0 - f(x0) / f(x0 + epsilon).dual
+   x2 = x1 - f(x1) / f(x1 + epsilon).dual
+
+   x2
+   ```
+
+   Remarquez qu'il y a beaucoup de **répétitions** dans le code ci-dessus.
+
+3. On remarque que l'on pourrait remplacer $x_0$, $x_1$ et $x_2$ par une seule variable $x$.
+   L'avantange est que l'on peut répéter l'itération par un simple copier-coller.
+
+   ```python run math highlight="6-8,10"
+   import numpy as np
+
+   def f(x):
+       return np.exp(-x**2) - 0.5
+
+   x = 0.8
+   x = x - f(x) / f(x + epsilon).dual
+   x = x - f(x) / f(x + epsilon).dual
+
+   x
+   ```
+
+::::
+:::
+
+:::exercise
+Essayons d'approximer {tex`\sqrt{3} \approx ${Math.sqrt(3)}`} de nouveau,
+mais avec deux itérations cette fois-ci.
+
+<Exercise.NewtonRaphson id="newton-raphson-sqrt3-2" expr="x^2 - 3" x0={1.5} n={2} loop={false} />
+:::
+
+On peut bien entendu répéter l'itération autant de fois que l'on souhaite pour améliorer notre approximation de la racine.
+Prenez un instant pour regarder l'animation ci-dessous.
+
+import NewtonRaphson from './newton_raphson.gif'
+
+<img src={NewtonRaphson} alt="Animation de la méthode de Newton-Raphson" class="mx-auto" />
+
+## Boucles
+
+Pour répéter une instruction un certain nombre de fois, on peut utiliser une boucle `for`:
+
+```python run
+for i in range(10):
+    print("Hello", i)
+```
+
+:::remark
+Seules les instructions **indentées** (précédées de 4 espaces) sont répétées.
+
+```python run
+for i in range(5):
+    print("Ceci est répété")
+    print("Ceci aussi")
+
+print("Ceci n'est pas répété")
+```
+
+:::
+
+## Newton-Raphson avec $n$ itérations
+
+<img src={NewtonRaphson} alt="Animation de la méthode de Newton-Raphson" class="mx-auto" />
+
+:::example
+En utilisant $10$ itérations de la méthode de Newton-Raphson à $f(x) = x^2 - 2$
+en partant de $x_0 = 1$,
+approximez $\sqrt{2}$.
+
+::::steps
+
+1. Faisons une première itération en partant de $x = 1$.
+
+   ```python run math highlight="4-5"
+   def f(x):
+       return x**2 - 2
+
+   x = 1
+   x - f(x) / f(x + epsilon).dual
+   ```
+
+   Notez qu'on a juste utilisé `x` au lieu de `x0` pour simplifier le code à venir.
+
+2. Lorsqu'on calcule la racine de la tangente,
+   Restockons le résultat dans `x`.
+   L'itération suivante sera alors un simple copier-coller.
+
+   ```python run math highlight="9-10, 12-13"
+   def f(x):
+       return x**2 - 2
+
+   x = 1
+
+   # Première itération
+   x = x - f(x) / f(x + epsilon).dual
+
+   # Deuxième itération
+   x = x - f(x) / f(x + epsilon).dual
+
+   # On affiche le résultat
+   x
+   ```
+
+3. Comme nous sommes civilisé·es,
+   on va employer une boucle pour répéter l'itération $10$ fois
+
+   ```python run math highlight="6-7"
+   def f(x):
+       return x**2 - 2
+
+   x = 1
+
+   for i in range(10):
+       x = x - f(x) / f(x + epsilon).dual
+
+   x
+   ```
+
+   On peut comparer le résultat avec la valeur exacte de $\sqrt{2}$:
+
+   ```python run
+   import numpy as np
+
+   np.sqrt(2)
+   ```
+
+::::
+:::
+
+## Exercices
+
+<Exercise.NewtonRaphsonSequence />
+
+# Résumé
+
+- Un nombre dual s'exprime sous la forme $a + b \epsilon$
+  Les règles arithmétiques du calcul littéral s'appliquent, avec $\epsilon^2 = 0$.
+
+- Une fonction dérivable $f$ s'étend sur les nombres duaux
+  {tex.display`f(a + b \epsilon) = f(a) + b f'(a) \epsilon`}
+
+  En particulier, pour $b = 1$, on a
+  {tex.display`f(a + \epsilon) = f(a) + f'(a) \epsilon`}
+
+- On peut calculer $f(x)$ et $f'(x)$ en une seule évaluation via $f(x + \epsilon)$.
+
+- En Python, pour calculer $f'(x)$ on utilise simplement `f(x + epsilon).dual`.
+
+- La méthode de Newton-Raphson permet d'améliorer une racine de $f$
+  en approximant $f$ par sa tangente en $x_0$.
+  La tangente de la racine est donnée par
+
+  {tex.display`x = x_0 - \frac{f(x_0)}{f'(x_0)}, \qquad \text{En Python:} \quad \texttt{x = x - f(x) / f(x + epsilon).dual}`}
+
+- On peut répéter l'itération autant de fois que nécessaire avec une boucle `for`:
+
+  ```python
+  for i in range(n):
+      x = x - f(x) / f(x + epsilon).dual
+  ```
+
+# Pourquoi ça marche? (non-examinable)
+
+Le but de cette section est de fournir une explication plus profonde de la dérivation automatique.
+En particulier, nous répondrons à la question suivante:
+
+:::question
+Comment les règles de dérivation telles que le quotient, le produit et la composée sont-elles appliquées automatiquement?
+:::
+
+## La règle du produit
+
+Pour démontrer la règle du produit,
+il faut calculer $(f g) (a + \epsilon) = f(a + \epsilon) g(a + \epsilon)$.
+
+En utilisant $f(a + \epsilon) = f(a) + f'(a) \epsilon$ et $g(a + \epsilon) = g(a) + g'(a) \epsilon$,
+on obtient
+
+{tex.display`f(a + \epsilon) g(a + \epsilon) = (f(a) + f'(a) \epsilon)(g(a) + g'(a) \epsilon)`}
+
+On développe le membre de droite pour obtenir
+
+{tex.display`\begin{align*} f(a + \epsilon) g(a + \epsilon) &= (f(a) + f'(a) \epsilon)(g(a) + g'(a) \epsilon) \\ &= f(a) g(a) + f(a) g'(a) \epsilon + f'(a) g(a) \epsilon + \underbrace{f'(a) g'(a) \epsilon^2}_{= 0} \\ \end{align*}`}
+
+Puisque $\epsilon^2 = 0$, on obtient
+
+{tex.display`f(a + \epsilon) g(a + \epsilon) = f(a) g(a) + \underbrace{\color{blue} (f(a) g'(a) + f'(a) g(a))}_{\text{dérivée du produit}} \epsilon`}
+
+## La règle de la composée
+
+Pour démontrer la règle de la composée,
+on s'intéresse à $f(g(a + \epsilon))$.
+
+En utilisant $g(a + \epsilon) = g(a) + g'(a) \epsilon$,
+on obtient
+
+{tex.display`f(g(a + \epsilon)) = f(g(a) + g'(a) \epsilon)`}
+
+Puisque $f(x + b \epsilon) = f(x) + f'(x) b \epsilon$,
+on obtient
+
+{tex.display`\begin{align*}f(g(a + \epsilon)) &= f(\underbrace{g(a)}_x + \underbrace{g'(a)}_b \epsilon)\\ &= f(g(a)) + \underbrace{\color{blue} f'(g(a)) g'(a)}_{\text{dérivée de la composée}} \epsilon \end{align*}`}
+
+# Implémentation Python (non-examinable)
+
+L'implémentation des nombres duaux dépasse le cadre de ce cours,
+mais nous la mettons à disposition des intéressé·es.
+Le code contient des concepts que vous verrez plus tard dans vos études,
+mais vous pouvez vous concentrer sur la logique générale.
+
+:::steps
+
+1. On définit un type de données, appelé `Dual`, pour représenter les nombres duaux.
+   Il prend en argument la _partie réelle_ et la _partie duale_.
+   Par exemple, le nombre dual $1 + 2 \epsilon$ est représenté par `Dual(1, 2)`.
+
+   ```python run
+   import dataclasses
+
+   # Dual est un "type de données". Vous reviendrez sur ce concept plus tard dans vos études.
+   @dataclasses.dataclass
+   class Dual:
+
+       # Stocke la partie réelle, accessible via `self.real`
+       real: float
+       # Stocke la partie duale, accessible via `self.dual`
+       dual: float
+
+       # Explique à Python comment afficher un nombre dual
+       def __repr__(self):
+           return f"{self.real} + {self.dual} ε"
+
+   # Créons un nombre dual 1 + 2 ε, déclenche __repr__
+   Dual(1, 2)
+   ```
+
+2. Apprenons à Python à multiplier deux nombres duaux.
+   Rappelons que
+   $$(a + b\epsilon)(c + d\epsilon) = ac + (ad + bc) \epsilon,$$
+   ce qui en particulier implique que $\epsilon^2 = 0$.
+
+   ```python run highlight="11-19"
+   import dataclasses
+
+   @dataclasses.dataclass
+   class Dual:
+       real: float
+       dual: float
+
+       def __repr__(self):
+           return f"{self.real} + {self.dual} ε"
+
+       def __mul__(self, other):
+           # Multiplication d'un nombre dual par un réel
+           if isinstance(other, (int, float)):
+               return Dual(self.real * other, self.dual * other)
+           # Multiplication de deux nombres duaux
+           return Dual(
+               self.real * other.real, # ac
+               self.real * other.dual + self.dual * other.real # ad + bc
+           )
+
+   # Testons la multiplication de deux nombres duaux
+   epsilon = Dual(0, 1)
+   epsilon * epsilon
+   ```
+
+   Il faudrait implémenter l'addition (`__add__`), la soustraction (`__sub__`), la division (`__truediv__`) et la puissance (`__pow__`)
+   pour que l'arithmétique des nombres duaux soit complète.
+
+3. Apprenons maintenant à Python à calculer le sinus d'un nombre dual.
+   Rappelons que
+   $$\sin(a + b\epsilon) = \sin(a) + b \cos(a) \epsilon$$
+
+   ```python run highlight="2,20-25"
+   import dataclasses
+   import math
+
+   @dataclasses.dataclass
+   class Dual:
+       real: float
+       dual: float
+
+       def __repr__(self):
+           return f"{self.real} + {self.dual} ε"
+
+       def __mul__(self, other):
+           if isinstance(other, (int, float)):
+               return Dual(self.real * other, self.dual * other)
+           return Dual(
+               self.real * other.real,
+               self.real * other.dual + self.dual * other.real
+           )
+
+   def sin(x):
+       # Si x est un nombre réel, on utilise la fonction math.sin
+       if isinstance(x, (int, float)):
+           return math.sin(x)
+       # Sinon, sin(a + b ε) = sin(a) + b cos(a) ε
+       return Dual(math.sin(x.real), x.dual * math.cos(x.real))
+
+   # Testons le sinus d'un nombre dual
+   x = Dual(math.pi, 1)
+   sin(x)
+   ```
+
+   Il faut également implémenter les autres fonctions mathématiques usuelles.
+
+:::

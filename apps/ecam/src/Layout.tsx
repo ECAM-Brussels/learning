@@ -13,6 +13,7 @@ import {
   Latex,
   Question,
   Remark,
+  Steps,
 } from '@learning/components'
 import { getUser, login, logout } from '@learning/core'
 import { MDXProvider } from '@learning/mdx'
@@ -116,6 +117,7 @@ export const Layout: ParentComponent = (props) => {
         Code,
         Highlight,
         Latex,
+        Steps,
       }}
     >
       <Navbar />
