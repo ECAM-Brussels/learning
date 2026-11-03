@@ -1,7 +1,6 @@
 import { Attempt } from '@learning/components'
 import { createStep, expr, tex } from '@learning/core'
 import { allKeyed } from 'es-toolkit'
-import { Match, Show, Switch } from 'solid-js'
 import { Root } from './Root'
 
 export const Factor = createStep({
@@ -13,7 +12,7 @@ export const Factor = createStep({
   options: {
     video: 'https://youtube.com/embed/32u4Pr0-XDk',
   },
-  prompt: (ctx) => (
+  prompt: (ctx) => @{
     <>
       <p>
         Factorise <strong>complètement</strong> l'expression suivante:
@@ -22,7 +21,7 @@ export const Factor = createStep({
         {tex`${ctx.data.expr} =`} {ctx.inputs.attempt}
       </Attempt>
     </>
-  ),
+  },
   async grade(ctx) {
     const { equal, factored } = await allKeyed({
       equal: ctx.inputs.attempt.isEqual(ctx.data.expr),
@@ -30,19 +29,17 @@ export const Factor = createStep({
     })
     return equal && factored
   },
-  feedback: (ctx) => (
-    <Switch>
-      <Match when={!ctx.correct}>
-        <Root expr={ctx.data.expr}>
-          {(rootCtx) => (
-            <FactorFromRoot root={rootCtx.inputs.root}>
-              <ctx.Self />
-            </FactorFromRoot>
-          )}
-        </Root>
-      </Match>
-    </Switch>
-  ),
+  feedback: (ctx) => @{
+    @if (!ctx.correct) {
+      <Root expr={ctx.data.expr}>
+        {(rootCtx) => (
+          <FactorFromRoot root={rootCtx.inputs.root}>
+            <ctx.Self />
+          </FactorFromRoot>
+        )}
+      </Root>
+    }
+  },
 })
 
 const FactorFromRoot = createStep({
@@ -62,18 +59,24 @@ const FactorFromRoot = createStep({
       </Attempt>
     </>
   ),
-  feedback: (ctx) => (
-    <Show when={!ctx.correct}>
-      <p>
-        N'oubliez pas que le facteur {tex`${ctx.inputs.factor}`} doit également avoir comme racine{' '}
-        {tex`${ctx.data.root}`}. Cependant, dans ce cas-ci, on a
-      </p>
-      {tex`
-        ${ctx.inputs.factor}
-        = ${ctx.inputs.factor.subs({ x: ctx.data.root })}
-        = ${ctx.inputs.factor.subs({ x: ctx.data.root }).simplify()}
-      `}
-      <ctx.Self />
-    </Show>
-  ),
+  feedback: (ctx) => @{
+    @if (!ctx.correct) {
+      function factor(subs?: boolean) {
+        const expr = ctx.inputs.factor
+        return subs ? expr.subs({ x: ctx.data.root }).simplify() : expr
+      }
+      <>
+        <p>
+          N'oubliez pas que le facteur {tex`${factor()}`} doit également avoir comme racine{' '}
+          {tex`${ctx.data.root}`}. Cependant, dans ce cas-ci, on a
+        </p>
+        {tex`
+          ${factor()}
+          = ${factor(true)}
+          = ${factor(true).simplify()}
+        `}
+        <ctx.Self />
+      </>
+    }
+  },
 })

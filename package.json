@@ -2,6 +2,8 @@
   "name": "learning",
   "type": "module",
   "devDependencies": {
+    "@tsrx/prettier-plugin": "^0.6.3",
+    "@tsrx/solid": "^0.3.5",
     "@types/bun": "latest",
     "prettier": "^3.8.4",
     "prettier-plugin-organize-imports": "^4.3.0",
