@@ -60,11 +60,7 @@ La multiplication réelle est **étendue** aux nombres duaux via
 {tex.display`(a + b \epsilon)(c + d \epsilon) = ac + (ad + bc) \epsilon`}
 :::
 
-:::example[Multiplication duale et règle de Leibniz]
-
-- Calculons $(f(x) + f'(x) \epsilon) (g(x) + g'(x) \epsilon)$:
-  {tex.display`(\underbrace{f(x)}_a + \underbrace{f'(x)}_b \epsilon) (\underbrace{g(x)}_c + \underbrace{g'(x)}_d \epsilon) = \underbrace{f(x) g(x)}_{ac} + \underbrace{\color{darkred}(f(x) g'(x) + f'(x) g(x))}_{ad + bc} \epsilon`}
-  Reconnaissez-vous la **règle du produit**?
+:::example[Multiplication de nombres duaux]
 
 - Calculons $\epsilon^2$:
   {tex.display`\epsilon^2 = (0 + 1 \epsilon)(0 + 1 \epsilon) = 0 + (0 + 0) \epsilon = 0`}
@@ -78,6 +74,19 @@ et nous le verrons de cette manière à partir de maintenant.
 :::
 
 <Exercise.MultiplicationSequence />
+
+:::question
+Pourquoi les nombres duaux sont-ils utiles pour calculer des dérivées?
+:::
+
+La multiplication des nombres duaux est définie
+de telle sorte que le calcul suivant soit vrai:
+{tex.display`\begin{align*} (f(x) + f'(x) \epsilon) (g(x) + g'(x) \epsilon) &= f(x) g(x) + f'(x) g(x) \epsilon + f(x) g'(x) \epsilon + f'(x) g'(x) \underbrace{\epsilon^2}_{0} \\ &= f(x) g(x) + {\color{darkgreen} (f(x) g'(x) + f'(x) g(x))} \epsilon \end{align*}`}
+
+On a obtenu la règle du produit des dérivées!
+En fait, vous verrez qu'avec les nombres duaux, toutes les règles de dérivation sont automatiquement appliquées.
+
+---
 
 À partir de maintenant,
 nous ferons les calculs par ordinateur:
@@ -162,6 +171,8 @@ La méthode présentée ci-dessus s'appelle la **dérivation automatique**.
 
 <Exercise.PolynomialSequence />
 
+Nous verrons que le calcul de $f'(a)$ via `f(a + epsilon).dual` fonctionne **de manière générale**.
+
 ## Fonctions sur les nombres duaux
 
 Rappelons que les nombres duaux ne sont pas des nombres réels,
@@ -205,7 +216,7 @@ On l'étend sur les nombres duaux via
 Calculez $f(x) = \cos(x)$ en $x = 2 - 4 \epsilon$.
 
 Le cours de maths nous dit que $f'(x) = -\sin x$.
-On peut alors utiliser la formule d'extension {tex.display`\displaystyle \cos(a + b \epsilon) = \cos(a) + b \cos'(a) \epsilon`},
+On peut alors utiliser la formule d'extension {tex.display`\displaystyle \cos(a + b \epsilon) = \cos(a) + b \cos'(a) \epsilon`}
 qui nous donne ensuite
 
 {tex.display`\cos(\underbrace{2}_{a} \underbrace{- 4}_b \epsilon) = \cos(2) + \underbrace{(-4)}_b \underbrace{(-\sin(2))}_{\cos'(a)} \epsilon = \cos(2) + 4 \sin(2) \epsilon`}
@@ -333,7 +344,7 @@ Calculez la dérivée de $f(x) = \sin(x^2)$ en $x = 1$ en utilisant la dérivati
 
 ### Dérivée de fonctions
 
-La vectorisation permet facilement de calculer la dérivée d'une fonction sur un intervalle.
+La fonction dérivée se calcule simplement en prenant la partie duale de $f(x + \epsilon)$:
 
 :::example
 
