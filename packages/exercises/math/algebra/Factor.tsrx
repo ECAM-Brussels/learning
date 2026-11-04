@@ -1,6 +1,5 @@
 import { Attempt } from '@learning/components'
 import { createStep, expr, tex } from '@learning/core'
-import { allKeyed } from 'es-toolkit'
 import { Root } from './Root'
 
 export const Factor = createStep({
@@ -22,13 +21,7 @@ export const Factor = createStep({
       </Attempt>
     </>
   },
-  async grade(ctx) {
-    const { equal, factored } = await allKeyed({
-      equal: ctx.inputs.attempt.isEqual(ctx.data.expr),
-      factored: ctx.inputs.attempt.isFactored(),
-    })
-    return equal && factored
-  },
+  grade: ({ inputs: { attempt }, data: { expr } }) => [attempt.isEqual(expr), attempt.isFactored()],
   feedback: (ctx) => @{
     @if (!ctx.correct) {
       <Root expr={ctx.data.expr}>

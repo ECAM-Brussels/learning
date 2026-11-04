@@ -41,7 +41,6 @@ export const fetchSequence = query(async (rawCtx: SequenceContext) => {
       data: true,
       state: true,
       correct: true,
-      feedback: true,
       submitted: true,
       position: true,
       sequencePosition: true,
@@ -155,7 +154,6 @@ export const reset = async (rawCtx: Omit<StepContext, 'position'>, options: Opti
       ...step,
       id: undefined,
       submitted: false,
-      feedback: {},
       correct: null,
     })
   })

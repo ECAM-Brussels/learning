@@ -53,7 +53,7 @@ export default {
   reset: async (ctx: Omit<StepContext, 'position'>) => {
     const id = getStorageId(ctx)
     const stored = JSON.parse(localStorage.getItem(id) ?? '[]')
-    const firstStep = { ...stored[0], submitted: false, feedback: {}, correct: undefined }
+    const firstStep = { ...stored[0], submitted: false, correct: undefined }
     localStorage.setItem(id, JSON.stringify([firstStep]))
   },
 } as ExerciseContext
