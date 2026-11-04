@@ -23,8 +23,8 @@ export function FirstExample() {
           grade={(attempt) => ctx.data.expr.taylor('\\epsilon', 0, 1).isEqual(attempt)}
         >
           <p>
-            Remarquez que le terme en {tex`\epsilon`} est précisément la <strong>dérivée</strong> de
-            l'autre terme,
+            Remarquez que le coefficient de {tex`\epsilon`} est précisément la{' '}
+            <strong>dérivée</strong> de l'autre terme,
           </p>
           {tex`
             \underbrace{${ctx.data.expr.subs({ epsilon: 0 }).simplify()}}_{f(x)}
@@ -39,6 +39,20 @@ export function FirstExample() {
     </Expand>
   )
 }
+
+const DualMultiplication = createDerivedStep(Simple, { z1: 'expr', z2: 'expr' }, (props) => ({
+  prompt: <p>Calculez le produit {tex`(${props.z1}) (${props.z2})`}</p>,
+  label: tex`(${props.z1})(${props.z2}) =`,
+  grade: (attempt) => props.z1.multiply(props.z2).taylor('\\epsilon', 0, 1).isEqual(attempt),
+}))
+
+export const MultiplicationSequence = () => (
+  <Sequence id="dual-multiplication">
+    <DualMultiplication z1="1 + 3 \epsilon" z2="2 - 4 \epsilon" />
+    <DualMultiplication z1="-1 - 3 \epsilon" z2="4 - \epsilon" />
+    <DualMultiplication z1="3 - \epsilon" z2="1 + \epsilon" />
+  </Sequence>
+)
 
 const DiffAtPoint = createDerivedStep(
   PythonCode,
@@ -133,13 +147,14 @@ export function AutomaticDifferentiation() {
 export function DerivativeSequence() {
   const schema = v.object({
     latex: v.string(),
+    python: v.optional(v.string()),
     name: v.optional(v.string(), 'diff'),
     a: v.number(),
     b: v.number(),
   })
   const exercises = v.parse(v.array(schema), [
     { latex: '\\sin(x^2 + 1)', a: 0, b: 2 },
-    { latex: 'e^{-x^2}', a: -1, b: 1 },
+    { latex: 'e^{-x^2}', python: 'np.exp(-x**2)', a: -1, b: 1 },
     { latex: '\\frac{x^2 + 1}{x - 1}', a: 2, b: 4 },
   ] satisfies v.InferInput<typeof schema>[])
   return (
@@ -161,7 +176,7 @@ export function DerivativeSequence() {
                   import numpy as np
 
                   def f(x):
-                      return ${expr(ex.latex).python()}
+                      return ${ex.python ?? expr(ex.latex).python()}
                   
                   f(${n} + epsilon).dual
                 `),
@@ -180,7 +195,7 @@ export function DerivativeSequence() {
                     <p>
                       Modifiez maintenant votre code pour afficher le graphe de{' '}
                       {tex`\displaystyle f(x) = ${ex.latex}`} et de sa dérivée sur l'intervalle{' '}
-                      {tex`[${ex.a}, ${ex.b}]`}
+                      {tex`[${ex.a}, ${ex.b}]`}. Nommez les axes.
                     </p>
                   }
                   tests={(expect) => ({
@@ -213,9 +228,9 @@ export function TangentSequence() {
             const tangent = createMemo(() =>
               expr('m (x - x_0) + y_0')
                 .subs({
-                  m: expr(f).diff('x', a),
+                  m: expr(f.replace('\\ln', '\\log')).diff('x', a),
                   x_0: a,
-                  y_0: expr(f).subs({ x: a }),
+                  y_0: expr(f.replace('\\ln', '\\log')).subs({ x: a }),
                 })
                 .python(true),
             )
