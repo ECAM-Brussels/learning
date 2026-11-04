@@ -293,6 +293,7 @@ function expression(input: Math) {
       symapi.expr.compare({ expr1: json, expr2: v.parse(Math, other).json, comparison: 'lt' }),
     matches: (other: Math) => symapi.expr.match({ expr1: json, expr2: v.parse(Math, other).json }),
     mod: (other: Math) => expression({ json: ['Mod', json, v.parse(Math, other).json] }),
+    multiply: (other: Math) => expression({ json: ['Multiply', json, v.parse(Math, other).json] }),
     N: (precision?: number) => {
       const result = Number(N(expression({ json }).evaluate()))
       return precision === undefined ? result : round(result, precision)
