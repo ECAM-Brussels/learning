@@ -1,6 +1,6 @@
 import { dynamic, type JSX } from '@solidjs/web'
 import { debounce } from 'es-toolkit'
-import { createEffect, createSignal, onCleanup, onSettled, useContext } from 'solid-js'
+import { createEffect, createSignal, onSettled, useContext } from 'solid-js'
 import { TOCContext } from './Page'
 
 export function Heading(props: { children: JSX.Element; level: 1 | 2 | 3 | 4 | 5 | 6 }) {
@@ -35,7 +35,7 @@ export function Heading(props: { children: JSX.Element; level: 1 | 2 | 3 | 4 | 5
       }, 200),
     )
     observer.observe(el)
-    onCleanup(() => observer.disconnect())
+    return () => observer.disconnect()
   })
 
   const HeadingTag = dynamic(() => `h${props.level ?? 1}`)
