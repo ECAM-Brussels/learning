@@ -1,6 +1,6 @@
 import { dynamic, type JSX } from '@solidjs/web'
 import { debounce } from 'es-toolkit'
-import { createEffect, createSignal, onSettled, useContext } from 'solid-js'
+import { createEffect, createSignal, onCleanup, onSettled, useContext } from 'solid-js'
 import { TOCContext } from './Page'
 
 export function Heading(props: { children: JSX.Element; level: 1 | 2 | 3 | 4 | 5 | 6 }) {
@@ -21,6 +21,9 @@ export function Heading(props: { children: JSX.Element; level: 1 | 2 | 3 | 4 | 5
   )
 
   onSettled(() => {
+    const el = element()
+    if (!el || typeof IntersectionObserver === 'undefined') return
+
     const observer = new IntersectionObserver(
       debounce((entries) => {
         const entry = entries[0]!
@@ -31,8 +34,8 @@ export function Heading(props: { children: JSX.Element; level: 1 | 2 | 3 | 4 | 5
           })
       }, 200),
     )
-    observer.observe(element()!)
-    return () => observer.disconnect()
+    observer.observe(el)
+    onCleanup(() => observer.disconnect())
   })
 
   const HeadingTag = dynamic(() => `h${props.level ?? 1}`)
