@@ -1,4 +1,4 @@
-import { Dynamic, type JSX } from '@solidjs/web'
+import { dynamic, type JSX } from '@solidjs/web'
 import { createEffect, createSignal, For, merge } from 'solid-js'
 import { Boundary } from './Boundary'
 
@@ -57,7 +57,10 @@ export function Pagination(rawProps: {
         {(i) => (
           <div class={{ hidden: i !== current() - 1 }}>
             <Boundary>
-              <Dynamic component={props.children[i]} />
+              {(() => {
+                const Page = dynamic(() => props.children[i])
+                return <Page />
+              })()}
             </Boundary>
           </div>
         )}

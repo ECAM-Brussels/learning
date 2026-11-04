@@ -1,5 +1,5 @@
 import type { JSX } from '@solidjs/web'
-import { clientOnly, Dynamic } from '@solidjs/web'
+import { clientOnly, dynamic } from '@solidjs/web'
 import dedent from 'dedent'
 import {
   createMemo,
@@ -41,12 +41,12 @@ export const Code: Component<Props> = (rawProps) => {
     if (isMobile()) return 'codemirror'
     return props.backend
   })
+  const Editor = dynamic(() => (editor() === 'monaco' ? Monaco : CodeMirror))
   const formState = useContext(FormState)
   return (
     <Loading fallback={<p>Chargement de l'éditeur...</p>}>
       <div class="my-4 flex flex-col gap-0">
-        <Dynamic
-          component={editor() === 'monaco' ? Monaco : CodeMirror}
+        <Editor
           children={value()}
           lang={props.lang}
           highlight={props.highlight}

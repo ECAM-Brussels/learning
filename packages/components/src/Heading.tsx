@@ -1,4 +1,4 @@
-import { Dynamic, type JSX } from '@solidjs/web'
+import { dynamic, type JSX } from '@solidjs/web'
 import { debounce } from 'es-toolkit'
 import { createEffect, createSignal, onSettled, useContext } from 'solid-js'
 import { TOCContext } from './Page'
@@ -35,9 +35,10 @@ export function Heading(props: { children: JSX.Element; level: 1 | 2 | 3 | 4 | 5
     return () => observer.disconnect()
   })
 
+  const HeadingTag = dynamic(() => `h${props.level ?? 1}`)
+
   return (
-    <Dynamic
-      component={`h${props.level ?? 1}`}
+    <HeadingTag
       ref={setElement}
       class={[
         'print:break-after-avoid',
@@ -50,6 +51,6 @@ export function Heading(props: { children: JSX.Element; level: 1 | 2 | 3 | 4 | 5
       id={id()}
     >
       {props.children}
-    </Dynamic>
+    </HeadingTag>
   )
 }

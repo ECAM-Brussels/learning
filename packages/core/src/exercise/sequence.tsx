@@ -1,6 +1,6 @@
 import { Boundary, Pagination, Scope } from '@learning/components'
 import { useLocation } from '@solidjs/router'
-import { Dynamic, type JSX } from '@solidjs/web'
+import { dynamic, type JSX } from '@solidjs/web'
 import { range } from 'es-toolkit'
 import { createMemo, onSettled, refresh, useContext, type Component } from 'solid-js'
 import * as v from 'valibot'
@@ -114,11 +114,15 @@ export function Sequence<T extends object>(props: Props<T> & { id: string }) {
                 <Scope>
                   {() => {
                     const next = createMemo(() => props.next({ position: i, progress: progress() }))
-                    return <Dynamic component={props.exercise} {...next()} />
+                    const Exercise = dynamic(() => props.exercise)
+                    return <Exercise {...next()} />
                   }}
                 </Scope>
               ) : (
-                <Dynamic component={props.next} position={i} progress={progress()} />
+                (() => {
+                  const Next = dynamic(() => props.next)
+                  return <Next position={i} progress={progress()} />
+                })()
               )}
             </Boundary>
           </StepContext>

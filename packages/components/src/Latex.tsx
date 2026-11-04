@@ -1,4 +1,4 @@
-import { Dynamic, type JSX } from '@solidjs/web'
+import { dynamic, type JSX } from '@solidjs/web'
 import katex from 'katex'
 import 'katex/dist/katex.min.css'
 import { createMemo, Loading } from 'solid-js'
@@ -21,13 +21,10 @@ export function Latex(props: {
       },
     })
   })
+  const Tag = dynamic(() => (props.displayMode ? 'div' : 'span'))
   return (
     <Loading>
-      <Dynamic
-        component={props.displayMode ? 'div' : 'span'}
-        class={props.class}
-        innerHTML={html()}
-      />
+      <Tag class={props.class} innerHTML={html()} />
     </Loading>
   )
 }
