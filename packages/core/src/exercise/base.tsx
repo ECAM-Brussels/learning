@@ -1,7 +1,7 @@
 import { Boundary, FeedbackContext, Form, MathField, Youtube } from '@learning/components'
 import { revalidate, useLocation } from '@solidjs/router'
-import { dynamic, Dynamic, type JSX } from '@solidjs/web'
-import { allKeyed, mapValues } from 'es-toolkit'
+import { dynamic, type JSX } from '@solidjs/web'
+import { allKeyed, mapValues, throttle } from 'es-toolkit'
 import {
   action,
   affects,
@@ -29,24 +29,9 @@ import { createIsVisible } from '../visibility'
 import { StepContext } from './context'
 import local from './context.local'
 import remote from './context.remote'
-import { Options, OptionsContext } from './options'
+import { ExerciseOptions, Options, OptionsContext } from './options'
 
 type MaybeAsync<T> = T | Promise<T>
-type Json = string | number | boolean | null | { [key: string]: Json } | Json[]
-
-const Json: v.GenericSchema<Json> = v.lazy(() =>
-  v.union([
-    v.string(),
-    v.number(),
-    v.boolean(),
-    v.null(),
-    v.record(v.string(), Json),
-    v.array(Json),
-  ]),
-)
-
-const JsonObject = v.record(v.string(), Json)
-type JsonObject = v.InferInput<typeof JsonObject>
 
 const CustomSchemas = {
   boolean: v.boolean(),
@@ -57,11 +42,13 @@ const CustomSchemas = {
     ),
     Expression,
   ]),
-  jsx: omitFromJSON(v.custom<JSX.Element>(() => true)),
+  jsx: v.union([v.string(), omitFromJSON(v.custom<JSX.Element>(() => true))]),
   string: v.string(),
   number: v.number(),
 } as const
 type CustomSchemas = typeof CustomSchemas
+
+export const schemas = CustomSchemas
 
 type ResolveSchema<T> =
   T extends v.BaseSchema<any, any, any>
@@ -108,7 +95,6 @@ function StoredStep<D extends RawShape, I extends RawShape>(data: D, inputs: I) 
       v.nullish(v.boolean()),
       v.transform((value) => (value === null ? undefined : value)),
     ),
-    feedback: v.optional(v.object({}), {}),
   })
 }
 
@@ -129,14 +115,14 @@ type Infer<T, U extends 'input' | 'output' = 'input'> =
       : v.InferInput<T>
     : T
 
-type StepBaseProps<D, I extends v.ObjectSchema<any, any>, F extends JsonObject> = {
+type StepBaseProps<D, I extends v.ObjectSchema<any, any>> = {
   name?: string
   class?: string
   data: Infer<D, 'input'> | (() => MaybeAsync<Infer<D, 'input'>>)
   grade: (ctx: {
     data: Infer<NoInfer<D>, 'output'>
     inputs: v.InferOutput<NoInfer<I>>
-  }) => MaybeAsync<boolean | [boolean, F]>
+  }) => MaybeAsync<boolean> | MaybeAsync<boolean>[]
   prompt: (props: {
     data: Infer<NoInfer<D>, 'output'>
     inputs: { [K in keyof NoInfer<I>['entries']]: JSX.Element }
@@ -155,9 +141,8 @@ type StepBaseProps<D, I extends v.ObjectSchema<any, any>, F extends JsonObject> 
   feedback?: (props: {
     data: Infer<NoInfer<D>, 'output'>
     inputs: v.InferOutput<NoInfer<I>>
-    feedback: F
     correct: boolean
-    Self: Component<Partial<StepBaseProps<NoInfer<D>, I, F>>>
+    Self: Component<Partial<StepBaseProps<NoInfer<D>, I>>>
     next: JSX.Element
   }) => JSX.Element
   children?:
@@ -166,13 +151,13 @@ type StepBaseProps<D, I extends v.ObjectSchema<any, any>, F extends JsonObject> 
         data: Infer<NoInfer<D>, 'output'>
         inputs: v.InferOutput<NoInfer<I>>
       }) => JSX.Element)
+  onChange?: (exercise: Record<number, StoredStep | null | undefined>) => void
   options?: Options<'input'> | ((data: Infer<D, 'output'>) => MaybeAsync<Options<'input'>>)
 }
 
-type StepProps<S extends StepSchema, F extends JsonObject> = StepBaseProps<
+type StepProps<S extends StepSchema> = StepBaseProps<
   ReturnType<typeof ObjectSchema<NoInfer<S>['data']>>,
-  ReturnType<typeof ObjectSchema<NoInfer<S>['inputs']>>,
-  F
+  ReturnType<typeof ObjectSchema<NoInfer<S>['inputs']>>
 > & { schema: S }
 
 export function useExerciseContext() {
@@ -182,9 +167,7 @@ export function useExerciseContext() {
   }, {})
 }
 
-export function Step<S extends StepSchema, F extends JsonObject>(
-  props: StepProps<S, F> & { id?: string },
-) {
+export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }) {
   /**
    * Retrieve data from the source of truth (localStorage or database),
    * merge it with the props, and validate.
@@ -247,6 +230,13 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     })
   }, {} as any)
 
+  createEffect(
+    () => [all(), stepContext().sequencePosition, props.onChange] as const,
+    ([all, sequencePosition, onChange]) => {
+      onChange?.(all[sequencePosition] ?? {})
+    },
+  )
+
   /**
    * Draft state, edited by the user prior to submission.
    *
@@ -270,23 +260,30 @@ export function Step<S extends StepSchema, F extends JsonObject>(
    * - Remove unserializable props
    * - Save and refresh state
    */
-  const submit = action(async function* (newState: Partial<ObjectSchema<S['inputs'], 'input'>>) {
-    if (!canSubmit()) return
-    const state = v.parse(schema().entries.state, newState)
-    const submitted = Object.keys(state).length > 0
-    if (submitted) affects(step, 'submitted')
-    const [correct, feedback] = await (async function grade() {
-      if (!submitted) return [undefined, {}] as const
-      const gradeResult = await props.grade({ data: step.data, inputs: state })
-      return normalizeGrade(gradeResult)
-    })()
-    const payload = { ...step, state, submitted, correct, feedback }
-    yield exerciseContext().saveStep(stepContext(), JSON.parse(JSON.stringify(payload)), options())
-    revalidate([
-      exerciseContext().fetchSequence.keyFor(sequenceContext()),
-      exerciseContext().getProgress.keyFor(sequenceContext()),
-    ])
-  })
+  const submit = throttle(
+    action(async function* (newState: Partial<ObjectSchema<S['inputs'], 'input'>>) {
+      if (!canSubmit()) return
+      const state = v.parse(schema().entries.state, newState)
+      const submitted = Object.keys(state).length > 0
+      let correct: boolean | undefined = undefined
+      if (submitted) {
+        affects(step, 'submitted')
+        const result = props.grade({ data: step.data, inputs: state })
+        correct = Array.isArray(result) ? (await Promise.all(result)).every(Boolean) : await result
+      }
+      const payload = { ...step, state, submitted, correct }
+      yield exerciseContext().saveStep(
+        stepContext(),
+        JSON.parse(JSON.stringify(payload)),
+        options(),
+      )
+      revalidate([
+        exerciseContext().fetchSequence.keyFor(sequenceContext()),
+        exerciseContext().getProgress.keyFor(sequenceContext()),
+      ])
+    }),
+    1000,
+  )
 
   /**
    * Save on load
@@ -317,7 +314,6 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     if (!canReset()) return
     setResetting(true)
     setStep((s) => {
-      s.feedback = {}
       s.submitted = false
       s.correct = undefined
     })
@@ -340,6 +336,9 @@ export function Step<S extends StepSchema, F extends JsonObject>(
       <OptionsContext
         value={() => ({
           ...rawOptions(),
+          // Some options need to be overriden or can't be inherited
+          depth: options().depth + (props.offset ?? 0),
+          video: null,
           ...(options().allowResubmissions && step.correct === false
             ? { allowResubmissions: false, readOnly: true }
             : {}),
@@ -359,21 +358,23 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   )
 
   const fields = createMemo(() =>
-    mapValues(props.schema.inputs as S['inputs'], (schema, name) => (
-      <Boundary>
-        <Dynamic
-          class="rounded border border-gray-200"
-          component={schema === 'expr' ? MathField : 'input'}
-          value={step.state[name] ?? ''}
-          onChange={(e: Event & { target: HTMLInputElement }) => {
-            setState((s) => {
-              s[name] = e.target.value as any
-            })
-          }}
-          readonly={!canSubmit()}
-        />
-      </Boundary>
-    )),
+    mapValues(props.schema.inputs as S['inputs'], (schema, name) => {
+      const Field = dynamic(() => (schema === 'expr' ? MathField : 'input'))
+      return (
+        <Boundary>
+          <Field
+            class="rounded border border-gray-200"
+            value={step.state[name] ?? ''}
+            onChange={(e: Event & { target: HTMLInputElement }) => {
+              setState((s) => {
+                s[name] = e.target.value as any
+              })
+            }}
+            readonly={!canSubmit()}
+          />
+        </Boundary>
+      )
+    }),
   )
 
   const promptState = {
@@ -393,21 +394,40 @@ export function Step<S extends StepSchema, F extends JsonObject>(
     },
   } satisfies ComponentProps<typeof props.prompt>['state']
 
-  const Self = (attrs: Partial<StepProps<S, F>>) => <Step {...props} data={step.data} {...attrs} />
+  const Self = (attrs: Partial<StepProps<S>>) => (
+    <ExerciseOptions depth={options().depth}>
+      <Step {...props} data={step.data} {...attrs} />
+    </ExerciseOptions>
+  )
 
   const Next = (attrs: { children: typeof props.children }) => (
     <Show
       when={typeof attrs.children === 'function' && attrs.children}
       fallback={<>{attrs.children}</>}
     >
-      {(next) => <Dynamic component={next()} data={step.data} inputs={step.state} />}
+      {(next) => {
+        const NextComponent = dynamic(() => next())
+        return <NextComponent data={step.data} inputs={step.state} />
+      }}
     </Show>
   )
+
+  const Prompt = dynamic(() => props.prompt)
+  const Feedback = dynamic(() => props.feedback)
+
   return (
     <div class={['not-prose my-4', props.class]}>
       <StepBoundary fallback="Chargement de l'exercice...">
         <Form
-          class={{ flex: options().video !== undefined }}
+          class={[
+            'my-4 rounded-xl bg-gray-50 p-4 shadow hover:bg-sky-50',
+            {
+              flex: options().video !== undefined,
+              'ml-6': options().depth === 1,
+              'ml-12': options().depth === 2,
+              'ml-18': options().depth === 3,
+            },
+          ]}
           readOnly={!canSubmit()}
           ref={setForm}
           onSubmit={(e) => {
@@ -416,12 +436,7 @@ export function Step<S extends StepSchema, F extends JsonObject>(
           }}
         >
           <div class="grow">
-            <Dynamic
-              component={props.prompt}
-              data={step.data}
-              inputs={fields()}
-              state={promptState}
-            />
+            <Prompt data={step.data} inputs={fields()} state={promptState} />
             <Show when={canSubmit() && !resetting()}>
               <button
                 class="my-4 block cursor-pointer rounded-lg bg-green-800 px-3 py-2 font-bold text-green-100 hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
@@ -436,18 +451,18 @@ export function Step<S extends StepSchema, F extends JsonObject>(
       </StepBoundary>
       <Show when={step.submitted && options().showFeedback}>
         <StepBoundary fallback="Chargement du feedback..." offset={1}>
-          <Dynamic
-            component={props.feedback}
+          <Feedback
             data={step.data}
             inputs={step.state}
             correct={step.correct ?? false}
-            feedback={step.feedback as F}
             Self={Self}
             next={<Next>{props.children}</Next>}
           />
-          <Show when={step.correct}>
-            <Next>{props.children}</Next>
-          </Show>
+          <ExerciseOptions depth={options().depth}>
+            <Show when={step.correct}>
+              <Next>{props.children}</Next>
+            </Show>
+          </ExerciseOptions>
         </StepBoundary>
       </Show>
       <Show when={canReset()}>
@@ -462,15 +477,24 @@ export function Step<S extends StepSchema, F extends JsonObject>(
   )
 }
 
-export function createStep<S extends StepSchema, F extends JsonObject>(
-  step: Omit<StepProps<S, F>, 'data'>,
-) {
+export function createStep<S extends StepSchema>(step: Omit<StepProps<S>, 'data'>) {
   const StepComponent: Component<
-    { id?: string } & Pick<StepProps<S, F>, 'class' | 'feedback' | 'children' | 'options'> &
-      (ObjectSchema<S['data'], 'input'> | { data: StepProps<S, F>['data'] })
+    { id?: string } & Pick<
+      StepProps<S>,
+      'class' | 'feedback' | 'children' | 'options' | 'onChange'
+    > &
+      (ObjectSchema<S['data'], 'input'> | { data: StepProps<S>['data'] })
   > = (props) => {
-    const data = omit(props, 'id', 'class', 'feedback', 'data', 'children', 'options') as
-      ObjectSchema<S['data'], 'input'> | undefined
+    const data = omit(
+      props,
+      'id',
+      'class',
+      'feedback',
+      'data',
+      'children',
+      'options',
+      'onChange',
+    ) as ObjectSchema<S['data'], 'input'> | undefined
     return (
       <Step
         {...step}
@@ -490,32 +514,37 @@ export function createStep<S extends StepSchema, F extends JsonObject>(
           })
           return { ...inherited, ...options }
         }}
+        onChange={props.onChange ?? step.onChange}
       />
     )
   }
   return Object.assign(StepComponent, { config: step })
 }
 
-type StepComponent<S extends StepSchema, F extends JsonObject> = ReturnType<typeof createStep<S, F>>
+type StepComponent<S extends StepSchema> = ReturnType<typeof createStep<S>>
 
-export function createDerivedStep<R extends RawShape, S extends StepSchema, F extends JsonObject>(
-  component: StepComponent<S, F>,
+export function createDerivedStep<R extends RawShape, S extends StepSchema>(
+  component: StepComponent<S>,
   schema: R,
   transform: (
     data: ObjectSchema<NoInfer<R>, 'output'>,
   ) => ObjectSchema<NoInfer<S>['data'], 'input'>,
-  patch: Partial<StepProps<{ data: R; inputs: S['inputs'] }, F>> = {},
+  patch: Partial<StepProps<{ data: R; inputs: S['inputs'] }>> = {},
 ) {
   const step = component.config
-  return createStep<{ data: R; inputs: S['inputs'] }, F>({
+  function fullTransform(data: ObjectSchema<NoInfer<R>, 'output'>) {
+    const transformed = transform(data)
+    return v.parse(ObjectSchema(step.schema.data as S['data']), transformed)
+  }
+  return createStep<{ data: R; inputs: S['inputs'] }>({
     ...step,
     schema: { data: schema, inputs: step.schema.inputs },
     prompt: (props) => {
       const Prompt = dynamic(() => step.prompt)
-      const data = createMemo(() => transform(props.data))
+      const data = createMemo(() => fullTransform(props.data))
       return <Prompt {...props} data={data()} />
     },
-    grade: (ctx) => step.grade({ ...ctx, data: transform(ctx.data) }),
+    grade: (ctx) => step.grade({ ...ctx, data: fullTransform(ctx.data) }),
     feedback: (props) => {
       const Self: ComponentProps<NonNullable<typeof step.feedback>>['Self'] = (attrs) => {
         const Component = dynamic(() => props.Self)
@@ -528,7 +557,7 @@ export function createDerivedStep<R extends RawShape, S extends StepSchema, F ex
                 ? (feedbackProps) =>
                     attrs.feedback?.({
                       ...feedbackProps,
-                      data: transform(feedbackProps.data),
+                      data: fullTransform(feedbackProps.data),
                       Self,
                     })
                 : undefined
@@ -537,17 +566,8 @@ export function createDerivedStep<R extends RawShape, S extends StepSchema, F ex
         )
       }
       const Feedback = dynamic(() => step.feedback)
-      return <Feedback {...props} Self={Self} data={transform(props.data)} />
+      return <Feedback {...props} Self={Self} data={fullTransform(props.data)} />
     },
     ...patch,
   })
-}
-
-function normalizeGrade<T extends boolean | [boolean, JsonObject]>(
-  result: T,
-): T extends boolean ? [boolean, {}] : T {
-  if (typeof result === 'boolean') {
-    return [result, {}] as any
-  }
-  return result as any
 }

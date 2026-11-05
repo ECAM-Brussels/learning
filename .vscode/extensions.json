@@ -6,6 +6,7 @@
     "ms-python.black-formatter",
     "unifiedjs.vscode-mdx",
     "hipstersmoothie-public.mdx-tsc-vscode",
-    "darkriszty.markdown-table-prettify"
+    "darkriszty.markdown-table-prettify",
+    "tsrx.tsrx-vscode-plugin"
   ]
 }

@@ -1,4 +1,4 @@
-import { Dynamic, type JSX } from '@solidjs/web'
+import { dynamic, type JSX } from '@solidjs/web'
 import { createEffect, createSignal, For, merge } from 'solid-js'
 import { Boundary } from './Boundary'
 
@@ -10,12 +10,14 @@ export function Pagination(rawProps: {
   showFeedback?: boolean
 }) {
   const props = merge({ showFeedback: true }, rawProps)
-  const [current, setCurrent] = createSignal(() => props.current ?? 1)
+  const [current, _setCurrent] = createSignal(() => props.current ?? 1)
   createEffect(current, (current) => {
     if (props.current !== current) {
       props.onChange?.(current)
     }
   })
+  const setCurrent: typeof _setCurrent = (value) =>
+    document.startViewTransition(() => _setCurrent(value))
   return (
     <div class="mx-8 my-4 rounded-xl border border-gray-200 p-4 py-8 shadow-sm">
       <div class="flex justify-center">
@@ -55,7 +57,10 @@ export function Pagination(rawProps: {
         {(i) => (
           <div class={{ hidden: i !== current() - 1 }}>
             <Boundary>
-              <Dynamic component={props.children[i]} />
+              {(() => {
+                const Page = dynamic(() => props.children[i])
+                return <Page />
+              })()}
             </Boundary>
           </div>
         )}

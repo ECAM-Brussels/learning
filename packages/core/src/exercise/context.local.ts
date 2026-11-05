@@ -31,10 +31,14 @@ export default {
         .filter((k) => k.startsWith(prefix))
         .map((k) => {
           const exercise = JSON.parse(localStorage.getItem(k) ?? '[]')
-          return [
-            parseInt(k.split(':').at(-1)!),
-            exercise.length > 0 ? exercise.every((part: StoredStep) => part.correct) : undefined,
-          ]
+          const filledIn = exercise.filter((part: StoredStep) => part.submitted)
+          const index = parseInt(k.split(':').at(-1)!)
+          let correct: boolean | null | undefined
+          if (filledIn.length === 0) correct = null
+          else if (exercise.some((part: StoredStep) => part.correct === false)) correct = false
+          else if (exercise.some((part: StoredStep) => part.correct === null)) correct = null
+          else correct = true
+          return [index, correct]
         })
         .filter(([, correct]) => correct !== undefined),
     )
@@ -49,7 +53,7 @@ export default {
   reset: async (ctx: Omit<StepContext, 'position'>) => {
     const id = getStorageId(ctx)
     const stored = JSON.parse(localStorage.getItem(id) ?? '[]')
-    const firstStep = { ...stored[0], submitted: false, feedback: {}, correct: undefined }
+    const firstStep = { ...stored[0], submitted: false, correct: undefined }
     localStorage.setItem(id, JSON.stringify([firstStep]))
   },
 } as ExerciseContext

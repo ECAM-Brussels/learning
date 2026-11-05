@@ -9,6 +9,9 @@ const StringLike = v.union([
   v.pipe(v.boolean(), v.toString()),
 ])
 
+/**
+ * @deprecated Use `PythonCode` directly, with `expect`
+ */
 export const PythonFunction = createDerivedStep(
   PythonCode,
   {

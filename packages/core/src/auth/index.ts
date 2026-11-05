@@ -1,5 +1,5 @@
 import { authClient } from '@learning/auth/client'
-import { action, query } from '@solidjs/router'
+import { formAction, query } from '@solidjs/router'
 import { getRequestEvent, redirect } from '@solidjs/web'
 
 export const getUser = query(async () => {
@@ -9,7 +9,7 @@ export const getUser = query(async () => {
 
 export const login = authClient.signIn.social
 
-export const logout = action(async () => {
+export const logout = formAction(async () => {
   await authClient.signOut()
   throw redirect('/')
 })

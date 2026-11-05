@@ -1,6 +1,6 @@
 export * from './src/auth'
 export { Encrypted, decrypt, encrypt } from './src/crypto'
-export { Step as Exercise, Step, createDerivedStep, createStep } from './src/exercise/base'
+export { Step as Exercise, Step, createDerivedStep, createStep, schemas } from './src/exercise/base'
 export * from './src/exercise/options'
 export { Sequence } from './src/exercise/sequence'
 export { Expression, expr, type Quantity } from './src/expr'

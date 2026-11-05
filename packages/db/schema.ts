@@ -29,7 +29,6 @@ export const steps = snakeCase.table(
     state: jsonb().notNull(),
     submitted: boolean().notNull().default(false),
     correct: boolean(),
-    feedback: jsonb().default({}),
 
     created: timestamp().defaultNow().notNull(),
     deleted: boolean().notNull().default(false),

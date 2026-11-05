@@ -41,7 +41,6 @@ export const fetchSequence = query(async (rawCtx: SequenceContext) => {
       data: true,
       state: true,
       correct: true,
-      feedback: true,
       submitted: true,
       position: true,
       sequencePosition: true,
@@ -73,7 +72,9 @@ export const getProgress = query(async (rawSequence: SequenceContext) => {
       ),
     )
     .orderBy(exercise.sequencePosition)
-  return Object.fromEntries(rows.map((r) => [r.i, r.correct] as const))
+  return Object.fromEntries(
+    rows.map((r) => [r.i, r.correct] as const).filter(([_i, correct]) => correct !== null),
+  )
 }, 'getProgress')
 
 export const saveStep = async (rawCtx: StepContext, step: StoredStep, options: Options) => {
@@ -153,7 +154,6 @@ export const reset = async (rawCtx: Omit<StepContext, 'position'>, options: Opti
       ...step,
       id: undefined,
       submitted: false,
-      feedback: {},
       correct: null,
     })
   })

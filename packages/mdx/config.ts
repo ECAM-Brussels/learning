@@ -1,6 +1,30 @@
 import { defineMdastPlugin } from 'satteri'
 
-function component(name: string, attributes: Record<string, unknown>) {
+function component(name: string, attributes: Record<string, unknown>): {
+  type: 'mdxJsxFlowElement'
+  name: string
+  attributes: Array<{
+    type: 'mdxJsxAttribute'
+    name: string
+    value: null | { type: 'mdxJsxAttributeValueExpression'; value: string }
+  }>
+  children: []
+}
+function component<C extends unknown[]>(
+  name: string,
+  attributes: Record<string, unknown>,
+  children: C,
+): {
+  type: 'mdxJsxFlowElement'
+  name: string
+  attributes: Array<{
+    type: 'mdxJsxAttribute'
+    name: string
+    value: null | { type: 'mdxJsxAttributeValueExpression'; value: string }
+  }>
+  children: C
+}
+function component(name: string, attributes: Record<string, unknown>, children: unknown[] = []) {
   return {
     type: 'mdxJsxFlowElement' as const,
     name,
@@ -14,7 +38,7 @@ function component(name: string, attributes: Record<string, unknown>) {
             ? null
             : { type: 'mdxJsxAttributeValueExpression' as const, value: JSON.stringify(value) },
       })),
-    children: [],
+    children,
   }
 }
 
@@ -75,8 +99,33 @@ const math = defineMdastPlugin({
   math: (node) => component('Latex', { value: node.value, displayMode: true }),
 })
 
+const steps = defineMdastPlugin({
+  name: 'steps',
+  containerDirective(node, ctx) {
+    if (node.name !== 'steps') return
+
+    const [labelNode, ...children] = node.children
+    const isLabel = Boolean(
+      (labelNode as { data?: { directiveLabel?: boolean } } | undefined)?.data?.directiveLabel,
+    )
+
+    const list = isLabel ? children[0] : labelNode
+    if (!list || list.type !== 'list' || !list.ordered) return
+
+    const sections = list.children.map((item) => component('section', {}, [...item.children]))
+    const wrapped = component('Steps', {}, sections)
+
+    const rest = isLabel ? children.slice(1) : node.children.slice(1)
+    if (isLabel && labelNode) {
+      ctx.setProperty(node, 'children', [labelNode, wrapped, ...rest])
+      return
+    }
+    ctx.setProperty(node, 'children', [wrapped, ...rest])
+  },
+})
+
 export default {
   features: { math: true, directive: true },
   mdx: { jsx: true, providerImportSource: '@learning/mdx' },
-  mdastPlugins: [code, directives, math],
+  mdastPlugins: [code, steps, directives, math],
 }
