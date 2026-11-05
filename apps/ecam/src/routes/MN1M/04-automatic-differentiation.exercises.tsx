@@ -278,7 +278,7 @@ export function NewtonRaphsonAnimation(props: { twoIterations?: boolean }) {
       <Board axis>
         <Board.Plot fn={t()} color="green" />
         <Board.Point position={[a(), 0]} fixed name="x_0" color="gray" />
-        <Board.Segment from={[a(), 0]} to={[a(), f(a())]} color="gray" dash={1} />
+        <Board.Segment from={[a(), 0]} to={[a(), f(a())]} color="gray" dash={1} fixed />
         <Board.Plot fn={(x) => 0.5 * (x ** 2 - 9)}>
           {(curve) => (
             <Board.Glider
@@ -299,7 +299,7 @@ export function NewtonRaphsonAnimation(props: { twoIterations?: boolean }) {
         <Show when={props.twoIterations}>
           <Board.Point position={[root(), f(root())]} fixed withLabel={false} color="gray" />
           <Board.Plot fn={t2()} color="green" />
-          <Board.Segment from={[root(), 0]} to={[root(), f(root())]} color="gray" dash={1} />
+          <Board.Segment from={[root(), 0]} to={[root(), f(root())]} color="gray" dash={1} fixed />
           <Board.Point position={[root2(), 0]} fixed name="x_2" color="red" />
         </Show>
       </Board>
