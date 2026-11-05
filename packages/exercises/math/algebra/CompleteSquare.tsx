@@ -35,7 +35,7 @@ export const CompleteSquare = createStep({
     return (
       <Switch>
         <Match when={degree() !== 2 || !hasOneX() || isExpanded()}>
-          <p class="mt-4">
+          <p class="text-right">
             L'objectif de l'exercice est d'écrire l'expression donnée sous la forme
             {tex`
             a(x - \alpha)^2 + \beta`}
@@ -61,7 +61,7 @@ export const CompleteSquare = createStep({
                 <Switch fallback={<p class="text-right">Parfait!</p>}>
                   <Match when={!correctA()}>
                     <>
-                      <p class="mt-4">
+                      <p class="text-right">
                         Le coefficient de {tex`x^2`} n'est pas correct!{' '}
                         <Show when={!isMonic()}>
                           Indice: commence par mettre en évidence le coefficient de {tex`x^2`}.
@@ -72,11 +72,11 @@ export const CompleteSquare = createStep({
                   </Match>
                   <Match when={!correctB() && isMonic()}>
                     <>
-                      <p class="mt-4">Ton produit remarquable n'est pas correct.</p>
+                      <p class="text-right">Ton produit remarquable n'est pas correct.</p>
                       <MakeSquaredBinomial expr={partialPoly()}>
                         {(MakeSquaredBinomialCtx) => (
                           <>
-                            <p class="mt-4">
+                            <p class="text-right">
                               Super, tu as trouvé le bon produit remarquable:{' '}
                               {tex`${expr('(x + b/2)^2').subs({ b: b() }).simplify()}`}. Réessaie
                               maintenant!
