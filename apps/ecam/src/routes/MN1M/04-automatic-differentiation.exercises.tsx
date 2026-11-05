@@ -10,7 +10,7 @@ import * as v from 'valibot'
 
 export function FirstExample() {
   return (
-    <Expand expr="(x + \epsilon)^2">
+    <Expand expr="(x + \epsilon)^2" options={{ allowResubmissions: false }}>
       {(ctx) => (
         <Simple
           prompt={
@@ -47,7 +47,7 @@ const DualMultiplication = createDerivedStep(Simple, { z1: 'expr', z2: 'expr' },
 }))
 
 export const MultiplicationSequence = () => (
-  <Sequence id="dual-multiplication">
+  <Sequence id="dual-multiplication" options={{ allowResubmissions: false }}>
     <DualMultiplication z1="1 + 3 \epsilon" z2="2 - 4 \epsilon" />
     <DualMultiplication z1="-1 - 3 \epsilon" z2="4 - \epsilon" />
     <DualMultiplication z1="3 - \epsilon" z2="1 + \epsilon" />
@@ -124,7 +124,7 @@ export function FunctionExtensionSequence() {
     }),
   )
   return (
-    <Sequence id="function-extension">
+    <Sequence id="function-extension" options={{ allowResubmissions: false }}>
       <FunctionExtension expr="\sin(x)" a={2} b={1} />
       <FunctionExtension expr="e^x" a={1} b={1} />
       <FunctionExtension expr="x^2" a={2} b={3} />
