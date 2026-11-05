@@ -24,7 +24,7 @@ export const Expand = createStep({
       equal: ctx.inputs.attempt.isEqual(ctx.data.expr),
       expanded: ctx.inputs.attempt.isExpanded(),
     })
-    return [equal && expanded, { equal, expanded }]
+    return equal && expanded
   },
   feedback: (ctx) => (
     <Switch>
