@@ -1,7 +1,7 @@
 import { Boundary, FeedbackContext, Form, MathField, Youtube } from '@learning/components'
 import { revalidate, useLocation } from '@solidjs/router'
 import { dynamic, type JSX } from '@solidjs/web'
-import { allKeyed, mapValues } from 'es-toolkit'
+import { allKeyed, mapValues, throttle } from 'es-toolkit'
 import {
   action,
   affects,
@@ -260,23 +260,30 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
    * - Remove unserializable props
    * - Save and refresh state
    */
-  const submit = action(async function* (newState: Partial<ObjectSchema<S['inputs'], 'input'>>) {
-    if (!canSubmit()) return
-    const state = v.parse(schema().entries.state, newState)
-    const submitted = Object.keys(state).length > 0
-    let correct: boolean | undefined = undefined
-    if (submitted) {
-      affects(step, 'submitted')
-      const result = props.grade({ data: step.data, inputs: state })
-      correct = Array.isArray(result) ? (await Promise.all(result)).every(Boolean) : await result
-    }
-    const payload = { ...step, state, submitted, correct }
-    yield exerciseContext().saveStep(stepContext(), JSON.parse(JSON.stringify(payload)), options())
-    revalidate([
-      exerciseContext().fetchSequence.keyFor(sequenceContext()),
-      exerciseContext().getProgress.keyFor(sequenceContext()),
-    ])
-  })
+  const submit = throttle(
+    action(async function* (newState: Partial<ObjectSchema<S['inputs'], 'input'>>) {
+      if (!canSubmit()) return
+      const state = v.parse(schema().entries.state, newState)
+      const submitted = Object.keys(state).length > 0
+      let correct: boolean | undefined = undefined
+      if (submitted) {
+        affects(step, 'submitted')
+        const result = props.grade({ data: step.data, inputs: state })
+        correct = Array.isArray(result) ? (await Promise.all(result)).every(Boolean) : await result
+      }
+      const payload = { ...step, state, submitted, correct }
+      yield exerciseContext().saveStep(
+        stepContext(),
+        JSON.parse(JSON.stringify(payload)),
+        options(),
+      )
+      revalidate([
+        exerciseContext().fetchSequence.keyFor(sequenceContext()),
+        exerciseContext().getProgress.keyFor(sequenceContext()),
+      ])
+    }),
+    1000,
+  )
 
   /**
    * Save on load
