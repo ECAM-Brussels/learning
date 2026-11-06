@@ -10,6 +10,8 @@ class Dual:
         self.dual = dual
 
     def __repr__(self):
+        if isinstance(self.dual, Dual):
+            return f"{self.real} + ({self.dual})δ"
         return f"{self.real} + {self.dual}ε"
 
     def __iter__(self):
@@ -57,6 +59,17 @@ class Dual:
     def __pow__(self, power):
         p = self._coerce(power)
         value = self.real**p.real
+
+        if isinstance(self.real, Dual):
+            if _np.all(_np.asarray(p.dual) == 0):
+                deriv = p.real * self.real ** (p.real - 1) * self.dual
+            else:
+                with _np.errstate(divide="ignore", invalid="ignore"):
+                    deriv = value * (
+                        p.dual * _np.log(self.real) + p.real * self.dual / self.real
+                    )
+            return Dual(value, deriv)
+
         positive = self.real > 0
 
         if _np.isscalar(positive):
