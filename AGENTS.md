@@ -34,3 +34,11 @@ or verifying a change didn't regress update granularity:
   - `{"method":"costs"}` — running cost tables for the open session
 
 Name your signals/memos/effects (the `{ name: "..." }` option) — attribution reports scopes by name.
+
+# Visualizations with JSXGraph
+
+If asked to create a visualization with JSXGraph,
+use the components in `./packages/components/src/Board.tsx`.
+Components in that file are meant to be *declarative versions* of their associated geometry elements.
+They are not yet comprehensive or complete.
+By any means improve them, but ensure they are compatible with Solid's reactivity system and are declarative.
