@@ -1,0 +1,349 @@
+import { Board } from '@learning/components'
+import { tex } from '@learning/core'
+import * as Exercise from './05-optimisation.exercises'
+
+# Introduction
+
+Nous présenterons ici deux algorithmes d'optimisation:
+
+1. la méthode de **Newton-Raphson** appliquée à la dérivée première:
+   efficace en dimension $1$,
+   elle nécessite le calcul de la dérivée seconde,
+   ce qui la rend moins performante lorsque la dimension augmente.
+
+2. la **descente de gradient**:
+   primitive et lente au premier regard,
+   elle ne s'empire pas quand la dimension augmente.
+   Elle est un algorithme clé de l'_apprentissage automatique_.
+
+# Dérivées secondes
+
+## Un premier essai infructueux
+
+De manière naïve,
+on pourrait dériver deux fois une fonction $f$ en écrivant:
+
+```python run math
+def f(x):
+    return x**2
+
+def diff(x):
+    return f(x + epsilon).dual
+
+def diff2(x):
+    return diff(x + epsilon).dual
+
+diff2(1) # Devrait donner 2
+```
+
+En suivant la chaîne de calcul, `diff2(1)` devient progressivement:
+
+1. `diff(1 + epsilon).dual` (`x = 1` à la ligne 8)
+
+2. `f(1 + epsilon + epsilon).dual.dual`
+
+L'erreur provient du fait que `.dual` donne un nombre rationnel (de type `float64`) qui n'a pas de partie duale,
+donc `.dual.dual` échoue.
+
+Pour qu'on puisse prendre la partie duale deux fois,
+il faudrait deux nombres duaux différents, par exemple $\epsilon$ et $\delta$,
+et calculer `f(1 + epsilon + delta).dual.dual`,
+ou le premier `.dual` serait calculé par rapport à $\epsilon$ et le second par rapport à $\delta$.
+
+## Imbrication de nombres duaux
+
+Conceptuellement, la dérivée automatique fonctionne comme prévu en utilisant un second nombre dual $\delta$ en plus d'$\epsilon$:
+
+{tex.display`(x + \epsilon + \delta)^2 = x^2 + {\color{green} 2x}\epsilon + \underbrace{\epsilon^2}_0 + {\color{green}2x} \delta + {\color{red} 2}\epsilon\delta + \underbrace{\delta^2}_0,`}
+
+Prendre la partie duale par rapport à $\epsilon$,
+puis par rapport à $\delta$,
+on obtient le coefficient de $\epsilon\delta$,
+qui est bien la dérivée seconde de $x^2$.
+On a tout simplement utilisé la dérivée automatique deux fois.
+
+De manière plus générale, on aura
+{tex.display`f(x + \epsilon + \delta) = f(x) + {\color{green} f'(x)} \epsilon + {\color{green} f'(x)} \delta + {\color{red} f''(x)} \epsilon \delta`}
+
+Conceptuellement, l'apparition de $\delta$ engendre un problème subtil,
+puisque nous sommes dans la situation où nous avons des nombres comme ceci:
+
+{tex.display`\underbrace{(a + b\epsilon)}_{\text{partie "réelle" p/r à } \delta} + \underbrace{(c + d \epsilon)}_{\text{partie "duale" p/r à } \delta} \delta`}
+
+Nos nombres duaux doivent donc pouvoir être **imbriqués**.
+le nombre $(1 + 2\epsilon) + (3 + 4\epsilon)\delta$ s'écrira:
+
+```python run math
+Dual(Dual(1, 2), Dual(3, 4))
+```
+
+Concrètement, cela signifie que l'on ne pourra plus simplement écrire `f(x + epsilon).dual`,
+mais `f(Dual(x, 1)).dual`.
+
+:::question
+Pourquoi ne peut-on pas écrire `f(x + epsilon).dual` si l'on veut obtenir la dérivée seconde?
+:::
+
+```python run math
+import numpy as np
+
+def f(x):
+    return x**2
+
+def diff(x):
+    return f(Dual(x, 1)).dual
+
+def diff2(x):
+    return diff(Dual(x, 1)).dual
+
+diff2(1)
+```
+
+Cette fois-ci, en suivant la chaîne de calcul, `diff2(1)` devient progressivement:
+
+- `diff(Dual(1, 1)).dual` (`x = 1` à la ligne 10)
+
+- `f(Dual(Dual(1, 1), 1)).dual.dual`, qui est bien défini: après le premier `.dual` (obtenu par rapport à $\delta$),
+  on obtient toujours un nombre de type $a + b \epsilon$,
+  dont on peut encore prendre la partie duale (par rapport à $\epsilon$).
+
+<p class="text-xl font-bold text-red-900">
+  <abbr title="Too Long; Didn't Read">TLDR</abbr>: remplacer `x + epsilon` par `Dual(x, 1)` résoud
+  tous vos problèmes.
+</p>
+<p class="text-xs">(À part l'examen parce qu'il faut comprendre, mais c'est pour plus tard.)</p>
+
+:::example
+Calculez la dérivée seconde de {tex`\displaystyle f(x) = \frac {x^2 + 3} {x - 4}`} en $x = 5$.
+
+::::steps
+
+1. On définit la fonction $f(x)$:
+
+   ```python run math
+   def f(x):
+       return (x**2 + 3) / (x - 4)
+   ```
+
+2. On calcule la dérivée première:
+
+   ```python run math highlight="4-5"
+   def f(x):
+       return (x**2 + 3) / (x - 4)
+
+   def diff(x):
+       return f(Dual(x, 1)).dual
+   ```
+
+   Remarquez qu'on n'a pas utilisé `x + epsilon` mais `Dual(x, 1)`.
+   Ceci permet une imbrication correcte lorsque `x` sera lui-même dual.
+
+3. On calcule la dérivée seconde:
+
+   ```python run math highlight="7-9"
+   def f(x):
+       return (x**2 + 3) / (x - 4)
+
+   def diff(x):
+       return f(Dual(x, 1)).dual
+
+   def diff2(x):
+       return diff(Dual(x, 1)).dual
+
+   diff2(5)
+   ```
+
+::::
+:::
+
+# Newton-Raphson pour l'optimisation
+
+Une étape utile pour optimiser est la résolution de l'équation $f'(x) = 0$.
+Souvenez-vous que l'on a appris à trouver une racine _numériquement_ avec la méthode de Newton-Raphson.
+
+On appliquera alors Newton-Raphson à la **dérivéé**.
+
+|           | Newton-Raphson classique                          | Newton-Raphson pour l'optimisation                  |
+| --------- | ------------------------------------------------- | --------------------------------------------------- |
+| Équation  | $f(x) = 0$                                        | $f'(x) = 0$                                         |
+| Itération | {tex`\displaystyle x = x - \frac {f(x)} {f'(x)}`} | {tex`\displaystyle x = x - \frac {f'(x)} {f''(x)}`} |
+
+:::example
+Avec la méthode de Newton-Raphson,
+trouvez le minimum de {tex`\displaystyle f(x) = x^2 + 3x + 5`} en partant de $x = 0$.
+
+::::steps
+
+1. On définit la fonction $f(x)$ et ses dérivées première et seconde:
+
+   ```python run math
+   def f(x):
+       return x**2 + 3*x + 5
+
+   def diff(x):
+       return f(Dual(x, 1)).dual
+
+   def diff2(x):
+       return diff(Dual(x, 1)).dual
+   ```
+
+2. On applique la méthode de Newton-Raphson à la dérivée première:
+
+   ```python run math highlight="10-14"
+   def f(x):
+       return x**2 + 3*x + 5
+
+   def diff(x):
+       return f(Dual(x, 1)).dual
+
+   def diff2(x):
+       return diff(Dual(x, 1)).dual
+
+   x = 0
+   for i in range(2):
+       x = x - diff(x) / diff2(x)
+
+   x
+   ```
+
+::::
+:::
+
+## Condition d'arrêt
+
+Appliquer $5$ ou $10$ itérations de Newton-Raphson semble _arbitraire_.
+Comment sait-on si cela sera suffisant?
+
+Puisque notre but est d'avoir $f'(x) = 0$,
+il est naturel de s'arrêter lorsque $f'$ est suffisamment proche de $0$,
+par exemple lorsque $|f'(x)| \leq 10^{-6}$.
+En Python, ceci se fait avec une boucle `while` (qui veut dire _tant que_ en français):
+
+```python
+while np.abs(diff(x)) > 1e-6:
+    x = x - diff(x) / diff2(x)
+```
+
+De nouveau, seules les **lignes indentées** sont répétées.
+
+:::example
+En utilisant la condition d'arrêt $|f'(x)| \leq 10^{-7}$,
+trouvez le minimum de {tex`\displaystyle f(x) = x^3 + 3x + 1`} en partant de $x = 3$.
+
+::::steps
+
+1. On définit la fonction $f(x)$ et ses dérivées première et seconde:
+
+   ```python run math
+   def f(x):
+       return x**3 + 3*x + 1
+
+   def diff(x):
+       return f(Dual(x, 1)).dual
+
+   def diff2(x):
+       return diff(Dual(x, 1)).dual
+   ```
+
+2. On applique la méthode de Newton-Raphson à la dérivée première:
+
+   ```python run math highlight="1,11-15"
+   import numpy as np
+   def f(x):
+       return x**3 + 3*x + 1
+
+   def diff(x):
+       return f(Dual(x, 1)).dual
+
+   def diff2(x):
+       return diff(Dual(x, 1)).dual
+
+   x = 3
+   # while np.abs(diff(x)) > 1e-3:
+   #     x = x - diff(x) / diff2(x)
+
+   x
+   ```
+
+::::
+:::
+
+# Descente de gradient
+
+L'idée de la _descente de gradient_ est simple.
+On améliore progressivement notre estimation du minimum en utilisant la _pente_ de la fonction.
+
+Supposons qu'on ait une estimation $x$ du minimum de $f$.
+Deux cas se présentent:
+
+- Si $f'(x) > 0$, la pente est positive, donc le minimum se trouve _à gauche_ de $x$.
+  Donc si $f'(x)$ est **positif**, on veut un déplacement **négatif** (vers la gauche).
+
+  <Board axis>
+    <Board.Plot fn={(x) => x ** 2 - 5} fixed />
+    <Board.Plot fn={(x) => 4 * (x - 2) - 1} domain={[1.8, 2.2]} color="darkgreen" strokeWidth={3} />
+    <Board.Point position={[2, -1]} fixed name="x" />
+  </Board>
+
+- Si $f'(x) < 0$, la pente est négative, donc le minimum se trouve _à droite_ de $x$.
+  Donc si $f'(x)$ est **négatif**, on veut un déplacement **positif** (vers la droite).
+
+  <Board axis>
+    <Board.Plot fn={(x) => x ** 2 - 5} fixed />
+    <Board.Plot
+      fn={(x) => -4 * (x + 2) - 1}
+      domain={[-2.2, -1.8]}
+      color="darkgreen"
+      strokeWidth={3}
+    />
+    <Board.Point position={[-2, -1]} fixed name="x" />
+  </Board>
+
+Remarquez que l'on se déplace dans la **direction opposée** de la pente:
+
+{tex.display`x_1 = x_0 - \eta f'(x_0)`}
+
+- En prenant $- \eta f'(x_0)$ avec $\eta > 0$, on s'assure de se déplacer dans la direction contraire à la pente,
+  c'est-à-dire vers le minimum.
+
+- $\eta$ est appelé le _taux d'apprentissage_.
+
+<Exercise.Animation />
+
+:::example
+En utilisant la descente de gradient sur $f(x) = x^2$ avec un taux d'apprentissage $\eta = 0.01$
+et un point de départ $x = 2$,
+trouvez le minimum de $f$ en utilisant la condition d'arrêt $|f'(x)| \leq 10^{-6}$.
+
+::::steps
+
+1. On définit $f$ et sa dérivée:
+
+   ```python run math
+   def f(x):
+       return x**2
+
+   def diff(x):
+       return f(Dual(x, 1)).dual
+   ```
+
+2. On applique la descente du gradient:
+
+   ```python run math highlight="1,9-11,13"
+   import numpy as np
+
+   def f(x):
+       return x**2
+
+   def diff(x):
+       return f(Dual(x, 1)).dual
+
+   x = 2
+   while np.abs(diff(x)) > 1e-6:
+       x = x - 0.01 * diff(x)
+
+   x
+   ```
+
+::::
+:::
