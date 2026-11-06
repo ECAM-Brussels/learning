@@ -287,12 +287,13 @@ export const Board = Object.assign(
     Plot: (
       props: {
         fn: (x: number) => number
+        domain?: [number, number]
         children?: (plot: JXG.Functiongraph) => JSX.Element
       } & JXG.FunctiongraphAttributes,
     ) => {
       const attrs = omit(props, 'fn', 'children')
       return (
-        <Element type="functiongraph" parent={[props.fn]} attrs={attrs}>
+        <Element type="functiongraph" parent={[props.fn, ...(props.domain ?? [])]} attrs={attrs}>
           {(plot: JXG.Functiongraph) => {
             return props.children?.(plot)
           }}
