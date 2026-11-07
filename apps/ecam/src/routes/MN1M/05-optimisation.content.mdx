@@ -33,26 +33,34 @@ def diff(x):
 def diff2(x):
     return diff(x + epsilon).dual
 
-diff2(1) # Devrait donner 2
+diff2(1)
 ```
 
-En suivant la chaîne de calcul, `diff2(1)` devient progressivement:
+:::question
+Pourquoi cela ne fonctionne-t-il pas?
+:::
 
-1. `diff(1 + epsilon).dual` (`x = 1` à la ligne 8)
+En utilisant la définition de `diff(x)` à la ligne 8,
+notre code est en fait équivalent à
 
-2. `f(1 + epsilon + epsilon).dual.dual`
+```python run math
+def f(x):
+    return x**2
 
-L'erreur provient du fait que `.dual` donne un nombre rationnel (de type `float64`) qui n'a pas de partie duale,
-donc `.dual.dual` échoue.
+def diff2(x):
+    return f(x + 2 * epsilon).dual.dual
 
-Pour qu'on puisse prendre la partie duale deux fois,
-il faudrait deux nombres duaux différents, par exemple $\epsilon$ et $\delta$,
-et calculer `f(1 + epsilon + delta).dual.dual`,
-ou le premier `.dual` serait calculé par rapport à $\epsilon$ et le second par rapport à $\delta$.
+diff2(1)
+```
 
-## Imbrication de nombres duaux
+L'erreur provient de la double application `.dual.dual`.
+En prenant la partie duale la première fois,
+on a un nombre réel et non dual, pour lesquels `.dual` n'est pas défini.
 
-Conceptuellement, la dérivée automatique fonctionne comme prévu en utilisant un second nombre dual $\delta$ en plus d'$\epsilon$:
+## Dérivée automatique seconde
+
+La dérivée automatique seconde fonctionne en utilisant un second nombre dual $\delta$ en plus d'$\epsilon$.
+Par exemple, pour la fonction $f(x) = x^2$, si $\epsilon^2 = 0$ et $\delta^2 = 0$, on a
 
 {tex.display`(x + \epsilon + \delta)^2 = x^2 + {\color{green} 2x}\epsilon + \underbrace{\epsilon^2}_0 + {\color{green}2x} \delta + {\color{red} 2}\epsilon\delta + \underbrace{\delta^2}_0,`}
 
@@ -65,23 +73,8 @@ On a tout simplement utilisé la dérivée automatique deux fois.
 De manière plus générale, on aura
 {tex.display`f(x + \epsilon + \delta) = f(x) + {\color{green} f'(x)} \epsilon + {\color{green} f'(x)} \delta + {\color{red} f''(x)} \epsilon \delta`}
 
-Conceptuellement, l'apparition de $\delta$ engendre un problème subtil,
-puisque nous sommes dans la situation où nous avons des nombres comme ceci:
-
-{tex.display`\underbrace{(a + b\epsilon)}_{\text{partie "réelle" p/r à } \delta} + \underbrace{(c + d \epsilon)}_{\text{partie "duale" p/r à } \delta} \delta`}
-
-Nos nombres duaux doivent donc pouvoir être **imbriqués**.
-le nombre $(1 + 2\epsilon) + (3 + 4\epsilon)\delta$ s'écrira:
-
-```python run math
-Dual(Dual(1, 2), Dual(3, 4))
-```
-
-Concrètement, cela signifie que l'on ne pourra plus simplement écrire `f(x + epsilon).dual`,
-mais `f(Dual(x, 1)).dual`.
-
 :::question
-Pourquoi ne peut-on pas écrire `f(x + epsilon).dual` si l'on veut obtenir la dérivée seconde?
+Comment calculer une dérivée seconde?
 :::
 
 ```python run math
@@ -91,30 +84,33 @@ def f(x):
     return x**2
 
 def diff(x):
-    return f(Dual(x, 1)).dual
+    return f(x + epsilon).dual
 
 def diff2(x):
-    return diff(Dual(x, 1)).dual
+    return diff(x + delta).dual
 
 diff2(1)
 ```
 
-Cette fois-ci, en suivant la chaîne de calcul, `diff2(1)` devient progressivement:
+Si seule la dérivée seconde est nécessaire,
+on peut également procéder en une seule étape:
 
-- `diff(Dual(1, 1)).dual` (`x = 1` à la ligne 10)
+```python run math
+def f(x):
+    return x**2
 
-- `f(Dual(Dual(1, 1), 1)).dual.dual`, qui est bien défini: après le premier `.dual` (obtenu par rapport à $\delta$),
-  on obtient toujours un nombre de type $a + b \epsilon$,
-  dont on peut encore prendre la partie duale (par rapport à $\epsilon$).
+def diff2(x):
+    return f(x + epsilon + delta).dual.dual
 
-<p class="text-xl font-bold text-red-900">
-  <abbr title="Too Long; Didn't Read">TLDR</abbr>: remplacer `x + epsilon` par `Dual(x, 1)` résoud
-  tous vos problèmes.
-</p>
-<p class="text-xs">(À part l'examen parce qu'il faut comprendre, mais c'est pour plus tard.)</p>
+diff2(1)
+```
 
 :::example
-Calculez la dérivée seconde de {tex`\displaystyle f(x) = \frac {x^2 + 3} {x - 4}`} en $x = 5$.
+Définissez la fonction `diff2(x)` qui est la dérivée seconde de {tex`\displaystyle f(x) = \frac {x^2 + 3} {x - 4}`}.
+Ensuite, tracez les graphes suivants sur $[4.5, 5.5]$:
+
+- {tex`f(x)`}
+- {tex`g(x) = f(5) + f'(5)(x - 5) + \frac {f''(5)} 2 (x - 5)^2`}
 
 ::::steps
 
@@ -132,25 +128,44 @@ Calculez la dérivée seconde de {tex`\displaystyle f(x) = \frac {x^2 + 3} {x - 
        return (x**2 + 3) / (x - 4)
 
    def diff(x):
-       return f(Dual(x, 1)).dual
+       return f(x + epsilon).dual
    ```
-
-   Remarquez qu'on n'a pas utilisé `x + epsilon` mais `Dual(x, 1)`.
-   Ceci permet une imbrication correcte lorsque `x` sera lui-même dual.
 
 3. On calcule la dérivée seconde:
 
-   ```python run math highlight="7-9"
+   ```python run math highlight="7-8"
    def f(x):
        return (x**2 + 3) / (x - 4)
 
    def diff(x):
-       return f(Dual(x, 1)).dual
+       return f(x + epsilon).dual
 
    def diff2(x):
-       return diff(Dual(x, 1)).dual
+       return diff(x + delta).dual
+   ```
 
-   diff2(5)
+4. On calcule la dérivée seconde:
+
+   ```python run math
+   import matplotlib.pyplot as plt
+   import numpy as np
+
+   def f(x):
+       return (x**2 + 3) / (x - 4)
+
+   def diff(x):
+       return f(x + epsilon).dual
+
+   def diff2(x):
+       return diff(x + delta).dual
+
+   def g(x):
+       return f(5) + diff(5) * (x - 5) + 0.5 * diff2(5) * (x - 5)**2
+
+   x = np.linspace(4.5, 5.5, 100)
+   plt.plot(x, f(x), label="f(x)")
+   plt.plot(x, g(x), label="g(x)")
+   plt.legend()
    ```
 
 ::::
@@ -163,10 +178,11 @@ Souvenez-vous que l'on a appris à trouver une racine _numériquement_ avec la m
 
 On appliquera alors Newton-Raphson à la **dérivéé**.
 
-|           | Newton-Raphson classique                          | Newton-Raphson pour l'optimisation                  |
-| --------- | ------------------------------------------------- | --------------------------------------------------- |
-| Équation  | $f(x) = 0$                                        | $f'(x) = 0$                                         |
-| Itération | {tex`\displaystyle x = x - \frac {f(x)} {f'(x)}`} | {tex`\displaystyle x = x - \frac {f'(x)} {f''(x)}`} |
+|                     | Newton-Raphson classique                                        | Newton-Raphson pour l'optimisation                                |
+| ------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Équation            | $f(x) = 0$                                                      | $f'(x) = 0$                                                       |
+| Itération           | {tex`\displaystyle x_{n + 1} = x_n - \frac {f(x_n)} {f'(x_n)}`} | {tex`\displaystyle x_{n + 1} = x_n - \frac {f'(x_n)} {f''(x_n)}`} |
+| Itération en Python | `x = x - f(x) / diff(x)`                                        | `x = x - diff(x) / diff2(x)`                                      |
 
 :::example
 Avec la méthode de Newton-Raphson,
@@ -181,10 +197,10 @@ trouvez le minimum de {tex`\displaystyle f(x) = x^2 + 3x + 5`} en partant de $x 
        return x**2 + 3*x + 5
 
    def diff(x):
-       return f(Dual(x, 1)).dual
+       return f(x + epsilon).dual
 
    def diff2(x):
-       return diff(Dual(x, 1)).dual
+       return diff(x + delta).dual
    ```
 
 2. On applique la méthode de Newton-Raphson à la dérivée première:
@@ -194,10 +210,10 @@ trouvez le minimum de {tex`\displaystyle f(x) = x^2 + 3x + 5`} en partant de $x 
        return x**2 + 3*x + 5
 
    def diff(x):
-       return f(Dual(x, 1)).dual
+       return f(x + epsilon).dual
 
    def diff2(x):
-       return diff(Dual(x, 1)).dual
+       return diff(x + delta).dual
 
    x = 0
    for i in range(2):
@@ -228,7 +244,7 @@ De nouveau, seules les **lignes indentées** sont répétées.
 
 :::example
 En utilisant la condition d'arrêt $|f'(x)| \leq 10^{-7}$,
-trouvez le minimum de {tex`\displaystyle f(x) = x^3 + 3x + 1`} en partant de $x = 3$.
+trouvez le minimum de {tex`\displaystyle f(x) = x^2 + 3x + 1`} en partant de $x = 3$.
 
 ::::steps
 
@@ -236,31 +252,32 @@ trouvez le minimum de {tex`\displaystyle f(x) = x^3 + 3x + 1`} en partant de $x 
 
    ```python run math
    def f(x):
-       return x**3 + 3*x + 1
+       return x**2 + 3*x + 1
 
    def diff(x):
-       return f(Dual(x, 1)).dual
+       return f(x + epsilon).dual
 
    def diff2(x):
-       return diff(Dual(x, 1)).dual
+       return diff(x + delta).dual
    ```
 
 2. On applique la méthode de Newton-Raphson à la dérivée première:
 
-   ```python run math highlight="1,11-15"
+   ```python run math highlight="1,12-16"
    import numpy as np
+
    def f(x):
-       return x**3 + 3*x + 1
+       return x**2 + 3*x + 1
 
    def diff(x):
-       return f(Dual(x, 1)).dual
+       return f(x + epsilon).dual
 
    def diff2(x):
-       return diff(Dual(x, 1)).dual
+       return diff(x + delta).dual
 
    x = 3
-   # while np.abs(diff(x)) > 1e-3:
-   #     x = x - diff(x) / diff2(x)
+   while np.abs(diff(x)) > 1e-3:
+       x = x - diff(x) / diff2(x)
 
    x
    ```
@@ -324,7 +341,7 @@ trouvez le minimum de $f$ en utilisant la condition d'arrêt $|f'(x)| \leq 10^{-
        return x**2
 
    def diff(x):
-       return f(Dual(x, 1)).dual
+       return f(x + epsilon).dual
    ```
 
 2. On applique la descente du gradient:
@@ -336,7 +353,7 @@ trouvez le minimum de $f$ en utilisant la condition d'arrêt $|f'(x)| \leq 10^{-
        return x**2
 
    def diff(x):
-       return f(Dual(x, 1)).dual
+       return f(x + epsilon).dual
 
    x = 2
    while np.abs(diff(x)) > 1e-6:
