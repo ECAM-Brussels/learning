@@ -10,9 +10,31 @@ class Dual:
         self.dual = dual
 
     def __repr__(self):
-        if isinstance(self.dual, Dual):
-            return f"{self.real} + ({self.dual})δ"
-        return f"{self.real} + {self.dual}ε"
+        def _split_delta(x):
+            if isinstance(x, Dual):
+                return x.real, x.dual
+            return x, 0.0
+
+        def _is_zero(x):
+            try:
+                return _np.all(_np.asarray(x) == 0)
+            except Exception:
+                return False
+
+        if isinstance(self.real, Dual) or isinstance(self.dual, Dual):
+            a, c = _split_delta(self.real)
+            b, d = _split_delta(self.dual)
+
+            parts = [f"{a!r}"]
+            if not _is_zero(b):
+                parts.append(f"{b!r}ε")
+            if not _is_zero(c):
+                parts.append(f"{c!r}δ")
+            if not _is_zero(d):
+                parts.append(f"{d!r}εδ")
+            return " + ".join(parts)
+
+        return f"{self.real!r} + {self.dual!r}ε"
 
     def __iter__(self):
         yield self.real
@@ -151,3 +173,4 @@ class Dual:
 
 
 epsilon = Dual(0, 1)
+delta = Dual(Dual(0, 1), 0)
