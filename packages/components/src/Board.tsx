@@ -59,8 +59,8 @@ export const Board = Object.assign(
       <Boundary>
         <div
           class={[
-            'mx-auto my-4 h-175 w-175 rounded-xl border border-slate-200 bg-white shadow',
-            props.class,
+            'mx-auto my-4 rounded-xl border border-slate-200 bg-white shadow',
+            props.class ?? 'h-175 w-175',
           ]}
           ref={setEl}
         />
@@ -110,11 +110,7 @@ export const Board = Object.assign(
     ) => {
       const attrs = omit(props, 'points', 'children')
       return (
-        <Element
-          type="arc"
-          parent={props.points}
-          attrs={{ withLabel: attrs.name ? true : false, ...attrs }}
-        >
+        <Element type="arc" parent={props.points} attrs={attrs}>
           {(arc: JXG.Arc) => {
             createEffect(
               () => props.points,
@@ -138,11 +134,7 @@ export const Board = Object.assign(
     ) => {
       const attrs = omit(props, 'from', 'to', 'children')
       return (
-        <Element
-          type="arrow"
-          parent={[props.from, props.to]}
-          attrs={{ withLabel: attrs.name ? true : false, ...attrs }}
-        >
+        <Element type="arrow" parent={[props.from, props.to]} attrs={attrs}>
           {(arrow: JXG.Arrow) => {
             createEffect(
               () => [props.from, props.to] as const,
@@ -259,7 +251,7 @@ export const Board = Object.assign(
         onDrag?: (point: JXG.Point) => void
       } & JXG.PointAttributes,
     ) => {
-      const attrs = omit(props, 'position', 'children')
+      const attrs = omit(props, 'position', 'children', 'onDrag')
       return (
         <Element type="point" parent={props.position} attrs={attrs}>
           {(point: JXG.Point) => {
@@ -359,11 +351,7 @@ export const Board = Object.assign(
     ) => {
       const attrs = omit(props, 'from', 'to', 'children')
       return (
-        <Element
-          type="segment"
-          parent={[props.from, props.to]}
-          attrs={{ withLabel: attrs.name ? true : false, ...attrs }}
-        >
+        <Element type="segment" parent={[props.from, props.to]} attrs={attrs}>
           {(segment: JXG.Segment) => {
             createEffect(
               () => [props.from, props.to] as const,
@@ -390,8 +378,17 @@ function Element<T extends JXG.GeometryElement>(props: {
   const board = useContext(BoardContext)
   const [el, setEl] = createSignal<T>()
 
+  const attrs = () => {
+    const source = props.attrs ?? {}
+    const next: Record<string, unknown> = {}
+    for (const key in source) {
+      next[key] = source[key]
+    }
+    return next
+  }
+
   onSettled(() => {
-    const created = board()?.create(props.type, props.parent, props.attrs ?? {}) as any
+    const created = board()?.create(props.type, props.parent, attrs()) as any
     setEl(created)
     return () => {
       board()?.removeObject(created)
@@ -407,13 +404,10 @@ function Element<T extends JXG.GeometryElement>(props: {
     },
   )
 
-  createEffect(
-    () => deep(props.attrs ?? {}),
-    (attrs) => {
-      el()?.setAttribute(attrs)
-      el()?.update()
-    },
-  )
+  createEffect(attrs, (attrs) => {
+    el()?.setAttribute(attrs)
+    el()?.update()
+  })
 
   return <Show when={el()}>{props.children?.(el()!)}</Show>
 }
