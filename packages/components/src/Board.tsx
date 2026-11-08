@@ -148,6 +148,29 @@ export const Board = Object.assign(
         </Element>
       )
     },
+    Axis: (
+      props: {
+        from: [number, number] | JXG.Point
+        to: [number, number] | JXG.Point
+        children?: (axis: JXG.Axis) => JSX.Element
+      } & JXG.AxisAttributes,
+    ) => {
+      const attrs = omit(props, 'from', 'to', 'children')
+      return (
+        <Element type="axis" parent={[props.from, props.to]} attrs={attrs}>
+          {(axis: JXG.Axis) => {
+            createEffect(
+              () => [props.from, props.to] as const,
+              ([from, to]) => {
+                axis.point1.moveTo(from)
+                axis.point2.moveTo(to)
+              },
+            )
+            return props.children?.(axis)
+          }}
+        </Element>
+      )
+    },
     Circle: (
       props: {
         center: [number, number] | JXG.Point
