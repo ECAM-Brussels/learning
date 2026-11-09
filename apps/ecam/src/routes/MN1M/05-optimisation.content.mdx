@@ -40,22 +40,33 @@ diff2(1)
 Pourquoi cela ne fonctionne-t-il pas?
 :::
 
-En utilisant la définition de `diff(x)` à la ligne 8,
-notre code est en fait équivalent à
+Notre code est en fait équivalent à
 
 ```python run math
 def f(x):
     return x**2
 
-def diff2(x):
-    return f(x + 2 * epsilon).dual.dual
-
-diff2(1)
+f(1 + epsilon + epsilon).dual.dual
 ```
 
 L'erreur provient de la double application `.dual.dual`.
 En prenant la partie duale la première fois,
-on a un nombre réel et non dual, pour lesquels `.dual` n'est pas défini.
+on a un nombre réel et non dual,
+et `.dual` n'est alors pas défini.
+
+Le `+ epsilon + epsilon` nous met la puce à l'oreille
+qu'il faut utiliser **deux nombres duals différents**.
+D'ailleurs, le code suivant fonctionne parfaitement
+
+```python run math
+def f(x):
+    return x**2
+
+f(1 + epsilon + delta).dual.dual
+```
+
+Le premier `.dual` prend la partie duale par rapport à $\epsilon$ (ou $\delta$),
+tandis que le second `.dual` prend la partie duale par rapport à $\delta$ (ou $\epsilon$).
 
 ## Dérivée automatique seconde
 
@@ -69,13 +80,16 @@ puis par rapport à $\delta$,
 on obtient le coefficient de $\epsilon\delta$,
 qui est bien la dérivée seconde de $x^2$.
 On a tout simplement utilisé la dérivée automatique deux fois.
-
-De manière plus générale, on aura
+De manière générale, on aura
 {tex.display`f(x + \epsilon + \delta) = f(x) + {\color{green} f'(x)} \epsilon + {\color{green} f'(x)} \delta + {\color{red} f''(x)} \epsilon \delta`}
 
 :::question
 Comment calculer une dérivée seconde?
 :::
+
+Si l'on a également besoin de la dérivée première,
+on peut procéder en deux étapes,
+en s'assurant d'employer deux nombres duaux différents pour chaque dérivée:
 
 ```python run math
 import numpy as np
@@ -93,7 +107,7 @@ diff2(1)
 ```
 
 Si seule la dérivée seconde est nécessaire,
-on peut également procéder en une seule étape:
+on peut se contenter d'une étape et écrire
 
 ```python run math
 def f(x):
@@ -104,6 +118,32 @@ def diff2(x):
 
 diff2(1)
 ```
+
+:::remark[Nombres duaux imbriqués]
+En employant $\epsilon$ et $\delta$,
+nos nombres peuvent maintenant prendre la forme
+
+{tex.display`\underbrace{(a + b \delta)}_{\text{partie "réelle" p/r à }\epsilon} + \underbrace{(c + d \delta)}_{\text{partie "duale" p/r à }\epsilon} \epsilon`}
+
+En d'autres termes, nos nombres duaux en $\delta$ sont **imbriqués** dans des nombres duaux en $\epsilon$.
+L'instruction `.dual.dual` sur le nombre ci-dessus prend alors son sens et donne $d$, le coefficient de $\epsilon\delta$.
+On peut le vérifier en Python avec l'exemple suivant:
+
+```python run math
+expr = (1 + 2 * delta) + (3 + 4 * delta) * epsilon
+expr.dual.dual
+```
+
+D'ailleurs, dans notre environnement de calcul,
+`epsilon` et `delta` sont définis
+de telle sorte que $\delta$ soit imbriqué:
+
+```python run math
+epsilon = Dual(0, 1)
+delta = Dual(Dual(0, 1), 0)
+```
+
+:::
 
 :::example
 Définissez la fonction `diff2(x)` qui est la dérivée seconde de {tex`\displaystyle f(x) = \frac {x^2 + 3} {x - 4}`}.
@@ -183,6 +223,8 @@ On appliquera alors Newton-Raphson à la **dérivéé**.
 | Équation            | $f(x) = 0$                                                      | $f'(x) = 0$                                                       |
 | Itération           | {tex`\displaystyle x_{n + 1} = x_n - \frac {f(x_n)} {f'(x_n)}`} | {tex`\displaystyle x_{n + 1} = x_n - \frac {f'(x_n)} {f''(x_n)}`} |
 | Itération en Python | `x = x - f(x) / diff(x)`                                        | `x = x - diff(x) / diff2(x)`                                      |
+
+<Exercise.NewtonRaphsonAnimation />
 
 :::example
 Avec la méthode de Newton-Raphson,
@@ -289,6 +331,8 @@ trouvez le minimum de {tex`\displaystyle f(x) = x^2 + 3x + 1`} en partant de $x 
 
 L'idée de la _descente de gradient_ est simple.
 On améliore progressivement notre estimation du minimum en utilisant la _pente_ de la fonction.
+Le minimum est-il à gauche ou à droite de notre estimation?
+On se déplace ensuite dans cette direction et on recommence.
 
 Supposons qu'on ait une estimation $x$ du minimum de $f$.
 Deux cas se présentent:
@@ -296,24 +340,33 @@ Deux cas se présentent:
 - Si $f'(x) > 0$, la pente est positive, donc le minimum se trouve _à gauche_ de $x$.
   Donc si $f'(x)$ est **positif**, on veut un déplacement **négatif** (vers la gauche).
 
-  <Board axis>
-    <Board.Plot fn={(x) => x ** 2 - 5} fixed />
-    <Board.Plot fn={(x) => 4 * (x - 2) - 1} domain={[1.8, 2.2]} color="darkgreen" strokeWidth={3} />
-    <Board.Point position={[2, -1]} fixed name="x" />
+  <Board class="h-96 w-96">
+    <Board.Axis from={[0, 0]} to={[0, 1]} ticks={{ visible: false }} />
+    <Board.Axis from={[0, 0]} to={[1, 0]} ticks={{ visible: false }} />
+    <Board.Plot fn={(x) => x ** 2 - 4.5} fixed />
+    <Board.Plot
+      fn={(x) => 4 * (x - 2) - 0.5}
+      domain={[1.8, 2.2]}
+      color="darkgreen"
+      strokeWidth={3}
+    />
+    <Board.Point position={[2, -0.5]} fixed name="x" />
   </Board>
 
 - Si $f'(x) < 0$, la pente est négative, donc le minimum se trouve _à droite_ de $x$.
   Donc si $f'(x)$ est **négatif**, on veut un déplacement **positif** (vers la droite).
 
-  <Board axis>
-    <Board.Plot fn={(x) => x ** 2 - 5} fixed />
+  <Board class="h-96 w-96">
+    <Board.Axis from={[0, 0]} to={[0, 1]} ticks={{ visible: false }} />
+    <Board.Axis from={[0, 0]} to={[1, 0]} ticks={{ visible: false }} />
+    <Board.Plot fn={(x) => x ** 2 - 4.5} fixed />
     <Board.Plot
-      fn={(x) => -4 * (x + 2) - 1}
+      fn={(x) => -4 * (x + 2) - 0.5}
       domain={[-2.2, -1.8]}
       color="darkgreen"
       strokeWidth={3}
     />
-    <Board.Point position={[-2, -1]} fixed name="x" />
+    <Board.Point position={[-2, -0.5]} fixed name="x" />
   </Board>
 
 Remarquez que l'on se déplace dans la **direction opposée** de la pente:
@@ -325,7 +378,7 @@ Remarquez que l'on se déplace dans la **direction opposée** de la pente:
 
 - $\eta$ est appelé le _taux d'apprentissage_.
 
-<Exercise.Animation />
+<Exercise.GradientDescentAnimation />
 
 :::example
 En utilisant la descente de gradient sur $f(x) = x^2$ avec un taux d'apprentissage $\eta = 0.01$
@@ -364,3 +417,44 @@ trouvez le minimum de $f$ en utilisant la condition d'arrêt $|f'(x)| \leq 10^{-
 
 ::::
 :::
+
+# Pour aller plus loin
+
+## Dérivées d'ordre supérieur
+
+```python run math
+import matplotlib.pyplot as plt
+import numpy as np
+
+def f(x):
+    return np.exp(x) * np.sin(x)
+
+def diff(n, x):
+    return f(x) if n == 0 else diff(n - 1, Dual(x, 1)).dual
+
+x = np.linspace(-1, 1)
+plt.plot(x, f(x), label="f(x)")
+plt.plot(x, diff(1, x), label="f'(x)")
+plt.plot(x, diff(2, x), label="f''(x)")
+plt.legend()
+```
+
+```python run math
+import math
+import matplotlib.pyplot as plt
+import numpy as np
+
+def f(x):
+    return np.sin(x)
+
+def diff(n, x):
+    return f(x) if n == 0 else diff(n - 1, Dual(x, 1)).dual
+
+def taylor(x):
+    return sum([diff(n, 0) * x**n / math.factorial(n) for n in range(5)])
+
+x = np.linspace(-1, 1)
+plt.plot(x, f(x), label="f(x)")
+plt.plot(x, taylor(x), label="Taylor")
+plt.legend()
+```
