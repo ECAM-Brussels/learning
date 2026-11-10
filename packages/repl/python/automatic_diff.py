@@ -25,16 +25,16 @@ class Dual:
             a, c = _split_delta(self.real)
             b, d = _split_delta(self.dual)
 
-            parts = [f"{a!r}"]
+            parts = [f"{a}"]
             if not _is_zero(b):
-                parts.append(f"{b!r}ε")
+                parts.append(f"{b}ε")
             if not _is_zero(c):
-                parts.append(f"{c!r}δ")
+                parts.append(f"{c}δ")
             if not _is_zero(d):
-                parts.append(f"{d!r}εδ")
+                parts.append(f"{d}εδ")
             return " + ".join(parts)
 
-        return f"{self.real!r} + {self.dual!r}ε"
+        return f"{self.real} + {self.dual}ε"
 
     def __iter__(self):
         yield self.real
