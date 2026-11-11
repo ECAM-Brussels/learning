@@ -174,3 +174,11 @@ class Dual:
 
 epsilon = Dual(0, 1)
 delta = Dual(Dual(0, 1), 0)
+
+
+def eps(n: int) -> Dual:
+    if n < 1 or not isinstance(n, int):
+        raise ValueError("n must be a positive integer")
+    if n == 1:
+        return Dual(0, 1)
+    return Dual(eps(n - 1), 0)

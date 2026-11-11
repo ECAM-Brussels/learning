@@ -51,12 +51,32 @@ f(1 + epsilon + epsilon).dual.dual
 
 L'erreur provient de la double application `.dual.dual`.
 En prenant la partie duale la première fois,
+
+```python run math
+def f(x):
+    return x**2
+
+f(1 + epsilon + epsilon).dual
+```
+
 on a un nombre réel et non dual,
 et `.dual` n'est alors pas défini.
 
 Le `+ epsilon + epsilon` nous met la puce à l'oreille
-qu'il faut utiliser **deux nombres duals différents**.
-D'ailleurs, le code suivant fonctionne parfaitement
+qu'il faut utiliser **deux nombres duaux différents**,
+tel que dans le code suivant.
+
+```python run math
+def f(x):
+    return x**2
+
+f(1 + epsilon + delta)
+```
+
+On voit alors que `.dual.dual` est bien défini:
+le premier `.dual` prend la partie duale par rapport à $\epsilon$ (ou $\delta$),
+tandis que le second `.dual` prend la partie duale par rapport à $\delta$ (ou $\epsilon$).
+D'ailleurs, le code suivant donne bien $2$ qui est la dérivée seconde de $x^2$.
 
 ```python run math
 def f(x):
@@ -64,9 +84,6 @@ def f(x):
 
 f(1 + epsilon + delta).dual.dual
 ```
-
-Le premier `.dual` prend la partie duale par rapport à $\epsilon$ (ou $\delta$),
-tandis que le second `.dual` prend la partie duale par rapport à $\delta$ (ou $\epsilon$).
 
 ## Dérivée automatique seconde
 
@@ -89,7 +106,7 @@ Comment calculer une dérivée seconde?
 
 Si l'on a également besoin de la dérivée première,
 on peut procéder en deux étapes,
-en s'assurant d'employer deux nombres duaux différents pour chaque dérivée:
+en s'assurant d'employer deux nombres duaux **différents** pour chaque dérivée:
 
 ```python run math
 import numpy as np
@@ -318,7 +335,7 @@ trouvez le minimum de {tex`\displaystyle f(x) = x^2 + 3x + 1`} en partant de $x 
        return diff(x + delta).dual
 
    x = 3
-   while np.abs(diff(x)) > 1e-3:
+   while np.abs(diff(x)) > 1e-7:
        x = x - diff(x) / diff2(x)
 
    x
@@ -326,6 +343,8 @@ trouvez le minimum de {tex`\displaystyle f(x) = x^2 + 3x + 1`} en partant de $x 
 
 ::::
 :::
+
+<Exercise.NewtonRaphsonSequence />
 
 # Descente de gradient
 
@@ -418,43 +437,160 @@ trouvez le minimum de $f$ en utilisant la condition d'arrêt $|f'(x)| \leq 10^{-
 ::::
 :::
 
-# Pour aller plus loin
+<Exercise.GradientDescentSequence />
+
+# Approximation polynomiales
 
 ## Dérivées d'ordre supérieur
 
+Jusqu'à présent, nous employions $\epsilon$ pour la dérivée première et $\delta$ pour la dérivée seconde.
+Pour une dérivée d'ordre supérieur, on peut continuer à ajouter des nombres duaux,
+ce qui est fastidieux.
+Pour vous aider, nous avons défini la fonction `eps(n)` qui donne pour chaque valeur de $n$ un nombre dual différent.
+
+On peut donc utiliser `eps(1)` pour la dérivée première, `eps(2)` pour la dérivée seconde, et ainsi de suite:
+
 ```python run math
-import matplotlib.pyplot as plt
-import numpy as np
-
-def f(x):
-    return np.exp(x) * np.sin(x)
-
-def diff(n, x):
-    return f(x) if n == 0 else diff(n - 1, Dual(x, 1)).dual
-
-x = np.linspace(-1, 1)
-plt.plot(x, f(x), label="f(x)")
-plt.plot(x, diff(1, x), label="f'(x)")
-plt.plot(x, diff(2, x), label="f''(x)")
-plt.legend()
+(1 + eps(1) + eps(2))**2
 ```
 
-```python run math
+Il est possible de calculer les dérivées d'ordre arbitraire de manière très concise:
+
+```python
+def diff(n, x):
+    if n == 0:
+        return ... # Expression analytique de f(x)
+    else:
+        return diff(n - 1, x + eps(n)).dual
+```
+
+:::example
+Définissez la fonction `diff(n, x)` qui est la dérivée d'ordre `n` de {tex`\displaystyle f(x) = e^x \sin x`}.
+
+::::steps
+
+1. On remarque que `diff(0, x)` est simplement la fonction elle-même
+   puisque c'est une dérivée d'ordre $0$.
+   Dès lors, si $n = 0$, on retourne $e^x \sin x$.
+
+   ```python run math highlight="4-5"
+   import numpy as np
+
+   def diff(n, x):
+        if n == 0:
+            return np.exp(x) * np.sin(x)
+   ```
+
+2. Autrement, lorsque $n > 0$,
+   `diff(n, x)` est simplement la dérivée de `diff(n - 1, x)`:
+
+   ```python run math
+   import numpy as np
+
+   def diff(n, x):
+        if n == 0:
+            return np.exp(x) * np.sin(x)
+        else:
+            return diff(n - 1, Dual(x, 1)).dual
+   ```
+
+::::
+:::
+
+## Formule de Maclaurin
+
+La formule de Maclaurin permet d'approximer une fonction autour de $0$ par un polynôme:
+
+{tex.display`f(x) \approx f(0) + f'(0) x + f''(0) \frac {x^2} {2!} + f'''(0) \frac {x^3} {3!} + \dots + f^{(N)}(0) \frac {x^N} {N!},`}
+
+où $n! = 1 \cdot 2 \cdot 3 \cdots n$ est la factorielle de $n$.
+À titre d'exemple, voici la fonction $f(x) = \sin x$ approximée par un polynôme de Maclaurin d'ordre $5$:
+
+<Exercise.MaclaurinAnimation />
+
+Remarquez que chacun des termes a la forme:
+
+{tex.display`f^{(n)}(0) \frac {x^n} {n!}`}
+
+La traduction en Python ne devrait pas être trop difficile sachant que
+
+- $n!$ est calculé avec `math.factorial(n)`,
+- {tex`f^{(n)}(0)`} est calculé avec `diff(n, 0)` défini précédemment.
+
+Dès lors,
+le polynôme de Maclaurin d'ordre $N$ s'écrit en Python comme suit:
+
+```python
 import math
-import matplotlib.pyplot as plt
-import numpy as np
 
-def f(x):
-    return np.sin(x)
-
-def diff(n, x):
-    return f(x) if n == 0 else diff(n - 1, Dual(x, 1)).dual
-
-def taylor(x):
-    return sum([diff(n, 0) * x**n / math.factorial(n) for n in range(5)])
-
-x = np.linspace(-1, 1)
-plt.plot(x, f(x), label="f(x)")
-plt.plot(x, taylor(x), label="Taylor")
-plt.legend()
+def maclaurin(x, N):
+    return sum([diff(n, 0) * x**n / math.factorial(n) for n in range(N + 1)])
 ```
+
+:::example
+
+Sur $[-3, 3]$,
+tracez les graphes suivants:
+
+- $f(x) = \sin x$
+- son approximation de Maclaurin d'ordre $3$.
+- son approximation de Maclaurin d'ordre $5$.
+
+::::steps
+
+1. On calcule les dérivées d'ordre $n$ de {tex`\sin x`} avec la dérivation automatique:
+
+   ```python run math highlight="3-7"
+   import numpy as np
+
+   def diff(n, x):
+       if n == 0:
+           return np.sin(x)
+       else:
+           return diff(n - 1, x + eps(n)).dual
+   ```
+
+2. On définit l'approximation polynomiale
+   {tex.display`f(x) \approx \sum_{n = 0}^N f^{(n)}(0) \frac {x^n} {n!}`}
+
+   ```python run math highlight="1,10-11"
+   import math
+   import numpy as np
+
+   def diff(n, x):
+       if n == 0:
+           return np.sin(x)
+       else:
+           return diff(n - 1, x + eps(n)).dual
+
+   def maclaurin(x, N):
+       return sum([diff(n, 0) * x**n / math.factorial(n) for n in range(N + 1)])
+   ```
+
+3. On trace les graphes
+
+   ```python run math highlight="2,14-17"
+   import math
+   import matplotlib.pyplot as plt
+   import numpy as np
+
+   def diff(n, x):
+       if n == 0:
+           return np.sin(x)
+       else:
+           return diff(n - 1, x + eps(n)).dual
+
+   def maclaurin(x, N):
+       return sum([diff(n, 0) * x**n / math.factorial(n) for n in range(N + 1)])
+
+   x = np.linspace(-3, 3, 100)
+   plt.plot(x, diff(0, x), label="f(x)")
+   plt.plot(x, maclaurin(x, 3), label="Maclaurin (ordre 3)")
+   plt.plot(x, maclaurin(x, 5), label="Maclaurin (ordre 5)")
+   plt.legend()
+   ```
+
+::::
+:::
+
+<Exercise.MaclaurinSequence />

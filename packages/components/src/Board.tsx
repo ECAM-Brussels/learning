@@ -26,6 +26,16 @@ declare global {
     interface Circle {
       setRadius(radius: string | number | (() => number)): this
     }
+
+    interface Functiongraph {
+      generateTerm(
+        varname: string,
+        xterm: string | number | ((x: number) => number),
+        yterm: string | number | ((x: number) => number),
+        min?: string | number | (() => number),
+        max?: string | number | (() => number),
+      ): void
+    }
   }
 }
 
@@ -306,10 +316,19 @@ export const Board = Object.assign(
         children?: (plot: JXG.Functiongraph) => JSX.Element
       } & JXG.FunctiongraphAttributes,
     ) => {
-      const attrs = omit(props, 'fn', 'children')
+      const attrs = omit(props, 'fn', 'domain', 'children')
       return (
         <Element type="functiongraph" parent={[props.fn, ...(props.domain ?? [])]} attrs={attrs}>
           {(plot: JXG.Functiongraph) => {
+            createEffect(
+              () => [props.fn, props.domain] as const,
+              ([fn, domain]) => {
+                plot.generateTerm('x', 'x', fn, domain?.[0], domain?.[1])
+                plot.update()
+                plot.updateRenderer()
+                plot.board?.update()
+              },
+            )
             return props.children?.(plot)
           }}
         </Element>

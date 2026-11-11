@@ -109,13 +109,16 @@ function expect(code: string, state: { negate?: boolean; math?: boolean } = {}) 
       toSatisfy: (check: (result: string) => boolean | Promise<boolean>) => async () => {
         const res = await output(code, { math: state.math ?? false, test: true })
         if (res[type] === undefined) return false
-        return check(res[type]) === !negate
+        return (await check(res[type])) === !negate
       },
     }
   }
   return {
     code: {
       toMatch: (regex: RegExp) => () => regex.test(code) === !negate,
+      not: {
+        toMatch: (regex: RegExp) => () => regex.test(code) === negate,
+      },
     },
     error: <T extends string | number | boolean>() => getMethods<T>('error'),
     matplotlib: {
@@ -145,10 +148,11 @@ function expect(code: string, state: { negate?: boolean; math?: boolean } = {}) 
           )
           .result<number>(),
       plot: (fn: string | Expression<'output'>, a: number, b: number, n: number = 40) => {
-        const fnCode = typeof fn === 'string' ? fn : fn.python()
-        return expect(code, state)
-          .with(
-            dedent /* python */ `
+        return async () => {
+          const fnCode = typeof fn === 'string' ? fn : await fn.python(true)
+          return expect(code, state)
+            .with(
+              dedent /* python */ `
               import matplotlib.pyplot as plt
               import numpy as np
               ax = plt.gcf().axes[0]
@@ -170,8 +174,9 @@ function expect(code: string, state: { negate?: boolean; math?: boolean } = {}) 
               plt.close("all")
               result
             `,
-          )
-          .toReturn(true)
+            )
+            .toReturn(true)()
+        }
       },
       sameScale: () =>
         expect(code, state)
