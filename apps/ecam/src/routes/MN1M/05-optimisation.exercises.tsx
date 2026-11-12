@@ -6,6 +6,8 @@ import { range } from 'es-toolkit'
 import { createEffect, createProjection, createSignal, For, Repeat, Show } from 'solid-js'
 import * as v from 'valibot'
 
+// TODO: remove this
+
 const SecondDerivative = createDerivedStep(PythonCode, { f: 'expr' }, (props) => ({
   math: true,
   prompt: (
