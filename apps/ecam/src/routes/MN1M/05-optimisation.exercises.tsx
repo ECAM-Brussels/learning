@@ -1,9 +1,50 @@
 import { Board } from '@learning/components'
 import { createDerivedStep, expr, Sequence, tex } from '@learning/core'
 import { PythonCode } from '@learning/exercises/python/Code'
+import dedent from 'dedent'
 import { range } from 'es-toolkit'
-import { createProjection, createSignal, For, Repeat, Show } from 'solid-js'
+import { createEffect, createProjection, createSignal, For, Repeat, Show } from 'solid-js'
 import * as v from 'valibot'
+
+const SecondDerivative = createDerivedStep(PythonCode, { f: 'expr' }, (props) => ({
+  math: true,
+  prompt: (
+    <>
+      <p>
+        Définissez la fonction <code>diff2(x)</code> qui correspond à la dérivée seconde de{' '}
+        {tex`f(x) = ${props.f}`}, calculée avec la dérivation automatique.
+      </p>
+    </>
+  ),
+  tests: (expect) => ({
+    'Le code utilise epsilon': expect.code.toMatch(/epsilon/),
+    'Le code utilise delta': expect.code.toMatch(/delta/),
+    'Le code utilise la dérivation automatique': expect.code.toMatch(/dual/),
+    ...Object.fromEntries(
+      range(-5, 6).map((n) => [
+        `diff2(${n}) est correct`,
+        expect.with(`diff2(${n})`).result().toEqualThatOf(dedent /* python */ `
+          import numpy as np
+
+          def f(x):
+              return ${props.f.python()}
+
+          f(${n} + epsilon + delta).dual.dual
+        `),
+      ]),
+    ),
+  }),
+}))
+
+export function SecondDerivativeSequence() {
+  return (
+    <Sequence id="second-derivative-sequence">
+      <SecondDerivative f="x^2 - 6x + 13" />
+      <SecondDerivative f="x^2 + e^{-x}" />
+      <SecondDerivative f="x^2 + \sqrt{1 + x^2} + 0.8x" />
+    </Sequence>
+  )
+}
 
 export function NewtonRaphsonAnimation() {
   const fn = (x: number) => 0.1 * x ** 2 + 2 * Math.sin(0.5 * x + 4)
@@ -90,7 +131,7 @@ const Optimisation = createDerivedStep(
         <p>
           À l'aide de la{' '}
           {props.method === 'newton' ? 'méthode de Newton-Raphson' : 'descente de gradient'},
-          trouvez une approximation du minimum de la fonction {tex`f(x) = ${props.f}`}. Comme
+          trouvez une approximation du minimum de la fonction {tex.display`f(x) = ${props.f}`} Comme
           condition d'arrêt, utilisez {tex`|f'(x)| \leq ${props.error}`}.
         </p>
       </>
@@ -129,11 +170,18 @@ export function GradientDescentAnimation() {
   const fn = (x: number) => x ** 2 - 4
   const df = (x: number) => 2 * x
   const [x0, setX0] = createSignal(2.5)
+  const [n, setN] = createSignal(2)
   const [eta, setEta] = createSignal(0.3)
+  createEffect(
+    () => eta(),
+    () => {
+      setN(1)
+    },
+  )
   const x = createProjection<[number, ...number[]]>(() => {
     const result = [x0()] as [number, ...number[]]
     let last = x0()
-    while (Math.abs(df(last)) > 0.3) {
+    while (result.length <= n()) {
       last = last - df(last) * eta()
       result.push(last)
     }
@@ -191,6 +239,21 @@ export function GradientDescentAnimation() {
         </For>
       </Board>
       <div class="flex items-center justify-center gap-8">
+        <label>
+          {tex`n`}:
+          <input
+            class="mx-4 rounded-xl border border-gray-400 px-4"
+            type="number"
+            value={n()}
+            onInput={(e) => {
+              try {
+                setN(Number(e.target.value))
+              } catch {}
+            }}
+            min={1}
+            step={1}
+          />
+        </label>
         <label>
           {tex`\eta`}:
           <input
@@ -288,7 +351,7 @@ const Maclaurin = createDerivedStep(
     ),
     tests: (expect) => ({
       "L'axe x est nommé": expect.matplotlib.xLabel().toMatch(/x/),
-      "L'axe y est nommé": expect.matplotlib.yLabel().toMatch(/f/),
+      "L'axe y est nommé": expect.matplotlib.yLabel().toMatch(/y/),
       'Le code emploie la fonction sum': expect.code.toMatch(/sum\(/),
       'Le code emploie des nombres duaux': expect.code.toMatch(/eps\(/),
       'Le code utilise la factorielle': expect.code.toMatch(/factorial\(/),
@@ -307,7 +370,8 @@ export const MaclaurinSequence = () => {
   return (
     <Sequence id="maclaurin-sequence">
       <Maclaurin f="\cos x" N={[2, 4]} I={[-3, 3]} />
-      <Maclaurin f="e^x" N={[2, 4]} I={[-3, 3]} />
+      <Maclaurin f="e^x" N={[3, 5]} I={[-4, 4]} />
+      <Maclaurin f="\frac{1}{2 + e^{x}}" N={[4, 7]} I={[-3, 3]} />
     </Sequence>
   )
 }

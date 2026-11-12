@@ -16,6 +16,8 @@ Nous présenterons ici deux algorithmes d'optimisation:
    elle ne s'empire pas quand la dimension augmente.
    Elle est un algorithme clé de l'_apprentissage automatique_.
 
+Nous verrons ensuite comment approximer une fonction par un polynôme.
+
 # Dérivées secondes
 
 ## Un premier essai infructueux
@@ -164,11 +166,6 @@ delta = Dual(Dual(0, 1), 0)
 
 :::example
 Définissez la fonction `diff2(x)` qui est la dérivée seconde de {tex`\displaystyle f(x) = \frac {x^2 + 3} {x - 4}`}.
-Ensuite, tracez les graphes suivants sur $[4.5, 5.5]$:
-
-- {tex`f(x)`}
-- {tex`g(x) = f(5) + f'(5)(x - 5) + \frac {f''(5)} 2 (x - 5)^2`}
-
 ::::steps
 
 1. On définit la fonction $f(x)$:
@@ -201,32 +198,20 @@ Ensuite, tracez les graphes suivants sur $[4.5, 5.5]$:
        return diff(x + delta).dual
    ```
 
-4. On calcule la dérivée seconde:
+4. On aurait pu, si on le souhaite, calculer directement la dérivée seconde
 
-   ```python run math
-   import matplotlib.pyplot as plt
-   import numpy as np
-
+   ```python run math highlight="7-8"
    def f(x):
        return (x**2 + 3) / (x - 4)
 
-   def diff(x):
-       return f(x + epsilon).dual
-
    def diff2(x):
-       return diff(x + delta).dual
-
-   def g(x):
-       return f(5) + diff(5) * (x - 5) + 0.5 * diff2(5) * (x - 5)**2
-
-   x = np.linspace(4.5, 5.5, 100)
-   plt.plot(x, f(x), label="f(x)")
-   plt.plot(x, g(x), label="g(x)")
-   plt.legend()
+       return diff(x + epsilon + delta).dual.dual
    ```
 
 ::::
 :::
+
+<Exercise.SecondDerivativeSequence />
 
 # Newton-Raphson pour l'optimisation
 
@@ -234,6 +219,9 @@ Une étape utile pour optimiser est la résolution de l'équation $f'(x) = 0$.
 Souvenez-vous que l'on a appris à trouver une racine _numériquement_ avec la méthode de Newton-Raphson.
 
 On appliquera alors Newton-Raphson à la **dérivéé**.
+Pour rappel, la méthode de Newton-Raphson consiste à remplacer $f$ par sa tangente,
+et espérer que la racine de cette dernière est proche de celle de $f$.
+En **réitérant**, on améliore notre estimation.
 
 |                     | Newton-Raphson classique                                        | Newton-Raphson pour l'optimisation                                |
 | ------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------- |
@@ -241,17 +229,30 @@ On appliquera alors Newton-Raphson à la **dérivéé**.
 | Itération           | {tex`\displaystyle x_{n + 1} = x_n - \frac {f(x_n)} {f'(x_n)}`} | {tex`\displaystyle x_{n + 1} = x_n - \frac {f'(x_n)} {f''(x_n)}`} |
 | Itération en Python | `x = x - f(x) / diff(x)`                                        | `x = x - diff(x) / diff2(x)`                                      |
 
+Dans le schéma ci-dessus,
+remarquez qu'on applique Newton-Raphson à $f'$ (bleu clair).
+On part de $x_0$, on se dirige verticalement vers le graphe.
+Ensuite, on se déplace _le long de la tangente_ vers la **racine**, qu'on appelle $x_1$.
+On recommence ensuite.
+
 <Exercise.NewtonRaphsonAnimation />
 
 :::example
-Avec la méthode de Newton-Raphson,
+En employant 5 itérations de la méthode de Newton-Raphson,
 trouvez le minimum de {tex`\displaystyle f(x) = x^2 + 3x + 5`} en partant de $x = 0$.
 
 ::::steps
 
-1. On définit la fonction $f(x)$ et ses dérivées première et seconde:
+1. On définit la fonction $f(x)$
 
    ```python run math
+   def f(x):
+       return x**2 + 3*x + 5
+   ```
+
+2. On calcule $f'(x)$ et $f''(x)$:
+
+   ```python run math highlight="4-8"
    def f(x):
        return x**2 + 3*x + 5
 
@@ -262,7 +263,7 @@ trouvez le minimum de {tex`\displaystyle f(x) = x^2 + 3x + 5`} en partant de $x 
        return diff(x + delta).dual
    ```
 
-2. On applique la méthode de Newton-Raphson à la dérivée première:
+3. On applique la méthode de Newton-Raphson à la dérivée première:
 
    ```python run math highlight="10-14"
    def f(x):
@@ -275,7 +276,7 @@ trouvez le minimum de {tex`\displaystyle f(x) = x^2 + 3x + 5`} en partant de $x 
        return diff(x + delta).dual
 
    x = 0
-   for i in range(2):
+   for i in range(5):
        x = x - diff(x) / diff2(x)
 
    x
@@ -291,15 +292,27 @@ Comment sait-on si cela sera suffisant?
 
 Puisque notre but est d'avoir $f'(x) = 0$,
 il est naturel de s'arrêter lorsque $f'$ est suffisamment proche de $0$,
-par exemple lorsque $|f'(x)| \leq 10^{-6}$.
+par exemple lorsque {tex.display`|f'(x)| \leq 10^{-6}`}
+
+On appelle cela une **condition d'arrêt**.
 En Python, ceci se fait avec une boucle `while` (qui veut dire _tant que_ en français):
 
 ```python
+# Tant que |f'(x)| > 10^(-6)...
 while np.abs(diff(x)) > 1e-6:
+    # On applique Newton-Raphson à f'
     x = x - diff(x) / diff2(x)
 ```
 
 De nouveau, seules les **lignes indentées** sont répétées.
+
+Remarquez que la _condition_ de la boucle `while` est le **contraire** de la condition d'arrêt.
+Ceci est dû au fait qu'avec `while` on spécifie quand continuer et non pas quand s'arrêter.
+
+| Condition d'arrêt      | Boucle `while`                    |
+| ---------------------- | --------------------------------- |
+| {tex`f'(x) \leq 0.01`} | `while np.abs(diff(x)) > 0.01:`   |
+| {tex`f'(x) < 0.001`}   | `while np.abs(diff(x)) >= 0.001:` |
 
 :::example
 En utilisant la condition d'arrêt $|f'(x)| \leq 10^{-7}$,
@@ -353,11 +366,10 @@ On améliore progressivement notre estimation du minimum en utilisant la _pente_
 Le minimum est-il à gauche ou à droite de notre estimation?
 On se déplace ensuite dans cette direction et on recommence.
 
-Supposons qu'on ait une estimation $x$ du minimum de $f$.
+Supposons qu'on ait une estimation $x_n$ du minimum de $f$.
 Deux cas se présentent:
 
-- Si $f'(x) > 0$, la pente est positive, donc le minimum se trouve _à gauche_ de $x$.
-  Donc si $f'(x)$ est **positif**, on veut un déplacement **négatif** (vers la gauche).
+- Si $f'(x_n) > 0$, la pente est positive et donc le minimum se trouve _à gauche_ de $x_n$.
 
   <Board class="h-96 w-96">
     <Board.Axis from={[0, 0]} to={[0, 1]} ticks={{ visible: false }} />
@@ -369,11 +381,18 @@ Deux cas se présentent:
       color="darkgreen"
       strokeWidth={3}
     />
-    <Board.Point position={[2, -0.5]} fixed name="x" />
+    <Board.Point position={[2, -0.5]} fixed name="x_n" />
   </Board>
 
+  Donc si $f'(x_n)$ est **positif**, on veut {tex`x_{n + 1} < x_n`}, c'est-à-dire un déplacement vers la **gauche**.
+  Notez que c'est le cas avec
+  {tex.display`x_{n + 1} = x_n - \underbrace{\eta f'(x_n)}_{> 0}, \qquad \qquad \eta > 0`}.
+
+  La formule ci dessus veut dire que l'on part de $x_n$
+  et que l'on se déplace dans la direction opposée de la pente $f'(x_n)$
+  puisque la quantité $\eta$ est une **constante** strictement positive.
+
 - Si $f'(x) < 0$, la pente est négative, donc le minimum se trouve _à droite_ de $x$.
-  Donc si $f'(x)$ est **négatif**, on veut un déplacement **positif** (vers la droite).
 
   <Board class="h-96 w-96">
     <Board.Axis from={[0, 0]} to={[0, 1]} ticks={{ visible: false }} />
@@ -388,14 +407,41 @@ Deux cas se présentent:
     <Board.Point position={[-2, -0.5]} fixed name="x" />
   </Board>
 
-Remarquez que l'on se déplace dans la **direction opposée** de la pente:
+  Donc si $f'(x_n)$ est **négatif**, on veut {tex`x_{n + 1} > x_n`}, c'est-à-dire un déplacement vers la **droite**.
+  Notez que c'est le cas avec
+  {tex.display`x_{n + 1} = x_n - \underbrace{\eta f'(x_n)}_{< 0}, \qquad \qquad \eta > 0`}.
 
-{tex.display`x_1 = x_0 - \eta f'(x_0)`}
+  La formule ci dessus veut dire que l'on part de $x_n$
+  et que l'on se déplace dans la direction opposée de la pente $f'(x_n)$,
+  puisque la quantité $\eta$ est une **constante** strictement positive.
 
-- En prenant $- \eta f'(x_0)$ avec $\eta > 0$, on s'assure de se déplacer dans la direction contraire à la pente,
-  c'est-à-dire vers le minimum.
+:::remark[Descente de gradient]
+L'itération {tex.display`x_{n + 1} = x_n - \eta f'(x_n)`} est appelée **descente de gradient**.
 
-- $\eta$ est appelé le _taux d'apprentissage_.
+Son nom provient du fait que l'on se déplace dans la direction opposée de la pente
+(le gradient est la généralisation de la pente en dimension supérieure).
+:::
+
+:::remark[Taux d'apprentissage]
+La constante $\eta$ est nécessaire pour s'assurer que les déplacements ne sont pas trop grands.
+Imaginons que $f'(x_n) = 1000$, alors {tex`x_{n + 1} = x_n - 1000`} est un déplacement énorme.
+Cette constante a pour nom le **taux d'apprentissage**.
+
+En revanche, si $\eta$ est trop petit, les déplacements seront minuscules
+et plus de temps sera nécessaire pour atteindre le minimum.
+:::
+
+En pratique, une seule ligne change entre Newton-Raphson et la descente de gradient: l'itération
+
+|                      | Newton-Raphson                                                    | Descente de gradient                  |
+| -------------------- | ----------------------------------------------------------------- | ------------------------------------- |
+| Itération            | {tex`\displaystyle x_{n + 1} = x_n - \frac {f'(x_n)} {f''(x_n)}`} | {tex`x_{n + 1} = x_n - \eta f'(x_n)`} |
+| Code Python          | `x = x - diff(x) / diff2(x)`                                      | `x = x - eta * diff(x)`               |
+| Dérivées nécessaires | $f'(x)$ et $f''(x)$                                               | seulement $f'(x)$                     |
+
+Prenez un moment pour utiliser l'animation ci-dessous.
+D'abord, faites augmenter $n$ pour voir les déplacements successifs,
+ensuite, changez le taux d'apprentissage $\eta$ pour voir l'effet sur la vitesse de convergence.
 
 <Exercise.GradientDescentAnimation />
 
@@ -403,7 +449,6 @@ Remarquez que l'on se déplace dans la **direction opposée** de la pente:
 En utilisant la descente de gradient sur $f(x) = x^2$ avec un taux d'apprentissage $\eta = 0.01$
 et un point de départ $x = 2$,
 trouvez le minimum de $f$ en utilisant la condition d'arrêt $|f'(x)| \leq 10^{-6}$.
-
 ::::steps
 
 1. On définit $f$ et sa dérivée:
@@ -439,7 +484,10 @@ trouvez le minimum de $f$ en utilisant la condition d'arrêt $|f'(x)| \leq 10^{-
 
 <Exercise.GradientDescentSequence />
 
-# Approximation polynomiales
+# Approximation polynomiales (non-examinable)
+
+Nous mettons cette section à destination des curieux·ses.
+Celle-ci illustre un concept que vous verrez à la fin du cours de _Math de base B_,
 
 ## Dérivées d'ordre supérieur
 
@@ -504,6 +552,17 @@ La formule de Maclaurin permet d'approximer une fonction autour de $0$ par un po
 {tex.display`f(x) \approx f(0) + f'(0) x + f''(0) \frac {x^2} {2!} + f'''(0) \frac {x^3} {3!} + \dots + f^{(N)}(0) \frac {x^N} {N!},`}
 
 où $n! = 1 \cdot 2 \cdot 3 \cdots n$ est la factorielle de $n$.
+Le membre de droite s'appelle le **polynôme de Maclaurin d'ordre N**.
+
+:::example[Polynôme de Maclaurin]
+Pour $f(x) = e^x$, {tex`f^{(n)}(x) = e^x`} donc {tex`f^{(n)}(0) = 1`}.
+Dès lors, la formule de Maclaurin devient:
+
+{tex.display`e^x \approx 1 + x + \frac {x^2} {2!} + \frac {x^3} {3!} + \dots + \frac {x^N} {N!}.`}
+
+En fait, l'exponentielle est implémentée sur les ordinateurs par cette formule.
+:::
+
 À titre d'exemple, voici la fonction $f(x) = \sin x$ approximée par un polynôme de Maclaurin d'ordre $5$:
 
 <Exercise.MaclaurinAnimation />
