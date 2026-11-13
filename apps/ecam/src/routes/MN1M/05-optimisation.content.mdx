@@ -2,8 +2,6 @@ import { Board } from '@learning/components'
 import { tex } from '@learning/core'
 import * as Exercise from './05-optimisation.exercises'
 
-TODO: remove this
-
 # Introduction
 
 Nous présenterons ici deux algorithmes d'optimisation:
@@ -18,9 +16,9 @@ Nous présenterons ici deux algorithmes d'optimisation:
    elle ne s'empire pas quand la dimension augmente.
    Elle est un algorithme clé de l'_apprentissage automatique_.
 
-Nous verrons ensuite comment approximer une fonction par un polynôme.
-
 # Dérivées secondes
+
+Pour pouvoir appliquer la méthode de Newton-Raphson, il faut pouvoir calculer la dérivée seconde.
 
 ## Un premier essai infructueux
 
@@ -44,7 +42,7 @@ diff2(1)
 Pourquoi cela ne fonctionne-t-il pas?
 :::
 
-Notre code est en fait équivalent à
+Notre code est en fait équivalent à:
 
 ```python run math
 def f(x):
@@ -54,7 +52,7 @@ f(1 + epsilon + epsilon).dual.dual
 ```
 
 L'erreur provient de la double application `.dual.dual`.
-En prenant la partie duale la première fois,
+Regardons ce qui se passe lorsque l'on applique `.dual` une première fois:
 
 ```python run math
 def f(x):
@@ -63,35 +61,13 @@ def f(x):
 f(1 + epsilon + epsilon).dual
 ```
 
+En prenant la partie duale la première fois,
 on a un nombre réel et non dual,
 et `.dual` n'est alors pas défini.
 
-Le `+ epsilon + epsilon` nous met la puce à l'oreille
-qu'il faut utiliser **deux nombres duaux différents**,
-tel que dans le code suivant.
-
-```python run math
-def f(x):
-    return x**2
-
-f(1 + epsilon + delta)
-```
-
-On voit alors que `.dual.dual` est bien défini:
-le premier `.dual` prend la partie duale par rapport à $\epsilon$ (ou $\delta$),
-tandis que le second `.dual` prend la partie duale par rapport à $\delta$ (ou $\epsilon$).
-D'ailleurs, le code suivant donne bien $2$ qui est la dérivée seconde de $x^2$.
-
-```python run math
-def f(x):
-    return x**2
-
-f(1 + epsilon + delta).dual.dual
-```
-
 ## Dérivée automatique seconde
 
-La dérivée automatique seconde fonctionne en utilisant un second nombre dual $\delta$ en plus d'$\epsilon$.
+La dérivée automatique seconde fonctionne en utilisant un **second nombre dual** $\delta$ en plus d'$\epsilon$.
 Par exemple, pour la fonction $f(x) = x^2$, si $\epsilon^2 = 0$ et $\delta^2 = 0$, on a
 
 {tex.display`(x + \epsilon + \delta)^2 = x^2 + {\color{green} 2x}\epsilon + \underbrace{\epsilon^2}_0 + {\color{green}2x} \delta + {\color{red} 2}\epsilon\delta + \underbrace{\delta^2}_0,`}
