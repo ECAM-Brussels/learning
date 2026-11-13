@@ -18,7 +18,7 @@
       "label": "Push schema database",
       "type": "shell",
       "command": "bun db:push",
-      "isBackground": true,
+      "isBackground": false,
       "presentation": {
         "reveal": "always",
         "panel": "dedicated"
