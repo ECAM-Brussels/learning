@@ -34,7 +34,8 @@
   "private": true,
   "scripts": {
     "codegen": "turbo run codegen",
-    "dev": "bun install && turbo run dev",
+    "db:push": "bun --env-file=.env --filter=@learning/db run db:push",
+    "dev": "bun install && bun --env-file=.env ./node_modules/turbo/bin/turbo run dev",
     "docker": "docker compose --profile prod up --build",
     "docker:dev": "docker compose --profile dev up --build",
     "lint": "turbo run lint && prettier . --write",
