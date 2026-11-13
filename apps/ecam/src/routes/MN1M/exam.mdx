@@ -1,0 +1,87 @@
+import { tex } from '@learning/core'
+
+# Préparation à l'examen
+
+Cette liste contient une liste de compétences nécessaires pour l'examen.
+Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure.
+
+## Séance 1
+
+- Pouvoir utiliser Python comme calculatrice scientifique.
+- Utiliser le fait que Python fonctionne avec $15$ chiffres significatifs,
+- Savoir si un nombre a une représentation binaire exacte
+- Comprendre la vectorisation
+- Utiliser le fait que les fonctions de `numpy`, contrairement à `math`, sont vectorisées.
+
+### Exemple de questions
+
+- Écrivez le calcul {tex`\displaystyle \frac{7^3}{3 \sin x }`} en Python
+- Quel est le résultat de `3 ** 3`?
+- Le nombre $0.4$ est-il stocké de manière exacte dans la mémoire de l'ordinateur?
+- Quel sera le résultat du code suivant:
+
+  ```python
+  import numpy as np
+
+  x = np.array([1, 2, 3])
+  x ** 2
+  ```
+
+- Que faut-il changer au code suivant pour qu'il fonctionne?
+
+  ```python
+  import math
+  import numpy as np
+
+  x = np.array([1, 2, 3])
+  math.sqrt(x)
+  ```
+
+## Séance 2
+
+- Comprendre la vectorisation
+- Comprendre que les graphes d'une fonction sont en fait linéaires par morceaux
+
+### Exemples de question
+
+- Quel type de données reçoit-on en sortie du programme suivant:
+
+  ```python
+  import numpy as np
+  x = np.linspace(0, 1, 100)
+  y = x**2
+  y
+  ```
+
+- Quel est le résultat du programme suivant:
+
+  ```python
+  import numpy as np
+
+  x = np.linspace(0, 2, 2)
+  x**2
+  ```
+
+- Vrai ou faux: les graphes sur Matplotlib ne sont en réalité pas lisses
+  et sont composés de segment de droites.
+
+## Séance 3
+
+- {tex`\displaystyle f'(a) \approx \frac{f(a+h) - f(a)}{h}`} est une bonne approximation si $h$ est petit,
+  mais pas si $h$ est trop petit.
+- Les différences finies sont **numériquement instables**.
+- La différence centrale {tex.display`f'(a) \approx \frac{f(a+h) - f(a-h)}{2h}`} est meilleure numériquement
+
+### Exemples de question
+
+## Séance 4
+
+- Pouvoir faire des calculs sur les nombres duaux
+- Évaluer une fonction réelle sur des nombres duaux (e.g. $\sin (3 + 4 \epsilon)$)
+- Comprendre que $f'(a)$ se calcule via `f(a + epsilon).dual`
+- Appliquer une ou deux itérations de Newton-Raphson à la main
+
+### Exemples de question
+
+- Que vaut $(3 + 2 \epsilon) (1 - \epsilon)$ après simplification?
+- Calculez {tex`\sqrt{1 + \epsilon}`}

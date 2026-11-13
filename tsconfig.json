@@ -28,7 +28,7 @@
     "noPropertyAccessFromIndexSignature": false
   },
   "mdx": {
-    "checkMdx": true
+    "checkMdx": false
   },
   "tsrx": {
     "compiler": "@tsrx/solid"

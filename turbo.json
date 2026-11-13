@@ -5,8 +5,18 @@
     "codegen": {
       "cache": false
     },
+    "db:start": {
+      "cache": false
+    },
+    "db:push": {
+      "cache": false,
+      "dependsOn": ["db:start"],
+      "passThroughEnv": ["*"]
+    },
     "dev": {
       "cache": false,
+      "dependsOn": ["db:start", "db:push"],
+      "passThroughEnv": ["*"],
       "persistent": true
     },
     "lint": {

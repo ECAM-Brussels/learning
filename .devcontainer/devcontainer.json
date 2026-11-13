@@ -1,0 +1,29 @@
+{
+  "name": "Ubuntu",
+  "image": "mcr.microsoft.com/devcontainers/base:resolute",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:4": {},
+    "ghcr.io/devcontainers-extra/features/bun:1": {},
+    "ghcr.io/devcontainer-community/devcontainer-features/astral.sh-uv:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "bierner.comment-tagged-templates",
+        "bradlc.vscode-tailwindcss",
+        "darkriszty.markdown-table-prettify",
+        "esbenp.prettier-vscode",
+        "hipstersmoothie-public.mdx-tsc-vscode",
+        "ms-python.black-formatter",
+        "unifiedjs.vscode-mdx",
+        "tsrx.tsrx-vscode-plugin"
+      ],
+      "settings": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true,
+        "prettier.configPath": "prettier.config.js",
+        "prettier.prettierPath": "./node_modules/prettier"
+      }
+    }
+  }
+}
