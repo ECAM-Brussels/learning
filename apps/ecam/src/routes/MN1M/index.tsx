@@ -8,6 +8,7 @@ import session4 from './automatic-differentiation.jpg'
 import banner from './banner.jpg'
 import session3 from './differences.jpg'
 import session2 from './matplotlib.jpg'
+import session5 from './optimisation.jpg'
 import session1 from './python.jpg'
 
 export const route = {
@@ -85,6 +86,13 @@ export default () => (
         link="04-automatic-differentiation"
         img={session4}
         draft={new Date('2026-11-05 07:00')}
+      />
+      <SessionCard
+        index={5}
+        title="Optimisation"
+        link="05-optimisation"
+        img={session5}
+        draft={new Date('2026-11-16 07:00')}
       />
     </div>
   </>
