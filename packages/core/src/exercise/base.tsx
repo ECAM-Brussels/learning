@@ -252,6 +252,7 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
     () =>
       !options().readOnly && (!step.submitted || (!step.correct && options().allowResubmissions)),
   )
+  const [status, setStatus] = createOptimistic<'ready' | 'grading' | 'submitting'>('ready')
   /**
    * Handle submissions
    *
@@ -263,6 +264,7 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
   const submit = throttle(
     action(async function* (newState: Partial<ObjectSchema<S['inputs'], 'input'>>) {
       if (!canSubmit()) return
+      setStatus('grading')
       const state = v.parse(schema().entries.state, newState)
       const submitted = Object.keys(state).length > 0
       let correct: boolean | undefined = undefined
@@ -272,6 +274,7 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
         correct = Array.isArray(result) ? (await Promise.all(result)).every(Boolean) : await result
       }
       const payload = { ...step, state, submitted, correct }
+      setStatus('submitting')
       yield exerciseContext().saveStep(
         stepContext(),
         JSON.parse(JSON.stringify(payload)),
@@ -438,12 +441,18 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
           <div class="grow">
             <Prompt data={step.data} inputs={fields()} state={promptState} />
             <Show when={canSubmit() && !resetting()}>
-              <button
-                class="my-4 block cursor-pointer rounded-lg bg-green-800 px-3 py-2 font-bold text-green-100 hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
-                disabled={isPending(() => step.submitted)}
-              >
-                {isPending(() => step.submitted) ? 'Soumission...' : 'Soumettre'}
-              </button>
+              <div class="flex items-center gap-4">
+                <button
+                  class="my-4 block cursor-pointer rounded-lg bg-green-800 px-3 py-2 font-bold text-green-100 hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+                  disabled={isPending(() => step.submitted)}
+                >
+                  {isPending(() => step.submitted) ? 'Soumission...' : 'Soumettre'}
+                </button>
+                <pre>
+                  <Show when={status() === 'grading'}>Correction en cours...</Show>
+                  <Show when={status() === 'submitting'}>Soumission en cours...</Show>
+                </pre>
+              </div>
             </Show>
           </div>
           <Show when={options().video}>{(src) => <Youtube src={src()} zoom={0.8} />}</Show>
