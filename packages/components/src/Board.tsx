@@ -357,6 +357,36 @@ export const Board = Object.assign(
         </Element>
       )
     },
+    RiemannSum: (
+      props: {
+        f: (x: number) => number
+        n: number
+        type?: JXG.RiemannSumTypeOrFunction
+        domain: [number, number]
+        children?: (riemannsum: JXG.Riemannsum) => JSX.Element
+      } & JXG.RiemannsumAttributes,
+    ) => {
+      const attrs = omit(props, 'f', 'n', 'type', 'domain', 'children')
+      return (
+        <Element
+          type="riemannsum"
+          parent={[props.f, () => props.n, () => props.type ?? 'left', ...props.domain]}
+          attrs={attrs}
+        >
+          {(riemannsum: JXG.Riemannsum) => {
+            createEffect(
+              () => [props.f, props.n, props.type, props.domain] as const,
+              () => {
+                riemannsum.update()
+                riemannsum.updateRenderer()
+                riemannsum.board?.update()
+              },
+            )
+            return props.children?.(riemannsum)
+          }}
+        </Element>
+      )
+    },
     Sector: (
       props: {
         points: [
@@ -403,6 +433,38 @@ export const Board = Object.assign(
               },
             )
             return props.children?.(segment)
+          }}
+        </Element>
+      )
+    },
+    Text: (
+      props: {
+        position: [number, number]
+        content: string | number
+        children?: (text: JXG.Text) => JSX.Element
+      } & JXG.TextAttributes,
+    ) => {
+      const attrs = omit(props, 'position', 'content', 'children')
+      return (
+        <Element
+          type="text"
+          parent={[props.position[0], props.position[1], `${props.content}`]}
+          attrs={attrs}
+        >
+          {(text: JXG.Text) => {
+            createEffect(
+              () => props.position,
+              (position) => {
+                text.moveTo(position)
+              },
+            )
+            createEffect(
+              () => props.content,
+              (content) => {
+                text.setText(`${content}`)
+              },
+            )
+            return props.children?.(text)
           }}
         </Element>
       )
