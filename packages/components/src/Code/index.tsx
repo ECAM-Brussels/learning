@@ -2,8 +2,10 @@ import type { JSX } from '@solidjs/web'
 import { clientOnly, dynamic } from '@solidjs/web'
 import dedent from 'dedent'
 import {
+  createEffect,
   createMemo,
   createSignal,
+  isPending,
   Loading,
   merge,
   Show,
@@ -30,12 +32,13 @@ type Props = Omit<EditorProps, 'lang'> & {
   backend?: 'monaco' | 'codemirror'
 } & {
   lang: 'python'
-  run?: boolean
+  run?: string | boolean
   math?: boolean
+  mode?: 'automatic' | 'manual'
 }
 
 export const Code: Component<Props> = (rawProps) => {
-  const props = merge({ backend: 'monaco' }, rawProps)
+  const props = merge({ backend: 'monaco', mode: 'automatic' }, rawProps)
   const [value, setValue] = createSignal(() => props.children)
   const editor = createMemo(() => {
     if (isMobile()) return 'codemirror'
@@ -43,21 +46,45 @@ export const Code: Component<Props> = (rawProps) => {
   })
   const Editor = dynamic(() => (editor() === 'monaco' ? Monaco : CodeMirror))
   const formState = useContext(FormState)
+
+  const [code, setCode] = createSignal(() => (typeof props.run === 'string' ? props.run : ''))
+  createEffect(
+    () => [value(), props.mode] as const,
+    ([value, mode]) => {
+      if (mode === 'automatic') {
+        setCode(value)
+      }
+    },
+  )
+
   return (
     <Loading fallback={<p>Chargement de l'éditeur...</p>}>
       <div class="my-4 flex flex-col gap-0">
-        <Editor
-          children={value()}
-          lang={props.lang}
-          highlight={props.highlight}
-          onChange={(newValue) => {
-            setValue(newValue)
-            props.onChange?.(newValue)
-          }}
-          readOnly={props.readOnly ?? formState().readOnly}
-        />
+        <div class="flex items-end gap-4">
+          <Show when={props.mode === 'manual'}>
+            <button
+              class="rounded-full border border-gray-400 px-2 disabled:text-gray-200"
+              type="button"
+              disabled={isPending(code)}
+              onClick={() => setCode(value())}
+            >
+              ▶
+            </button>
+          </Show>
+          <Editor
+            class="grow"
+            children={value()}
+            lang={props.lang}
+            highlight={props.highlight}
+            onChange={(newValue) => {
+              setValue(newValue)
+              props.onChange?.(newValue)
+            }}
+            readOnly={props.readOnly ?? formState().readOnly}
+          />
+        </div>
         <Show when={props.lang === 'python' && props.run}>
-          <Python class="my-0 py-0" value={value()} math={props.math} />
+          <Python class="my-0 py-0" value={code()} math={props.math} />
         </Show>
       </div>
     </Loading>

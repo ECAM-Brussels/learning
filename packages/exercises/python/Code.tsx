@@ -89,6 +89,7 @@ export const PythonCode = createStep({
       check: omitFromJSON(
         v.optional(v.custom<(code: string) => boolean | Promise<boolean>>(() => true)),
       ),
+      mode: v.optional(v.union([v.literal('automatic'), v.literal('manual')]), 'automatic'),
       math: v.optional(v.boolean(), false),
       initialCode: v.optional(v.string(), ''),
     },
@@ -121,7 +122,8 @@ export const PythonCode = createStep({
           children={ctx.state.current.code ?? ctx.data.initialCode}
           onChange={ctx.state.set.bind(null, 'code')}
           math={ctx.data.math}
-          run
+          run={ctx.state.saved?.code ?? true}
+          mode={ctx.data.mode}
         />
       </>
     )

@@ -88,9 +88,7 @@ Si l'on a également besoin de la dérivée première,
 on peut procéder en deux étapes,
 en s'assurant d'employer deux nombres duaux **différents** pour chaque dérivée:
 
-```python run math
-import numpy as np
-
+```python run math highlight="8"
 def f(x):
     return x**2
 
@@ -106,7 +104,7 @@ diff2(1)
 Si seule la dérivée seconde est nécessaire,
 on peut se contenter d'une étape et écrire
 
-```python run math
+```python run math highlight="5"
 def f(x):
     return x**2
 
@@ -120,7 +118,7 @@ diff2(1)
 En employant $\epsilon$ et $\delta$,
 nos nombres peuvent maintenant prendre la forme
 
-{tex.display`\underbrace{(a + b \delta)}_{\text{partie "réelle" p/r à }\epsilon} + \underbrace{(c + d \delta)}_{\text{partie "duale" p/r à }\epsilon} \epsilon`}
+{tex.display`\underbrace{(a + b \delta)}_{\text{partie ${'``'}réelle'' p/r à }\epsilon} + \underbrace{(c + d \delta)}_{\text{partie ${'``'}duale'' p/r à }\epsilon} \epsilon`}
 
 En d'autres termes, nos nombres duaux en $\delta$ sont **imbriqués** dans des nombres duaux en $\epsilon$.
 L'instruction `.dual.dual` sur le nombre ci-dessus prend alors son sens et donne $d$, le coefficient de $\epsilon\delta$.
@@ -183,7 +181,7 @@ Définissez la fonction `diff2(x)` qui est la dérivée seconde de {tex`\display
        return (x**2 + 3) / (x - 4)
 
    def diff2(x):
-       return diff(x + epsilon + delta).dual.dual
+       return f(x + epsilon + delta).dual.dual
    ```
 
 ::::
@@ -196,7 +194,7 @@ Définissez la fonction `diff2(x)` qui est la dérivée seconde de {tex`\display
 Une étape utile pour optimiser est la résolution de l'équation $f'(x) = 0$.
 Souvenez-vous que l'on a appris à trouver une racine _numériquement_ avec la méthode de Newton-Raphson.
 
-On appliquera alors Newton-Raphson à la **dérivéé**.
+On appliquera alors Newton-Raphson à la **dérivée**.
 Pour rappel, la méthode de Newton-Raphson consiste à remplacer $f$ par sa tangente,
 et espérer que la racine de cette dernière est proche de celle de $f$.
 En **réitérant**, on améliore notre estimation.
@@ -207,7 +205,7 @@ En **réitérant**, on améliore notre estimation.
 | Itération           | {tex`\displaystyle x_{n + 1} = x_n - \frac {f(x_n)} {f'(x_n)}`} | {tex`\displaystyle x_{n + 1} = x_n - \frac {f'(x_n)} {f''(x_n)}`} |
 | Itération en Python | `x = x - f(x) / diff(x)`                                        | `x = x - diff(x) / diff2(x)`                                      |
 
-Dans le schéma ci-dessus,
+Dans le schéma ci-dessous,
 remarquez qu'on applique Newton-Raphson à $f'$ (bleu clair).
 On part de $x_0$, on se dirige verticalement vers le graphe.
 Ensuite, on se déplace _le long de la tangente_ vers la **racine**, qu'on appelle $x_1$.
@@ -350,50 +348,50 @@ Deux cas se présentent:
 - Si $f'(x_n) > 0$, la pente est positive et donc le minimum se trouve _à gauche_ de $x_n$.
 
   <Board class="h-96 w-96">
-    <Board.Axis from={[0, 0]} to={[0, 1]} ticks={{ visible: false }} />
     <Board.Axis from={[0, 0]} to={[1, 0]} ticks={{ visible: false }} />
     <Board.Plot fn={(x) => x ** 2 - 4.5} fixed />
+    <Board.Point position={[1, 0]} fixed name="x_n" />
+    <Board.Segment from={[1, 0]} to={[1, -3.5]} color="lightgray" dash={1} fixed />
     <Board.Plot
-      fn={(x) => 4 * (x - 2) - 0.5}
-      domain={[1.8, 2.2]}
+      fn={(x) => 2 * (x - 1) - 3.5}
+      domain={[0.8, 1.2]}
       color="darkgreen"
       strokeWidth={3}
     />
-    <Board.Point position={[2, -0.5]} fixed name="x_n" />
   </Board>
 
   Donc si $f'(x_n)$ est **positif**, on veut {tex`x_{n + 1} < x_n`}, c'est-à-dire un déplacement vers la **gauche**.
   Notez que c'est le cas avec
-  {tex.display`x_{n + 1} = x_n - \underbrace{\eta f'(x_n)}_{> 0}, \qquad \qquad \eta > 0`}.
+  {tex.display`x_{n + 1} = x_n - \underbrace{\eta f'(x_n)}_{> 0}, \qquad \qquad \eta > 0`}
 
   La formule ci dessus veut dire que l'on part de $x_n$
   et que l'on se déplace dans la direction opposée de la pente $f'(x_n)$
   puisque la quantité $\eta$ est une **constante** strictement positive.
 
-- Si $f'(x) < 0$, la pente est négative, donc le minimum se trouve _à droite_ de $x$.
+- Si $f'(x_n) < 0$, la pente est négative, donc le minimum se trouve _à droite_ de $x_n$.
 
   <Board class="h-96 w-96">
-    <Board.Axis from={[0, 0]} to={[0, 1]} ticks={{ visible: false }} />
     <Board.Axis from={[0, 0]} to={[1, 0]} ticks={{ visible: false }} />
     <Board.Plot fn={(x) => x ** 2 - 4.5} fixed />
+    <Board.Point position={[-1, 0]} fixed name="x_n" />
+    <Board.Segment from={[-1, 0]} to={[-1, -3.5]} color="lightgray" dash={1} fixed />
     <Board.Plot
-      fn={(x) => -4 * (x + 2) - 0.5}
-      domain={[-2.2, -1.8]}
+      fn={(x) => -2 * (x + 1) - 3.5}
+      domain={[-1.2, -0.8]}
       color="darkgreen"
       strokeWidth={3}
     />
-    <Board.Point position={[-2, -0.5]} fixed name="x" />
   </Board>
 
   Donc si $f'(x_n)$ est **négatif**, on veut {tex`x_{n + 1} > x_n`}, c'est-à-dire un déplacement vers la **droite**.
   Notez que c'est le cas avec
-  {tex.display`x_{n + 1} = x_n - \underbrace{\eta f'(x_n)}_{< 0}, \qquad \qquad \eta > 0`}.
+  {tex.display`x_{n + 1} = x_n - \underbrace{\eta f'(x_n)}_{< 0}, \qquad \qquad \eta > 0`}
 
-  La formule ci dessus veut dire que l'on part de $x_n$
+  La formule ci-dessus veut dire que l'on part de $x_n$
   et que l'on se déplace dans la direction opposée de la pente $f'(x_n)$,
   puisque la quantité $\eta$ est une **constante** strictement positive.
 
-:::remark[Descente de gradient]
+:::definition[Descente de gradient]
 L'itération {tex.display`x_{n + 1} = x_n - \eta f'(x_n)`} est appelée **descente de gradient**.
 
 Son nom provient du fait que l'on se déplace dans la direction opposée de la pente
@@ -403,10 +401,11 @@ Son nom provient du fait que l'on se déplace dans la direction opposée de la p
 :::remark[Taux d'apprentissage]
 La constante $\eta$ est nécessaire pour s'assurer que les déplacements ne sont pas trop grands.
 Imaginons que $f'(x_n) = 1000$, alors {tex`x_{n + 1} = x_n - 1000`} est un déplacement énorme.
-Cette constante a pour nom le **taux d'apprentissage**.
+Cette constante a pour nom le **taux d'apprentissage** (_learning rate_ en anglais).
 
 En revanche, si $\eta$ est trop petit, les déplacements seront minuscules
 et plus de temps sera nécessaire pour atteindre le minimum.
+Pour cette séance, $\eta = 0.01$ est un bon compromis.
 :::
 
 En pratique, une seule ligne change entre Newton-Raphson et la descente de gradient: l'itération
@@ -462,7 +461,7 @@ trouvez le minimum de $f$ en utilisant la condition d'arrêt $|f'(x)| \leq 10^{-
 
 <Exercise.GradientDescentSequence />
 
-# Approximation polynomiales (non-examinable)
+# Approximations polynomiales (non-examinable)
 
 Nous mettons cette section à destination des curieux·ses.
 Celle-ci illustre un concept que vous verrez à la fin du cours de _Math de base B_,
@@ -525,7 +524,10 @@ Définissez la fonction `diff(n, x)` qui est la dérivée d'ordre `n` de {tex`\d
 
 ## Formule de Maclaurin
 
-La formule de Maclaurin permet d'approximer une fonction autour de $0$ par un polynôme:
+Vous avez déjà vu qu'on peut approximer une fonction par sa tangente lorsque $x \approx a$.
+Dans cette section, nous allons améliorer cette approximation.
+Plutôt que d'utiliser une droite pour approximer, nous allons employer un **polynôme**.
+La formule de Maclaurin nous dit comment faire cela lorsque $x \approx 0$.
 
 {tex.display`f(x) \approx f(0) + f'(0) x + f''(0) \frac {x^2} {2!} + f'''(0) \frac {x^3} {3!} + \dots + f^{(N)}(0) \frac {x^N} {N!},`}
 

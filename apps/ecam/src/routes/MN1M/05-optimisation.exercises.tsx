@@ -6,8 +6,6 @@ import { range } from 'es-toolkit'
 import { createEffect, createProjection, createSignal, For, Repeat, Show } from 'solid-js'
 import * as v from 'valibot'
 
-// TODO: remove this
-
 const SecondDerivative = createDerivedStep(PythonCode, { f: 'expr' }, (props) => ({
   math: true,
   prompt: (
@@ -42,7 +40,7 @@ export function SecondDerivativeSequence() {
   return (
     <Sequence id="second-derivative-sequence">
       <SecondDerivative f="x^2 - 6x + 13" />
-      <SecondDerivative f="x^2 + e^{-x}" />
+      <SecondDerivative f="x^2 + 2^{-x}" />
       <SecondDerivative f="x^2 + \sqrt{1 + x^2} + 0.8x" />
     </Sequence>
   )
@@ -68,12 +66,18 @@ export function NewtonRaphsonAnimation() {
   return (
     <Board>
       <Board.Axis from={[0, 0]} to={[0, 1]} ticks={{ visible: false }} name="y" withLabel />
-      <Board.Axis from={[0, 0]} to={[1, 0]} name="x" ticks={{ visible: false }} withLabel />
+      <Board.Axis from={[0, 0]} to={[1, 0]} name="x" ticks={{ visible: false }} withLabel>
+        {(axis) => (
+          <Board.Glider on={axis} position={[x0(), 0]} name="x_0" onDrag={(P) => setX0(P.X())} />
+        )}
+      </Board.Axis>
       <Board.Plot fn={df} strokeColor="lightblue" withLabel name="f'" strokeWidth={2} />
       <Repeat count={x.length}>
         {(i) => (
           <>
-            <Board.Point name={`x_{${i}}`} position={[x[i]!, 0]} fixed color="black" size={1} />
+            <Show when={i > 0}>
+              <Board.Point name={`x_{${i}}`} position={[x[i]!, 0]} fixed color="black" size={1} />
+            </Show>
             <Show when={i < x.length - 1}>
               <Board.Arrow
                 from={[x[i]!, 0]}
@@ -93,16 +97,7 @@ export function NewtonRaphsonAnimation() {
           </>
         )}
       </Repeat>
-      <Board.Plot fn={fn} strokeWidth={4} name="f" withLabel>
-        {(curve) => (
-          <Board.Glider
-            on={curve}
-            position={[x0(), fn(x0())]}
-            name="P"
-            onDrag={(P) => setX0(P.X())}
-          />
-        )}
-      </Board.Plot>
+      <Board.Plot fn={fn} strokeWidth={4} name="f" withLabel />
       <Board.Segment
         from={[x[x.length - 1]!, 0]}
         to={[x[x.length - 1]!, fn(x[x.length - 1]!)]}
@@ -128,6 +123,7 @@ const Optimisation = createDerivedStep(
   },
   (props) => ({
     math: true,
+    mode: 'manual' as const,
     prompt: (
       <>
         <p>
@@ -159,11 +155,10 @@ const Optimisation = createDerivedStep(
 export const NewtonRaphsonSequence = () => {
   return (
     <Sequence id="newton-raphson-sequence">
-      <Optimisation method="newton" f="x^2 - 6x + 13" error="10^{-7}" />
+      <Optimisation method="newton" f="x^2 - 9x + 13" error="10^{-7}" />
       <Optimisation method="newton" f="x^2 + e^{-x}" error="10^{-5}" />
       <Optimisation method="newton" f="e^x - 3x" error="10^{-5}" />
       <Optimisation method="newton" f="x^2 + \sqrt{1 + x^2} + 0.8x" error="10^{-6}" />
-      <Optimisation method="newton" f="x^2 + \ln{(1 + e^{-2x})}" error="10^{-6}" />
     </Sequence>
   )
 }
@@ -196,18 +191,12 @@ export function GradientDescentAnimation() {
         <h5 class="text-gray-500">{tex`x_{n + 1} = x_n - \eta f'(x_n)`}</h5>
       </hgroup>
       <Board>
-        <Board.Axis from={[0, 0]} to={[0, 1]} ticks={{ visible: false }} />
-        <Board.Axis from={[0, 0]} to={[1, 0]} ticks={{ visible: false }} />
-        <Board.Plot fn={fn}>
-          {(curve) => (
-            <Board.Glider
-              on={curve}
-              position={[x0(), fn(x0())]}
-              name="P"
-              onDrag={(P) => setX0(P.X())}
-            />
+        <Board.Axis from={[0, 0]} to={[1, 0]} ticks={{ visible: false }}>
+          {(axis) => (
+            <Board.Glider on={axis} position={[x0(), 0]} name="x_0" onDrag={(P) => setX0(P.X())} />
           )}
-        </Board.Plot>
+        </Board.Axis>
+        <Board.Plot fn={fn} />
         <For each={x}>
           {(t, i) => (
             <>
@@ -299,7 +288,7 @@ export const MaclaurinAnimation = () => {
   }
   const factorial = (x: number): number => (x === 0 ? 1 : x * factorial(x - 1))
   const taylor = (n: number) => (x: number) =>
-    range(n).reduce(
+    range(n + 1).reduce(
       (sum, i) => sum + ((i % 2 === 0 ? 0 : i % 4 === 1 ? 1 : -1) / factorial(i)) * x ** i,
       0,
     )

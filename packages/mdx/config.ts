@@ -1,6 +1,9 @@
 import { defineMdastPlugin } from 'satteri'
 
-function component(name: string, attributes: Record<string, unknown>): {
+function component(
+  name: string,
+  attributes: Record<string, unknown>,
+): {
   type: 'mdxJsxFlowElement'
   name: string
   attributes: Array<{
@@ -73,6 +76,7 @@ const code = defineMdastPlugin({
     const run = node.meta?.includes('run') ?? false
     const highlight: number[] = []
     const match = node.meta?.match(/highlight="([^"]*)"/)
+    const mode = node.meta?.includes('manual') ? 'manual' : 'automatic'
     if (match && match[1]) {
       const list = match[1].split(',').flatMap((item) => {
         const [start, end] = item.split('-').map(Number) as [number, number | undefined]
@@ -84,7 +88,14 @@ const code = defineMdastPlugin({
     }
     if (node.lang === 'python' && run) {
       const math = node.meta?.includes('math') ?? false
-      return component('Code', { lang: node.lang, children: node.value, run, math, highlight })
+      return component('Code', {
+        lang: node.lang,
+        children: node.value,
+        run,
+        math,
+        highlight,
+        mode,
+      })
     }
     return component('Highlight', {
       lang: node.lang === 'mdx' ? 'jsx' : node.lang,

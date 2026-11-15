@@ -117,7 +117,7 @@ function expect(code: string, state: { negate?: boolean; math?: boolean } = {}) 
     code: {
       toMatch: (regex: RegExp) => () => regex.test(code) === !negate,
       not: {
-        toMatch: (regex: RegExp) => () => regex.test(code) === negate,
+        toMatch: (regex: RegExp) => () => regex.test(code) === (negate ?? false),
       },
     },
     error: <T extends string | number | boolean>() => getMethods<T>('error'),
