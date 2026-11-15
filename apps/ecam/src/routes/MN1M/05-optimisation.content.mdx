@@ -333,6 +333,15 @@ trouvez le minimum de {tex`\displaystyle f(x) = x^2 + 3x + 1`} en partant de $x 
 ::::
 :::
 
+:::remark
+Pour les exercices suivants,
+nous avons **désactivé** l'**évaluation automatique** des cellules de code.
+Appuyez sur le bouton "Play" pour exécuter le code et voir le résultat.
+
+Ce choix est motivé par le fait qu'une boucle `while` risque de ne jamais s'arrêter
+si le code n'est pas correct.
+:::
+
 <Exercise.NewtonRaphsonSequence />
 
 # Descente de gradient
@@ -516,7 +525,7 @@ Définissez la fonction `diff(n, x)` qui est la dérivée d'ordre `n` de {tex`\d
         if n == 0:
             return np.exp(x) * np.sin(x)
         else:
-            return diff(n - 1, Dual(x, 1)).dual
+            return diff(n - 1, x + eps(n)).dual
    ```
 
 ::::

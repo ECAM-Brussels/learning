@@ -23,7 +23,7 @@ self.onmessage = async (event: MessageEvent<Input>) => {
   self.postMessage({ id: event.data.id, status: 'importing' })
   await pyodide.loadPackagesFromImports(event.data.code)
   self.postMessage({ id: event.data.id, status: 'executing' })
-  let output: Output = { id: event.data.id }
+  let output: Output = { id: event.data.id, status: 'done' }
   try {
     pyodide.globals.clear()
     if (event.data.code.includes('matplotlib')) {

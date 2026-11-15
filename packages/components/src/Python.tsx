@@ -1,16 +1,18 @@
 import { python } from '@learning/repl'
 import type { JSX } from '@solidjs/web'
-import { createMemo, Loading, Match, Show, Switch } from 'solid-js'
+import { createEffect, createMemo, Loading, Match, Show, Switch } from 'solid-js'
 import { Latex } from './Latex'
+
+type Output = ReturnType<typeof python.run> extends AsyncGenerator<infer T> ? T : never
 
 export default function Python(props: {
   class?: string
   value: string
   math?: boolean
+  onChange?: (output: Output) => void
 }): JSX.Element {
-  const output = createMemo(() => python.run(props.value, { math: props.math ?? false }), {
-    ssrSource: 'client',
-  })
+  const output = createMemo(() => python.run(props.value, { math: props.math ?? false }))
+  createEffect(output, (output) => props.onChange?.(output))
   return (
     <Loading>
       <pre class="not-prose my-2 text-xs">

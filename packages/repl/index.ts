@@ -9,6 +9,7 @@ export type FinalOutput = {
   format: 'text' | 'latex' | 'image'
   result?: string
   stdout?: string
+  status: 'done'
   error?: string
 }
 
@@ -19,7 +20,7 @@ export type Output =
       error?: string
       stdout?: string
       format?: 'text' | 'latex' | 'image'
-      status?: never
+      status: 'done'
     }
   | {
       id: string
@@ -43,7 +44,7 @@ export type Input = {
 
 async function* run(code: string, options?: Options) {
   if (!code) {
-    yield { id: crypto.randomUUID(), result: '' }
+    yield { id: crypto.randomUUID(), result: '', status: 'done' } as Output
     return
   }
   const promiseId = crypto.randomUUID()
@@ -63,7 +64,7 @@ async function* run(code: string, options?: Options) {
 
 async function output(code: string, options?: Options): Promise<FinalOutput> {
   for await (const chunk of run(code, options)) {
-    if (!chunk.status) {
+    if (chunk.status === 'done') {
       return chunk as FinalOutput
     }
   }

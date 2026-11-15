@@ -5,7 +5,6 @@ import {
   createEffect,
   createMemo,
   createSignal,
-  isPending,
   Loading,
   merge,
   Show,
@@ -57,15 +56,17 @@ export const Code: Component<Props> = (rawProps) => {
     },
   )
 
+  const [status, setStatus] = createSignal<'running' | 'done'>('done')
+
   return (
     <Loading fallback={<p>Chargement de l'éditeur...</p>}>
       <div class="my-4 flex flex-col gap-0">
         <div class="flex items-end gap-4">
           <Show when={props.mode === 'manual'}>
             <button
-              class="rounded-full border border-gray-400 px-2 disabled:text-gray-200"
+              class="rounded-full border border-cyan-700 px-2 text-cyan-700 disabled:border-gray-200 disabled:text-gray-200"
               type="button"
-              disabled={isPending(code)}
+              disabled={status() === 'running'}
               onClick={() => setCode(value())}
             >
               ▶
@@ -84,7 +85,18 @@ export const Code: Component<Props> = (rawProps) => {
           />
         </div>
         <Show when={props.lang === 'python' && props.run}>
-          <Python class="my-0 py-0" value={code()} math={props.math} />
+          <Python
+            class="my-0 py-0"
+            value={code()}
+            math={props.math}
+            onChange={(output) => {
+              if (output.status === 'done') {
+                setStatus('done')
+              } else {
+                setStatus('running')
+              }
+            }}
+          />
         </Show>
       </div>
     </Loading>
