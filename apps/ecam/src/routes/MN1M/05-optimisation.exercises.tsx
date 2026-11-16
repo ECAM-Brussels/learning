@@ -274,7 +274,6 @@ export const GradientDescentSequence = () => {
       <Optimisation method="gradient" f="x^2 + e^{-x}" error="10^{-5}" />
       <Optimisation method="gradient" f="e^x - 3x" error="10^{-5}" />
       <Optimisation method="gradient" f="x^2 + \sqrt{1 + x^2} + 0.8x" error="10^{-6}" />
-      <Optimisation method="gradient" f="x^2 + \ln{(1 + e^{-2x})}" error="10^{-6}" />
     </Sequence>
   )
 }
