@@ -132,6 +132,7 @@ const Optimisation = createDerivedStep(
           trouvez une approximation du minimum de la fonction {tex.display`f(x) = ${props.f}`} Comme
           condition d'arrêt, utilisez {tex`|f'(x)| \leq ${props.error}`}.
         </p>
+        <p>Vous pouvez choisir n'importe quel point de départ.</p>
       </>
     ),
     tests: (expect) => ({
@@ -257,7 +258,7 @@ export function GradientDescentAnimation() {
               } catch {}
             }}
             min={0.1}
-            max={0.9}
+            max={1.2}
             step={0.05}
           />
           {tex`${eta()}`}

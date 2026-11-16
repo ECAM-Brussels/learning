@@ -311,7 +311,7 @@ trouvez le minimum de {tex`\displaystyle f(x) = x^2 + 3x + 1`} en partant de $x 
 
 2. On applique la méthode de Newton-Raphson à la dérivée première:
 
-   ```python run math highlight="1,12-16"
+   ```python run math highlight="1,12-15,17"
    import numpy as np
 
    def f(x):
@@ -325,6 +325,7 @@ trouvez le minimum de {tex`\displaystyle f(x) = x^2 + 3x + 1`} en partant de $x 
 
    x = 3
    while np.abs(diff(x)) > 1e-7:
+       print(x) # On affiche les résultats intermédiaires
        x = x - diff(x) / diff2(x)
 
    x
@@ -449,7 +450,7 @@ trouvez le minimum de $f$ en utilisant la condition d'arrêt $|f'(x)| \leq 10^{-
 
 2. On applique la descente du gradient:
 
-   ```python run math highlight="1,9-11,13"
+   ```python run math highlight="1,9-12,14"
    import numpy as np
 
    def f(x):
@@ -460,6 +461,7 @@ trouvez le minimum de $f$ en utilisant la condition d'arrêt $|f'(x)| \leq 10^{-
 
    x = 2
    while np.abs(diff(x)) > 1e-6:
+       print(x)
        x = x - 0.01 * diff(x)
 
    x
