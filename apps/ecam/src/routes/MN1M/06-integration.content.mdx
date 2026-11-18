@@ -402,9 +402,7 @@ en utilisant la méthode du **point milieu**.
 
 ## Règle des trapèzes
 
-D'un point de vue numérique,
-il est plus efficace d'approximer l'aire sous la courbe par des _trapèzes_,
-comme le montre la figure ci-dessous.
+La règle des trapèzes consiste à approximer l'aire sous la courbe par des trapèzes au lieu de rectangles.
 
 <Exercise.RiemannSum
   f={(x) => x ** 2 + 0.5}
@@ -490,10 +488,10 @@ Elle donnent des poids différents aux points gauches, milieux et droits de chaq
 Ainsi, la règle du point milieu ne prend en compte que le point milieu de chaque sous-intervalle,
 alors que la règle du trapèze prend en compte les points gauches et droits à poids égaux.
 
-|                       | `f(x)` (gauche)           | `f(x + dx / 2)` (milieu) | `f(x + dx)` (droite)      |
-| --------------------- | ------------------------- | ------------------------ | ------------------------- |
-| Règle du point milieu | $0$                       | $1$                      | $0$                       |
-| Règle du trapèze      | $\displaystyle \frac 1 2$ | $0$                      | $\displaystyle \frac 1 2$ |
+|                       | `f(x)`                    | `f(x + dx / 2)` | `f(x + dx)`               |
+| --------------------- | ------------------------- | --------------- | ------------------------- |
+| Règle du point milieu | $0$                       | $1$             | $0$                       |
+| Règle du trapèze      | $\displaystyle \frac 1 2$ | $0$             | $\displaystyle \frac 1 2$ |
 
 :::question
 Est-il possible de trouver une combinaison des trois points qui donne la meilleure règle possible?
@@ -502,7 +500,7 @@ Est-il possible de trouver une combinaison des trois points qui donne la meilleu
 La meilleure combinaison est donnée par la règle de Simpson,
 qui donne des _poids égaux aux extrémités_ et un poids **quatre fois plus grand** au _point milieu_.
 
-|                       | `f(x)` (gauche)           | `f(x + dx / 2)` (milieu)  | `f(x + dx)` (droite)      |
+|                       | `f(x)`                    | `f(x + dx / 2)`           | `f(x + dx)`               |
 | --------------------- | ------------------------- | ------------------------- | ------------------------- |
 | Règle du point milieu | $0$                       | $1$                       | $0$                       |
 | Règle du trapèze      | $\displaystyle \frac 1 2$ | $0$                       | $\displaystyle \frac 1 2$ |
@@ -586,38 +584,149 @@ Employez $n = 100$ sous-intervalles.
 
 # Non-examinable
 
+## Ordre d'une méthode et vitesse de convergence
+
+| Méthode             | Terme d'erreur |
+| ------------------- | -------------- |
+| Point milieu        | $C n^{-2}$     |
+| Méthode de trapèzes | $C n^{-2}$     |
+| Méthode de Simpson  | $C n^{-4}$     |
+
+Ceci veut dire que lorsque $n$ est dix fois plus grand,
+l'erreur pour le point milieu ou les trapèzes réduit d'un facteur $100$.
+En revanche, l'erreur avec Simpson diminue d'un facteur $10^4$, ce qui est une amélioration significative.
+
+## Interpolation
+
+Nos règles peuvent être vues comme une **moyenne pondérée** de points sur un intervalle,
+mais quel poids donner n'est pas évident au premier regard.
+Nous présentons un point de vue équivalent,
+mais qui cette fois nous donne directement les poids
+et nous montre comment généraliser.
+
+Étant donné une fonction $f$,
+l'interpolation consiste à trouver un _polynôme_ $P(x)$ de plus petit degré possible qui passe par un certain nombre de points.
+
+La figure ci-dessous montre un exemple d'un polynôme $P$ en bleu qui interpole la fonction $f$.
+Bougez les points pour voir le polynôme s'adapter à la fonction.
+
+<Exercise.Interpolation
+  x={[-3, 0, 3]}
+  f={(x) => 0.2 * x ** 2 + 0.1 * x + 1 / Math.exp(x ** 2 + x)}
+/>
+
+Je pourrais vous montrer comment calculer ces [polynômes interpolateurs à la main](https://fr.wikipedia.org/wiki/Interpolation_lagrangienne),
+mais la vie est trop courte,
+donc nous allons le faire en Python.
+
+:::example
+Définissez une fonction `P(x)` qui interpole la fonction $f$ aux points $(1, f(1))$ et $(3, f(3))$.
+
+```python run math
+import sympy as sp
+
+f = sp.Function('f')
+
+def P(x):
+    return sp.interpolate({ 1: f(1), 3: f(3) }, x)
+
+P(1), P(3)
+```
+
+:::
+
+## Formule du trapèze revisitée
+
+Sur chaque sous-intervalle,
+remplaçons $f$ par le polynôme $P$ qui passe par les points gauche et droit,
+et intéressons-nous à l'aire sous $P(x)$.
+
+Pour simplifier, supposons que notre intervalle est $[-3, 3]$,
+donc notre polynôme $P$ doit interpoler $f$ aux points $-3$ et $3$.
+
+<Exercise.Interpolation x={[-3, 3]} y={[2, 3]} area />
+
+Remarquez que le polynôme $P$ est une droite,
+et l'aire sous $P(x)$ est un trapèze.
+En calculant l'intégrale de $P(x)$ avec Python, on obtient
+
+```python run math highlight="8"
+import sympy as sp
+
+f, x = sp.Function('f'), sp.Symbol('x')
+
+def P(x):
+    return sp.interpolate({ -3: f(-3), 3: f(3) }, x)
+
+sp.integrate(P(x), (x, -3, 3))
+```
+
+On voit que le poids (qui doivent être divisés par la longueur de l'intervalle) est le même pour les deux points,
+ce qui est exactement la formule du trapèze.
+
+|                  | `f(x)`                    | `f(x + dx / 2)` | `f(x + dx)`               |
+| ---------------- | ------------------------- | --------------- | ------------------------- |
+| Règle du trapèze | $\displaystyle \frac 1 2$ | $0$             | $\displaystyle \frac 1 2$ |
+
 ## Formule de Simpson
 
-Faisons le calcul par ordinateur sur l'intervalle $[-3, 3]$.
+Utilisons cette fois-ci $3$ points équidistants pour interpoler:
+le point gauche, le point milieu et le point droit.
 
-1. On définit $P(x)$ comme un polynôme de degré $2$ passant par les points $(-3, f(-3))$, $(0, f(0))$ et $(3, f(3))$.
-   Trouver un polynôme passant par certains points s'appelle une **interpolation**.
+<Exercise.Interpolation x={[-3, 0, 3]} y={[2, 4, 3]} area />
 
-   ```python run math highlight="5-6"
-   import sympy as sp
+```python run math highlight="8"
+import sympy as sp
 
-   f, x = sp.Function('f'), sp.Symbol('x')
+f, x = sp.Function('f'), sp.Symbol('x')
 
-   def P(x):
-       return sp.interpolate({ -3: f(-3), 0: f(0), 3: f(3) }, x)
+def P(x):
+    return sp.interpolate({ -3: f(-3), 0: f(0), 3: f(3) }, x)
 
-   # On vérifie que le polynôme passe bien par les trois points
-   P(-3), P(0), P(3)
-   ```
+sp.integrate(P(x), (x, -3, 3))
+```
 
-2. L'idée centrale de Simpson est
-   {tex.display`f(x) \approx P(x) \quad \implies \quad \int_{-3}^{3} f(x) \, \mathrm dx \approx \int_{-3}^{3} P(x) \, \mathrm dx`}
-   On calcule alors l'intégrale $\displaystyle \int_{-3}^{3} P(x) \, \mathrm dx$.
+On voit alors que le point milieu $0$ a un poids quatre fois plus grand,
+et que les poids sont
 
-   ```python run math highlight="8"
-   import sympy as sp
+|                  | `f(x)`                    | `f(x + dx / 2)`           | `f(x + dx)`               |
+| ---------------- | ------------------------- | ------------------------- | ------------------------- |
+| Règle de Simpson | $\displaystyle \frac 1 6$ | $\displaystyle \frac 4 6$ | $\displaystyle \frac 1 6$ |
 
-   f, x = sp.Function('f'), sp.Symbol('x')
+## Formules de Newton-Cotes
 
-   def P(x):
-       return sp.interpolate({ -3: f(-3), 0: f(0), 3: f(3) }, x)
+On peut se demander si l'idée qui a donné la formule de Simpson pourrait être étendue à plusieurs points.
+Et si sur un intervalle, on utiliserait un polynôme $P$ qui passerait par $4$ points équidistants au lieu de $3$?
 
-   sp.integrate(P(x), (x, -3, 3))
-   ```
+<Exercise.Interpolation x={[-3, -1, 1, 3]} y={[2, 3, 1, 2.5]} area />
 
-   On voit alors que le point milieu $0$ a un poids quatre fois plus grand.
+```python run math
+import sympy as sp
+
+f, x = sp.Function('f'), sp.Symbol('x')
+
+def P(x):
+    return sp.interpolate({ -3: f(-3), -1: f(-1), 1: f(1), 3: f(3) }, x)
+
+sp.integrate(P(x), (x, -3, 3))
+```
+
+On voit que les deux points milieux doivent avoir un poids deux fois plus grand,
+ce qui donne les poids suivants:
+
+| Méthode     | `f(x)`                    | `f(x + dx/3)`             | `f(x + 2*dx/3)`           | `f(x + dx)`               |
+| ----------- | ------------------------- | ------------------------- | ------------------------- | ------------------------- |
+| Simpson 3/8 | $\displaystyle \frac 1 8$ | $\displaystyle \frac 3 8$ | $\displaystyle \frac 3 8$ | $\displaystyle \frac 1 8$ |
+
+Notez que l'on peut également interpoler avec $5$ points, puis $6$ etc.
+En pratique, on ne le fait pas,
+car l'interpolation polynômiale est soumise au [phénomène de Runge](https://fr.wikipedia.org/wiki/Ph%C3%A9nom%C3%A8ne_de_Runge):
+interpoler avec trop de points peut donner des résultats très mauvais.
+Dans la figure ci-dessous,
+le polynôme interpolateur en bleu oscille beaucoup plus que la fonction $f$ en rouge.
+
+<Exercise.Interpolation
+  x={Array.from({ length: 13 }, (_, i) => -3 + (i * 6) / 12)}
+  hideLabels
+  f={(x) => 3 / (1 + 25 * x ** 2) - 1}
+/>

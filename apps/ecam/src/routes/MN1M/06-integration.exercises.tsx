@@ -1,8 +1,8 @@
 import { Board } from '@learning/components'
 import { createDerivedStep, expr, Sequence, tex } from '@learning/core'
 import { PythonCode } from '@learning/exercises/python/Code'
-import { dedent, range, sum } from 'es-toolkit'
-import { createSignal, Repeat, Show, type ComponentProps } from 'solid-js'
+import { dedent, randomInt, range, sum } from 'es-toolkit'
+import { createSignal, createStore, For, Repeat, Show, type ComponentProps } from 'solid-js'
 import * as v from 'valibot'
 
 export function RiemannSum(props: {
@@ -227,22 +227,38 @@ export const NumericalIntegral = createDerivedStep(
 )
 
 export const AverageExample = () => (
-  <NumericalIntegral
-    id="average-example"
-    prompt={
-      <p>
-        Estimez la valeur moyenne de la fonction {tex`f(x) = \sqrt{x}`} sur l'intervalle{' '}
-        {tex`[0, 3]`} en utilisant les <strong>points milieux</strong> d'une partition de {tex`200`}{' '}
-        intervalles.
-      </p>
-    }
-    f="\sqrt{x}"
-    a={0}
-    b={3}
-    n={200}
-    method="midpoint"
-    average
-  />
+  <Sequence id="average-example">
+    <NumericalIntegral
+      prompt={
+        <p>
+          Estimez la valeur moyenne de la fonction {tex`f(x) = \sqrt{x}`} sur l'intervalle{' '}
+          {tex`[0, 3]`} en utilisant les <strong>points milieux</strong> d'une partition de{' '}
+          {tex`200`} intervalles.
+        </p>
+      }
+      f="\sqrt{x}"
+      a={0}
+      b={3}
+      n={200}
+      method="midpoint"
+      average
+    />
+    <NumericalIntegral
+      prompt={
+        <p>
+          Estimez la valeur moyenne de la fonction {tex`f(x) = \sin(x^2)`} sur l'intervalle{' '}
+          {tex`[0, 2 \pi]`} en utilisant les <strong>points milieux</strong> d'une partition de{' '}
+          {tex`150`} intervalles.
+        </p>
+      }
+      f="\sin(x^2)"
+      a={0}
+      b={2 * Math.PI}
+      n={150}
+      method="midpoint"
+      average
+    />
+  </Sequence>
 )
 
 export const KinematicsExample = () => (
@@ -281,3 +297,124 @@ export const TrapezoidExample = () => (
     method="trapezoid"
   />
 )
+
+export const Interpolation = (props: {
+  x: number[]
+  y?: number[]
+  f?: (x: number) => number
+  area?: boolean
+  hideLabels?: boolean
+}) => {
+  const [x, setX] = createStore(() => props.x, [])
+  const [y, setY] = createStore(
+    () => props.y ?? props.x.map((x) => props.f?.(x) ?? randomInt(0, 4)),
+    [],
+  )
+  const lagrange = () => {
+    const points = x.map((x, i) => [x, y[i]!] as const)
+    return (x: number) => {
+      let sum = 0
+      for (let i = 0; i < points.length; i++) {
+        const [xi, yi] = points[i]!
+        let product = yi
+        for (let j = 0; j < points.length; j++) {
+          if (i !== j) {
+            const [xj] = points[j]!
+            product *= (x - xj) / (xi - xj)
+          }
+        }
+        sum += product
+      }
+      return sum
+    }
+  }
+  return (
+    <Board axis>
+      <Show
+        when={!props.f}
+        fallback={
+          <>
+            <Board.Plot
+              fn={props.f!}
+              strokeWidth={2}
+              strokeColor="darkred"
+              name="f(x)"
+              withLabel={!props.hideLabels}
+            >
+              {(curve) => (
+                <For each={x}>
+                  {(x, i) => (
+                    <Board.Glider
+                      position={[x, y[i()]!]}
+                      on={curve}
+                      name={`(${x}, f(${x}))`}
+                      onDrag={(P) => {
+                        setX((x) => {
+                          x[i()] = P.X()
+                        })
+                        setY((y) => {
+                          y[i()] = P.Y()
+                        })
+                      }}
+                      withLabel={!props.hideLabels}
+                    />
+                  )}
+                </For>
+              )}
+            </Board.Plot>
+          </>
+        }
+      >
+        <For each={x}>
+          {(x, i) => (
+            <Board.Line
+              points={[
+                [x, 0],
+                [x, 1],
+              ]}
+              strokeWidth={0}
+              fixed
+            >
+              {(line) => (
+                <Board.Glider
+                  on={line}
+                  position={[x, y[i()]!]}
+                  onDrag={(P) => {
+                    setY((y) => {
+                      y[i()] = P.Y()
+                    })
+                  }}
+                  name={`(${x}, f(${x}))`}
+                  fixed={props.f !== undefined}
+                  label={{ autoPosition: true }}
+                  withLabel={!props.hideLabels}
+                />
+              )}
+            </Board.Line>
+          )}
+        </For>
+      </Show>
+      <Board.Plot
+        fn={lagrange()}
+        domain={[Math.min(...x), Math.max(...x)]}
+        name="P(x)"
+        withLabel={!props.hideLabels}
+        strokeWidth={2}
+        label={{ autoPosition: true }}
+      >
+        {(curve) => (
+          <Show when={props.area}>
+            <Board.Integral
+              curve={curve}
+              domain={[Math.min(...x), Math.max(...x)]}
+              baseLeft={{ visible: false }}
+              baseRight={{ visible: false }}
+              curveLeft={{ visible: false }}
+              curveRight={{ visible: false }}
+            />
+          </Show>
+        )}
+      </Board.Plot>
+    </Board>
+  )
+}
