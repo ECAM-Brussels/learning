@@ -142,9 +142,11 @@ Sur chaque sous-intervalle, utilisez le _point milieu_ comme représentant.
    f(x_m)
    ```
 
+   Il suffit de calculer la moyenne de ces valeurs.
+
 3. On calcule la moyenne de ces valeurs
 
-   ```python run highlight="10, 12"
+   ```python run highlight="11"
    import numpy as np
 
    a, b, n = 0, 2, 100
@@ -204,7 +206,7 @@ np.sum(f(x_m) * dx) / (b - a)
 
 :::example
 Une particule se déplace le long d'une droite avec comme vitesse {tex`v(t) = e^{-t}`}.
-Estimez la distance parcourue entre $t = 0$ et $t = 2$ en utilisant
+Estimez le déplacement net entre $t = 0$ et $t = 2$ en utilisant
 les _points milieux_ d'une partition de $100$ intervalles.
 
 ::::steps
@@ -267,7 +269,7 @@ les _points milieux_ d'une partition de $100$ intervalles.
 ::::
 :::
 
-La position peut donc être récupérée de la vitesse par le code suivant:
+Le déplacement peut donc être récupéré de la vitesse par le code suivant:
 
 ```python
 # On partitionne l'intervalle de temps
@@ -311,7 +313,8 @@ Notez la ressemblance formelle:
 # Aire sous la courbe
 
 Attaquons maintenant le problème classique de l'_aire sous la courbe_.
-Nous verrons que ce problème est fondamentalement lié à celui de la moyenne ou de la distance parcourue.
+Nous verrons que ce problème est fondamentalement lié à celui de la moyenne ou du déplacement,
+de telle sorte que les méthodes vues ici peuvent également être utilisées pour d'autres applications.
 
 ## Méthode du point milieu
 
@@ -353,6 +356,10 @@ f(x_m) * dx
 # Somme des aires des rectangles
 np.sum(f(x_m) * dx)
 ```
+
+Notez la ressemblance du calcul d'aire avec celui de la moyenne ou du déplacement.
+L'aire sous la courbe d'une fonction positive $f$ est donc donnée par
+{tex.display`\int_a^b f(x) \, \mathrm dx`}
 
 :::example[Méthode du point milieu]
 Approximez l'aire sous la courbe de la fonction $\displaystyle f(x) = \frac 1 x$ avec $100$ intervalles entre $x = 1$ et $x = 3$
@@ -581,6 +588,8 @@ Employez $n = 100$ sous-intervalles.
 
 ::::
 :::
+
+<Exercise.Simpson />
 
 # Non-examinable
 

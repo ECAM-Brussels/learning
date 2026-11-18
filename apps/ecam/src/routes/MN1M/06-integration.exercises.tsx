@@ -262,40 +262,131 @@ export const AverageExample = () => (
 )
 
 export const KinematicsExample = () => (
-  <NumericalIntegral
-    id="kinematics-example"
-    prompt={
-      <p>
-        Estimez la distance parcourue par un objet dont la vitesse est donnée par{' '}
-        {tex`v(t) = 3t^2 + 2t + 1`} sur l'intervalle {tex`[0, 5]`} en utilisant les{' '}
-        <strong>points droits</strong> (et non pas les points milieux) d'une partition de {tex`100`}{' '}
-        intervalles.
-      </p>
-    }
-    f="3x^2 + 2x + 1"
-    a={0}
-    b={5}
-    n={100}
-    method="right"
-  />
+  <Sequence id="kinematics-example">
+    <NumericalIntegral
+      prompt={
+        <p>
+          Estimez le déplacement net d'un objet dont la vitesse est donnée par{' '}
+          {tex`v(t) = 3t^2 + 2t + 1`} sur l'intervalle {tex`[0, 5]`} en utilisant les{' '}
+          <strong>points droits</strong> (et non pas les points milieux) d'une partition de{' '}
+          {tex`100`} intervalles.
+        </p>
+      }
+      f="3x^2 + 2x + 1"
+      a={0}
+      b={5}
+      n={100}
+      method="right"
+    />
+    <NumericalIntegral
+      prompt={
+        <p>
+          Estimez le déplacement net par un objet dont la vitesse est donnée par{' '}
+          {tex`v(t) = \sin t`} sur l'intervalle {tex`[0, \pi]`} en utilisant les{' '}
+          <strong>points droits</strong> (et non pas les points milieux) d'une partition de{' '}
+          {tex`200`} intervalles.
+        </p>
+      }
+      f="\sin(x)"
+      a={0}
+      b={Math.PI}
+      n={200}
+      method="midpoint"
+    />
+  </Sequence>
 )
 
 export const TrapezoidExample = () => (
-  <NumericalIntegral
-    id="trapezoid-example"
-    prompt={
-      <p>
-        Estimez l'aire sous la courbe de la fonction {tex`f(x) = \sin x`} sur l'intervalle{' '}
-        {tex`[0, \pi]`} en utilisant la <strong>règle des trapèzes</strong> avec une partition de{' '}
-        {tex`50`} intervalles.
-      </p>
-    }
-    f="\sin(x)"
-    a={0}
-    b={Math.PI}
-    n={50}
-    method="trapezoid"
-  />
+  <Sequence id="trapezoid">
+    <NumericalIntegral
+      prompt={
+        <p>
+          Estimez l'aire sous la courbe de la fonction {tex`f(x) = \sin x`} sur l'intervalle{' '}
+          {tex`[0, \pi]`} en utilisant la <strong>règle des trapèzes</strong> avec une partition de{' '}
+          {tex`50`} intervalles.
+        </p>
+      }
+      f="\sin(x)"
+      a={0}
+      b={Math.PI}
+      n={50}
+      method="trapezoid"
+    />
+    <NumericalIntegral
+      prompt={
+        <p>
+          Approximez l'intégrale {tex`\displaystyle \int_{-1}^1 e^{-x^2} \, \mathrm d x`} avec la
+          méthode des trapèzes en utilisant 100 intervalles.
+        </p>
+      }
+      f="\exp(-x^2)"
+      a={-1}
+      b={1}
+      n={100}
+      method="trapezoid"
+    />
+    <NumericalIntegral
+      prompt={
+        <p>
+          Approximez la valeur moyenne de {tex`\frac 1 x`} sur {tex`[2, 5]`} en utilisant la méthode
+          des trapèzes sur {tex`150`} intervalles.
+        </p>
+      }
+      f="\frac{1}{x}"
+      a={2}
+      b={5}
+      n={150}
+      method="trapezoid"
+      average
+    />
+  </Sequence>
+)
+
+export const Simpson = () => (
+  <Sequence id="simpson">
+    <NumericalIntegral
+      prompt={
+        <p>
+          Estimez l'aire sous la courbe de la fonction {tex`f(x) = e^{-x^2}`} sur l'intervalle{' '}
+          {tex`[-2, 2]`} en utilisant la <strong>méthode de Simpson</strong> avec une partition de{' '}
+          {tex`200`} intervalles.
+        </p>
+      }
+      f="\exp(-x^2)"
+      a={-2}
+      b={2}
+      n={200}
+      method="simpson"
+    />
+    <NumericalIntegral
+      prompt={
+        <p>
+          Estimez le déplacement net d'un mobile dont la vitesse est donnée par{' '}
+          {tex`v(t) = e^{-t^2} \cos(t^3)`} sur l'intervalle {tex`[0, 3]`} en utilisant la{' '}
+          <strong>méthode de Simpson</strong> avec {tex`180`} intervalles.
+        </p>
+      }
+      f="\exp(-x^2) \cos(x^3)"
+      a={0}
+      b={3}
+      n={180}
+      method="simpson"
+    />
+    <NumericalIntegral
+      prompt={
+        <p>
+          Approximez la valeur moyenne de {tex`f(x) = \sin(x^2)`} sur {tex`[0, 4]`} en utilisant la{' '}
+          <strong>méthode de Simpson</strong> sur {tex`240`} intervalles.
+        </p>
+      }
+      f="\sin(x^2)"
+      a={0}
+      b={4}
+      n={240}
+      method="simpson"
+      average
+    />
+  </Sequence>
 )
 
 export const Interpolation = (props: {
