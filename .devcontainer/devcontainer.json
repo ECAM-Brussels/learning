@@ -9,6 +9,7 @@
   "customizations": {
     "vscode": {
       "extensions": [
+        "anthropic.claude-code",
         "bierner.comment-tagged-templates",
         "bradlc.vscode-tailwindcss",
         "darkriszty.markdown-table-prettify",
