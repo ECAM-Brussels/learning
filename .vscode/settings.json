@@ -5,5 +5,28 @@
   "editor.formatOnSave": true,
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter"
-  }
+  },
+  "workbench.colorCustomizations": {
+  "titleBar.activeBackground": "#0A192F",
+  "titleBar.activeForeground": "#FFFFFF",
+  "titleBar.inactiveBackground": "#081426",
+  "titleBar.inactiveForeground": "#8899AA",
+
+  "activityBar.background": "#081426",
+  "activityBar.foreground": "#64B5F6",
+
+  "sideBar.background": "#0D1B2A",
+  "sideBar.foreground": "#D6E2F0",
+
+  "statusBar.background": "#112D4E",
+  "statusBar.foreground": "#FFFFFF",
+  "statusBar.debuggingBackground": "#1B263B",
+
+  "editorGroupHeader.tabsBackground": "#0D1B2A",
+  "tab.activeBackground": "#1B263B",
+  "tab.activeForeground": "#FFFFFF",
+  "tab.inactiveBackground": "#0D1B2A",
+  "tab.inactiveForeground": "#8899AA"
 }
+}
+
