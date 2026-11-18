@@ -1,0 +1,623 @@
+import { tex } from '@learning/core'
+import * as Exercise from './06-integration.exercises'
+
+# Introduction
+
+De nombreuses applications scientifiques et de l'ingénierie se réduisent au **calcul d'aire** sous une courbe.
+Nous commencerons par étudier la notion de **moyenne** et un exemple de cinématique.
+
+Nous introduirons ensuite trois méthodes numériques communes pour calculer des intégrales:
+la méthode du **point milieu**, la **règle du trapèze** et la **règle de Simpson**.
+
+## Partitions d'un intervalle
+
+Nous appelerons une _partition_ d'un intervalle $[a, b]$ en $n$ sous-intervalles
+la donnée de $n$ nombres {tex`x_0, x_1, x_2, \ldots, x_{n - 1}`} tels que
+{tex.display`a = x_0 < x_1 < x_2 < \cdots < x_{n - 1} < b`}
+et $[x_0, x_1]$, $[x_1, x_2]$, $\ldots$, {tex`[x_{n-1}, b]`} sont des intervalles de même longueur,
+que l'on dénotera {tex`\mathrm{d}x`}.
+Regardez-bien l'animation ci-dessous pour vous familiariser avec cette notion.
+
+<Exercise.Partition />
+
+Remarquez que les nombres {tex`x_0, x_1, \dots, x_{n - 1}`} sont les **points gauches** de chacun des sous-intervalles.
+
+En Python,
+une partition de $[a, b]$ en $n$ sous-intervalles et son pas
+s'obtient de la manière suivante:
+
+```python
+import numpy as np
+
+x, dx = np.linspace(a, b, n, endpoint=False, retstep=True)
+```
+
+:::remark
+
+- `endpoint=False` exclut $b$, comme demandé par la définition de partition.
+- `retstep=True` pour `return step` (_retourne le pas_) permet d'avoir aussi la valeur de {tex`\mathrm{d}x`}.
+  :::
+
+| Concept                    | Code Python                                           | Commentaire                            |
+| -------------------------- | ----------------------------------------------------- | -------------------------------------- |
+| Partition                  | `x = np.linspace(a, b, endpoint=False)`               | Donne les $n$ points de la partition   |
+| Partition avec pas         | `x = np.linspace(a, b, endpoint=False, retstep=True)` | Donne également le pas `dx`            |
+| Vecteur des points gauches | `x`                                                   | Point gauche de chaque sous-intervalle |
+| Vecteur des points milieux | `x_m = x + dx / 2`                                    | Point milieu de chaque sous-intervalle |
+| Vecteur des points droits  | `x_r = x + dx`                                        | Point droit de chaque sous-intervalle  |
+
+:::example[Partition d'un intervalle]
+
+Regardons une partition de l'intervalle $[0, 1]$ en $10$ sous-intervalles.
+On s'attend que les dix sous-intervalles soient $[0, 0.1]$, $[0.1, 0.2]$, $\ldots$, $[0.9, 1]$.
+
+```python run
+import numpy as np
+
+x, dx = np.linspace(0, 1, 10, endpoint=False, retstep=True)
+
+print("Partition:      ", x)
+print("Points gauches: ", x)
+print("Points droits:  ", x + dx)
+print("Points milieux: ", (x + dx / 2))
+print("Pas:            ", dx)
+```
+
+:::
+
+:::remark[Vectorisation]
+Remarquez que `x` est un vecteur, et `dx` est un scalaire.
+La somme `x + dx` est le vecteur dont les composantes sont les sommes de chaque composante de `x` avec le scalaire `dx`.
+:::
+
+<Exercise.PartitionSequence />
+
+Le rôle des partitions est de pouvoir remplacer un intervalle par un _échantillon fini_ de points,
+par exemple les **points milieux**.
+
+## Calcul d'une moyenne
+
+Rappelons que la _moyenne arithmétique_ de $n$ valeurs $x_1, x_2, \ldots, x_n$ est donnée par la formule:
+
+{tex.display`\bar{x} = \frac{\left(x_1 + x_2 + \cdots + x_n \right)} n`}
+
+En Python, cette formule peut se calculer facilement avec `np.sum` et `len`
+{tex.display`\bar{x} = \frac{\overbrace{x_1 + x_2 + \cdots + x_n}^{\texttt{np.sum(x)}}} {\underbrace{n}_{\texttt{len(x)}}}`}
+
+| Fonction    | Rôle                                          |
+| ----------- | --------------------------------------------- |
+| `np.sum(x)` | Calcule la somme des élements de la liste `x` |
+| `len(x)`    | Calcule le nombre d'élements de la liste `x`  |
+
+:::example[Moyenne d'un échantillon]
+Calculez la valeur moyenne de l'échantillon suivant: $1, 7, 4, 3, 2$.
+
+```python run
+import numpy as np
+
+x = [1, 7, 4, 3, 2]
+n = len(x)
+
+np.sum(x) / n
+```
+
+:::
+
+Nous allons maintenant calculer la valeur moyenne d'une **fonction** sur un intervalle.
+La notion de _partition_ nous sera utile,
+puisqu'elle nous permet de remplacer un intervalle par un **échantillon fini** de points,
+pour lesquels nous savons comment calculer une moyenne.
+
+:::example[Calcul de moyenne]
+Estimez la valeur moyenne de la fonction $f(x) = x^2$ sur l'intervalle $[0, 2]$
+en utilisant une partition de $100$ intervalles.
+Sur chaque sous-intervalle, utilisez le _point milieu_ comme représentant.
+
+::::steps
+
+1. On définit la fonction $f(x) = x^2$ et les variables $a$ et $b$.
+
+   ```python run
+   a, b, n = 0, 2, 100
+
+   def f(x):
+       return x**2
+   ```
+
+2. On partitionne l'intervalle $[0, 2]$ en $100$ sous-intervalles de même longueur,
+   et on prend le point milieu `x_m` de chaque sous-intervalle comme représentant.
+   On regarde ensuite l'image des points milieux `f(x_m)`.
+
+   ```python run highlight="1,8-9,11"
+   import numpy as np
+
+   a, b, n = 0, 2, 100
+
+   def f(x):
+       return x**2
+
+   x, dx = np.linspace(a, b, n, endpoint=False, retstep=True)
+   x_m = x + dx / 2
+
+   f(x_m)
+   ```
+
+3. On calcule la moyenne de ces valeurs
+
+   ```python run highlight="10, 12"
+   import numpy as np
+
+   a, b, n = 0, 2, 100
+
+   def f(x):
+       return x**2
+
+   x, dx = np.linspace(a, b, n, endpoint=False, retstep=True)
+   x_m = x + dx / 2
+
+   np.sum(f(x_m)) / n
+   ```
+
+   Ceci donne la réponse correcte, mais réécrivons le code différemment.
+
+4. Rappelez vous que {tex`\displaystyle \mathrm{d} x = \frac {b - a} n`},
+   et donc {tex`\displaystyle n = \frac {b - a} {\mathrm{d} x}`}.
+   Au lieu de diviser par $n$, on peut donc multiplier par {tex`\displaystyle \frac {\mathrm{d} x} {b - a}`}.
+
+   ```python run highlight="9"
+   import numpy as np
+
+   a, b, n = 0, 2, 100
+
+   def f(x):
+       return x**2
+
+   x, dx = np.linspace(a, b, n, endpoint=False, retstep=True)
+   np.sum(f(x) * dx) / (b - a)
+   ```
+
+   Cette formule paraît plus compliquée,
+   mais elle montre le lien plus explicitement avec l'**intégrale**.
+
+::::
+:::
+
+Voici donc les principales étapes pour calculer la valeur moyenne d'une fonction sur un intervalle:
+
+```python
+# On partitionne l'intervalle [a, b] en n sous-intervalles
+x, dx = np.linspace(a, b, n, endpoint=False, retstep=True)
+
+# On calcule les points milieux
+x_m = x + dx / 2
+
+# La moyenne est approximée par
+np.sum(f(x_m)) / n
+
+# Forme alternative, puisque n = (b - a) / dx
+np.sum(f(x_m) * dx) / (b - a)
+```
+
+<Exercise.AverageExample />
+
+## Cinématique
+
+:::example
+Une particule se déplace le long d'une droite avec comme vitesse {tex`v(t) = e^{-t}`}.
+Estimez la distance parcourue entre $t = 0$ et $t = 2$ en utilisant
+les _points milieux_ d'une partition de $100$ intervalles.
+
+::::steps
+
+1. On définit la fonction de vitesse {tex`v(t) = e^{-t}`}
+
+   ```python run highlight="3-4"
+   import numpy as np
+
+   def v(t):
+       return np.exp(-t)
+   ```
+
+2. On découpe notre intervalle de temps $[0, 2]$ en $100$ intervalles de même longueur {tex`\mathrm{d}t`}.
+
+   ```python run highlight="6"
+   import numpy as np
+
+   def v(t):
+       return np.exp(-t)
+
+   t, dt = np.linspace(0, 2, 100, endpoint=False, retstep=True)
+   ```
+
+3. Sur chacun des intervalles,
+   imaginons que la vitesse est constante et vaut celle au point milieu.
+   Le déplacement se calcule par {tex`\text{vitesse} \times \text{temps},`}
+   ce qui donne, sur chaque intervalle,
+
+   {tex.display`\underbrace{\mathrm{d}x}_{\text{déplacement}} = \underbrace{v(t_m)}_{\text{vitesse}} \underbrace{\mathrm{d}t}_{\text{temps}}`}
+
+   ```python run highlight="7,9,10"
+   import numpy as np
+
+   def v(t):
+       return np.exp(-t)
+
+   t, dt = np.linspace(0, 2, 100, endpoint=False, retstep=True)
+   t_m = t + dt / 2
+
+   # Déplacements sur chaque intervalle de la partition
+   v(t_m) * dt
+   ```
+
+4. Pour obtenir le **déplacement total**,
+   il faut sommer tous les déplacements sur chacun des intervalles.
+
+   ```python run highlight="9"
+   import numpy as np
+
+   def v(t):
+       return np.exp(-t)
+
+   t, dt = np.linspace(0, 2, 100, endpoint=False, retstep=True)
+   t_m = t + dt / 2
+
+   np.sum(v(t) * dt)
+   ```
+
+::::
+:::
+
+La position peut donc être récupérée de la vitesse par le code suivant:
+
+```python
+# On partitionne l'intervalle de temps
+t, dt = linspace(a, b, n, endpoint=False, retstep=True)
+
+# On calcule le point milieu
+t_m = t + dt / 2
+
+# On somme les déplacements dx = v(t_m) * dt sur chaque intervalle
+np.sum(v(t_m) * dt)
+```
+
+<Exercise.KinematicsExample />
+
+## Intégrale définie
+
+Dans les cas ci-dessus,
+nous avons obtenu une somme de type
+
+```python
+x, dx = np.linspace(a, b, n, endpoint=False, retstep=True)
+np.sum(f(x) * dx)
+```
+
+Dans toutes nos applications, le résultat est une approximation qui s'améliore lorsque le nombre d'intervalles $n$ augmente.
+Le résultat théorique, lorsque $n \to \infty$, est noté
+
+{tex.display`\int_a^b f(x) \, \mathrm dx`}
+
+La quantité ci-dessus s'appelle l'**intégrale définie** de $f$ sur l'intervalle $[a, b]$.
+
+:::remark[Notation]
+
+Le symbole d'intégration {tex`\int`} est en fait l'[ancienne forme de la lettre s minuscule](https://fr.wikipedia.org/wiki/S_long).
+Notez la ressemblance formelle:
+
+{tex.display`\underbrace{\int_a^b}_{\text{s(omme)}} f(x) \, \mathrm dx \quad \text{et} \quad \texttt{np.sum(f(x) * dx)}`}
+
+:::
+
+# Aire sous la courbe
+
+Attaquons maintenant le problème classique de l'_aire sous la courbe_.
+Nous verrons que ce problème est fondamentalement lié à celui de la moyenne ou de la distance parcourue.
+
+## Méthode du point milieu
+
+Avec une partition de l'intervalle $[a, b]$ en $n$ sous-intervalles,
+on peut approximer la surface sous la courbe de la fonction $f$ par des rectangles.
+La base des rectangles est donnée par les sous-intervalles de la partition,
+et comme son nom l'indique,
+la hauteur des rectangles est donnée par la valeur de la fonction $f$ au **point milieu** de chaque sous-intervalle.
+En augmentant le nombre de sous-intervalles $n$,
+l'approximation devient de plus en plus précise.
+
+<Exercise.RiemannSum
+  f={(x) => x ** 2 + 0.5}
+  domain={[-2, 2]}
+  n={5}
+  latex="x^2 + 0.5"
+  type="middle"
+/>
+
+En d'autres termes, pour chaque sous-intervalle {tex`[x_i, x_{i+1}]`} de la partition,
+l'aire du rectangle est donnée par
+{tex.display`\underbrace{f\left(\frac{x_i + x_{i+1}} 2\right)}_{\text{hauteur}} \underbrace{\mathrm{d} x}_{\text{base}}, \qquad \mathrm{d} x = x_{i+1} - x_i = \frac {b - a} n`}
+
+Donc l'approximation de l'aire totale est donnée par
+{tex.display`f\left(\frac{x_0 + x_1} 2\right) \mathrm{d} x + f\left(\frac{x_1 + x_2} 2\right) \mathrm{d} x + \cdots + f\left(\frac{x_{n-1} + x_n} 2\right) \mathrm{d} x`}
+
+En Python, l'écriture est plus propre grâce à la vectorisation.
+
+```python
+# Partition en n sous-intervalles
+x, dx = np.linspace(a, b, n, endpoint=False, retstep=True)
+
+# Points milieux
+x_m = x + dx / 2
+
+# Aires des rectangles: hauteur = f(x_m), base = dx
+f(x_m) * dx
+
+# Somme des aires des rectangles
+np.sum(f(x_m) * dx)
+```
+
+:::example[Méthode du point milieu]
+Approximez l'aire sous la courbe de la fonction $\displaystyle f(x) = \frac 1 x$ avec $100$ intervalles entre $x = 1$ et $x = 3$
+en utilisant la méthode du **point milieu**.
+
+::::steps
+
+1. On définit la fonction $f(x) = \frac 1 x$.
+
+   ```python run
+   import numpy as np
+
+   def f(x):
+       return 1 / x
+   ```
+
+2. On partitionne l'intervalle $[1, 3]$ en $n = 100$ sous-intervalles de largeur {tex`\mathrm{d}x`},
+   pour ensuite calculer les points milieux.
+
+   ```python run highlight="6-7,9"
+   import numpy as np
+
+   def f(x):
+       return 1 / x
+
+   x, dx = np.linspace(1, 3, 100, endpoint=False, retstep=True)
+   x_m = x + dx / 2
+
+   x_m
+   ```
+
+3. On somme l'aire des rectangles de largeur {tex`\mathrm{d}x`} et de hauteur $f(x_m)$.
+
+   ```python run highlight="8"
+   import numpy as np
+
+   def f(x):
+       return 1 / x
+
+   x, dx = np.linspace(1, 3, 100, endpoint=False, retstep=True)
+   x_m = x + dx / 2
+   np.sum(f(x_m) * dx)
+   ```
+
+::::
+:::
+
+## Règle des trapèzes
+
+D'un point de vue numérique,
+il est plus efficace d'approximer l'aire sous la courbe par des _trapèzes_,
+comme le montre la figure ci-dessous.
+
+<Exercise.RiemannSum
+  f={(x) => x ** 2 + 0.5}
+  domain={[-2, 2]}
+  n={5}
+  latex="x^2 + 0.5"
+  type="trapezoidal"
+/>
+
+Rappelons que l'aire d'un trapèze est donnée par la formule
+
+{tex.display`\text{Aire} = \text{moyenne des bases} \times  \text{hauteur}`}
+
+Nos trapèzes ont pour hauteur {tex`\mathrm{d}x`} et pour bases les valeurs de la fonction $f$ aux points gauche et droit de chaque sous-intervalle.
+Il suit que l'aire des est donnéees par
+
+{tex.display`\frac {f(x_i) + f(x_{i+1})} 2 \mathrm{d}x`}
+
+En écriture vectorisée, cela donne `(f(x) + f(x + dx)) / 2 * dx`.
+
+```python
+# Partition en n sous-intervalles
+x, dx = np.linspace(a, b, n, endpoint=False, retstep=True)
+
+# Base moyenne
+y = (f(x) + f(x + dx)) / 2
+
+# Somme des aires des trapèzes (hauteur = dx, base moyenne = y)
+np.sum(y * dx)
+```
+
+:::example
+Avec la règle des trapèzes, approximez l'intégrale
+{tex.display`\int_0^1 \sqrt{1 - x^2} \, \mathrm dx`}
+en employant $100$ sous-intervalles.
+
+::::steps
+
+1. On définit la fonction {tex`\displaystyle f(x) = \sqrt{1 - x^2}`}.
+
+   ```python run
+   import numpy as np
+
+   def f(x):
+       return np.sqrt(1 - x**2)
+   ```
+
+2. On partitionne l'intervalle $[0, 1]$ en $n = 100$ sous-intervalles de largeur {tex`\mathrm{d}x`},
+   pour ensuite calculer la base moyenne des trapèzes.
+
+   ```python run highlight="6-7"
+   import numpy as np
+
+   def f(x):
+       return np.sqrt(1 - x**2)
+
+   x, dx = np.linspace(0, 1, 100, endpoint=False, retstep=True)
+   y = (f(x) + f(x + dx)) / 2 * dx
+   ```
+
+3. On additionne les aires des trapèzes de base moyenne $y$ et de hauteur {tex`\mathrm{d}x`}.
+
+   ```python run highlight="8"
+   import numpy as np
+
+   def f(x):
+       return np.sqrt(1 - x**2)
+
+   x, dx = np.linspace(0, 1, 100, endpoint=False, retstep=True)
+   y = (f(x) + f(x + dx)) / 2
+   np.sum(y * dx)
+   ```
+
+::::
+:::
+
+<Exercise.TrapezoidExample />
+
+## Règle de Simpson
+
+Les règles que nous avons vues jusqu'à présent sont des cas particuliers de **moyennes pondérées**.
+Elle donnent des poids différents aux points gauches, milieux et droits de chaque sous-intervalle.
+Ainsi, la règle du point milieu ne prend en compte que le point milieu de chaque sous-intervalle,
+alors que la règle du trapèze prend en compte les points gauches et droits à poids égaux.
+
+|                       | `f(x)` (gauche)           | `f(x + dx / 2)` (milieu) | `f(x + dx)` (droite)      |
+| --------------------- | ------------------------- | ------------------------ | ------------------------- |
+| Règle du point milieu | $0$                       | $1$                      | $0$                       |
+| Règle du trapèze      | $\displaystyle \frac 1 2$ | $0$                      | $\displaystyle \frac 1 2$ |
+
+:::question
+Est-il possible de trouver une combinaison des trois points qui donne la meilleure règle possible?
+:::
+
+La meilleure combinaison est donnée par la règle de Simpson,
+qui donne des _poids égaux aux extrémités_ et un poids **quatre fois plus grand** au _point milieu_.
+
+|                       | `f(x)` (gauche)           | `f(x + dx / 2)` (milieu)  | `f(x + dx)` (droite)      |
+| --------------------- | ------------------------- | ------------------------- | ------------------------- |
+| Règle du point milieu | $0$                       | $1$                       | $0$                       |
+| Règle du trapèze      | $\displaystyle \frac 1 2$ | $0$                       | $\displaystyle \frac 1 2$ |
+| Règle de Simpson      | $\displaystyle \frac 1 6$ | $\displaystyle \frac 4 6$ | $\displaystyle \frac 1 6$ |
+
+:::question
+D'où vient cette règle?
+:::
+
+L'idée centrale est d'approximer $f(x)$ sur chaque intervalle par un polynôme $P(x)$ de degré $2$
+qui passe par le point gauche, milieu et le point droit.
+Ensuite, on calcule l'aire exacte sous ce polynôme,
+ce que vous apprendrez à faire au cours de maths.
+
+<Exercise.RiemannSum
+  f={(x) => Math.cos(x) + 2}
+  domain={[-2.5, 2.5]}
+  n={2}
+  latex="\sin(x)"
+  type="simpson"
+  hideHeading
+/>
+
+Nous donnons plus de détails à la fin de ce document.
+
+:::example
+En employant la règle de Simpson,
+calculez l'aire sous la courbe de la fonction {tex`\displaystyle f(x) = \sqrt{1 + x^2}`} sur l'intervalle $[-1, 1]$.
+Employez $n = 100$ sous-intervalles.
+
+::::steps
+
+1. On définit la fonction {tex`\displaystyle f(x) = \sqrt{1 + x^2}`}.
+
+   ```python run
+   import numpy as np
+
+   def f(x):
+       return np.sqrt(1 + x**2)
+   ```
+
+2. On partitionne l'intervalle $[-1, 1]$ en $n = 100$ sous-intervalles de largeur {tex`\mathrm{d}x`}.
+
+   ```python run highlight="6"
+   import numpy as np
+
+   def f(x):
+       return np.sqrt(1 + x**2)
+
+   x, dx = np.linspace(-1, 1, 100, endpoint=False, retstep=True)
+   ```
+
+3. On calcule la moyenne pondérée donnée par la **règle de Simpson**,
+   qui met un poids quatre fois plus grand au point milieu de chaque sous-intervalle.
+
+   ```python run highlight="7"
+   import numpy as np
+
+   def f(x):
+       return np.sqrt(1 + x**2)
+
+   x, dx = np.linspace(-1, 1, 100, endpoint=False, retstep=True)
+   y = (f(x) + 4 * f(x + dx / 2) + f(x + dx)) / 6
+   ```
+
+4. On somme les aires
+
+   ```python run highlight="8"
+   import numpy as np
+
+   def f(x):
+       return np.sqrt(1 + x**2)
+
+   x, dx = np.linspace(-1, 1, 100, endpoint=False, retstep=True)
+   y = (f(x) + 4 * f(x + dx / 2) + f(x + dx)) / 6
+   np.sum(y * dx)
+   ```
+
+::::
+:::
+
+# Non-examinable
+
+## Formule de Simpson
+
+Faisons le calcul par ordinateur sur l'intervalle $[-3, 3]$.
+
+1. On définit $P(x)$ comme un polynôme de degré $2$ passant par les points $(-3, f(-3))$, $(0, f(0))$ et $(3, f(3))$.
+   Trouver un polynôme passant par certains points s'appelle une **interpolation**.
+
+   ```python run math highlight="5-6"
+   import sympy as sp
+
+   f, x = sp.Function('f'), sp.Symbol('x')
+
+   def P(x):
+       return sp.interpolate({ -3: f(-3), 0: f(0), 3: f(3) }, x)
+
+   # On vérifie que le polynôme passe bien par les trois points
+   P(-3), P(0), P(3)
+   ```
+
+2. L'idée centrale de Simpson est
+   {tex.display`f(x) \approx P(x) \quad \implies \quad \int_{-3}^{3} f(x) \, \mathrm dx \approx \int_{-3}^{3} P(x) \, \mathrm dx`}
+   On calcule alors l'intégrale $\displaystyle \int_{-3}^{3} P(x) \, \mathrm dx$.
+
+   ```python run math highlight="8"
+   import sympy as sp
+
+   f, x = sp.Function('f'), sp.Symbol('x')
+
+   def P(x):
+       return sp.interpolate({ -3: f(-3), 0: f(0), 3: f(3) }, x)
+
+   sp.integrate(P(x), (x, -3, 3))
+   ```
+
+   On voit alors que le point milieu $0$ a un poids quatre fois plus grand.

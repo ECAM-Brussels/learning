@@ -1,0 +1,283 @@
+import { Board } from '@learning/components'
+import { createDerivedStep, expr, Sequence, tex } from '@learning/core'
+import { PythonCode } from '@learning/exercises/python/Code'
+import { dedent, range, sum } from 'es-toolkit'
+import { createSignal, Repeat, Show, type ComponentProps } from 'solid-js'
+import * as v from 'valibot'
+
+export function RiemannSum(props: {
+  latex?: string
+  f: (x: number) => number
+  domain: [number, number]
+  n: number
+  type?: ComponentProps<typeof Board.RiemannSum>['type']
+  hideHeading?: boolean
+}) {
+  const [n, setN] = createSignal(() => props.n)
+  const dx = () => (props.domain[1] - props.domain[0]) / n()
+  const x = () => range(n() + 1).map((i) => props.domain[0] + i * dx())
+  const integral = () =>
+    sum(
+      x()
+        .slice(0, -1)
+        .map((x) => props.f(x) * dx()),
+    )
+  const theoretical = () =>
+    props.latex ? expr(props.latex).integrate('x', props.domain[0], props.domain[1]) : null
+  return (
+    <>
+      <Show when={!props.hideHeading}>
+        <h3 class="text-center">
+          <label>
+            Approximation de l'aire utilisant{' '}
+            <input
+              class="w-24 rounded border border-gray-400 px-4 py-1"
+              type="number"
+              value={n()}
+              onInput={(e) => setN(Number(e.currentTarget.value))}
+              min={1}
+            />{' '}
+            intervalles
+          </label>
+        </h3>
+        <div class="flex justify-center gap-8">
+          <label>Aire approchée: {integral()}</label>
+          <label>Résultat théorique {tex`\approx ${theoretical()?.N()}`}</label>
+        </div>
+      </Show>
+      <Board>
+        <Board.Axis from={[0, 0]} to={[1, 0]} ticks={{ visible: false }} />
+        <Board.RiemannSum f={props.f} domain={props.domain} n={n()} type={props.type} />
+        <Repeat count={2}>
+          {(i) => (
+            <Board.Segment
+              from={[props.domain[i]!, 0]}
+              to={[props.domain[i]!, props.f(props.domain[i]!)]}
+              strokeWidth={2}
+              dash={1}
+              fixed
+            />
+          )}
+        </Repeat>
+        <Board.Plot fn={props.f} strokeWidth={2} strokeColor="darkred" domain={props.domain} />
+      </Board>
+    </>
+  )
+}
+
+export function Partition(props: {}) {
+  const a = -4.5
+  const b = 4.5
+  const [n, setN] = createSignal(10)
+  const dx = () => (b - a) / n()
+  return (
+    <>
+      <h3 class="text-center">
+        Partition avec{' '}
+        <input
+          type="number"
+          value={n()}
+          onInput={(e) => setN(Number(e.currentTarget.value))}
+          min={1}
+          class="w-24 rounded border border-gray-400 px-4 py-1"
+        />{' '}
+        intervalles de longueur {tex`\mathrm{d}x = \frac{b - a}{${n()}}`}
+      </h3>
+      <Board class="h-64">
+        <Board.Segment from={[a, 0]} to={[b, 0]} strokeWidth={2} fixed />
+        <Board.Text content={`a`} position={[a, 1]} anchorX="middle" anchorY="top" />
+        <Board.Text content={`b`} position={[b, 1]} anchorX="middle" anchorY="top" />
+        <Repeat count={n() + 1}>
+          {(i) => (
+            <>
+              <Show when={i < n()}>
+                <Board.Segment
+                  from={[a + i * dx() + 0.01, 0.5]}
+                  to={[a + (i + 1) * dx() - 0.01, 0.5]}
+                  strokeColor="lightgray"
+                  strokeWidth={2}
+                  fixed
+                  firstArrow
+                  lastArrow
+                />
+                <Board.Text
+                  content="\mathrm{d}x"
+                  position={[a + i * dx() + dx() / 2, 1.4]}
+                  anchorX="middle"
+                  anchorY="top"
+                />
+              </Show>
+              <Board.Segment
+                from={[a + i * dx(), -0.1]}
+                to={[a + i * dx(), 0.1]}
+                strokeWidth={2}
+                fixed
+              />
+              <Show when={i < n()}>
+                <Board.Text
+                  content={`x_{${i}}`}
+                  position={[a + i * dx(), -0.2]}
+                  anchorX="middle"
+                  anchorY="top"
+                  fixed
+                />
+              </Show>
+            </>
+          )}
+        </Repeat>
+      </Board>
+    </>
+  )
+}
+
+export const PartitionSequence = () => {
+  return (
+    <Sequence id="partition">
+      <PythonCode
+        prompt={
+          <p>
+            Donnez le <strong>vecteur des points milieux</strong> d'une partition de l'intervalle{' '}
+            {tex`[-2, 2]`} en {tex`50`} intervalles.
+          </p>
+        }
+        tests={(expect) => ({
+          'Le vecteur donné est correct': expect.result().toEqualThatOf(dedent /* python */ `
+            import numpy as np
+            x = np.linspace(-2, 2, 51)
+            (x[:-1] + x[1:]) / 2
+          `),
+        })}
+      />
+      <PythonCode
+        prompt={
+          <p>
+            Donnez les <strong>points droits</strong> d'une partition de l'intervalle {tex`[-3, 1]`}{' '}
+            en {tex`70`} intervalles.
+          </p>
+        }
+        tests={(expect) => ({
+          'Le vecteur donné est correct': expect.result().toEqualThatOf(dedent /* python */ `
+            import numpy as np
+            x = np.linspace(-3, 1, 71)
+            x[1:]
+          `),
+        })}
+      />
+      <PythonCode
+        prompt={
+          <p>
+            Donnez le <strong>pas</strong> d'une partition de l'intervalle {tex`[-\pi, \pi]`}
+            en {tex`40`} intervalles.
+          </p>
+        }
+        tests={(expect) => ({
+          'Le vecteur donné est correct': expect.result().toEqualThatOf(dedent /* python */ `
+            import numpy as np
+
+            (2 * np.pi) / 40
+          `),
+        })}
+      />
+    </Sequence>
+  )
+}
+
+const methods = {
+  left: 'f(x)',
+  right: 'f(x + dx)',
+  midpoint: 'f(x + dx / 2)',
+  trapezoid: '(f(x) + f(x + dx)) / 2',
+  simpson: '(f(x) + 4 * f(x + dx / 2) + f(x + dx)) / 6',
+}
+
+export const NumericalIntegral = createDerivedStep(
+  PythonCode,
+  {
+    prompt: 'jsx',
+    average: v.optional(v.boolean(), false),
+    f: 'expr',
+    a: 'number',
+    b: 'number',
+    n: 'number',
+    method: v.union([
+      v.literal('left'),
+      v.literal('right'),
+      v.literal('midpoint'),
+      v.literal('trapezoid'),
+      v.literal('simpson'),
+    ]),
+  },
+  (props) => ({
+    prompt: props.prompt,
+    tests: (expect) => ({
+      'Contient "sum"': expect.code.toMatch(/sum/),
+      'Contient "linspace"': expect.code.toMatch(/linspace/),
+      'Le résultat est correct': expect.result().toEqualThatOf(dedent /* python */ `
+        import numpy as np
+
+        def f(x):
+          return ${props.f.python()}
+
+        x, dx = np.linspace(${props.a}, ${props.b}, ${props.n}, endpoint=False, retstep=True)
+        y = ${methods[props.method]}
+        np.sum(y * dx) ${props.average ? `/ (${props.b - props.a})` : ``}
+      `),
+    }),
+  }),
+)
+
+export const AverageExample = () => (
+  <NumericalIntegral
+    id="average-example"
+    prompt={
+      <p>
+        Estimez la valeur moyenne de la fonction {tex`f(x) = \sqrt{x}`} sur l'intervalle{' '}
+        {tex`[0, 3]`} en utilisant les <strong>points milieux</strong> d'une partition de {tex`200`}{' '}
+        intervalles.
+      </p>
+    }
+    f="\sqrt{x}"
+    a={0}
+    b={3}
+    n={200}
+    method="midpoint"
+    average
+  />
+)
+
+export const KinematicsExample = () => (
+  <NumericalIntegral
+    id="kinematics-example"
+    prompt={
+      <p>
+        Estimez la distance parcourue par un objet dont la vitesse est donnée par{' '}
+        {tex`v(t) = 3t^2 + 2t + 1`} sur l'intervalle {tex`[0, 5]`} en utilisant les{' '}
+        <strong>points droits</strong> (et non pas les points milieux) d'une partition de {tex`100`}{' '}
+        intervalles.
+      </p>
+    }
+    f="3x^2 + 2x + 1"
+    a={0}
+    b={5}
+    n={100}
+    method="right"
+  />
+)
+
+export const TrapezoidExample = () => (
+  <NumericalIntegral
+    id="trapezoid-example"
+    prompt={
+      <p>
+        Estimez l'aire sous la courbe de la fonction {tex`f(x) = \sin x`} sur l'intervalle{' '}
+        {tex`[0, \pi]`} en utilisant la <strong>règle des trapèzes</strong> avec une partition de{' '}
+        {tex`50`} intervalles.
+      </p>
+    }
+    f="\sin(x)"
+    a={0}
+    b={Math.PI}
+    n={50}
+    method="trapezoid"
+  />
+)
