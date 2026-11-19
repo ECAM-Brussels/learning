@@ -2,15 +2,10 @@ import { Boundary, Heading } from '@learning/components'
 import { hasPermissions } from '@learning/core'
 import { type RouteDefinition } from '@solidjs/router'
 import type { JSX } from '@solidjs/web'
-import { createMemo, Show } from 'solid-js'
+import { createMemo, For, Show } from 'solid-js'
 import { paths } from '../../router'
-import session4 from './automatic-differentiation.jpg'
 import banner from './banner.jpg'
-import session3 from './differences.jpg'
-import session6 from './integration.svg'
-import session2 from './matplotlib.jpg'
-import session5 from './optimisation.jpg'
-import session1 from './python.jpg'
+import { isReleased, type Session, sessions } from './sessions.meta'
 
 export const route = {
   preload() {
@@ -66,42 +61,7 @@ export default () => (
     </table>
     <Heading level={2}>Séances d'exercices</Heading>
     <div class="grid gap-2 lg:grid-cols-2">
-      <SessionCard index={1} title="Introduction à Python" link="01-python" img={session1} />
-      <SessionCard
-        index={2}
-        title="Fonctions et graphiques"
-        link="02-plots"
-        img={session2}
-        draft={new Date('2026-10-02 07:00')}
-      />
-      <SessionCard
-        index={3}
-        title="Différences finies"
-        link="03-diff"
-        img={session3}
-        draft={new Date('2026-10-16 07:00')}
-      />
-      <SessionCard
-        index={4}
-        title="Dérivation automatique"
-        link="04-automatic-differentiation"
-        img={session4}
-        draft={new Date('2026-11-05 07:00')}
-      />
-      <SessionCard
-        index={5}
-        title="Optimisation"
-        link="05-optimisation"
-        img={session5}
-        draft={new Date('2026-11-16 07:00')}
-      />
-      <SessionCard
-        index={6}
-        title="Intégration"
-        link="06-integration"
-        img={session6}
-        draft={new Date('2026-11-24 07:00')}
-      />
+      <For each={sessions}>{(session) => <SessionCard session={session} />}</For>
     </div>
   </>
 )
@@ -118,25 +78,17 @@ function TR(props: JSX.IntrinsicElements['tr']) {
   return <tr {...props} class="px-4 even:bg-gray-50" />
 }
 
-function SessionCard(props: {
-  index: number
-  title: JSX.Element
-  link: keyof typeof paths.MN1M
-  img?: string
-  draft?: boolean | Date
-}) {
-  const isDraft = createMemo(
-    () => props.draft === true || (props.draft instanceof Date && new Date() < props.draft),
-  )
+function SessionCard(props: { session: Session }) {
+  const isDraft = createMemo(() => !isReleased(props.session))
   const show = createMemo(() => (isDraft() ? hasPermissions(['draft:read']) : true))
   return (
     <Boundary>
       <Show when={show()}>
-        <a href={paths.MN1M[props.link] as string} class="not-prose no-underline">
+        <a href={paths.MN1M[props.session.link] as string} class="not-prose no-underline">
           <div class="border border-slate-200 bg-cover bg-center shadow-xs hover:bg-blue-50">
-            <Show when={props.img} fallback={<div class="h-48 w-full bg-slate-100" />}>
+            <Show when={props.session.img} fallback={<div class="h-48 w-full bg-slate-100" />}>
               <img
-                src={props.img}
+                src={props.session.img}
                 class={[
                   'h-48 w-full object-cover transition ease-in-out',
                   {
@@ -147,7 +99,8 @@ function SessionCard(props: {
               />
             </Show>
             <h3 class="px-2 py-4 text-lg font-bold text-stone-700">
-              Session {props.index} - {props.title} <Show when={isDraft()}>(non publié)</Show>
+              Session {props.session.index} - {props.session.title}{' '}
+              <Show when={isDraft()}>(non publié)</Show>
             </h3>
           </div>
         </a>
