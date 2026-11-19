@@ -7,6 +7,7 @@ import { paths } from '../../router'
 import session4 from './automatic-differentiation.jpg'
 import banner from './banner.jpg'
 import session3 from './differences.jpg'
+import session6 from './integration.svg'
 import session2 from './matplotlib.jpg'
 import session5 from './optimisation.jpg'
 import session1 from './python.jpg'
@@ -93,6 +94,13 @@ export default () => (
         link="05-optimisation"
         img={session5}
         draft={new Date('2026-11-16 07:00')}
+      />
+      <SessionCard
+        index={6}
+        title="Intégration"
+        link="06-integration"
+        img={session6}
+        draft={new Date('2026-11-24 07:00')}
       />
     </div>
   </>
