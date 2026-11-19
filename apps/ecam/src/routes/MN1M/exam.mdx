@@ -7,7 +7,8 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
 
 ## Séance 1
 
-- Pouvoir utiliser Python comme calculatrice scientifique.
+- Pouvoir utiliser Python comme calculatrice scientifique,
+  en tenant en compte la **priorité des opérations**.
 - Utiliser le fait que Python fonctionne avec $15$ chiffres significatifs,
 - Savoir si un nombre a une représentation binaire exacte
 - Comprendre la vectorisation
@@ -44,6 +45,14 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
 
 ### Exemples de question
 
+- Quel est le résultat du programme suivant:
+
+  ```python
+  import numpy as np
+
+  np.linspace(0, 1, 2)
+  ```
+
 - Quel type de données reçoit-on en sortie du programme suivant:
 
   ```python
@@ -79,9 +88,28 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
 - Pouvoir faire des calculs sur les nombres duaux
 - Évaluer une fonction réelle sur des nombres duaux (e.g. $\sin (3 + 4 \epsilon)$)
 - Comprendre que $f'(a)$ se calcule via `f(a + epsilon).dual`
-- Appliquer une ou deux itérations de Newton-Raphson à la main
+- Appliquer une ou deux itérations de Newton-Raphson à la main {tex`x_{n+1} = x_n - \frac{f(x_n)}{f'(x_n)}`}
 
 ### Exemples de question
 
 - Que vaut $(3 + 2 \epsilon) (1 - \epsilon)$ après simplification?
 - Calculez {tex`\sqrt{1 + \epsilon}`}
+
+## Séance 5
+
+- Pouvoir calculer une dérivée seconde avec les nombres duaux
+
+- Pouvoir appliquer une itération de Newton-Raphson à la main pour trouver un **minimum** {tex`x_{n+1} = x_n - \frac{f'(x_n)}{f''(x_n)}`}
+
+- Pouvoir appliquer une itération de la descente de gradient à la main {tex`x_{n+1} = x_n - \eta f'(x_n)`}.
+
+### Exemples de questions
+
+- Quelle instruction permet de calculer la dérivée seconde d'une fonction $f$ en un point $a$?
+  `f(a + epsilon + epsilon**2).dual.dual` ou `f(a + epsilon + delta).dual.dual`?
+
+## Séance 6
+
+- Identifier les caractéristiques d'un vecteur associé à une partition
+
+- Reconnaître la méthode d'intégration utilisée
