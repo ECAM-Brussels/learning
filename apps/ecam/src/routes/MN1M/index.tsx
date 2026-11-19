@@ -52,7 +52,9 @@ export default () => (
           <TH>Évaluation</TH>
           <TD>
             <ul>
-              <li>Janvier: examen écrit (50%)</li>
+              <li>
+                Janvier: examen écrit (50%) – <a href={paths.MN1M.exam}>préparation à l'examen</a>
+              </li>
               <li>Juin: examen écrit (50%)</li>
             </ul>
           </TD>
