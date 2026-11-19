@@ -509,3 +509,37 @@ export const Interpolation = (props: {
     </Board>
   )
 }
+
+export const Antiderivative = createDerivedStep(
+  PythonCode,
+  {
+    f: 'expr',
+    domain: v.tuple([v.number(), v.number()]),
+  },
+  (props) => ({
+    math: true,
+    prompt: (
+      <p>
+        Soit la fonction {tex`f(x) = ${props.f}`}. Calculez {tex`F(x)`}, l'intégrale{' '}
+        <strong>indéfinie</strong> de {tex`f(x)`}. Ensuite, tracez {tex`F'(x)`} (calculée
+        numériquement avec la différence centrale et un pas fin) et {tex`f(x)`} sur l'intervalle{' '}
+        {tex`[${props.domain[0]}, ${props.domain[1]}]`}. Nommez les axes.
+      </p>
+    ),
+    tests: (expect) => ({
+      "L'axe x est nommé": expect.matplotlib.xLabel().toMatch(/x/),
+      "L'axe y est nommé": expect.matplotlib.xLabel().toMatch(/y/),
+      'Graphe de f': expect.matplotlib.plot(props.f, ...props.domain),
+      'Graphe de la dérivée de F': expect.matplotlib.plot(props.f, ...props.domain),
+      "Calcul d'intégrale indéfinie": expect.code.toMatch(/^\s+.*\bsum\b.*$/m),
+      'Vectorisation de F': expect.code.toMatch(/vectorize/),
+    }),
+  }),
+)
+
+export const FundamentalTheorem = () => (
+  <Sequence id="fundamental-theorem">
+    <Antiderivative f="\exp(-x^2)" domain={[-1, 1]} />
+    <Antiderivative f="\sin(\exp(x))" domain={[-1, 1]} />
+  </Sequence>
+)
