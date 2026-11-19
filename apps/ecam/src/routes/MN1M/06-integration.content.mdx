@@ -593,6 +593,108 @@ Employez $n = 100$ sous-intervalles.
 
 # Non-examinable
 
+## Intégrales indéfinies (conseillé pour maths)
+
+Dans une _intégrale indéfinie_,
+la borne est un paramètre:
+{tex.display`F({\color{red} x}) = \int_{x_0}^{{\color{red} x}} f(t) \, \mathrm{d} t`}
+
+En python, cela s'écrit simplement (par exemple via la méthode de Simpson)
+
+```python
+import numpy as np
+
+def f(x):
+    return ...
+
+x0 = ...
+
+def F(x):
+    t, dt = np.linspace(x0, x, 200, endpoint=False, retstep=True)
+    y = (f(t) + 4 * f(t + dt / 2) + f(t + dt)) / 6
+    return np.sum(y * dt)
+```
+
+En sciences et en ingénierie,
+une quantité importante est la **dérivée de l'intégrale indéfinie**.
+
+:::example[Dérivée d'intégrale indéfinie]
+Calculez $F$, l'intégrale indéfinie de {tex`f(x) = e^{-x^2}`}.
+Ensuite, tracez le graphe de $F'$ (calculé numériquement avec la différence centrale) sur $[-1, 1]$.
+
+::::steps
+
+1. On définit la fonction {tex`f(x) = e^{-x^2}`}.
+
+   ```python run
+   import numpy as np
+
+   def f(x):
+       return np.exp(-x**2)
+   ```
+
+2. On calcule l'intégrale indéfinie avec la méthode de Simpson.
+
+   ```python run math highlight="6-9"
+   import numpy as np
+
+   def f(x):
+       return np.exp(-x**2)
+
+   def F(x):
+       t, dt = np.linspace(0, x, 200, endpoint=False, retstep=True)
+       y = (f(t) + 4 * f(t + dt / 2) + f(t + dt)) / 6
+       return np.sum(y * dt)
+   ```
+
+3. On calcule la dérivée de $F$ avec la différence centrale.
+
+   ```python run math highlight="11-12"
+   import numpy as np
+
+   def f(x):
+       return np.exp(-x**2)
+
+   def F(x):
+       t, dt = np.linspace(0, x, 200, endpoint=False, retstep=True)
+       y = (f(t) + 4 * f(t + dt / 2) + f(t + dt)) / 6
+       return np.sum(y * dt)
+
+   def diff_F(x, h = 1e-6):
+       return (F(x + h) - F(x - h)) / (2 * h)
+   ```
+
+4. On trace le graphe de `diff_F` sur l'intervalle $[-1, 1]$.
+
+   ```python run math highlight="1,7,16-18"
+   import matplotlib.pyplot as plt
+   import numpy as np
+
+   def f(x):
+       return np.exp(-x**2)
+
+   @np.vectorize
+   def F(x):
+       t, dt = np.linspace(0, x, 200, endpoint=False, retstep=True)
+       y = (f(t) + 4 * f(t + dt / 2) + f(t + dt)) / 6
+       return np.sum(y * dt)
+
+   def diff_F(x, h = 1e-6):
+       return (F(x + h) - F(x - h)) / (2 * h)
+
+   x = np.linspace(-1, 1, 100)
+   plt.plot(x, diff_F(x), label="F'(x)")
+   plt.legend()
+   ```
+
+   L'instruction `@np.vectorize` permet de calculer `F(x)` pour un vecteur `x`.
+   La raison pour laquelle l'instruction est essentielle est que `x` (potentiellement un vecteur) est utilisé dans la fonction `np.linspace`.
+
+::::
+:::
+
+<Exercise.FundamentalTheorem />
+
 ## Ordre d'une méthode et vitesse de convergence
 
 | Méthode             | Terme d'erreur |
