@@ -255,6 +255,30 @@ export const Board = Object.assign(
         </Element>
       )
     },
+    Integral: (
+      props: {
+        curve: JXG.Curve
+        domain: [number, number]
+        children?: (integral: JXG.Integral) => JSX.Element
+      } & JXG.IntegralAttributes,
+    ) => {
+      const attrs = omit(props, 'curve', 'domain', 'children')
+      return (
+        <Element type="integral" parent={[props.domain, props.curve]} attrs={attrs}>
+          {(integral: JXG.Integral) => {
+            createEffect(
+              () => [props.curve, props.domain] as const,
+              () => {
+                integral.update()
+                integral.updateRenderer()
+                integral.board?.update()
+              },
+            )
+            return props.children?.(integral)
+          }}
+        </Element>
+      )
+    },
     Line: (
       props: {
         points: [[number, number] | JXG.Point, [number, number] | JXG.Point]
