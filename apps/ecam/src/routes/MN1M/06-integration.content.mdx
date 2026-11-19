@@ -1,8 +1,6 @@
 import { tex } from '@learning/core'
 import * as Exercise from './06-integration.exercises'
 
-TODO: remove
-
 # Introduction
 
 De nombreuses applications scientifiques et de l'ingénierie se réduisent au **calcul d'aire** sous une courbe.
@@ -13,12 +11,12 @@ la méthode du **point milieu**, la **règle du trapèze** et la **règle de Sim
 
 ## Partitions d'un intervalle
 
-Nous appelerons une _partition_ d'un intervalle $[a, b]$ en $n$ sous-intervalles
+Nous appellerons une _partition_ d'un intervalle $[a, b]$ en $n$ sous-intervalles
 la donnée de $n$ nombres {tex`x_0, x_1, x_2, \ldots, x_{n - 1}`} tels que
 {tex.display`a = x_0 < x_1 < x_2 < \cdots < x_{n - 1} < b`}
 et $[x_0, x_1]$, $[x_1, x_2]$, $\ldots$, {tex`[x_{n-1}, b]`} sont des intervalles de même longueur,
 que l'on dénotera {tex`\mathrm{d}x`}.
-Regardez-bien l'animation ci-dessous pour vous familiariser avec cette notion.
+Regardez bien l'animation ci-dessous pour vous familiariser avec cette notion.
 
 <Exercise.Partition />
 
@@ -38,20 +36,21 @@ x, dx = np.linspace(a, b, n, endpoint=False, retstep=True)
 
 - `endpoint=False` exclut $b$, comme demandé par la définition de partition.
 - `retstep=True` pour `return step` (_retourne le pas_) permet d'avoir aussi la valeur de {tex`\mathrm{d}x`}.
-  :::
 
-| Concept                    | Code Python                                           | Commentaire                            |
-| -------------------------- | ----------------------------------------------------- | -------------------------------------- |
-| Partition                  | `x = np.linspace(a, b, endpoint=False)`               | Donne les $n$ points de la partition   |
-| Partition avec pas         | `x = np.linspace(a, b, endpoint=False, retstep=True)` | Donne également le pas `dx`            |
-| Vecteur des points gauches | `x`                                                   | Point gauche de chaque sous-intervalle |
-| Vecteur des points milieux | `x_m = x + dx / 2`                                    | Point milieu de chaque sous-intervalle |
-| Vecteur des points droits  | `x_r = x + dx`                                        | Point droit de chaque sous-intervalle  |
+:::
+
+| Concept                    | Code Python                                                  | Commentaire                            |
+| -------------------------- | ------------------------------------------------------------ | -------------------------------------- |
+| Partition                  | `x = np.linspace(a, b, n, endpoint=False)`                   | Donne les $n$ points de la partition   |
+| Partition avec pas         | `x, dx = np.linspace(a, b, n, endpoint=False, retstep=True)` | Donne également le pas `dx`            |
+| Vecteur des points gauches | `x`                                                          | Point gauche de chaque sous-intervalle |
+| Vecteur des points milieux | `x_m = x + dx / 2`                                           | Point milieu de chaque sous-intervalle |
+| Vecteur des points droits  | `x_r = x + dx`                                               | Point droit de chaque sous-intervalle  |
 
 :::example[Partition d'un intervalle]
 
 Regardons une partition de l'intervalle $[0, 1]$ en $10$ sous-intervalles.
-On s'attend que les dix sous-intervalles soient $[0, 0.1]$, $[0.1, 0.2]$, $\ldots$, $[0.9, 1]$.
+On s'attend à ce que les dix sous-intervalles soient $[0, 0.1]$, $[0.1, 0.2]$, $\ldots$, $[0.9, 1]$.
 
 ```python run
 import numpy as np
@@ -88,8 +87,8 @@ En Python, cette formule peut se calculer facilement avec `np.sum` et `len`
 
 | Fonction    | Rôle                                          |
 | ----------- | --------------------------------------------- |
-| `np.sum(x)` | Calcule la somme des élements de la liste `x` |
-| `len(x)`    | Calcule le nombre d'élements de la liste `x`  |
+| `np.sum(x)` | Calcule la somme des éléments de la liste `x` |
+| `len(x)`    | Calcule le nombre d'éléments de la liste `x`  |
 
 :::example[Moyenne d'un échantillon]
 Calculez la valeur moyenne de l'échantillon suivant: $1, 7, 4, 3, 2$.
@@ -168,7 +167,7 @@ Sur chaque sous-intervalle, utilisez le _point milieu_ comme représentant.
    et donc {tex`\displaystyle n = \frac {b - a} {\mathrm{d} x}`}.
    Au lieu de diviser par $n$, on peut donc multiplier par {tex`\displaystyle \frac {\mathrm{d} x} {b - a}`}.
 
-   ```python run highlight="9"
+   ```python run highlight="10"
    import numpy as np
 
    a, b, n = 0, 2, 100
@@ -177,7 +176,8 @@ Sur chaque sous-intervalle, utilisez le _point milieu_ comme représentant.
        return x**2
 
    x, dx = np.linspace(a, b, n, endpoint=False, retstep=True)
-   np.sum(f(x) * dx) / (b - a)
+   x_m = x + dx / 2
+   np.sum(f(x_m) * dx) / (b - a)
    ```
 
    Cette formule paraît plus compliquée,
@@ -265,7 +265,7 @@ les _points milieux_ d'une partition de $100$ intervalles.
    t, dt = np.linspace(0, 2, 100, endpoint=False, retstep=True)
    t_m = t + dt / 2
 
-   np.sum(v(t) * dt)
+   np.sum(v(t_m) * dt)
    ```
 
 ::::
@@ -275,7 +275,7 @@ Le déplacement peut donc être récupéré de la vitesse par le code suivant:
 
 ```python
 # On partitionne l'intervalle de temps
-t, dt = linspace(a, b, n, endpoint=False, retstep=True)
+t, dt = np.linspace(a, b, n, endpoint=False, retstep=True)
 
 # On calcule le point milieu
 t_m = t + dt / 2
@@ -341,7 +341,7 @@ l'aire du rectangle est donnée par
 {tex.display`\underbrace{f\left(\frac{x_i + x_{i+1}} 2\right)}_{\text{hauteur}} \underbrace{\mathrm{d} x}_{\text{base}}, \qquad \mathrm{d} x = x_{i+1} - x_i = \frac {b - a} n`}
 
 Donc l'approximation de l'aire totale est donnée par
-{tex.display`f\left(\frac{x_0 + x_1} 2\right) \mathrm{d} x + f\left(\frac{x_1 + x_2} 2\right) \mathrm{d} x + \cdots + f\left(\frac{x_{n-1} + x_n} 2\right) \mathrm{d} x`}
+{tex.display`f\left(\frac{x_0 + x_1} 2\right) \mathrm{d} x + f\left(\frac{x_1 + x_2} 2\right) \mathrm{d} x + \cdots + f\left(\frac{x_{n-1} + b} 2\right) \mathrm{d} x`}
 
 En Python, l'écriture est plus propre grâce à la vectorisation.
 
@@ -426,7 +426,7 @@ Rappelons que l'aire d'un trapèze est donnée par la formule
 {tex.display`\text{Aire} = \text{moyenne des bases} \times  \text{hauteur}`}
 
 Nos trapèzes ont pour hauteur {tex`\mathrm{d}x`} et pour bases les valeurs de la fonction $f$ aux points gauche et droit de chaque sous-intervalle.
-Il suit que l'aire des est donnéees par
+Il suit que l'aire de chaque trapèze est donnée par
 
 {tex.display`\frac {f(x_i) + f(x_{i+1})} 2 \mathrm{d}x`}
 
@@ -469,7 +469,7 @@ en employant $100$ sous-intervalles.
        return np.sqrt(1 - x**2)
 
    x, dx = np.linspace(0, 1, 100, endpoint=False, retstep=True)
-   y = (f(x) + f(x + dx)) / 2 * dx
+   y = (f(x) + f(x + dx)) / 2
    ```
 
 3. On additionne les aires des trapèzes de base moyenne $y$ et de hauteur {tex`\mathrm{d}x`}.
@@ -493,7 +493,7 @@ en employant $100$ sous-intervalles.
 ## Règle de Simpson
 
 Les règles que nous avons vues jusqu'à présent sont des cas particuliers de **moyennes pondérées**.
-Elle donnent des poids différents aux points gauches, milieux et droits de chaque sous-intervalle.
+Elles donnent des poids différents aux points gauches, milieux et droits de chaque sous-intervalle.
 Ainsi, la règle du point milieu ne prend en compte que le point milieu de chaque sous-intervalle,
 alors que la règle du trapèze prend en compte les points gauches et droits à poids égaux.
 
@@ -528,7 +528,7 @@ ce que vous apprendrez à faire au cours de maths.
   f={(x) => Math.cos(x) + 2}
   domain={[-2.5, 2.5]}
   n={2}
-  latex="\sin(x)"
+  latex="\cos(x) + 2"
   type="simpson"
   hideHeading
 />
@@ -601,7 +601,7 @@ Dans une _intégrale indéfinie_,
 la borne est un paramètre:
 {tex.display`F({\color{red} x}) = \int_{x_0}^{{\color{red} x}} f(t) \, \mathrm{d} t`}
 
-En python, cela s'écrit simplement (par exemple via la méthode de Simpson)
+En Python, cela s'écrit simplement (par exemple via la méthode de Simpson)
 
 ```python
 import numpy as np
@@ -699,11 +699,11 @@ Ensuite, tracez le graphe de $F'$ (calculé numériquement avec la différence c
 
 ## Ordre d'une méthode et vitesse de convergence
 
-| Méthode             | Terme d'erreur |
-| ------------------- | -------------- |
-| Point milieu        | $C n^{-2}$     |
-| Méthode de trapèzes | $C n^{-2}$     |
-| Méthode de Simpson  | $C n^{-4}$     |
+| Méthode              | Terme d'erreur |
+| -------------------- | -------------- |
+| Point milieu         | $C n^{-2}$     |
+| Méthode des trapèzes | $C n^{-2}$     |
+| Méthode de Simpson   | $C n^{-4}$     |
 
 Ceci veut dire que lorsque $n$ est dix fois plus grand,
 l'erreur pour le point milieu ou les trapèzes réduit d'un facteur $100$.
@@ -774,7 +774,7 @@ def P(x):
 sp.integrate(P(x), (x, -3, 3))
 ```
 
-On voit que le poids (qui doivent être divisés par la longueur de l'intervalle) est le même pour les deux points,
+On voit que les poids (qui doivent être divisés par la longueur de l'intervalle) sont les mêmes pour les deux points,
 ce qui est exactement la formule du trapèze.
 
 |                  | `f(x)`                    | `f(x + dx / 2)` | `f(x + dx)`               |
@@ -809,7 +809,7 @@ et que les poids sont
 ## Formules de Newton-Cotes
 
 On peut se demander si l'idée qui a donné la formule de Simpson pourrait être étendue à plusieurs points.
-Et si sur un intervalle, on utiliserait un polynôme $P$ qui passerait par $4$ points équidistants au lieu de $3$?
+Et si, sur un intervalle, on utilisait un polynôme $P$ qui passe par $4$ points équidistants au lieu de $3$?
 
 <Exercise.Interpolation x={[-3, -1, 1, 3]} y={[2, 3, 1, 2.5]} area />
 
@@ -824,7 +824,7 @@ def P(x):
 sp.integrate(P(x), (x, -3, 3))
 ```
 
-On voit que les deux points milieux doivent avoir un poids deux fois plus grand,
+On voit que les deux points milieux doivent avoir un poids trois fois plus grand,
 ce qui donne les poids suivants:
 
 | Méthode     | `f(x)`                    | `f(x + dx/3)`             | `f(x + 2*dx/3)`           | `f(x + dx)`               |
@@ -833,7 +833,7 @@ ce qui donne les poids suivants:
 
 Notez que l'on peut également interpoler avec $5$ points, puis $6$ etc.
 En pratique, on ne le fait pas,
-car l'interpolation polynômiale est soumise au [phénomène de Runge](https://fr.wikipedia.org/wiki/Ph%C3%A9nom%C3%A8ne_de_Runge):
+car l'interpolation polynomiale est soumise au [phénomène de Runge](https://fr.wikipedia.org/wiki/Ph%C3%A9nom%C3%A8ne_de_Runge):
 interpoler avec trop de points peut donner des résultats très mauvais.
 Dans la figure ci-dessous,
 le polynôme interpolateur en bleu oscille beaucoup plus que la fonction $f$ en rouge.
