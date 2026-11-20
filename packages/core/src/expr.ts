@@ -329,9 +329,11 @@ function expression(input: Math) {
 
 const Unit = v.pipe(
   v.custom<MathJsonExpression>(() => true),
-  v.transform((unit) => {
-    if (typeof unit === 'string' && unit.includes('\\')) return ce.parse(unit).json
-    return unit
+  v.transform((rawUnit) => {
+    const unit =
+      typeof rawUnit === 'string' && rawUnit.includes('\\') ? ce.parse(rawUnit).json : rawUnit
+    const json = ce.expr(['Quantity', 1, unit]).json
+    return Array.isArray(json) && json[0] === 'Quantity' ? (json[2] as MathJsonExpression) : unit
   }),
 )
 type Unit = v.InferInput<typeof Unit>
@@ -343,7 +345,14 @@ const QuantityInput = v.union([
   ),
   v.pipe(
     v.tuple([Math, Unit]),
-    v.transform(([magnitude, unit]) => ['Quantity', String(magnitude.json), unit] as const),
+    v.transform(
+      ([magnitude, unit]) =>
+        [
+          'Quantity',
+          typeof magnitude.json === 'number' ? String(magnitude.json) : magnitude.json,
+          unit,
+        ] as const,
+    ),
   ),
   v.pipe(
     v.tuple([v.looseObject({ magnitude: Expression, unit: Unit })]),
@@ -390,7 +399,8 @@ export function quantity(...rawQuantity: v.InferInput<typeof QuantityInput>) {
           quantity({ json: json[1] }, json[2])
             .subtract({ json: other[1] }, other[2])
             .convert(other[2])
-            .magnitude.N() <= error
+            .magnitude.abs()
+            .N() <= error
         )
       } catch {
         return false

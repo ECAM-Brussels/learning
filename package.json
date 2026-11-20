@@ -41,8 +41,8 @@
     "docker:dev": "docker compose --profile dev up --build",
     "lint": "turbo run lint && prettier . --write",
     "lint:check": "turbo run lint:check && bun run prettier . --check",
-    "test": "turbo run test",
-    "test:watch": "turbo run test:watch"
+    "test": "bun --env-file=.env ./node_modules/turbo/bin/turbo run test",
+    "test:watch": "bun --env-file=.env ./node_modules/turbo/bin/turbo run test:watch"
   },
   "workspaces": [
     "apps/*",

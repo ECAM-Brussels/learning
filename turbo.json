@@ -26,10 +26,12 @@
       "cache": false
     },
     "test": {
-      "cache": false
+      "cache": false,
+      "passThroughEnv": ["*"]
     },
     "test:watch": {
-      "cache": false
+      "cache": false,
+      "passThroughEnv": ["*"]
     }
   }
 }
