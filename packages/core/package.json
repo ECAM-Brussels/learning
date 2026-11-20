@@ -4,6 +4,10 @@
   "type": "module",
   "private": true,
   "devDependencies": {
+    "@happy-dom/global-registrator": "^21.0.4",
+    "@solidjs/compiler": "catalog:",
+    "@solidjs/testing-library": "catalog:",
+    "@testing-library/jest-dom": "catalog:",
     "@types/bun": "latest",
     "openapi-typescript": "^7.10.1"
   },
@@ -14,8 +18,8 @@
   },
   "scripts": {
     "codegen": "openapi-typescript http://localhost:8088/openapi.json -o ./src/symapi.d.ts && prettier --write ./src/symapi.d.ts",
-    "test": "bun test --coverage --coverage-reporter=lcov",
-    "test:watch": "bun test --watch --coverage"
+    "test": "bun test --conditions=browser --coverage --coverage-reporter=lcov",
+    "test:watch": "bun test --conditions=browser --watch --coverage"
   },
   "dependencies": {
     "@cortex-js/compute-engine": "catalog:",
