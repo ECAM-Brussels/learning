@@ -515,3 +515,79 @@ describe('createDerivedStep', () => {
     }
   })
 })
+
+describe('union data schemas', () => {
+  const Shape = createStep({
+    schema: {
+      data: v.variant('kind', [
+        v.object({ kind: v.literal('square'), side: v.number() }),
+        v.object({ kind: v.literal('rect'), width: v.number(), height: v.number() }),
+      ]),
+      inputs: { answer: 'string' },
+    },
+    grade: ({ data, inputs }) =>
+      Number(inputs.answer) ===
+      (data.kind === 'square' ? data.side ** 2 : data.width * data.height),
+    prompt: (p) => (
+      <div>
+        <p data-testid="question">
+          {p.data.kind === 'square'
+            ? `square ${p.data.side}`
+            : `rect ${p.data.width}x${p.data.height}`}
+        </p>
+        {p.inputs.answer}
+      </div>
+    ),
+    feedback: (p) => <div data-testid="feedback">{p.correct ? 'Bravo' : 'Faux'}</div>,
+  })
+
+  test('accepts a valibot union/variant schema as data', async () => {
+    render(() => <Shape id="union-square" kind="square" side={3} />)
+    expect(await screen.findByTestId('question')).toHaveTextContent('square 3')
+    answer('9')
+    submit()
+    expect(await screen.findByTestId('feedback')).toHaveTextContent('Bravo')
+    expect(stored('union-square')[0]).toMatchObject({ data: { kind: 'square', side: 3 } })
+  })
+
+  test('narrows on each union member', async () => {
+    render(() => <Shape id="union-rect" data={{ kind: 'rect', width: 2, height: 5 }} />)
+    expect(await screen.findByTestId('question')).toHaveTextContent('rect 2x5')
+  })
+
+  test('an array of raw shapes is shorthand for a union of objects', async () => {
+    const Either = createStep({
+      schema: {
+        data: [{ a: 'number', b: 'number' }, { label: 'string' }],
+        inputs: { answer: 'string' },
+      },
+      grade: () => true,
+      prompt: (p) => (
+        <p data-testid="question">
+          {'label' in p.data ? p.data.label : `${p.data.a} + ${p.data.b}`}
+        </p>
+      ),
+    })
+    render(() => (
+      <>
+        <Either id="union-raw-1" a={1} b={2} />
+        <Either id="union-raw-2" label="hello" />
+      </>
+    ))
+    const questions = await screen.findAllByTestId('question')
+    expect(questions.map((q) => q.textContent)).toEqual(['1 + 2', 'hello'])
+  })
+
+  test('a derived step can take a union as its own data schema', async () => {
+    const Area = createDerivedStep(
+      Shape,
+      [{ square: 'number' }, { w: 'number', h: 'number' }],
+      (data) =>
+        'square' in data
+          ? { kind: 'square' as const, side: data.square }
+          : { kind: 'rect' as const, width: data.w, height: data.h },
+    )
+    render(() => <Area id="union-derived" w={3} h={4} />)
+    expect(await screen.findByTestId('question')).toHaveTextContent('rect 3x4')
+  })
+})
