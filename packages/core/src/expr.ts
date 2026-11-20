@@ -206,7 +206,7 @@ function expression(input: Math) {
         if (Array.isArray(json) && json[0] === 'Power' && json.length === 3) {
           const [_, base, exponent] = json
           if (
-            base === 'exponentialE' &&
+            base === 'ExponentialE' &&
             ['Multiply', 'InvisibleOperator'].includes(exponent[0]) &&
             exponent.length === 3 &&
             (exponent[1] === 'ImaginaryUnit' ||
