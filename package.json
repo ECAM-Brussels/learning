@@ -39,8 +39,8 @@
     "dev": "bun install && bun --env-file=.env ./node_modules/turbo/bin/turbo run dev",
     "docker": "docker compose --profile prod up --build",
     "docker:dev": "docker compose --profile dev up --build",
-    "lint": "turbo run lint && prettier . --write",
-    "lint:check": "turbo run lint:check && bun run prettier . --check",
+    "lint": "turbo run lint && git ls-files -z --cached --others --exclude-standard | xargs -0 prettier --write --ignore-unknown --no-error-on-unmatched-pattern",
+    "lint:check": "turbo run lint:check && git ls-files -z --cached --others --exclude-standard | xargs -0 prettier --check --ignore-unknown --no-error-on-unmatched-pattern",
     "test": "bun --env-file=.env ./node_modules/turbo/bin/turbo run test",
     "test:watch": "bun --env-file=.env ./node_modules/turbo/bin/turbo run test:watch"
   },
