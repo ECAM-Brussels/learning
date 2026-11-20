@@ -38,7 +38,13 @@ const symapiRequest = query(async ({ path, body }: { path: string; body: string 
     headers: { 'Content-Type': 'application/json' },
     body,
   })
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+  if (!res.ok) {
+    const detail = await res
+      .json()
+      .then((body) => (typeof body?.detail === 'string' ? body.detail : JSON.stringify(body)))
+      .catch(() => res.statusText)
+    throw new Error(`HTTP ${res.status}: ${detail}`)
+  }
   return await res.json()
 }, 'symapi')
 

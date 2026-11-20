@@ -273,6 +273,15 @@ export interface components {
        */
       comparison: 'gt' | 'lt' | 'geq' | 'leq'
     }
+    /** DegreeInput */
+    DegreeInput: {
+      expr: components['schemas']['Expression']
+      /**
+       * X
+       * @default x
+       */
+      x: string
+    }
     /** Expression */
     Expression: components['schemas']['MathJSON']
     /** HTTPValidationError */
@@ -374,7 +383,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': boolean
+          'application/json': boolean | null
         }
       }
       /** @description Validation Error */
@@ -397,7 +406,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': components['schemas']['OneExpression']
+        'application/json': components['schemas']['DegreeInput']
       }
     }
     responses: {
@@ -407,7 +416,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': number
+          'application/json': number | null
         }
       }
       /** @description Validation Error */
@@ -572,7 +581,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': boolean
+          'application/json': boolean | null
         }
       }
       /** @description Validation Error */

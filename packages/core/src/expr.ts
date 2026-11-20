@@ -1,6 +1,7 @@
 import {
   type ExpressionInput as CEExpressionInput,
   ComputeEngine,
+  isNumber,
   type MathJsonExpression,
   N,
   PythonTarget,
@@ -57,6 +58,24 @@ const Math = v.union([
   ),
 ])
 type Math = v.InferInput<typeof Math>
+
+const undecided = <T>(result: Promise<T | null>) => result.then((r) => r ?? undefined)
+
+/**
+ * Compute Engine evaluates Mod with the sign of the dividend (-7 mod 3 = -1),
+ * while sympy floors (-7 mod 3 = 2). Rewrite Mod as a - b floor(a / b) before
+ * evaluating so both sides agree on the floored convention.
+ */
+function floorMod(json: MathJsonExpression): MathJsonExpression {
+  if (!Array.isArray(json)) return json
+  const [head, ...args] = json as [string, ...MathJsonExpression[]]
+  const mapped = args.map(floorMod)
+  if (head === 'Mod' && mapped.length === 2) {
+    const [a, b] = mapped as [MathJsonExpression, MathJsonExpression]
+    return ['Subtract', a, ['Multiply', b, ['Floor', ['Divide', a, b]]]]
+  }
+  return [head, ...mapped] as MathJsonExpression
+}
 
 const integrateParams = v.union([
   v.pipe(
@@ -126,7 +145,8 @@ function expression(input: Math) {
       }
       return _count(json)
     },
-    degree: () => symapi.expr.degree({ expr: json }),
+    degree: (x = 'x') =>
+      symapi.expr.degree({ expr: json, x }).then((d) => (d === null ? -Infinity : d)),
     delta: (x: string, a: Math, b: Math) => {
       const f = (t: Math) => expression({ json }).subs({ [x]: t }).json
       return expression({ json: ['Subtract', f(b), f(a)] }).simplify()
@@ -138,11 +158,15 @@ function expression(input: Math) {
     },
     encrypt: async () => Promise.resolve(expression({ json }).latex()).then(encrypt),
     expand: () => expression({ json: ['Expand', json] }),
-    evaluate: () => ce.expr(json).evaluate(),
+    evaluate: () => ce.expr(floorMod(json)).evaluate(),
     geq: (other: Math) =>
-      symapi.expr.compare({ expr1: json, expr2: v.parse(Math, other).json, comparison: 'geq' }),
+      undecided(
+        symapi.expr.compare({ expr1: json, expr2: v.parse(Math, other).json, comparison: 'geq' }),
+      ),
     gt: (other: Math) =>
-      symapi.expr.compare({ expr1: json, expr2: v.parse(Math, other).json, comparison: 'gt' }),
+      undecided(
+        symapi.expr.compare({ expr1: json, expr2: v.parse(Math, other).json, comparison: 'gt' }),
+      ),
     hasSymbol: () => {
       function findSymbol(json: MathJsonExpression): boolean {
         if (Array.isArray(json) && json.length > 1) {
@@ -159,12 +183,14 @@ function expression(input: Math) {
       return json[0] as string
     },
     imaginary: () => expression({ json: ['Imaginary', json] }),
-    in: (set: Math) => symapi.expr.inSet({ expr1: json, expr2: v.parse(Math, set).json }),
+    in: (set: Math) =>
+      undecided(symapi.expr.inSet({ expr1: json, expr2: v.parse(Math, set).json })),
     integrate: (...params: v.InferInput<typeof integrateParams>) =>
       expression({ json: ['Integrate', json, ...v.parse(integrateParams, params)] }),
     isEqual: async (other: MaybeAsync<Math>, error: number = 0) => {
       if (error > 0) {
-        const diff = expression({ json: ['Subtract', json, v.parse(Math, await other).json] })
+        const self = hasInstructionOp(json) ? (await expression({ json }).apply()).json : json
+        const diff = expression({ json: ['Subtract', self, v.parse(Math, await other).json] })
           .abs()
           .N()
         return diff <= error
@@ -288,14 +314,22 @@ function expression(input: Math) {
       }
     },
     leq: (other: Math) =>
-      symapi.expr.compare({ expr1: json, expr2: v.parse(Math, other).json, comparison: 'leq' }),
+      undecided(
+        symapi.expr.compare({ expr1: json, expr2: v.parse(Math, other).json, comparison: 'leq' }),
+      ),
     lt: (other: Math) =>
-      symapi.expr.compare({ expr1: json, expr2: v.parse(Math, other).json, comparison: 'lt' }),
+      undecided(
+        symapi.expr.compare({ expr1: json, expr2: v.parse(Math, other).json, comparison: 'lt' }),
+      ),
     matches: (other: Math) => symapi.expr.match({ expr1: json, expr2: v.parse(Math, other).json }),
     mod: (other: Math) => expression({ json: ['Mod', json, v.parse(Math, other).json] }),
     multiply: (other: Math) => expression({ json: ['Multiply', json, v.parse(Math, other).json] }),
     N: (precision?: number) => {
-      const result = Number(N(expression({ json }).evaluate()))
+      // `Number(boxed)` silently returns 0 for anything that isn't a real
+      // literal (symbols, complex numbers, ComplexInfinity, ...), so read
+      // the real/imaginary parts explicitly and return NaN instead.
+      const n = N(expression({ json }).evaluate())
+      const result = isNumber(n) && n.im === 0 ? n.re : NaN
       return precision === undefined ? result : round(result, precision)
     },
     python: <T extends boolean = false>(sympy?: T): T extends false ? string : Promise<string> => {
@@ -313,9 +347,24 @@ function expression(input: Math) {
         v.parse(v.record(v.string(), Math), rawSubstitutions),
         (v) => v.json,
       )
+      // Instructions such as Derivative/Integrate bind their variable:
+      // substituting into them directly would turn d/dx x^2 into d/d3 3^2.
+      // Defer the substitution to sympy with a Subs node instead.
+      if (hasInstructionOp(json)) {
+        const keys = Object.keys(substitutions)
+        if (keys.length === 0) return expression({ json })
+        const values = keys.map((k) => substitutions[k]!)
+        return expression({
+          json:
+            keys.length === 1
+              ? ['Subs', json, keys[0]!, values[0]!]
+              : ['Subs', json, ['Tuple', ...keys], ['Tuple', ...values]],
+        })
+      }
       return expression({ json: ce.expr(json, { form: 'raw' }).subs(substitutions).json })
     },
-    solve: (x: Math = 'x') => set(['Solve', json, v.parse(Math, x).json]),
+    solve: (x: Math = 'x', complex = false) =>
+      set(['Solve', json, v.parse(Math, x).json, complex ? 'ComplexNumbers' : 'RealNumbers']),
     subtract: (other: Math) => expression({ json: ['Subtract', json, v.parse(Math, other).json] }),
     taylor: (x: Math, a: Math, n: number) =>
       expression({

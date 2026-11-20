@@ -23,9 +23,26 @@ def parse_expr(expr: MathJSON) -> sympy.Expr:
                 return sympy.I
             case "Pi":
                 return sympy.pi
+            # Sets
+            case "EmptySet":
+                return cast(sympy.Expr, sympy.S.EmptySet)
+            case "ComplexNumbers":
+                return cast(sympy.Expr, sympy.S.Complexes)
+            case "RealNumbers":
+                return cast(sympy.Expr, sympy.S.Reals)
+            case "RationalNumbers":
+                return cast(sympy.Expr, sympy.S.Rationals)
+            case "Integers":
+                return cast(sympy.Expr, sympy.S.Integers)
+            case "NonNegativeIntegers":
+                return cast(sympy.Expr, sympy.S.Naturals0)
+            case "PositiveIntegers":
+                return cast(sympy.Expr, sympy.S.Naturals)
             case _:
-                return sympy.Symbol(expr)
+                return sympy.Symbol(expr, real=True)
     if isinstance(expr, list):
+        if expr and expr[0] == "Interval":
+            return parse_interval(expr[1:])
         args = [parse_expr(e) for e in expr[1:]]
         match expr[0]:
             # Operations
@@ -50,9 +67,21 @@ def parse_expr(expr: MathJSON) -> sympy.Expr:
             case "Delimiter":
                 return args[0]
             case "Subs":
+                if isinstance(args[1], sympy.Tuple):
+                    return args[0].subs(dict(zip(args[1], args[2])), simultaneous=True)
                 return args[0].subs(args[1], args[2])
             case "Equal":
                 return cast(sympy.Expr, sympy.Eq(*args, evaluate=False))
+            case "NotEqual":
+                return cast(sympy.Expr, sympy.Ne(*args, evaluate=False))
+            case "Less":
+                return cast(sympy.Expr, sympy.Lt(*args, evaluate=False))
+            case "LessEqual":
+                return cast(sympy.Expr, sympy.Le(*args, evaluate=False))
+            case "Greater":
+                return cast(sympy.Expr, sympy.Gt(*args, evaluate=False))
+            case "GreaterEqual":
+                return cast(sympy.Expr, sympy.Ge(*args, evaluate=False))
             case "Expand":
                 return sympy.expand(args[0])
             case "Factor":
@@ -61,8 +90,6 @@ def parse_expr(expr: MathJSON) -> sympy.Expr:
                 return sympy.im(args[0])
             case "Integrate":
                 return sympy.integrate(*args)
-            case "Interval":
-                return sympy.Interval(*args)
             case "Intersect":
                 return sympy.Intersection(*args)
             case "InvisibleOperator":
@@ -77,6 +104,10 @@ def parse_expr(expr: MathJSON) -> sympy.Expr:
                 return args[0].removeO()
             case "Power":
                 return sympy.Pow(*args, evaluate=False)
+            case "Root":
+                return sympy.root(*args)
+            case "Factorial":
+                return sympy.factorial(*args)
             case "Rational":
                 return sympy.Rational(*args)
             case "Real":
@@ -89,7 +120,8 @@ def parse_expr(expr: MathJSON) -> sympy.Expr:
             case "Simplify":
                 return sympy.simplify(args[0])
             case "Solve":
-                return sympy.solveset(*args)
+                domain = args[2] if len(args) > 2 else sympy.S.Reals
+                return cast(sympy.Expr, sympy.solveset(args[0], args[1], domain))
             case "Subtract":
                 return sympy.Add(args[0], -args[1], evaluate=False)
             case "Sqrt":
@@ -101,18 +133,58 @@ def parse_expr(expr: MathJSON) -> sympy.Expr:
                 return sympy.cos(*args, evaluate=False)
             case "Exp":
                 return sympy.exp(*args, evaluate=False)
-            case "Log":
+            case "Ln":
                 return sympy.log(*args, evaluate=False)
+            case "Log":
+                base = args[1] if len(args) > 1 else sympy.Integer(10)
+                return sympy.log(args[0], base)
+            case "Lb":
+                return sympy.log(args[0], 2)
+            case "Sec":
+                return sympy.sec(*args, evaluate=False)
+            case "Csc":
+                return sympy.csc(*args, evaluate=False)
+            case "Cot":
+                return sympy.cot(*args, evaluate=False)
+            case "Arcsin":
+                return sympy.asin(*args, evaluate=False)
+            case "Arccos":
+                return sympy.acos(*args, evaluate=False)
+            case "Arctan":
+                return sympy.atan(*args, evaluate=False)
+            case "Sinh":
+                return sympy.sinh(*args, evaluate=False)
+            case "Cosh":
+                return sympy.cosh(*args, evaluate=False)
+            case "Tanh":
+                return sympy.tanh(*args, evaluate=False)
             case "Sin":
                 return sympy.sin(*args, evaluate=False)
             case "Tan":
                 return sympy.tan(*args, evaluate=False)
+            case head:
+                raise ValueError(f"Unsupported MathJSON function: {head!r}")
     if isinstance(expr, Num):
         try:
             return sympy.Rational(expr.num)
         except:
             raise ValueError(f"Invalid MathJSON number: {expr.num!r}")
     raise ValueError("Not a valid expression")
+
+
+def parse_interval(bounds: list[MathJSON]) -> sympy.Expr:
+    if len(bounds) != 2:
+        raise ValueError("Interval expects exactly 2 bounds")
+
+    def bound(b: MathJSON) -> tuple[sympy.Expr, bool]:
+        if isinstance(b, list) and len(b) == 2 and b[0] == "Open":
+            return parse_expr(b[1]), True
+        if isinstance(b, list) and len(b) == 2 and b[0] == "Closed":
+            return parse_expr(b[1]), False
+        return parse_expr(b), False
+
+    (a, left_open), (b, right_open) = bound(bounds[0]), bound(bounds[1])
+    return cast(sympy.Expr, sympy.Interval(a, b, left_open, right_open))
 
 
 class Expression(pydantic.RootModel):
