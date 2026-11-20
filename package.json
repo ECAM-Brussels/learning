@@ -56,7 +56,8 @@
     "lint:check": "turbo run lint:check && eslint . && git ls-files -z --cached --others --exclude-standard | xargs -0 prettier --check --ignore-unknown --no-error-on-unmatched-pattern",
     "prepare": "lefthook install",
     "test": "bun --env-file=.env ./node_modules/turbo/bin/turbo run test",
-    "test:watch": "bun --env-file=.env ./node_modules/turbo/bin/turbo run test:watch"
+    "test:watch": "bun --env-file=.env ./node_modules/turbo/bin/turbo run test:watch",
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json"
   },
   "workspaces": [
     "apps/*",

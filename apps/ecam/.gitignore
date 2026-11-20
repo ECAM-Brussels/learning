@@ -27,5 +27,5 @@ gitignore
 .DS_Store
 Thumbs.db
 
-file-routes.d.ts
-solid-env.d.ts
+# Generated type declarations (file-routes.d.ts, solid-env.d.ts) are committed on purpose:
+# CI type-checks without running Vite, which is what (re)generates them.

@@ -13,3 +13,6 @@ pre-commit:
       glob: '*.py'
       run: uv run python -m black {staged_files}
       stage_fixed: true
+    typecheck:
+      glob: '*.{ts,tsx,mts,cts,js,jsx,mdx,json}'
+      run: bun run typecheck
