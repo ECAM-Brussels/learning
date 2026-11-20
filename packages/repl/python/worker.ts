@@ -3,7 +3,6 @@
 import dedent from 'dedent'
 import { loadPyodide, version as pyodideVersion } from 'pyodide'
 import type { Input, Output } from '..'
-// @ts-expect-error -- Python source imported as a string via the ?raw suffix
 import DualNumbers from './automatic_diff.py?raw'
 
 let pyodidePromise: ReturnType<typeof loadPyodide> | null = null

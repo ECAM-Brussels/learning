@@ -1,5 +1,5 @@
 import { query } from '@solidjs/router'
-import type { env as serverEnv } from 'virtual:env/server'
+import type { env as serverEnv } from 'virtual:solid-env/server'
 import type { paths } from './symapi.d'
 
 const env = process.env as unknown as typeof serverEnv

@@ -4,14 +4,10 @@ import { createEffect } from 'solid-js'
 
 declare module '@solidjs/web' {
   namespace JSX {
-    type ElementProps<T> = {
-      [K in keyof T]: Props<T[K]> & HTMLAttributes<T[K]>
-    }
-    type Props<T> = {
-      [K in keyof T as `prop:${string & K}`]?: T[K]
-    }
     interface IntrinsicElements {
-      'math-field': Partial<ElementProps<MathfieldElement>> & { ref?: MathfieldElement }
+      'math-field': HTMLAttributes<MathfieldElement> &
+        Properties<MathfieldElement> &
+        Partial<MathfieldElementAttributes>
     }
   }
 }
@@ -36,7 +32,7 @@ export function MathField(props: Partial<MathfieldElementAttributes> & { value: 
         {...props}
         value={(props.value as string) ?? ''}
         placeholder={`\\text{${props.placeholder ?? ''}`}
-        onkeydown={(event: KeyboardEvent) => {
+        onKeyDown={(event) => {
           if (event.key.startsWith('Arrow')) {
             event.stopPropagation()
           }
