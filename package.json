@@ -10,6 +10,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-mdx": "^3.10.1",
     "globals": "^17.14.0",
+    "lefthook": "^2.2.2",
     "prettier": "^3.8.4",
     "prettier-plugin-organize-imports": "^4.3.0",
     "prettier-plugin-tailwindcss": "^0.7.4",
@@ -50,6 +51,7 @@
     "docker:dev": "docker compose --profile dev up --build",
     "lint": "turbo run lint && eslint . --fix && git ls-files -z --cached --others --exclude-standard | xargs -0 prettier --write --ignore-unknown --no-error-on-unmatched-pattern",
     "lint:check": "turbo run lint:check && eslint . && git ls-files -z --cached --others --exclude-standard | xargs -0 prettier --check --ignore-unknown --no-error-on-unmatched-pattern",
+    "prepare": "lefthook install",
     "test": "bun --env-file=.env ./node_modules/turbo/bin/turbo run test",
     "test:watch": "bun --env-file=.env ./node_modules/turbo/bin/turbo run test:watch"
   },
