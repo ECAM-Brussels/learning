@@ -17,6 +17,7 @@
         "bierner.comment-tagged-templates",
         "bradlc.vscode-tailwindcss",
         "darkriszty.markdown-table-prettify",
+        "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
         "hipstersmoothie-public.mdx-tsc-vscode",
         "ms-python.black-formatter",

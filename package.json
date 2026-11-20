@@ -2,13 +2,22 @@
   "name": "learning",
   "type": "module",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@tsrx/prettier-plugin": "^0.6.3",
     "@tsrx/solid": "^0.3.5",
     "@types/bun": "latest",
+    "eslint": "^10.15.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-mdx": "^3.10.1",
+    "globals": "^17.14.0",
     "prettier": "^3.8.4",
     "prettier-plugin-organize-imports": "^4.3.0",
     "prettier-plugin-tailwindcss": "^0.7.4",
-    "turbo": "^2.9.18"
+    "remark-directive": "^4.0.0",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
+    "turbo": "^2.9.18",
+    "typescript-eslint": "^8.73.0"
   },
   "peerDependencies": {
     "typescript": "^5.9.3"
@@ -39,8 +48,8 @@
     "dev": "bun install && bun --env-file=.env ./node_modules/turbo/bin/turbo run dev",
     "docker": "docker compose --profile prod up --build",
     "docker:dev": "docker compose --profile dev up --build",
-    "lint": "turbo run lint && git ls-files -z --cached --others --exclude-standard | xargs -0 prettier --write --ignore-unknown --no-error-on-unmatched-pattern",
-    "lint:check": "turbo run lint:check && git ls-files -z --cached --others --exclude-standard | xargs -0 prettier --check --ignore-unknown --no-error-on-unmatched-pattern",
+    "lint": "turbo run lint && eslint . --fix && git ls-files -z --cached --others --exclude-standard | xargs -0 prettier --write --ignore-unknown --no-error-on-unmatched-pattern",
+    "lint:check": "turbo run lint:check && eslint . && git ls-files -z --cached --others --exclude-standard | xargs -0 prettier --check --ignore-unknown --no-error-on-unmatched-pattern",
     "test": "bun --env-file=.env ./node_modules/turbo/bin/turbo run test",
     "test:watch": "bun --env-file=.env ./node_modules/turbo/bin/turbo run test:watch"
   },
