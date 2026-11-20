@@ -21,6 +21,8 @@ jobs:
         run: bun install
 
       - name: Run tests
+        env:
+          SYMAPI_URL: http://localhost:8088
         run: |
           bun dev --filter=@learning/symapi &
           for i in {1..30}; do

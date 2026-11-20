@@ -20,7 +20,7 @@ export function Integer(rawProps: {
   const [precision, setPrecision] = createSignal(() => props.precision)
 
   const bits = createMemo(() => {
-    let bits: Record<number, number> = {}
+    const bits: Record<number, number> = {}
     const rep = number().toString(props.base)
     let power = rep.indexOf('.') >= 0 ? rep.indexOf('.') - 1 : rep.length - 1
     if (!rep.startsWith('0')) bits[power + 1] = 0
@@ -47,7 +47,7 @@ export function Integer(rawProps: {
   const entries = createMemo(() =>
     Object.entries(bits())
       .sort(([a], [b]) => Number(b) - Number(a))
-      .filter(([power, bit]) => Number(power) >= -precision()),
+      .filter(([power]) => Number(power) >= -precision()),
   )
 
   const isApprox = createMemo(() => number() !== fromEntries(entries()))
@@ -121,7 +121,7 @@ export function Integer(rawProps: {
       </div>
       <Show when={props.showCalculation}>
         {tex`${entries()
-          .filter(([i, b]) => b !== 0)
+          .filter(([, b]) => b !== 0)
           .map(
             ([i, b]) =>
               `
@@ -644,7 +644,7 @@ export const Representable = createDerivedStep(
       const expr = props.x.simplify().evaluate().json
       if (!Array.isArray(expr) || !['Rational', 'Divide'].includes(expr[0]))
         throw new Error('Expected a rational number')
-      const [_, m, n] = expr as [string, number, number]
+      const [, , n] = expr as [string, number, number]
       const answer = n > 0 && (n & (n - 1)) === 0
       return sel.equals([answer ? 'true' : 'false'])
     },

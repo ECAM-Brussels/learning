@@ -1,4 +1,5 @@
 /// <reference path="./solid-env.d.ts" />
+/// <reference path="./mdx.d.ts" />
 /// <reference types="./node_modules/@solidjs/vite-plugin/boundary-modules" />
 
 import { type getAuth } from '@learning/auth'
@@ -11,13 +12,6 @@ declare module '@solidjs/web' {
       | null
     role: Awaited<ReturnType<typeof getRole>>
   }
-}
-
-declare module '*.mdx' {
-  import type { Component } from 'solid-js'
-  const MDXContent: Component<Record<string, unknown>>
-  export const frontmatter: Record<string, unknown>
-  export default MDXContent
 }
 
 export {}

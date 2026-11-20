@@ -136,9 +136,13 @@ const Optimisation = createDerivedStep(
       </>
     ),
     tests: (expect) => ({
-      "La condition d'arrêt est respectée": expect
-        .result()
-        .toSatisfy((x) => props.f.diff('x', x).abs().leq(props.error)),
+      "La condition d'arrêt est respectée": expect.result().toSatisfy((x) =>
+        props.f
+          .diff('x', x)
+          .abs()
+          .leq(props.error)
+          .then((ok) => ok === true),
+      ),
       'Le code emploie une boucle while': expect.code.toMatch(/while/),
       'Le code emploie la dérivée première': expect.code.toMatch(/epsilon/),
       'Le code emploie .dual pour dériver': expect.code.toMatch(/\.dual/),

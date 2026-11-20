@@ -1,5 +1,11 @@
+/// <reference types="./node_modules/@solidjs/vite-plugin/virtual-modules" />
 import type { Serve } from 'bun'
-import { handleRequest } from './dist/server/server.js'
+
+// The server bundle (entry: `virtual:solid-ssr-handler`) only exists after `vite build`,
+// so it is imported through a non-literal specifier and typed from the plugin's declarations.
+const { handleRequest }: typeof import('virtual:solid-ssr-handler') = await import(
+  './dist/server/server.js' as string
+)
 
 const MIME = {
   '.js': 'application/javascript',

@@ -1,14 +1,14 @@
 {
-  "name": "Ubuntu",
+  "name": "learning",
   "image": "mcr.microsoft.com/devcontainers/base:resolute",
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:4": {},
     "ghcr.io/devcontainers-extra/features/bun:1": {},
     "ghcr.io/devcontainer-community/devcontainer-features/astral.sh-uv:1": {}
   },
-  "postCreateCommand": "PY_VER=$(cat apps/symapi/.python-version) && uv python install \"$PY_VER\" && cd apps/symapi && uv sync --frozen --dev",
+  "postCreateCommand": "uv python install \"$(cat apps/symapi/.python-version)\" && cd apps/symapi && uv sync --frozen --dev",
   "remoteEnv": {
-    "PATH": "/workspaces/learning/apps/symapi/.venv/bin:${containerEnv:PATH}"
+    "PATH": "${containerWorkspaceFolder}/apps/symapi/.venv/bin:${containerEnv:PATH}"
   },
   "customizations": {
     "vscode": {
@@ -17,8 +17,10 @@
         "bierner.comment-tagged-templates",
         "bradlc.vscode-tailwindcss",
         "darkriszty.markdown-table-prettify",
+        "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
         "hipstersmoothie-public.mdx-tsc-vscode",
+        "ms-python.python",
         "ms-python.black-formatter",
         "unifiedjs.vscode-mdx",
         "tsrx.tsrx-vscode-plugin"
@@ -28,7 +30,7 @@
         "editor.formatOnSave": true,
         "prettier.configPath": "prettier.config.js",
         "prettier.prettierPath": "./node_modules/prettier",
-        "python.defaultInterpreterPath": "${workspaceFolder}/apps/symapi/.venv/bin/python"
+        "python.defaultInterpreterPath": "${containerWorkspaceFolder}/apps/symapi/.venv/bin/python"
       }
     }
   }

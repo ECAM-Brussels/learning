@@ -48,7 +48,7 @@ async function* run(code: string, options?: Options) {
     return
   }
   const promiseId = crypto.randomUUID()
-  const iterator = new EventIterator<Output>(({ push, stop }) => {
+  const iterator = new EventIterator<Output>(({ push }) => {
     const listener = (event: MessageEvent<Output>) => {
       if (event.data?.id !== promiseId) return
       push(event.data)

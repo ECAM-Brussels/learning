@@ -1,0 +1,23 @@
+name: Typecheck
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install JS deps
+        run: bun install
+
+      # Turns `tsc` errors into inline annotations on the commit / pull request diff
+      - name: Register tsc problem matcher
+        run: echo "::add-matcher::.github/matchers/tsc.json"
+
+      - name: Typecheck
+        run: bun run typecheck --pretty false

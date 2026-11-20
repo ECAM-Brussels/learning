@@ -74,12 +74,8 @@ export const Integrate = createStep({
       </Attempt>
     </>
   ),
-  async grade(ctx) {
-    const equal = await ctx.inputs.attempt.isEqual(
-      ctx.data.expr.integrate('x', ctx.data.low, ctx.data.high),
-    )
-    return [equal, { equal }]
-  },
+  grade: (ctx) =>
+    ctx.inputs.attempt.isEqual(ctx.data.expr.integrate('x', ctx.data.low, ctx.data.high)),
   feedback: (ctx) => (
     <Switch>
       <Match when={!ctx.correct}>

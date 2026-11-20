@@ -3,7 +3,6 @@
 import dedent from 'dedent'
 import { loadPyodide, version as pyodideVersion } from 'pyodide'
 import type { Input, Output } from '..'
-// @ts-ignore
 import DualNumbers from './automatic_diff.py?raw'
 
 let pyodidePromise: ReturnType<typeof loadPyodide> | null = null
@@ -23,7 +22,7 @@ self.onmessage = async (event: MessageEvent<Input>) => {
   self.postMessage({ id: event.data.id, status: 'importing' })
   await pyodide.loadPackagesFromImports(event.data.code)
   self.postMessage({ id: event.data.id, status: 'executing' })
-  let output: Output = { id: event.data.id, status: 'done' }
+  const output: Output = { id: event.data.id, status: 'done' }
   try {
     pyodide.globals.clear()
     if (event.data.code.includes('matplotlib')) {

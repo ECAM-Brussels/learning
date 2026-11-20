@@ -203,7 +203,7 @@ export const Board = Object.assign(
           {(circle: JXG.Circle) => {
             createEffect(
               () => [props.center, props.radius, props.through] as const,
-              ([center, radius, through]) => {
+              ([center, radius]) => {
                 circle.center.moveTo(center)
                 if (radius) {
                   circle.setRadius(radius)

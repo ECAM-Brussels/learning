@@ -45,7 +45,7 @@ def common_roots(input: TwoExpressions) -> list[str]:
 
 
 @router.post("/compare")
-def compare(input: ComparisonInput) -> bool:
+def compare(input: ComparisonInput) -> Optional[bool]:
     diff = sympy.simplify(input.expr1.expr - input.expr2.expr)
     if input.comparison == "gt":
         return sympy.ask(sympy.Q.positive(diff))
@@ -59,13 +59,28 @@ def compare(input: ComparisonInput) -> bool:
         raise ValueError("Invalid comparison")
 
 
+class DegreeInput(OneExpression):
+    x: str = "x"
+
+
 @router.post("/degree")
-def degree(input: OneExpression) -> int:
-    return sympy.degree(input.expr.expr)
+def degree(input: DegreeInput) -> Optional[int]:
+    expr, x = input.expr.expr, sympy.Symbol(input.x, real=True)
+    if not expr.is_polynomial(x):
+        raise ValueError(f"{expr} is not a polynomial in {x}")
+    d = sympy.Poly(expr, x).degree()
+    return None if d == -sympy.oo else int(d)
 
 
 @router.post("/equal")
 def equal(input: TwoExpressions) -> bool:
+    if any(
+        isinstance(e, sympy.core.relational.Relational)
+        for e in (input.expr1.expr, input.expr2.expr)
+    ):
+        raise ValueError(
+            "Cannot compare equations/inequalities with equal; use equivalent"
+        )
     expr = input.expr1.expr - input.expr2.expr
     if expr.is_complex:
         expr = sympy.expand_complex(expr)
@@ -102,9 +117,16 @@ def equivalent(input: TwoExpressions) -> bool:
 
 
 @router.post("/inSet")
-def in_set(input: TwoExpressions) -> bool:
+def in_set(input: TwoExpressions) -> Optional[bool]:
     expr, set_expr = input.expr1.expr, input.expr2.expr
-    return expr in set_expr
+    if not isinstance(set_expr, sympy.Set):
+        raise ValueError(f"{set_expr} is not a set")
+    result = set_expr.contains(expr)
+    if result == True:
+        return True
+    if result == False:
+        return False
+    return None
 
 
 @router.post("/isExpanded")
@@ -179,4 +201,8 @@ class RootsInput(OneExpression):
 def roots(input: RootsInput) -> list[str]:
     domain = sympy.S.Complexes if input.complex else sympy.S.Reals
     expr = sympy.solveset(input.expr.expr, domain=domain)
+    if expr == sympy.S.EmptySet:
+        return []
+    if not isinstance(expr, sympy.FiniteSet):
+        raise ValueError(f"Cannot list the roots of {input.expr.expr}: {expr}")
     return [sympy.latex(e) for e in expr]

@@ -3,6 +3,7 @@
   "prettier.prettierPath": "./node_modules/prettier",
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact", "mdx"],
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter"
   }
