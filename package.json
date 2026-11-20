@@ -45,7 +45,7 @@
     "codegen": "turbo run codegen",
     "db:start": "bun --env-file=.env --filter=@learning/db run db:start",
     "db:push": "bun install && bun --env-file=.env --filter=@learning/db run db:push",
-    "dev": "bun install && bun --env-file=.env ./node_modules/turbo/bin/turbo run dev",
+    "dev": "bun install && bun --env-file=.env ./node_modules/turbo/bin/turbo run dev test:watch",
     "docker": "docker compose --profile prod up --build",
     "docker:dev": "docker compose --profile dev up --build",
     "lint": "turbo run lint && eslint . --fix && git ls-files -z --cached --others --exclude-standard | xargs -0 prettier --write --ignore-unknown --no-error-on-unmatched-pattern",

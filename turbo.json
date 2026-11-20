@@ -31,7 +31,8 @@
     },
     "test:watch": {
       "cache": false,
-      "passThroughEnv": ["*"]
+      "passThroughEnv": ["*"],
+      "persistent": true
     }
   }
 }
