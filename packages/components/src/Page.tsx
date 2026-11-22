@@ -33,7 +33,7 @@ export const Page: ParentComponent<{ title?: JSX.Element }> = (props) => {
   useBeforeLeave((event) => {
     if (typeof event.to === 'string') {
       const url = new URL(event.to, 'http://localhost').pathname
-      if (url !== event.from.pathname) setToc((s) => [])
+      if (url !== event.from.pathname) setToc(() => [])
     }
   })
 

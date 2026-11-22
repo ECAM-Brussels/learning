@@ -12,10 +12,12 @@ import {
   createSignal,
   createStore,
   isPending,
+  Match,
   omit,
   onSettled,
   refresh,
   Show,
+  Switch,
   useContext,
   type Component,
   type ComponentProps,
@@ -38,6 +40,14 @@ const CustomSchemas = {
   expr: v.union([
     v.pipe(
       v.string(),
+      v.check((latex) => {
+        try {
+          expr(latex)
+          return true
+        } catch {
+          return false
+        }
+      }),
       v.transform((latex) => expr(latex)),
     ),
     Expression,
@@ -60,7 +70,60 @@ type ResolveSchema<T> =
       : never
 
 type RawShape = Record<string, v.BaseSchema<any, any, any> | keyof CustomSchemas>
-function ObjectSchema<T extends RawShape>(rawSchema: T) {
+type ObjectLikeSchema = v.GenericSchema<Record<string, any>, Record<string, any>>
+
+/**
+ * Anything that describes an object:
+ *
+ * - a raw shape, e.g. `{ a: 'number', b: v.string() }`, wrapped in `v.object` for you
+ * - a full valibot schema producing an object, e.g. `v.union([...])` or `v.variant('type', [...])`
+ * - an array of raw shapes, shorthand for `v.union([v.object(...), v.object(...)])`
+ */
+type Shape = RawShape | ObjectLikeSchema | readonly [RawShape, ...RawShape[]]
+
+type RawObjectSchema<T extends RawShape> = v.ObjectSchema<
+  { [K in keyof T]: ResolveSchema<T[K]> },
+  undefined
+>
+
+type ResolveShape<T> = T extends ObjectLikeSchema
+  ? T
+  : T extends readonly RawShape[]
+    ? v.UnionSchema<
+        { [K in keyof T]: T[K] extends RawShape ? RawObjectSchema<T[K]> : never },
+        undefined
+      >
+    : T extends RawShape
+      ? RawObjectSchema<T>
+      : never
+
+type InferShape<T, U extends 'input' | 'output' = 'input'> = U extends 'output'
+  ? v.InferOutput<ResolveShape<T>>
+  : v.InferInput<ResolveShape<T>>
+
+/**
+ * The schema of a shape, typed as a plain `GenericSchema` so that TypeScript
+ * still knows it is a schema while `T` is generic (e.g. inside `Step`).
+ */
+type ShapeSchema<T> = v.GenericSchema<InferShape<T, 'input'>, InferShape<T, 'output'>>
+
+/**
+ * Same type as `T`, but written as a mapped type so that TypeScript can still use it as a
+ * contextual type while `T` is generic (otherwise e.g. callbacks inside `.map()` lose their types).
+ * Being a homomorphic mapped type over a type parameter, it distributes over unions.
+ */
+type Contextual<T> = { [K in keyof T]: T[K] }
+
+function isSchema(value: unknown): value is v.GenericSchema {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    (value as { kind?: unknown }).kind === 'schema' &&
+    typeof (value as { '~run'?: unknown })['~run'] === 'function'
+  )
+}
+
+function RawObjectSchema<T extends RawShape>(rawSchema: T) {
   const transformed = Object.fromEntries(
     Object.entries(rawSchema).map(([key, value]) => [
       key,
@@ -72,24 +135,17 @@ function ObjectSchema<T extends RawShape>(rawSchema: T) {
   return v.object(transformed)
 }
 
-type ObjectSchema<
-  T extends Record<string, v.BaseSchema<any, any, any> | keyof CustomSchemas>,
-  U extends 'input' | 'output' = 'input',
-> =
-  ReturnType<typeof ObjectSchema<T>> extends v.ObjectSchema<
-    { [K in keyof T]: ResolveSchema<T[K]> },
-    any
-  >
-    ? U extends 'output'
-      ? v.InferOutput<ReturnType<typeof ObjectSchema<T>>>
-      : v.InferInput<ReturnType<typeof ObjectSchema<T>>>
-    : never
+function ShapeSchema<T extends Shape>(shape: T): ShapeSchema<T> {
+  if (isSchema(shape)) return shape as unknown as ShapeSchema<T>
+  if (Array.isArray(shape)) return v.union(shape.map(RawObjectSchema)) as unknown as ShapeSchema<T>
+  return RawObjectSchema(shape as RawShape) as unknown as ShapeSchema<T>
+}
 
-function StoredStep<D extends RawShape, I extends RawShape>(data: D, inputs: I) {
+function StoredStep<D extends Shape, I extends RawShape>(data: D, inputs: I) {
   return v.object({
     name: v.nullish(v.string(), undefined),
-    data: ObjectSchema(data),
-    state: v.partial(ObjectSchema(inputs)),
+    data: ShapeSchema(data),
+    state: v.partial(RawObjectSchema(inputs)),
     submitted: v.optional(v.boolean(), false),
     correct: v.pipe(
       v.nullish(v.boolean()),
@@ -99,14 +155,14 @@ function StoredStep<D extends RawShape, I extends RawShape>(data: D, inputs: I) 
 }
 
 export type StoredStep<
-  D extends RawShape = Record<string, v.UnknownSchema>,
+  D extends Shape = Record<string, v.UnknownSchema>,
   I extends RawShape = Record<string, v.UnknownSchema>,
   U extends 'input' | 'output' = 'input',
 > = U extends 'output'
   ? v.InferOutput<ReturnType<typeof StoredStep<D, I>>>
   : v.InferInput<ReturnType<typeof StoredStep<D, I>>>
 
-type StepSchema = { inputs: RawShape; data: RawShape }
+type StepSchema = { inputs: RawShape; data: Shape }
 
 type Infer<T, U extends 'input' | 'output' = 'input'> =
   T extends v.BaseSchema<any, any, any>
@@ -156,8 +212,8 @@ type StepBaseProps<D, I extends v.ObjectSchema<any, any>> = {
 }
 
 type StepProps<S extends StepSchema> = StepBaseProps<
-  ReturnType<typeof ObjectSchema<NoInfer<S>['data']>>,
-  ReturnType<typeof ObjectSchema<NoInfer<S>['inputs']>>
+  ShapeSchema<NoInfer<S>['data']>,
+  RawObjectSchema<NoInfer<S>['inputs']>
 > & { schema: S }
 
 export function useExerciseContext() {
@@ -243,10 +299,11 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
    * This should use primitive values only (e.g. latex instead of `expr` objects),
    * as this will be consumed by input components
    */
-  const [state, setState] = createStore<Partial<ObjectSchema<S['inputs'], 'input'>>>(
+  const [state, setState] = createStore<Partial<InferShape<S['inputs'], 'input'>>>(
     () => JSON.parse(JSON.stringify(step.state)),
     {} as any,
   )
+  const isValid = createMemo(() => v.safeParse(schema().entries.state, state).success)
 
   const canSubmit = createMemo(
     () =>
@@ -262,7 +319,7 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
    * - Save and refresh state
    */
   const submit = throttle(
-    action(async function* (newState: Partial<ObjectSchema<S['inputs'], 'input'>>) {
+    action(async function* (newState: Partial<InferShape<S['inputs'], 'input'>>) {
       if (!canSubmit()) return
       setStatus('grading')
       const state = v.parse(schema().entries.state, newState)
@@ -368,7 +425,7 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
           <Field
             class="rounded border border-gray-200"
             value={step.state[name] ?? ''}
-            onChange={(e: Event & { target: HTMLInputElement }) => {
+            onInput={(e) => {
               setState((s) => {
                 s[name] = e.target.value as any
               })
@@ -440,18 +497,18 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
         >
           <div class="grow">
             <Prompt data={step.data} inputs={fields()} state={promptState} />
-            <Show when={canSubmit() && !resetting()}>
+            <Show when={canSubmit() && !resetting() && isValid()}>
               <div class="flex items-center gap-4">
                 <button
                   class="my-4 block cursor-pointer rounded-lg bg-green-800 px-3 py-2 font-bold text-green-100 hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
                   disabled={isPending(() => step.submitted)}
                 >
-                  {isPending(() => step.submitted) ? 'Soumission...' : 'Soumettre'}
+                  <Switch fallback="Soumettre">
+                    <Match when={status() === 'grading'}>Correction en cours...</Match>
+                    <Match when={status() === 'submitting'}>Soumission en cours...</Match>
+                    <Match when={isPending(() => step.submitted)}>Soumission en cours...</Match>
+                  </Switch>
                 </button>
-                <pre>
-                  <Show when={status() === 'grading'}>Correction en cours...</Show>
-                  <Show when={status() === 'submitting'}>Soumission en cours...</Show>
-                </pre>
               </div>
             </Show>
           </div>
@@ -492,7 +549,7 @@ export function createStep<S extends StepSchema>(step: Omit<StepProps<S>, 'data'
       StepProps<S>,
       'class' | 'feedback' | 'children' | 'options' | 'onChange'
     > &
-      (ObjectSchema<S['data'], 'input'> | { data: StepProps<S>['data'] })
+      (InferShape<S['data'], 'input'> | { data: StepProps<S>['data'] })
   > = (props) => {
     const data = omit(
       props,
@@ -503,7 +560,7 @@ export function createStep<S extends StepSchema>(step: Omit<StepProps<S>, 'data'
       'children',
       'options',
       'onChange',
-    ) as ObjectSchema<S['data'], 'input'> | undefined
+    ) as InferShape<S['data'], 'input'> | undefined
     return (
       <Step
         {...step}
@@ -532,18 +589,18 @@ export function createStep<S extends StepSchema>(step: Omit<StepProps<S>, 'data'
 
 type StepComponent<S extends StepSchema> = ReturnType<typeof createStep<S>>
 
-export function createDerivedStep<R extends RawShape, S extends StepSchema>(
+export function createDerivedStep<R extends Shape, S extends StepSchema>(
   component: StepComponent<S>,
   schema: R,
   transform: (
-    data: ObjectSchema<NoInfer<R>, 'output'>,
-  ) => ObjectSchema<NoInfer<S>['data'], 'input'>,
+    data: InferShape<NoInfer<R>, 'output'>,
+  ) => Contextual<InferShape<NoInfer<S>['data'], 'input'>>,
   patch: Partial<StepProps<{ data: R; inputs: S['inputs'] }>> = {},
 ) {
   const step = component.config
-  function fullTransform(data: ObjectSchema<NoInfer<R>, 'output'>) {
+  function fullTransform(data: InferShape<NoInfer<R>, 'output'>) {
     const transformed = transform(data)
-    return v.parse(ObjectSchema(step.schema.data as S['data']), transformed)
+    return v.parse(ShapeSchema(step.schema.data as S['data']), transformed)
   }
   return createStep<{ data: R; inputs: S['inputs'] }>({
     ...step,

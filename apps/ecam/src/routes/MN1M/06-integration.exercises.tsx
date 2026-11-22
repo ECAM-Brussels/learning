@@ -65,7 +65,7 @@ export function RiemannSum(props: {
   )
 }
 
-export function Partition(props: {}) {
+export function Partition() {
   const a = -4.5
   const b = 4.5
   const [n, setN] = createSignal(10)

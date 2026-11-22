@@ -8,17 +8,14 @@ interface GeogebraProps {
 }
 
 export function Geogebra(props: GeogebraProps) {
-  const attrs = createProjection(
-    () => ({
-      allowfullscreen: true,
-      loading: 'lazy' as const,
-      height: 600,
-      width: 900,
-      ...props,
-      src: `https://www.geogebra.org/material/iframe/id/${props.id}/width/${props.width}/height/${props.height}/ai/false/smb/false/stb/false`,
-    }),
-    {},
-  )
+  const attrs = createProjection(() => ({
+    allowfullscreen: true,
+    loading: 'lazy' as const,
+    height: 600,
+    width: 900,
+    ...props,
+    src: `https://www.geogebra.org/material/iframe/id/${props.id}/width/${props.width}/height/${props.height}/ai/false/smb/false/stb/false`,
+  }))
 
   return <iframe {...attrs} />
 }

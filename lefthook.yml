@@ -1,0 +1,18 @@
+pre-commit:
+  piped: true
+  commands:
+    eslint:
+      glob: '*.{js,jsx,ts,tsx,mdx}'
+      run: bunx eslint --fix --no-warn-ignored {staged_files}
+      stage_fixed: true
+    prettier:
+      run: bunx prettier --write --ignore-unknown --no-error-on-unmatched-pattern {staged_files}
+      stage_fixed: true
+    black:
+      root: apps/symapi/
+      glob: '*.py'
+      run: uv run python -m black {staged_files}
+      stage_fixed: true
+    typecheck:
+      glob: '*.{ts,tsx,mts,cts,js,jsx,mdx,json}'
+      run: bun run typecheck

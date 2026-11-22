@@ -1,0 +1,12 @@
+{
+  // Type-checks the whole monorepo as a single program (much faster than one `tsc` per package,
+  // since packages import each other). Used by `bun typecheck`, the pre-commit hook and CI.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["./apps/ecam/node_modules/vite/client", "bun"],
+    "incremental": true,
+    "tsBuildInfoFile": "./node_modules/.cache/tsc/typecheck.tsbuildinfo"
+  },
+  "include": ["apps/ecam", "packages"],
+  "exclude": ["**/node_modules", "**/dist", "**/coverage", "packages/db/db-data"]
+}
