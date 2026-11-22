@@ -1,5 +1,5 @@
 import { MDXProvider } from '@learning/mdx'
-import { useBeforeLeave } from '@solidjs/router'
+import { useBeforeLeave, useLocation } from '@solidjs/router'
 import type { JSX } from '@solidjs/web'
 import {
   createContext,
@@ -38,6 +38,7 @@ export const Page: ParentComponent<{ title?: JSX.Element }> = (props) => {
   })
 
   const [toc, setToc] = createStore<Node[]>([])
+  const location = useLocation()
 
   return (
     <div class="relative container mx-auto w-screen pb-1 xl:flex">
@@ -51,7 +52,9 @@ export const Page: ParentComponent<{ title?: JSX.Element }> = (props) => {
           }}
         >
           <TOCContext value={setToc}>
-            <Boundary>{props.children}</Boundary>
+            <Boundary on={location.pathname} fallback="Chargement de la page...">
+              {props.children}
+            </Boundary>
           </TOCContext>
         </MDXProvider>
       </main>

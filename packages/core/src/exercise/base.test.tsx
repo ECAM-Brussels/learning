@@ -11,7 +11,7 @@ import * as v from 'valibot'
  */
 const hasPermissions = mock(async (_: string[]) => true)
 mock.module('../auth', () => ({ getUser: async () => null }))
-mock.module('./context.remote', () => ({ default: {} }))
+mock.module('./context.remote', () => ({ default: {}, fetchSequence: async () => null }))
 mock.module('../permissions', () => ({ hasPermissions }))
 mock.module('@learning/components', async () => {
   const { Boundary } = await import('../../../components/src/Boundary')
@@ -90,7 +90,7 @@ function SumStep(props: SumProps & { id: string }) {
 const answer = (value: string) => {
   const input = screen.getByRole('textbox') as HTMLInputElement
   input.value = value
-  fireEvent.change(input)
+  fireEvent.input(input)
 }
 const submit = () => fireEvent.click(screen.getByRole('button', { name: 'Soumettre' }))
 
@@ -207,6 +207,22 @@ describe('Step', () => {
     submit()
     await screen.findByTestId('feedback')
     expect(screen.getByRole('button', { name: 'Soumettre' })).toBeInTheDocument()
+  })
+
+  test('initialState prefills the draft from data', async () => {
+    render(() => (
+      <SumStep id="initial-state" initialState={(data) => ({ answer: String(data.a) })} />
+    ))
+    expect(await screen.findByTestId('current')).toHaveTextContent('2')
+  })
+
+  test('saved state takes precedence over initialState', async () => {
+    localStorage.setItem(
+      storageKey('initial-state-saved'),
+      JSON.stringify([{ data: { a: 2, b: 3 }, state: { answer: '9' }, submitted: false }]),
+    )
+    render(() => <SumStep id="initial-state-saved" initialState={() => ({ answer: 'default' })} />)
+    await waitFor(() => expect(screen.getByTestId('current')).toHaveTextContent('9'))
   })
 
   test('restores a saved submission from storage', async () => {
@@ -341,7 +357,7 @@ describe('Step', () => {
     await waitFor(() => expect(screen.getAllByTestId('question')).toHaveLength(2))
     const inputs = screen.getAllByRole('textbox') as HTMLInputElement[]
     inputs[1]!.value = '2'
-    fireEvent.change(inputs[1]!)
+    fireEvent.input(inputs[1]!)
     fireEvent.click(screen.getByRole('button', { name: 'Soumettre' }))
     await waitFor(() => expect(stored('nested')).toHaveLength(2))
     expect(stored('nested')[1]).toMatchObject({

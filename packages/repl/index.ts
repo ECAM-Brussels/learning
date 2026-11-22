@@ -3,7 +3,11 @@ import { allKeyed } from 'es-toolkit'
 import { EventIterator } from 'event-iterator'
 import type { Expression } from '../core'
 
-const worker = new Worker(new URL('./python/worker.ts', import.meta.url), { type: 'module' })
+let worker: Worker | undefined
+function getWorker() {
+  worker ??= new Worker(new URL('./python/worker.ts', import.meta.url), { type: 'module' })
+  return worker
+}
 
 export type FinalOutput = {
   format: 'text' | 'latex' | 'image'
@@ -48,6 +52,7 @@ async function* run(code: string, options?: Options) {
     return
   }
   const promiseId = crypto.randomUUID()
+  const worker = getWorker()
   const iterator = new EventIterator<Output>(({ push }) => {
     const listener = (event: MessageEvent<Output>) => {
       if (event.data?.id !== promiseId) return
@@ -117,8 +122,10 @@ function expect(code: string, state: { negate?: boolean; math?: boolean } = {}) 
   return {
     code: {
       toMatch: (regex: RegExp) => () => regex.test(code) === !negate,
+      toSatisfy: (check: (code: string) => boolean) => () => check(code) === !negate,
       not: {
         toMatch: (regex: RegExp) => () => regex.test(code) === (negate ?? false),
+        toSatisfy: (check: (code: string) => boolean) => () => check(code) === (negate ?? false),
       },
     },
     error: <T extends string | number | boolean>() => getMethods<T>('error'),

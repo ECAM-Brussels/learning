@@ -26,6 +26,12 @@ function sanitize<T extends CEExpressionInput>(json: T): T {
   return json
 }
 
+function hasErrorNode(json: MathJsonExpression): boolean {
+  if (!Array.isArray(json)) return false
+  const [head, ...args] = json as [string, ...MathJsonExpression[]]
+  return head === 'Error' || args.some(hasErrorNode)
+}
+
 const Math = v.union([
   v.pipe(
     v.union([v.string(), v.number()]),
@@ -33,6 +39,10 @@ const Math = v.union([
       rawInput: input,
       json: sanitize(ce.parse(String(input), { form: 'raw' }).json),
     })),
+    v.check(
+      ({ json }) => !hasErrorNode(json),
+      ({ input }) => `Invalid LaTeX "${input.rawInput}": ${stringify(input.json)}`,
+    ),
   ),
   v.pipe(
     v.tupleWithRest(

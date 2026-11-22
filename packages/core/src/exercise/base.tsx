@@ -12,10 +12,12 @@ import {
   createSignal,
   createStore,
   isPending,
+  Match,
   omit,
   onSettled,
   refresh,
   Show,
+  Switch,
   useContext,
   type Component,
   type ComponentProps,
@@ -28,7 +30,7 @@ import { omitFromJSON } from '../validation'
 import { createIsVisible } from '../visibility'
 import { StepContext } from './context'
 import local from './context.local'
-import remote from './context.remote'
+import remote, { fetchSequence as fetchRemoteSequence } from './context.remote'
 import { ExerciseOptions, Options, OptionsContext } from './options'
 
 type MaybeAsync<T> = T | Promise<T>
@@ -38,6 +40,14 @@ const CustomSchemas = {
   expr: v.union([
     v.pipe(
       v.string(),
+      v.check((latex) => {
+        try {
+          expr(latex)
+          return true
+        } catch {
+          return false
+        }
+      }),
       v.transform((latex) => expr(latex)),
     ),
     Expression,
@@ -184,6 +194,7 @@ type StepBaseProps<D, I extends v.ObjectSchema<any, any>> = {
       correct?: boolean
     }
   }) => JSX.Element
+  initialState?: (data: Infer<NoInfer<D>, 'output'>) => Partial<v.InferInput<NoInfer<I>>>
   feedback?: (props: {
     data: Infer<NoInfer<D>, 'output'>
     inputs: v.InferOutput<NoInfer<I>>
@@ -260,7 +271,15 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
 
   const schema = () =>
     StoredStep(props.schema.data as S['data'], props.schema.inputs as S['inputs'])
-  const all = createMemo(() => exerciseContext().fetchSequence(sequenceContext()), {})
+  const all = createMemo(
+    async () => {
+      const seq = sequenceContext()
+      const remoteSequence = fetchRemoteSequence(seq)
+      const localSequence = local.fetchSequence(seq)
+      return (await remoteSequence) ?? (await localSequence)
+    },
+    { name: 'all' },
+  )
   const fetched = createMemo(
     () => all()[stepContext().sequencePosition]?.[stepContext().position] ?? null,
   )
@@ -290,9 +309,13 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
    * as this will be consumed by input components
    */
   const [state, setState] = createStore<Partial<InferShape<S['inputs'], 'input'>>>(
-    () => JSON.parse(JSON.stringify(step.state)),
+    () => ({
+      ...props.initialState?.(step.data),
+      ...JSON.parse(JSON.stringify(step.state)),
+    }),
     {} as any,
   )
+  const isValid = createMemo(() => v.safeParse(schema().entries.state, state).success)
 
   const canSubmit = createMemo(
     () =>
@@ -414,7 +437,7 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
           <Field
             class="rounded border border-gray-200"
             value={step.state[name] ?? ''}
-            onChange={(e: Event & { target: HTMLInputElement }) => {
+            onInput={(e) => {
               setState((s) => {
                 s[name] = e.target.value as any
               })
@@ -486,18 +509,18 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
         >
           <div class="grow">
             <Prompt data={step.data} inputs={fields()} state={promptState} />
-            <Show when={canSubmit() && !resetting()}>
+            <Show when={canSubmit() && !resetting() && isValid()}>
               <div class="flex items-center gap-4">
                 <button
                   class="my-4 block cursor-pointer rounded-lg bg-green-800 px-3 py-2 font-bold text-green-100 hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
                   disabled={isPending(() => step.submitted)}
                 >
-                  {isPending(() => step.submitted) ? 'Soumission...' : 'Soumettre'}
+                  <Switch fallback="Soumettre">
+                    <Match when={status() === 'grading'}>Correction en cours...</Match>
+                    <Match when={status() === 'submitting'}>Soumission en cours...</Match>
+                    <Match when={isPending(() => step.submitted)}>Soumission en cours...</Match>
+                  </Switch>
                 </button>
-                <pre>
-                  <Show when={status() === 'grading'}>Correction en cours...</Show>
-                  <Show when={status() === 'submitting'}>Soumission en cours...</Show>
-                </pre>
               </div>
             </Show>
           </div>

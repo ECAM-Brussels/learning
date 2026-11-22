@@ -29,5 +29,5 @@ export * from './src/Slideshow'
 export * from './src/SymbolicRepresentation'
 export * from './src/Youtube'
 
-export const MathField = clientOnly(() => import('./src/MathField'))
-export const Python = clientOnly(() => import('./src/Python'))
+export const MathField = clientOnly(() => import('./src/MathField'), { lazy: true })
+export const Python = clientOnly(() => import('./src/Python'), { lazy: true })

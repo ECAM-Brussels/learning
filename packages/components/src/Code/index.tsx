@@ -13,10 +13,10 @@ import {
   type ComponentProps,
 } from 'solid-js'
 import { FormState } from '../Form'
-import Python from '../Python'
 
-const Monaco = clientOnly(() => import('./Monaco'))
-const CodeMirror = clientOnly(() => import('./CodeMirror'))
+const Monaco = clientOnly(() => import('./Monaco'), { lazy: true })
+const CodeMirror = clientOnly(() => import('./CodeMirror'), { lazy: true })
+const Python = clientOnly(() => import('../Python'), { lazy: true })
 
 export type EditorProps = {
   class?: JSX.ClassValue | string
@@ -85,18 +85,20 @@ export const Code: Component<Props> = (rawProps) => {
           />
         </div>
         <Show when={props.lang === 'python' && props.run}>
-          <Python
-            class="my-0 py-0"
-            value={code()}
-            math={props.math}
-            onChange={(output) => {
-              if (output.status === 'done') {
-                setStatus('done')
-              } else {
-                setStatus('running')
-              }
-            }}
-          />
+          <Loading on={code()}>
+            <Python
+              class="my-0 py-0"
+              value={code()}
+              math={props.math}
+              onChange={(output) => {
+                if (output.status === 'done') {
+                  setStatus('done')
+                } else {
+                  setStatus('running')
+                }
+              }}
+            />
+          </Loading>
         </Show>
       </div>
     </Loading>
