@@ -3,7 +3,7 @@ import { createStep, omitFromJSON } from '@learning/core'
 import { python } from '@learning/repl'
 import type { MaybePromise } from 'bun'
 import { allKeyed, mapAsync } from 'es-toolkit'
-import { createEffect, createMemo, createProjection, For, Show } from 'solid-js'
+import { createMemo, createProjection, For, Show } from 'solid-js'
 import * as v from 'valibot'
 
 // Old test format, deprecated
@@ -105,15 +105,8 @@ export const PythonCode = createStep({
     })
     return tests.every(Boolean) && codeCheck !== false
   },
+  initialState: (data) => ({ code: data.initialCode }),
   prompt: (ctx) => {
-    createEffect(
-      () => [ctx.state.current.code, ctx.data.initialCode] as const,
-      ([current, initial]) => {
-        if (current === undefined) {
-          ctx.state.set('code', initial)
-        }
-      },
-    )
     return (
       <>
         {ctx.data.prompt}

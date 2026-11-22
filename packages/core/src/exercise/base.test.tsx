@@ -11,7 +11,7 @@ import * as v from 'valibot'
  */
 const hasPermissions = mock(async (_: string[]) => true)
 mock.module('../auth', () => ({ getUser: async () => null }))
-mock.module('./context.remote', () => ({ default: {} }))
+mock.module('./context.remote', () => ({ default: {}, fetchSequence: async () => null }))
 mock.module('../permissions', () => ({ hasPermissions }))
 mock.module('@learning/components', async () => {
   const { Boundary } = await import('../../../components/src/Boundary')
@@ -207,6 +207,22 @@ describe('Step', () => {
     submit()
     await screen.findByTestId('feedback')
     expect(screen.getByRole('button', { name: 'Soumettre' })).toBeInTheDocument()
+  })
+
+  test('initialState prefills the draft from data', async () => {
+    render(() => (
+      <SumStep id="initial-state" initialState={(data) => ({ answer: String(data.a) })} />
+    ))
+    expect(await screen.findByTestId('current')).toHaveTextContent('2')
+  })
+
+  test('saved state takes precedence over initialState', async () => {
+    localStorage.setItem(
+      storageKey('initial-state-saved'),
+      JSON.stringify([{ data: { a: 2, b: 3 }, state: { answer: '9' }, submitted: false }]),
+    )
+    render(() => <SumStep id="initial-state-saved" initialState={() => ({ answer: 'default' })} />)
+    await waitFor(() => expect(screen.getByTestId('current')).toHaveTextContent('9'))
   })
 
   test('restores a saved submission from storage', async () => {

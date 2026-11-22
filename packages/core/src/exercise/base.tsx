@@ -30,7 +30,7 @@ import { omitFromJSON } from '../validation'
 import { createIsVisible } from '../visibility'
 import { StepContext } from './context'
 import local from './context.local'
-import remote from './context.remote'
+import remote, { fetchSequence as fetchRemoteSequence } from './context.remote'
 import { ExerciseOptions, Options, OptionsContext } from './options'
 
 type MaybeAsync<T> = T | Promise<T>
@@ -194,6 +194,12 @@ type StepBaseProps<D, I extends v.ObjectSchema<any, any>> = {
       correct?: boolean
     }
   }) => JSX.Element
+  /**
+   * Default draft inputs (e.g. starter code), layered under whatever was saved.
+   * Prefer this over an effect in `prompt` that fills in missing state,
+   * which would render the empty value first and then correct it.
+   */
+  initialState?: (data: Infer<NoInfer<D>, 'output'>) => Partial<v.InferInput<NoInfer<I>>>
   feedback?: (props: {
     data: Infer<NoInfer<D>, 'output'>
     inputs: v.InferOutput<NoInfer<I>>
@@ -270,7 +276,15 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
 
   const schema = () =>
     StoredStep(props.schema.data as S['data'], props.schema.inputs as S['inputs'])
-  const all = createMemo(() => exerciseContext().fetchSequence(sequenceContext()), {})
+  const all = createMemo(
+    async () => {
+      const seq = sequenceContext()
+      const remoteSequence = fetchRemoteSequence(seq)
+      const localSequence = local.fetchSequence(seq)
+      return (await remoteSequence) ?? (await localSequence)
+    },
+    { name: 'all' },
+  )
   const fetched = createMemo(
     () => all()[stepContext().sequencePosition]?.[stepContext().position] ?? null,
   )
@@ -300,7 +314,10 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
    * as this will be consumed by input components
    */
   const [state, setState] = createStore<Partial<InferShape<S['inputs'], 'input'>>>(
-    () => JSON.parse(JSON.stringify(step.state)),
+    () => ({
+      ...props.initialState?.(step.data),
+      ...JSON.parse(JSON.stringify(step.state)),
+    }),
     {} as any,
   )
   const isValid = createMemo(() => v.safeParse(schema().entries.state, state).success)
