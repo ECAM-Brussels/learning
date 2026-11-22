@@ -2,10 +2,9 @@ import { Attempt, Boundary, CheckMark, Highlight, Question } from '@learning/com
 import { createDerivedStep, Exercise, expr, omitFromJSON, Sequence, tex } from '@learning/core'
 import { MultipleChoice } from '@learning/exercises/MultipleChoice'
 import { PythonCode } from '@learning/exercises/python/Code'
-import { python } from '@learning/repl'
 import { type JSX } from '@solidjs/web'
-import { allKeyed, dedent } from 'es-toolkit'
-import { createMemo, createProjection, createSignal, For, merge, Show } from 'solid-js'
+import { dedent } from 'es-toolkit'
+import { createMemo, createSignal, For, merge, Show } from 'solid-js'
 import * as v from 'valibot'
 
 export function Integer(rawProps: {
@@ -192,9 +191,46 @@ export function Print(props: {
   )
 }
 
-export async function getRep(number: string) {
-  const code = `from decimal import Decimal\nDecimal(${number})`
-  return python.output(code).then((r) => r.result as string)
+/**
+ * Exact decimal value of the double closest to `number`,
+ * formatted like Python's `str(Decimal(number))`.
+ *
+ * Every finite double is `m * 2^e` with integer `m` and `e`.
+ * When `e < 0`, this equals `m * 5^-e / 10^-e`, which has a finite decimal expansion.
+ */
+export function getRep(number: string | number) {
+  const x = typeof number === 'number' ? number : parseFloat(number)
+  if (!Number.isFinite(x)) return Number.isNaN(x) ? 'NaN' : x > 0 ? 'Infinity' : '-Infinity'
+  const view = new DataView(new ArrayBuffer(8))
+  view.setFloat64(0, x)
+  const bits = view.getBigUint64(0)
+  const sign = bits >> 63n ? '-' : ''
+  const biasedExponent = Number((bits >> 52n) & 0x7ffn)
+  const fraction = bits & ((1n << 52n) - 1n)
+  let mantissa = biasedExponent === 0 ? fraction : fraction | (1n << 52n)
+  let exponent = (biasedExponent === 0 ? 1 : biasedExponent) - 1075
+  if (mantissa === 0n) return `${sign}0`
+  while (exponent < 0 && (mantissa & 1n) === 0n) {
+    mantissa >>= 1n
+    exponent++
+  }
+  // Decimal coefficient and exponent: value = digits * 10^exp10
+  const digits =
+    exponent >= 0
+      ? (mantissa << BigInt(exponent)).toString()
+      : (mantissa * 5n ** BigInt(-exponent)).toString()
+  const exp10 = exponent >= 0 ? 0 : exponent
+  // Python's Decimal.__str__: plain notation unless the number is very small
+  const leftDigits = exp10 + digits.length
+  const dotPlace = exp10 <= 0 && leftDigits > -6 ? leftDigits : 1
+  let rep: string
+  if (dotPlace <= 0) rep = `0.${'0'.repeat(-dotPlace)}${digits}`
+  else if (dotPlace >= digits.length) rep = digits + '0'.repeat(dotPlace - digits.length)
+  else rep = `${digits.slice(0, dotPlace)}.${digits.slice(dotPlace)}`
+  const shownExponent = leftDigits - dotPlace
+  return (
+    sign + rep + (shownExponent !== 0 ? `E${shownExponent > 0 ? '+' : ''}${shownExponent}` : '')
+  )
 }
 
 export const Calculator = createDerivedStep(
@@ -228,10 +264,6 @@ export const Calculator = createDerivedStep(
           )}
           grade={(ctx) => ctx.inputs.attempt.isEqual(props.data.prompt)}
           feedback={(ctx) => {
-            const reps = createProjection(
-              () => allKeyed(Object.fromEntries(props.data.inexact!.map((n) => [n, getRep(n)]))),
-              {},
-            )
             return (
               <>
                 <Show when={!ctx.correct}>
@@ -267,7 +299,7 @@ export const Calculator = createDerivedStep(
                             <tr>
                               <td class="px-4 py-2">{tex`${n}`}</td>
                               <td class="px-4 py-2">
-                                <code>{reps[n]}</code>
+                                <code>{getRep(n)}</code>
                               </td>
                             </tr>
                           )}
