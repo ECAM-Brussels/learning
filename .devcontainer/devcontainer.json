@@ -22,8 +22,7 @@
         "hipstersmoothie-public.mdx-tsc-vscode",
         "ms-python.python",
         "ms-python.black-formatter",
-        "unifiedjs.vscode-mdx",
-        "tsrx.tsrx-vscode-plugin"
+        "unifiedjs.vscode-mdx"
       ],
       "settings": {
         "editor.defaultFormatter": "esbenp.prettier-vscode",

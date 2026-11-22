@@ -1,5 +1,6 @@
 import { Attempt } from '@learning/components'
 import { createStep, expr, tex } from '@learning/core'
+import { Show } from 'solid-js'
 import { Root } from './Root'
 
 export const Factor = createStep({
@@ -11,7 +12,7 @@ export const Factor = createStep({
   options: {
     video: 'https://youtube.com/embed/32u4Pr0-XDk',
   },
-  prompt: (ctx) => @{
+  prompt: (ctx) => (
     <>
       <p>
         Factorise <strong>complètement</strong> l'expression suivante:
@@ -20,10 +21,10 @@ export const Factor = createStep({
         {tex`${ctx.data.expr} =`} {ctx.inputs.attempt}
       </Attempt>
     </>
-  },
+  ),
   grade: ({ inputs: { attempt }, data: { expr } }) => [attempt.isEqual(expr), attempt.isFactored()],
-  feedback: (ctx) => @{
-    @if (!ctx.correct) {
+  feedback: (ctx) => (
+    <Show when={!ctx.correct}>
       <Root expr={ctx.data.expr}>
         {(rootCtx) => (
           <FactorFromRoot root={rootCtx.inputs.root}>
@@ -31,8 +32,8 @@ export const Factor = createStep({
           </FactorFromRoot>
         )}
       </Root>
-    }
-  },
+    </Show>
+  ),
 })
 
 const FactorFromRoot = createStep({
@@ -52,13 +53,13 @@ const FactorFromRoot = createStep({
       </Attempt>
     </>
   ),
-  feedback: (ctx) => @{
-    @if (!ctx.correct) {
-      function factor(subs?: boolean) {
-        const expr = ctx.inputs.factor
-        return subs ? expr.subs({ x: ctx.data.root }).simplify() : expr
-      }
-      <>
+  feedback: (ctx) => {
+    function factor(subs?: boolean) {
+      const expr = ctx.inputs.factor
+      return subs ? expr.subs({ x: ctx.data.root }).simplify() : expr
+    }
+    return (
+      <Show when={!ctx.correct}>
         <p>
           N'oubliez pas que le facteur {tex`${factor()}`} doit également avoir comme racine{' '}
           {tex`${ctx.data.root}`}. Cependant, dans ce cas-ci, on a
@@ -69,7 +70,7 @@ const FactorFromRoot = createStep({
           = ${factor(true).simplify()}
         `}
         <ctx.Self />
-      </>
-    }
+      </Show>
+    )
   },
 })

@@ -30,7 +30,7 @@ export default defineConfig({
     }),
     fileRoutes({
       types: true,
-      extensions: ['mdx', 'tsx', 'ts', 'tsrx'],
+      extensions: ['mdx', 'tsx', 'ts'],
       toPath: (file) => {
         if (file.includes('.')) return undefined
         return routePathFromFile(file).replace(/\/_layout$/, '')

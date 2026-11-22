@@ -3,8 +3,6 @@
   "type": "module",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@tsrx/prettier-plugin": "^0.6.3",
-    "@tsrx/solid": "^0.3.5",
     "@types/bun": "latest",
     "eslint": "^10.15.0",
     "eslint-config-prettier": "^10.1.8",

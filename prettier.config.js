@@ -3,11 +3,7 @@
  * @type {import("prettier").Config}
  */
 const config = {
-  plugins: [
-    'prettier-plugin-organize-imports',
-    'prettier-plugin-tailwindcss',
-    '@tsrx/prettier-plugin',
-  ],
+  plugins: ['prettier-plugin-organize-imports', 'prettier-plugin-tailwindcss'],
   printWidth: 100,
   semi: false,
   singleQuote: true,
