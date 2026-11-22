@@ -12,10 +12,12 @@ import {
   createSignal,
   createStore,
   isPending,
+  Match,
   omit,
   onSettled,
   refresh,
   Show,
+  Switch,
   useContext,
   type Component,
   type ComponentProps,
@@ -38,6 +40,14 @@ const CustomSchemas = {
   expr: v.union([
     v.pipe(
       v.string(),
+      v.check((latex) => {
+        try {
+          expr(latex)
+          return true
+        } catch {
+          return false
+        }
+      }),
       v.transform((latex) => expr(latex)),
     ),
     Expression,
@@ -293,6 +303,7 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
     () => JSON.parse(JSON.stringify(step.state)),
     {} as any,
   )
+  const isValid = createMemo(() => v.safeParse(schema().entries.state, state).success)
 
   const canSubmit = createMemo(
     () =>
@@ -414,7 +425,7 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
           <Field
             class="rounded border border-gray-200"
             value={step.state[name] ?? ''}
-            onChange={(e: Event & { target: HTMLInputElement }) => {
+            onInput={(e) => {
               setState((s) => {
                 s[name] = e.target.value as any
               })
@@ -486,18 +497,18 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
         >
           <div class="grow">
             <Prompt data={step.data} inputs={fields()} state={promptState} />
-            <Show when={canSubmit() && !resetting()}>
+            <Show when={canSubmit() && !resetting() && isValid()}>
               <div class="flex items-center gap-4">
                 <button
                   class="my-4 block cursor-pointer rounded-lg bg-green-800 px-3 py-2 font-bold text-green-100 hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
                   disabled={isPending(() => step.submitted)}
                 >
-                  {isPending(() => step.submitted) ? 'Soumission...' : 'Soumettre'}
+                  <Switch fallback="Soumettre">
+                    <Match when={status() === 'grading'}>Correction en cours...</Match>
+                    <Match when={status() === 'submitting'}>Soumission en cours...</Match>
+                    <Match when={isPending(() => step.submitted)}>Soumission en cours...</Match>
+                  </Switch>
                 </button>
-                <pre>
-                  <Show when={status() === 'grading'}>Correction en cours...</Show>
-                  <Show when={status() === 'submitting'}>Soumission en cours...</Show>
-                </pre>
               </div>
             </Show>
           </div>

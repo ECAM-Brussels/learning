@@ -986,6 +986,10 @@ describe('expression', () => {
   ])('%s: throws on %s', (_, __, f) => {
     expect(f).toThrow()
   })
+
+  test.each(['\\frac{1}', 'x+', '(x', '\\foo{x}'])('throws on unparsable LaTeX %p', (latex) => {
+    expect(() => expr(latex)).toThrow(/Invalid LaTeX/)
+  })
 })
 
 describe('quantity', () => {

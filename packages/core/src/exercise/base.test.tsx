@@ -90,7 +90,7 @@ function SumStep(props: SumProps & { id: string }) {
 const answer = (value: string) => {
   const input = screen.getByRole('textbox') as HTMLInputElement
   input.value = value
-  fireEvent.change(input)
+  fireEvent.input(input)
 }
 const submit = () => fireEvent.click(screen.getByRole('button', { name: 'Soumettre' }))
 
@@ -341,7 +341,7 @@ describe('Step', () => {
     await waitFor(() => expect(screen.getAllByTestId('question')).toHaveLength(2))
     const inputs = screen.getAllByRole('textbox') as HTMLInputElement[]
     inputs[1]!.value = '2'
-    fireEvent.change(inputs[1]!)
+    fireEvent.input(inputs[1]!)
     fireEvent.click(screen.getByRole('button', { name: 'Soumettre' }))
     await waitFor(() => expect(stored('nested')).toHaveLength(2))
     expect(stored('nested')[1]).toMatchObject({
