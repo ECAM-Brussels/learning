@@ -15,7 +15,7 @@ Nous appellerons une _partition_ d'un intervalle $[a, b]$ en $n$ sous-intervalle
 la donnée de $n$ nombres {tex`x_0, x_1, x_2, \ldots, x_{n - 1}`} tels que
 {tex.display`a = x_0 < x_1 < x_2 < \cdots < x_{n - 1} < b`}
 et $[x_0, x_1]$, $[x_1, x_2]$, $\ldots$, {tex`[x_{n-1}, b]`} sont des intervalles de même longueur,
-que l'on dénotera {tex`\mathrm{d}x`}.
+que l'on dénotera {tex`\mathrm{d}x`} (appelé **pas** de la partition).
 Regardez bien l'animation ci-dessous pour vous familiariser avec cette notion.
 
 <Exercise.Partition />
@@ -23,8 +23,8 @@ Regardez bien l'animation ci-dessous pour vous familiariser avec cette notion.
 Remarquez que les nombres {tex`x_0, x_1, \dots, x_{n - 1}`} sont les **points gauches** de chacun des sous-intervalles.
 
 En Python,
-une partition de $[a, b]$ en $n$ sous-intervalles et son pas
-s'obtient de la manière suivante:
+une partition de $[a, b]$ en $n$ sous-intervalles et son pas {tex`mathrm{d}x`}
+s'obtiennent de la manière suivante:
 
 ```python
 import numpy as np
@@ -163,7 +163,7 @@ Sur chaque sous-intervalle, utilisez le _point milieu_ comme représentant.
 
    Ceci donne la réponse correcte, mais réécrivons le code différemment.
 
-4. Rappelez vous que {tex`\displaystyle \mathrm{d} x = \frac {b - a} n`},
+4. Rappelez-vous que {tex`\displaystyle \mathrm{d} x = \frac {b - a} n`},
    et donc {tex`\displaystyle n = \frac {b - a} {\mathrm{d} x}`}.
    Au lieu de diviser par $n$, on peut donc multiplier par {tex`\displaystyle \frac {\mathrm{d} x} {b - a}`}.
 
@@ -308,7 +308,7 @@ La quantité ci-dessus s'appelle l'**intégrale définie** de $f$ sur l'interval
 Le symbole d'intégration {tex`\int`} est en fait l'[ancienne forme de la lettre s minuscule](https://fr.wikipedia.org/wiki/S_long).
 Notez la ressemblance formelle:
 
-{tex.display`\underbrace{\int_a^b}_{\text{s(omme)}} f(x) \, \mathrm dx \quad \text{et} \quad \texttt{np.sum(f(x) * dx)}`}
+{tex.display`\underbrace{\int_a^b}_{\text{somme}} f(x) \, \mathrm dx \quad \text{et} \quad \texttt{np.sum(f(x) * dx)}`}
 
 :::
 
@@ -595,10 +595,9 @@ Employez $n = 100$ sous-intervalles.
 
 # Non-examinable
 
-## Intégrales indéfinies (conseillé pour maths)
+## Fonctions d'aire (conseillé pour maths)
 
-Dans une _intégrale indéfinie_,
-la borne est un paramètre:
+Considérons une intégrale dont la borne supérieure est un paramètre:
 {tex.display`F({\color{red} x}) = \int_{x_0}^{{\color{red} x}} f(t) \, \mathrm{d} t`}
 
 En Python, cela s'écrit simplement (par exemple via la méthode de Simpson)
@@ -618,10 +617,10 @@ def F(x):
 ```
 
 En sciences et en ingénierie,
-une quantité importante est la **dérivée de l'intégrale indéfinie**.
+une quantité importante est la **dérivée de cette fonction d'aire**.
 
-:::example[Dérivée d'intégrale indéfinie]
-Calculez $F$, l'intégrale indéfinie de {tex`f(x) = e^{-x^2}`}.
+:::example[Dérivée de la fonction d'aire]
+Calculez $F$, la fonction d'aire de {tex`f(x) = e^{-x^2}`}.
 Ensuite, tracez le graphe de $F'$ (calculé numériquement avec la différence centrale) sur $[-1, 1]$.
 
 ::::steps
@@ -635,7 +634,7 @@ Ensuite, tracez le graphe de $F'$ (calculé numériquement avec la différence c
        return np.exp(-x**2)
    ```
 
-2. On calcule l'intégrale indéfinie avec la méthode de Simpson.
+2. On calcule la fonction d'aire avec la méthode de Simpson.
 
    ```python run math highlight="6-9"
    import numpy as np
@@ -699,11 +698,11 @@ Ensuite, tracez le graphe de $F'$ (calculé numériquement avec la différence c
 
 ## Ordre d'une méthode et vitesse de convergence
 
-| Méthode              | Terme d'erreur |
-| -------------------- | -------------- |
-| Point milieu         | $C n^{-2}$     |
-| Méthode des trapèzes | $C n^{-2}$     |
-| Méthode de Simpson   | $C n^{-4}$     |
+| Méthode              | Convergence |
+| -------------------- | ----------- |
+| Point milieu         | $n^{-2}$    |
+| Méthode des trapèzes | $n^{-2}$    |
+| Méthode de Simpson   | $n^{-4}$    |
 
 Ceci veut dire que lorsque $n$ est dix fois plus grand,
 l'erreur pour le point milieu ou les trapèzes réduit d'un facteur $100$.
