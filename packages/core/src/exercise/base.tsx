@@ -333,17 +333,17 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
   const submit = throttle(
     action(async function* (newState: Partial<InferShape<S['inputs'], 'input'>>) {
       if (!canSubmit()) return
-      setStatus('grading')
       const state = v.parse(schema().entries.state, newState)
       const submitted = Object.keys(state).length > 0
       let correct: boolean | undefined = undefined
       if (submitted) {
+        setStatus('grading')
         affects(step, 'submitted')
         const result = props.grade({ data: step.data, inputs: state })
         correct = Array.isArray(result) ? (await Promise.all(result)).every(Boolean) : await result
+        setStatus('submitting')
       }
       const payload = { ...step, state, submitted, correct }
-      setStatus('submitting')
       yield exerciseContext().saveStep(
         stepContext(),
         JSON.parse(JSON.stringify(payload)),
