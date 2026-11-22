@@ -24,7 +24,8 @@ export default function Layout(props: { children: JSX.Element }) {
         </p>
       </Show>
       <Crumb href={paths.IA1M} title="Fondations mathématiques de l'IA">
-        {props.children}
+        {/* Italic correction: keep italic text from crowding the following punctuation. */}
+        <div class="[&_em]:pr-[0.20em]">{props.children}</div>
       </Crumb>
     </Page>
   )
