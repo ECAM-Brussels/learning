@@ -89,13 +89,16 @@ function expect(code: string, state: { negate?: boolean; math?: boolean } = {}) 
   const { negate } = state
   function getMethods<T = string | number | boolean>(type: 'result' | 'stdout' | 'error') {
     return {
-      toEqualThatOf(modelAnswer: string) {
+      toEqualThatOf(modelAnswer: string, error?: number) {
         return async () => {
           const { res1, res2 } = await allKeyed({
             res1: output(code, { math: state.math ?? false, test: true }),
             res2: output(modelAnswer, { math: state.math ?? false, test: true }),
           })
-          return (res1[type]?.trim() === res2[type]?.trim()) === !negate
+          const [a, b] = [res1[type]?.trim(), res2[type]?.trim()]
+          if (error === undefined) return (a === b) === !negate
+          const [x, y] = [Number.parseFloat(a ?? ''), Number.parseFloat(b ?? '')]
+          return Math.abs(x - y) <= error === !negate
         }
       },
       toBe: (expected: T) => async () => {
