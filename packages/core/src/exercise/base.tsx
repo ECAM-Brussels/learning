@@ -194,11 +194,6 @@ type StepBaseProps<D, I extends v.ObjectSchema<any, any>> = {
       correct?: boolean
     }
   }) => JSX.Element
-  /**
-   * Default draft inputs (e.g. starter code), layered under whatever was saved.
-   * Prefer this over an effect in `prompt` that fills in missing state,
-   * which would render the empty value first and then correct it.
-   */
   initialState?: (data: Infer<NoInfer<D>, 'output'>) => Partial<v.InferInput<NoInfer<I>>>
   feedback?: (props: {
     data: Infer<NoInfer<D>, 'output'>
