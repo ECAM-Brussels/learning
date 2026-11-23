@@ -4,8 +4,16 @@
   "private": true,
   "devDependencies": {
     "@fortawesome/fontawesome-common-types": "catalog:",
+    "@happy-dom/global-registrator": "catalog:",
+    "@solidjs/compiler": "catalog:",
+    "@solidjs/testing-library": "catalog:",
+    "@testing-library/jest-dom": "catalog:",
     "@types/bun": "latest",
     "shiki": "^4.1.0"
+  },
+  "scripts": {
+    "test": "bun test --conditions=browser --coverage --coverage-reporter=lcov",
+    "test:watch": "bun test --conditions=browser --watch --coverage"
   },
   "peerDependencies": {
     "typescript": "^5"

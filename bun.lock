@@ -104,6 +104,10 @@
       },
       "devDependencies": {
         "@fortawesome/fontawesome-common-types": "catalog:",
+        "@happy-dom/global-registrator": "catalog:",
+        "@solidjs/compiler": "catalog:",
+        "@solidjs/testing-library": "catalog:",
+        "@testing-library/jest-dom": "catalog:",
         "@types/bun": "latest",
         "shiki": "^4.1.0",
       },
@@ -127,7 +131,7 @@
         "valibot": "catalog:",
       },
       "devDependencies": {
-        "@happy-dom/global-registrator": "^21.0.4",
+        "@happy-dom/global-registrator": "catalog:",
         "@solidjs/compiler": "catalog:",
         "@solidjs/testing-library": "catalog:",
         "@testing-library/jest-dom": "catalog:",
@@ -210,6 +214,7 @@
     "@fortawesome/fontawesome-common-types": "^7.3.1",
     "@fortawesome/free-brands-svg-icons": "^7.3.1",
     "@fortawesome/free-solid-svg-icons": "^7.3.1",
+    "@happy-dom/global-registrator": "^21.0.4",
     "@solidjs/compiler": "2.0.2",
     "@solidjs/diagnostics": "^2.0.3",
     "@solidjs/meta": "^2.0.0",

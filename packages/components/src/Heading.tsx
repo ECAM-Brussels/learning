@@ -1,48 +1,21 @@
 import { dynamic, type JSX } from '@solidjs/web'
-import { debounce } from 'es-toolkit'
-import { createEffect, createSignal, onSettled, useContext } from 'solid-js'
+import { createMemo, onSettled, useContext } from 'solid-js'
 import { TOCContext } from './Page'
 
 export function Heading(props: { children: JSX.Element; level: 1 | 2 | 3 | 4 | 5 | 6 }) {
-  const [id, setId] = createSignal<string | undefined>()
-  const [element, setElement] = createSignal<HTMLElement | null>(null)
-  const setToc = useContext(TOCContext)
-
-  createEffect(
-    () => props.children,
-    (title) => {
-      setToc((t) => {
-        if (props.level <= 3) {
-          setId(String(t.length))
-          t.push({ title, level: props.level, visible: false, position: 0 })
-        }
-      })
-    },
+  const toc = useContext(TOCContext)
+  let element!: HTMLHeadingElement
+  const index = createMemo(
+    () => toc?.entries().findIndex((entry) => entry.element === element) ?? -1,
   )
 
-  onSettled(() => {
-    const el = element()
-    if (!el || typeof IntersectionObserver === 'undefined') return
-
-    const observer = new IntersectionObserver(
-      debounce((entries) => {
-        const entry = entries[0]!
-        if (id())
-          setToc((t) => {
-            t[Number(id())]!.visible = entry.isIntersecting
-            t[Number(id())]!.position = entry.boundingClientRect.top
-          })
-      }, 200),
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  })
+  onSettled(() => toc?.register({ title: () => props.children, level: props.level, element }))
 
   const HeadingTag = dynamic(() => `h${props.level ?? 1}`)
 
   return (
     <HeadingTag
-      ref={setElement}
+      ref={element}
       class={[
         'print:break-after-avoid',
         {
@@ -51,7 +24,7 @@ export function Heading(props: { children: JSX.Element; level: 1 | 2 | 3 | 4 | 5
           'text-cyan-700': props.level === 3,
         },
       ]}
-      id={id()}
+      id={index() === -1 ? undefined : String(index())}
     >
       {props.children}
     </HeadingTag>

@@ -23,6 +23,7 @@
   },
   "catalog": {
     "@cortex-js/compute-engine": "0.58.0",
+    "@happy-dom/global-registrator": "^21.0.4",
     "@solidjs/compiler": "2.0.2",
     "@solidjs/diagnostics": "^2.0.3",
     "@solidjs/meta": "^2.0.0",

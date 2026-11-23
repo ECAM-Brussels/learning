@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@happy-dom/global-registrator": "^21.0.4",
+    "@happy-dom/global-registrator": "catalog:",
     "@solidjs/compiler": "catalog:",
     "@solidjs/testing-library": "catalog:",
     "@testing-library/jest-dom": "catalog:",
