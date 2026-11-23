@@ -12,6 +12,13 @@ You can find more details in the file IA1M/index.mdx
 
 # Formatting
 
+## Capital letters
+
+Write field names such as machine learning and artificial intelligence
+in lowercase in running text.
+Capitalize them only at the start of a sentence,
+in titles and headings, and in proper names (e.g. a course title).
+
 ## Line cut
 
 I want the lines to be cut, in order to have no lines longer than 80 characters.
