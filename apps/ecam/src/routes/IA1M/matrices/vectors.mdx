@@ -1,5 +1,6 @@
 import { defineMeta } from '@learning/components'
 import { tex } from '@learning/core'
+import { SpanOfVector } from './vectors.figures'
 
 export default defineMeta({
   title: 'Vectors',
@@ -7,8 +8,34 @@ export default defineMeta({
 
 # Vectors
 
-Vectors represent data points with {tex`n`} features.
-In matrix notation:
+We have already seen vectors in the course of Calculus,
+where they were used to represent quantities
+having both a magnitude and a direction:
+positions, displacements, velocities, accelerations and forces.
+They were also used to describe geometric objects,
+such as the direction of a line or the normal to a plane,
+and vector fields, such as the gradient of a function,
+which points in the direction of steepest increase.
+
+:::remark
+
+In English, the _direction_ of a vector includes its orientation:
+{tex`\mathbf{v}`} and {tex`-\mathbf{v}`} have _opposite directions_.
+The French "direction" and "sens" are both covered by this single word.
+
+:::
+
+In all these cases, a vector can be drawn as an arrow,
+but it can also be written as an ordered list of numbers: its _components_.
+Which point of view is the most useful depends on the context.
+In machine learning, the second one is usually the natural choice,
+since the components do not need to have a geometric meaning.
+For example, a house can be described by its area,
+its number of rooms and its age.
+These are called _features_ or _attributes_ of the house.
+
+In machine learning, vectors are used to represent data points with {tex`n`} features.
+In matrix notation this is written as a column vector:
 
 {tex`
 \mathbf{x}=\begin{bmatrix}
@@ -32,30 +59,124 @@ x_1 & \cdots & x_n
 
 :::
 
-### Sum
+On its own, transposing a vector does not change any information:
+it only turns a column into a row.
 
-:::definition[Sum]
+In a dataset, each data point is usually written as a row.
+For example, a table of houses has one row per house,
+and one column per feature:
 
-The _sum_ of two vectors is naturally defined by:
+| House | Area (m²) | Rooms | Age (years) |
+| ----- | --------- | ----- | ----------- |
+| 1     | 120       | 4     | 15          |
+| 2     | 85        | 3     | 40          |
+
+The first house is described by the vector
+{tex`\mathbf{x}=\begin{bmatrix} 120 \\ 4 \\ 15 \end{bmatrix}`},
+and its row in the table is {tex`\mathbf{x}^T=\begin{bmatrix} 120 & 4 & 15 \end{bmatrix}.`}
+
+Transposing also becomes useful when we compute dot products,
+as we will see below.
+
+### Sum and difference
+
+:::definition[Sum and difference]
+
+The _sum_ and _difference_ of two vectors are naturally defined by:
 
 {tex`
 \mathbf{x}+\mathbf{y}=\begin{bmatrix}
 x_1+y_1 \\
 \vdots \\
 x_n+y_n
+\end{bmatrix}\qquad\qquad
+\mathbf{x}-\mathbf{y}=\begin{bmatrix}
+x_1-y_1 \\
+\vdots \\
+x_n-y_n
 \end{bmatrix}`}
 
 :::
+
+The difference of two vectors {tex`\mathbf{x}-\mathbf{y}`}
+compares two data points feature by feature.
+For example, with {tex`\mathbf{x}`} and {tex`\mathbf{y}`} the two houses of the table:
+
+{tex`
+\mathbf{x}-\mathbf{y}
+=\begin{bmatrix}
+120 \\
+4 \\
+15
+\end{bmatrix}
+-\begin{bmatrix}
+85 \\
+3 \\
+40
+\end{bmatrix}
+=\begin{bmatrix}
+35 \\
+1 \\
+-25
+\end{bmatrix}`}
+
+The first house is 35 m² larger, has one more room
+and is 25 years younger than the second one.
 
 ### Dot product
 
 :::definition[Dot product]
 
 The _dot product_ (also called scalar product) of two vectors
-is defined by:
+{tex`\mathbf{x}`} and {tex`\mathbf{y}`} is defined by:
 
 {tex`
-\mathbf{x}^T\mathbf{y}=x_1y_1+x_2y_2+\cdots+x_ny_n`}
+\mathbf{x}^T\mathbf{y}
+=x_1y_1+x_2y_2+\cdots+x_ny_n`}
+
+:::
+
+:::remark
+
+In Calculus, the dot product was written {tex`\mathbf{x}\cdot\mathbf{y}`}.
+Here we write it {tex`\mathbf{x}^T\mathbf{y}`}:
+a row multiplied by a column.
+
+{tex`
+\mathbf{x}^T\mathbf{y}=\begin{bmatrix}
+x_1 & \cdots & x_n
+\end{bmatrix}
+\begin{bmatrix}
+y_1 \\
+\vdots \\
+y_n
+\end{bmatrix}
+=x_1y_1+x_2y_2+\cdots+x_ny_n`}
+
+Read it as follows:
+go along the row and down the column at the same time,
+multiply the components two by two,
+and add up the results.
+This _row times column_ rule is the basic building block
+of the matrix product, which we will see later.
+
+For example, suppose a real estate agent estimates the price of a house
+with 3000 € per m², 10000 € per room and −1000 € per year of age.
+Writing these prices as a row and the house as a column:
+
+{tex`
+\begin{bmatrix}
+3000 & 10000 & -1000
+\end{bmatrix}
+\begin{bmatrix}
+120 \\
+4 \\
+15
+\end{bmatrix}
+=3000\cdot 120+10000\cdot 4-1000\cdot 15
+=385000`}
+
+The dot product gives the estimated price: 385000 €.
 
 :::
 
@@ -69,6 +190,119 @@ The _squared distance_ between two vectors is:
 {tex`
 ||\mathbf{x}-\mathbf{y}||^2
 =(\mathbf{x}-\mathbf{y})^T(\mathbf{x}-\mathbf{y})`}
+
+#### Similarity
+
+In Calculus, we have seen the geometric meaning of the dot product:
+
+{tex`
+\mathbf{x}^T\mathbf{y}=||\mathbf{x}||\,||\mathbf{y}||\cos\theta`}
+
+where {tex`\theta`} is the angle between the two vectors.
+This formula remains valid in {tex`n`} dimensions.
+The sign of the dot product therefore tells us
+whether two vectors point in similar directions:
+
+- if {tex`\mathbf{x}^T\mathbf{y}>0`}, the angle is smaller than 90°,
+  and the vectors point in similar directions;
+- if {tex`\mathbf{x}^T\mathbf{y}=0`}, the angle is exactly 90°;
+- if {tex`\mathbf{x}^T\mathbf{y}<0`}, the angle is larger than 90°,
+  and the vectors point in opposite directions.
+
+This makes the dot product a first measure of _similarity_
+between two data points.
+
+:::example[Movie ratings]
+
+Four people rate three movies:
+{tex`1`} means they liked it, {tex`-1`} that they disliked it,
+and {tex`0`} that they have not seen it.
+
+| Person    | Movie 1 | Movie 2 | Movie 3 |
+| --------- | ------- | ------- | ------- |
+| Adam      | 1       | 1       | -1      |
+| Batoul    | 1       | 1       | 0       |
+| Charlotte | -1      | -1      | 1       |
+| Djamel    | 1       | -1      | 0       |
+
+Each person is described by a vector of ratings.
+Comparing Adam ({tex`\mathbf{a}`}) to the others:
+
+- {tex`\mathbf{a}^T\mathbf{b}=1+1+0=2`}:
+  Adam and Batoul have similar tastes;
+- {tex`\mathbf{a}^T\mathbf{c}=-1-1-1=-3`}:
+  Adam and Charlotte have opposite tastes;
+- {tex`\mathbf{a}^T\mathbf{d}=1-1+0=0`}:
+  Adam and Djamel agree on one movie and disagree on another,
+  so their tastes are neither similar nor opposite.
+
+Note that opposite tastes are not the same as unrelated tastes.
+Knowing Adam's ratings, we can predict Charlotte's exactly:
+they are simply reversed.
+Djamel's ratings, on the other hand, tell us nothing about Adam's:
+this absence of similarity corresponds to a dot product of zero,
+that is to orthogonal vectors.
+
+:::
+
+The dot product is only a _first_ measure of similarity.
+Consider the two houses of the table:
+
+{tex`
+\mathbf{x}^T\mathbf{y}
+=\underbrace{120\cdot 85}_{\text{area}}
++\underbrace{4\cdot 3}_{\text{rooms}}
++\underbrace{15\cdot 40}_{\text{age}}
+=10200+12+600=10812`}
+
+Almost all of this value comes from the areas:
+the number of rooms contributes only 12 out of 10812.
+This is not because the number of rooms is less important
+to describe a house:
+one extra room changes a house much more than one extra m².
+It is only because the area is measured in m²,
+which gives much larger numbers than a number of rooms.
+In other words, the result depends on the _units_ of the features.
+To give each feature a fair weight,
+the features are usually rescaled to comparable ranges first:
+this is called _normalization_, and we will come back to it later.
+
+#### Orthogonality
+
+:::definition[Orthogonality]
+
+Two vectors {tex`\mathbf{x}`} and {tex`\mathbf{y}`} are _orthogonal_ if
+
+{tex`
+\mathbf{x}^T\mathbf{y}=0`}
+
+:::
+
+In 2 or 3 dimensions, orthogonal vectors are perpendicular.
+For example, the vectors
+
+{tex`
+\begin{bmatrix}
+1 \\
+2
+\end{bmatrix}
+\quad\text{and}\quad
+\begin{bmatrix}
+2 \\
+-1
+\end{bmatrix}`}
+
+are orthogonal, since {tex`1\cdot 2+2\cdot(-1)=0`}.
+In {tex`n`} dimensions, we cannot draw the right angle anymore,
+but the dot product still allows us to define it:
+in the example above, Adam and Djamel are orthogonal.
+
+{/* Orthogonality is also a convenient way to describe lines and planes. */}
+{/* In the chapter on linear models, */}
+{/* the equation {tex`\mathbf{w}^T\mathbf{x}=0`} means */}
+{/* that {tex`\mathbf{x}`} is orthogonal to {tex`\mathbf{w}`}: */}
+{/* it describes the line or plane */}
+{/* whose normal vector is {tex`\mathbf{w}`}. */}
 
 ### Scalar multiplication
 
@@ -85,15 +319,21 @@ where {tex`\alpha`} is a real number.
 
 Geometrically, all scalar multiples of a given vector {tex`\mathbf{x}`}
 generate a line through the origin in the direction of {tex`\mathbf{x}`}.
+
 This line is also called the _span_ of a vector {tex`\mathbf{x}`}:
 
 {tex`
 \mathrm{span}(\mathbf{x})
 =\{\alpha\mathbf{x}\:|\:\alpha\in\mathbb{R}\}`}
 
+Drag the head of the vector {tex`\mathbf{x}`}
+to see how its span changes:
+
+<SpanOfVector />
+
 We define this notion of span more generally in the next paragraph.
 
-## Span
+## Linear combinations and span
 
 :::definition[Linear combination]
 
@@ -122,9 +362,12 @@ If {tex`\mathbf{x}`} and {tex`\mathbf{y}`} are 3-dimensional vectors,
 the span is the _subspace_ of {tex`\mathbb{R}^3`}
 generated by {tex`\mathbf{x}`} and {tex`\mathbf{y}`}.
 
+Let's generalize this notion to {tex`k`} vectors
+{tex`\mathbf{x_1},\mathbf{x_2},\ldots,\mathbf{x_k}`}:
+
 :::definition[Span]
 
-In general, the _span_ of {tex`k`} vectors is defined
+The _span_ of {tex`k`} vectors is defined
 as the set of all linear combinations:
 
 {tex`
@@ -162,6 +405,7 @@ In that case, we say the vectors {tex`\mathbf{x}`} and {tex`\mathbf{y}`}
 are _linearly dependent_.
 The vector {tex`\mathbf{y}`} does not add a new direction
 to the span of {tex`\mathbf{x}`}.
+
 Conversely, the vectors {tex`\mathbf{x}`} and {tex`\mathbf{y}`}
 are called _linearly independent_
 if {tex`\mathbf{y}`} is not in the span of {tex`\mathbf{x}`},
@@ -200,12 +444,12 @@ cannot be generated by fewer vectors.
 
 ## Basis
 
-:::definition[Basis]
+:::definition[Basis \& dimension]
 
 A _basis_ is a set of linearly independent vectors that spans the entire space.
 In other words,
 any vector of the space can be expressed as a linear combination of the basis vectors.
 
-:::
-
 The _dimension_ of the space is the number of vectors in a basis.
+
+:::
