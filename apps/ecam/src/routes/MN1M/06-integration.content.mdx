@@ -20,10 +20,10 @@ Regardez bien l'animation ci-dessous pour vous familiariser avec cette notion.
 
 <Exercise.Partition />
 
-Remarquez que les nombres {tex`x_0, x_1, \dots, x_{n - 1}`} sont les **points gauches** de chacun des sous-intervalles.
+Remarquez que les nombres {tex`x_0, x_1, \dots, x_{n - 1}`} sont les **bornes gauches** de chacun des sous-intervalles.
 
 En Python,
-une partition de $[a, b]$ en $n$ sous-intervalles et son pas {tex`mathrm{d}x`}
+une partition de $[a, b]$ en $n$ sous-intervalles et son pas {tex`\mathrm{d}x`}
 s'obtiennent de la manière suivante:
 
 ```python
@@ -43,9 +43,9 @@ x, dx = np.linspace(a, b, n, endpoint=False, retstep=True)
 | -------------------------- | ------------------------------------------------------------ | -------------------------------------- |
 | Partition                  | `x = np.linspace(a, b, n, endpoint=False)`                   | Donne les $n$ points de la partition   |
 | Partition avec pas         | `x, dx = np.linspace(a, b, n, endpoint=False, retstep=True)` | Donne également le pas `dx`            |
-| Vecteur des points gauches | `x`                                                          | Point gauche de chaque sous-intervalle |
+| Vecteur des bornes gauches | `x`                                                          | Borne gauche de chaque sous-intervalle |
 | Vecteur des points milieux | `x_m = x + dx / 2`                                           | Point milieu de chaque sous-intervalle |
-| Vecteur des points droits  | `x_r = x + dx`                                               | Point droit de chaque sous-intervalle  |
+| Vecteur des bornes droites | `x_r = x + dx`                                               | Borne droite de chaque sous-intervalle |
 
 :::example[Partition d'un intervalle]
 
@@ -58,8 +58,8 @@ import numpy as np
 x, dx = np.linspace(0, 1, 10, endpoint=False, retstep=True)
 
 print("Partition:      ", x)
-print("Points gauches: ", x)
-print("Points droits:  ", x + dx)
+print("Bornes gauches: ", x)
+print("Bornes droites: ", x + dx)
 print("Points milieux: ", (x + dx / 2))
 print("Pas:            ", dx)
 ```
@@ -425,7 +425,7 @@ Rappelons que l'aire d'un trapèze est donnée par la formule
 
 {tex.display`\text{Aire} = \text{moyenne des bases} \times  \text{hauteur}`}
 
-Nos trapèzes ont pour hauteur {tex`\mathrm{d}x`} et pour bases les valeurs de la fonction $f$ aux points gauche et droit de chaque sous-intervalle.
+Nos trapèzes ont pour hauteur {tex`\mathrm{d}x`} et pour bases les valeurs de la fonction $f$ aux bornes gauche et droite de chaque sous-intervalle.
 Il suit que l'aire de chaque trapèze est donnée par
 
 {tex.display`\frac {f(x_i) + f(x_{i+1})} 2 \mathrm{d}x`}
@@ -493,9 +493,9 @@ en employant $100$ sous-intervalles.
 ## Règle de Simpson
 
 Les règles que nous avons vues jusqu'à présent sont des cas particuliers de **moyennes pondérées**.
-Elles donnent des poids différents aux points gauches, milieux et droits de chaque sous-intervalle.
+Elles donnent des poids différents aux bornes gauches, aux points milieux et aux bornes droites de chaque sous-intervalle.
 Ainsi, la règle du point milieu ne prend en compte que le point milieu de chaque sous-intervalle,
-alors que la règle du trapèze prend en compte les points gauches et droits à poids égaux.
+alors que la règle du trapèze prend en compte les bornes gauches et droites à poids égaux.
 
 |                       | `f(x)`                    | `f(x + dx / 2)` | `f(x + dx)`               |
 | --------------------- | ------------------------- | --------------- | ------------------------- |
@@ -520,7 +520,7 @@ D'où vient cette règle?
 :::
 
 L'idée centrale est d'approximer $f(x)$ sur chaque intervalle par un polynôme $P(x)$ de degré $2$
-qui passe par le point gauche, milieu et le point droit.
+qui passe par la borne gauche, le point milieu et la borne droite.
 Ensuite, on calcule l'aire exacte sous ce polynôme,
 ce que vous apprendrez à faire au cours de maths.
 
@@ -750,7 +750,7 @@ P(1), P(3)
 ## Formule du trapèze revisitée
 
 Sur chaque sous-intervalle,
-remplaçons $f$ par le polynôme $P$ qui passe par les points gauche et droit,
+remplaçons $f$ par le polynôme $P$ qui passe par les bornes gauche et droite,
 et intéressons-nous à l'aire sous $P(x)$.
 
 Pour simplifier, supposons que notre intervalle est $[-3, 3]$,
@@ -783,7 +783,7 @@ ce qui est exactement la formule du trapèze.
 ## Formule de Simpson
 
 Utilisons cette fois-ci $3$ points équidistants pour interpoler:
-le point gauche, le point milieu et le point droit.
+la borne gauche, le point milieu et la borne droite.
 
 <Exercise.Interpolation x={[-3, 0, 3]} y={[2, 4, 3]} area />
 

@@ -151,8 +151,8 @@ export const PartitionSequence = () => {
       <PythonCode
         prompt={
           <p>
-            Donnez les <strong>points droits</strong> d'une partition de l'intervalle {tex`[-3, 1]`}{' '}
-            en {tex`70`} intervalles.
+            Donnez les <strong>bornes droites</strong> d'une partition de l'intervalle{' '}
+            {tex`[-3, 1]`} en {tex`70`} intervalles.
           </p>
         }
         tests={(expect) => ({
@@ -271,7 +271,7 @@ export const KinematicsExample = () => (
         <p>
           Estimez le déplacement net d'un objet dont la vitesse est donnée par{' '}
           {tex`v(t) = 3t^2 + 2t + 1`} sur l'intervalle {tex`[0, 5]`} en utilisant les{' '}
-          <strong>points droits</strong> (et non pas les points milieux) d'une partition de{' '}
+          <strong>bornes droites</strong> (et non pas les points milieux) d'une partition de{' '}
           {tex`100`} intervalles.
         </p>
       }
@@ -285,7 +285,7 @@ export const KinematicsExample = () => (
       prompt={
         <p>
           Estimez le déplacement net d'un objet dont la vitesse est donnée par {tex`v(t) = \sin t`}{' '}
-          sur l'intervalle {tex`[0, \pi]`} en utilisant les <strong>points droits</strong> (et non
+          sur l'intervalle {tex`[0, \pi]`} en utilisant les <strong>bornes droites</strong> (et non
           pas les points milieux) d'une partition de {tex`200`} intervalles.
         </p>
       }
