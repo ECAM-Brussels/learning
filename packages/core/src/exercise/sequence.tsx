@@ -31,7 +31,7 @@ type Props<T extends object> = Prettify<
         next: Component<{ position: number; progress: Record<number, boolean | null | undefined> }>
       }
     | {
-        children: JSX.Element[]
+        children: JSX.Element
       }
   )
 >
@@ -109,40 +109,79 @@ export function Sequence<T extends object>(props: Props<T> & { id: string }) {
     sequencePosition,
     position: 0,
   })
-  const length = createMemo(() =>
-    'children' in props ? props.children.length : Object.keys(filteredProgress()).length + 1,
-  )
+  const length = createMemo(() => Object.keys(filteredProgress()).length + 1)
+  const pages: (() => JSX.Element)[] = []
   return (
     <OptionsContext value={rawOptions}>
       <Boundary fallback="Chargement des exercices...">
-        <Pagination progress={progress()} showFeedback={options().showFeedback}>
-          {range(length()).map((i) => () => (
-            <StepContext value={() => stepContext(i)}>
-              <Boundary fallback="Chargement de l'exercice...">
-                {'children' in props ? (
-                  props.children[i]
-                ) : 'exercise' in props ? (
-                  <Scope>
-                    {() => {
-                      const next = createMemo(() =>
-                        props.next({ position: i, progress: progress() }),
-                      )
-                      const Exercise = dynamic(() => props.exercise)
-                      return <Exercise {...next()} />
-                    }}
-                  </Scope>
-                ) : (
-                  (() => {
-                    const Next = dynamic(() => props.next)
-                    return <Next position={i} progress={progress()} />
-                  })()
-                )}
-              </Boundary>
-            </StepContext>
-          ))}
-        </Pagination>
+        {'children' in props ? (
+          <StaticPages
+            context={stepContext()}
+            progress={progress()}
+            showFeedback={options().showFeedback}
+          >
+            {props.children}
+          </StaticPages>
+        ) : (
+          <Pagination progress={progress()} showFeedback={options().showFeedback}>
+            {range(length()).map(
+              (i) =>
+                (pages[i] ??= () => (
+                  <StepContext value={() => stepContext(i)}>
+                    <Boundary fallback="Chargement de l'exercice...">
+                      {'exercise' in props ? (
+                        <Scope>
+                          {() => {
+                            const next = createMemo(() =>
+                              props.next({ position: i, progress: progress() }),
+                            )
+                            const Exercise = dynamic(() => props.exercise)
+                            return <Exercise {...next()} />
+                          }}
+                        </Scope>
+                      ) : (
+                        (() => {
+                          const Next = dynamic(() => props.next)
+                          return <Next position={i} progress={progress()} />
+                        })()
+                      )}
+                    </Boundary>
+                  </StepContext>
+                )),
+            )}
+          </Pagination>
+        )}
       </Boundary>
     </OptionsContext>
+  )
+}
+
+function StaticPages(props: {
+  children: JSX.Element
+  context: StepContext
+  progress: Record<number, boolean | null | undefined>
+  showFeedback: boolean
+}) {
+  let next = 0
+  const claim = () => next++
+  return (
+    <StepContext value={() => ({ ...props.context, claim })}>
+      {(() => {
+        const pages = createMemo(
+          () => {
+            next = 0
+            const children = props.children
+            return (Array.isArray(children) ? children : [children]).map((child) => () => child)
+          },
+          { name: 'sequence-children' },
+        )
+        return (
+          <Pagination progress={props.progress} showFeedback={props.showFeedback}>
+            {pages()}
+          </Pagination>
+        )
+      })()}
+    </StepContext>
   )
 }
 

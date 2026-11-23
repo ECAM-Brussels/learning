@@ -2,29 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@solidjs/testing-library'
 import { beforeEach, describe, expect, mock, test } from 'bun:test'
 import * as v from 'valibot'
 
-/**
- * Module mocks — must be registered before `./base` is imported.
- *
- * - No user is logged in, so steps use the real localStorage-backed context.
- * - The remote context and auth/permission helpers pull in server-only modules.
- * - `@learning/components` is reduced to the pieces `Step` renders.
- */
-const hasPermissions = mock(async (_: string[]) => true)
-mock.module('../auth', () => ({ getUser: async () => null }))
-mock.module('./context.remote', () => ({ default: {}, fetchSequence: async () => null }))
-mock.module('../permissions', () => ({ hasPermissions }))
-mock.module('@learning/components', async () => {
-  const { Boundary } = await import('../../../components/src/Boundary')
-  const { Form } = await import('../../../components/src/Form')
-  const { FeedbackContext } = await import('../../../components/src/FeedbackContext')
-  return {
-    Boundary,
-    Form,
-    FeedbackContext,
-    MathField: (props: any) => <input data-testid="math-field" {...props} />,
-    Youtube: (props: { src: string }) => <div data-testid="video" data-src={props.src} />,
-  }
-})
+const { hasPermissions } = await import('./test.mocks')
 
 /**
  * Controllable IntersectionObserver: nothing is visible unless a test opts in.

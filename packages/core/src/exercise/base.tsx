@@ -17,6 +17,7 @@ import {
   refresh,
   Show,
   Switch,
+  untrack,
   useContext,
   type Component,
   type ComponentProps,
@@ -243,6 +244,7 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
    * - Is this an exercise (starting step) or a subsequent step?
    */
   const inherited = useContext(StepContext)
+  const slot = untrack(() => inherited?.().claim?.())
   const exerciseContext = useExerciseContext()
   const sequenceContext = createMemo(() => ({
     url: useLocation().pathname,
@@ -250,7 +252,7 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
   }))
   const stepContext = createMemo(() => ({
     ...sequenceContext(),
-    sequencePosition: inherited?.().sequencePosition ?? 0,
+    sequencePosition: slot ?? inherited?.().sequencePosition ?? 0,
     position: inherited?.().position ?? 0,
   }))
   const optionsCtx = useContext(OptionsContext)
