@@ -42,3 +42,9 @@ use the components in `./packages/components/src/Board.tsx`.
 Components in that file are meant to be _declarative versions_ of their associated geometry elements.
 They are not yet comprehensive or complete.
 By any means improve them, but ensure they are compatible with Solid's reactivity system and are declarative.
+
+# Comments
+
+Don't write comments that restate what the code already says,
+such as comments on self-explanatory lines or doc comments that repeat a name or signature.
+Only comment what the code can't say itself: a non-obvious reason, constraint or pitfall.
