@@ -6,7 +6,10 @@ import { createMemo, onSettled, refresh, useContext, type Component } from 'soli
 import * as v from 'valibot'
 import { StepContext } from './context'
 import local from './context.local'
-import { getProgress as getRemoteProgress } from './context.remote'
+import {
+  fetchSequence as fetchRemoteSequence,
+  getProgress as getRemoteProgress,
+} from './context.remote'
 import { Options, OptionsContext } from './options'
 
 type Prettify<T> = {
@@ -141,4 +144,14 @@ export function Sequence<T extends object>(props: Props<T> & { id: string }) {
       </Boundary>
     </OptionsContext>
   )
+}
+
+export function preloadSequences(url: string, sequenceIds: readonly string[]) {
+  for (const sequenceId of sequenceIds) {
+    const seq = { url, sequenceId }
+    void fetchRemoteSequence(seq)
+    void local.fetchSequence(seq)
+    void getRemoteProgress(seq)
+    void local.getProgress(seq)
+  }
 }
