@@ -257,8 +257,9 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
   const rawOptions = createMemo(async () => {
     const inherited = optionsCtx()
     const data = exerciseData()
-    const options = typeof props.options === 'function' ? await props.options(data) : props.options
-    return { ...inherited, ...options }
+    const opts = props.options
+    if (typeof opts !== 'function') return { ...inherited, ...opts }
+    return { ...inherited, ...(await opts(data)) }
   })
   const options = createMemo(() => v.parse(Options, rawOptions()))
   onSettled(() => {
