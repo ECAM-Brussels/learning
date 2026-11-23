@@ -29,8 +29,5 @@
   },
   "mdx": {
     "checkMdx": false
-  },
-  "tsrx": {
-    "compiler": "@tsrx/solid"
   }
 }

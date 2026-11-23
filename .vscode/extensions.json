@@ -7,7 +7,6 @@
     "unifiedjs.vscode-mdx",
     "hipstersmoothie-public.mdx-tsc-vscode",
     "darkriszty.markdown-table-prettify",
-    "dbaeumer.vscode-eslint",
-    "tsrx.tsrx-vscode-plugin"
+    "dbaeumer.vscode-eslint"
   ]
 }

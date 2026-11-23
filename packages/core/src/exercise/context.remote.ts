@@ -34,6 +34,7 @@ type StepContext = v.InferInput<typeof StepContext>
 
 export const fetchSequence = query(async (rawCtx: SequenceContext) => {
   'use server'
+  if (!getRequestEvent()?.locals.user) return null
   await ensurePermissions(['exercise:readOwn'])
   const rows = await db.query.steps.findMany({
     columns: {
@@ -59,6 +60,7 @@ export const fetchSequence = query(async (rawCtx: SequenceContext) => {
 
 export const getProgress = query(async (rawSequence: SequenceContext) => {
   'use server'
+  if (!getRequestEvent()?.locals.user) return null
   await ensurePermissions(['exercise:readOwn'])
   const sequence = v.parse(SequenceContext, rawSequence)
   const rows = await db

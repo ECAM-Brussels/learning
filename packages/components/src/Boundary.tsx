@@ -1,7 +1,7 @@
 import type { JSX } from '@solidjs/web'
 import { Errored, Loading } from 'solid-js'
 
-export function Boundary(props: { children: JSX.Element; fallback?: JSX.Element }) {
+export function Boundary(props: { children: JSX.Element; fallback?: JSX.Element; on?: unknown }) {
   return (
     <Errored
       fallback={(err) => {
@@ -15,7 +15,9 @@ export function Boundary(props: { children: JSX.Element; fallback?: JSX.Element 
         )
       }}
     >
-      <Loading fallback={props.fallback}>{props.children}</Loading>
+      <Loading on={props.on} fallback={props.fallback}>
+        {props.children}
+      </Loading>
     </Errored>
   )
 }

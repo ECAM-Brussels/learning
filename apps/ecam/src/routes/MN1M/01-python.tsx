@@ -1,19 +1,10 @@
-import { Meta } from '@learning/components'
-import { getUser, hasPermissions } from '@learning/core'
-import { type RouteDefinition } from '@solidjs/router'
 import Page from './01-python.content.mdx'
+import { SessionPage, sessionRoute } from './sessions.meta'
 
-export const route = {
-  preload() {
-    getUser()
-    hasPermissions(['draft:read'])
-  },
-} satisfies RouteDefinition
+export const route = sessionRoute('01-python')
 
-export default () => {
-  return (
-    <Meta title="Séance 1: Introduction à Python">
-      <Page />
-    </Meta>
-  )
-}
+export default () => (
+  <SessionPage link="01-python">
+    <Page />
+  </SessionPage>
+)

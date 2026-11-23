@@ -114,10 +114,26 @@ export const Layout: ParentComponent = (props) => {
         tr: (attrs) => <tr class="px-2 even:bg-slate-50" {...attrs} />,
         td: (attrs) => <td class="px-2" {...attrs} />,
         th: (attrs) => <th class="px-2" {...attrs} />,
-        Code,
-        Highlight,
-        Latex,
-        Steps,
+        Code: (attrs) => (
+          <Boundary>
+            <Code {...attrs} />
+          </Boundary>
+        ),
+        Highlight: (attrs) => (
+          <Boundary>
+            <Highlight {...attrs} />
+          </Boundary>
+        ),
+        Latex: (attrs) => (
+          <Boundary>
+            <Latex {...attrs} />
+          </Boundary>
+        ),
+        Steps: (attrs) => (
+          <Boundary>
+            <Steps {...attrs} />
+          </Boundary>
+        ),
       }}
     >
       <Navbar />

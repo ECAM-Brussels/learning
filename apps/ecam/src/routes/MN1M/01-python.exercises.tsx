@@ -1,11 +1,10 @@
-import { Attempt, CheckMark, Highlight, Question } from '@learning/components'
+import { Attempt, Boundary, CheckMark, Highlight, Question } from '@learning/components'
 import { createDerivedStep, Exercise, expr, omitFromJSON, Sequence, tex } from '@learning/core'
 import { MultipleChoice } from '@learning/exercises/MultipleChoice'
 import { PythonCode } from '@learning/exercises/python/Code'
-import { python, type FinalOutput } from '@learning/repl'
 import { type JSX } from '@solidjs/web'
-import { allKeyed, dedent } from 'es-toolkit'
-import { createMemo, createProjection, createSignal, For, merge, Show } from 'solid-js'
+import { dedent } from 'es-toolkit'
+import { createMemo, createSignal, For, merge, Show } from 'solid-js'
 import * as v from 'valibot'
 
 export function Integer(rawProps: {
@@ -156,13 +155,11 @@ export function Print(props: {
         )
       }
       initialCode={props.initialCode}
-      tests={[
-        {
-          test: null,
-          check: ({ stdout }) =>
-            stdout?.toLowerCase().includes(props.message.toLowerCase()) === true,
-        },
-      ]}
+      tests={(expect) => ({
+        [`affiche "${props.message}"`]: expect
+          .stdout()
+          .toSatisfy((stdout) => stdout.toLowerCase().includes(props.message.toLowerCase())),
+      })}
       feedback={(ctx) => {
         const [message, setMessage] = createSignal('message')
         return (
@@ -194,9 +191,46 @@ export function Print(props: {
   )
 }
 
-export async function getRep(number: string) {
-  const code = `from decimal import Decimal\nDecimal(${number})`
-  return python.output(code).then((r) => r.result as string)
+/**
+ * Exact decimal value of the double closest to `number`,
+ * formatted like Python's `str(Decimal(number))`.
+ *
+ * Every finite double is `m * 2^e` with integer `m` and `e`.
+ * When `e < 0`, this equals `m * 5^-e / 10^-e`, which has a finite decimal expansion.
+ */
+export function getRep(number: string | number) {
+  const x = typeof number === 'number' ? number : parseFloat(number)
+  if (!Number.isFinite(x)) return Number.isNaN(x) ? 'NaN' : x > 0 ? 'Infinity' : '-Infinity'
+  const view = new DataView(new ArrayBuffer(8))
+  view.setFloat64(0, x)
+  const bits = view.getBigUint64(0)
+  const sign = bits >> 63n ? '-' : ''
+  const biasedExponent = Number((bits >> 52n) & 0x7ffn)
+  const fraction = bits & ((1n << 52n) - 1n)
+  let mantissa = biasedExponent === 0 ? fraction : fraction | (1n << 52n)
+  let exponent = (biasedExponent === 0 ? 1 : biasedExponent) - 1075
+  if (mantissa === 0n) return `${sign}0`
+  while (exponent < 0 && (mantissa & 1n) === 0n) {
+    mantissa >>= 1n
+    exponent++
+  }
+  // Decimal coefficient and exponent: value = digits * 10^exp10
+  const digits =
+    exponent >= 0
+      ? (mantissa << BigInt(exponent)).toString()
+      : (mantissa * 5n ** BigInt(-exponent)).toString()
+  const exp10 = exponent >= 0 ? 0 : exponent
+  // Python's Decimal.__str__: plain notation unless the number is very small
+  const leftDigits = exp10 + digits.length
+  const dotPlace = exp10 <= 0 && leftDigits > -6 ? leftDigits : 1
+  let rep: string
+  if (dotPlace <= 0) rep = `0.${'0'.repeat(-dotPlace)}${digits}`
+  else if (dotPlace >= digits.length) rep = digits + '0'.repeat(dotPlace - digits.length)
+  else rep = `${digits.slice(0, dotPlace)}.${digits.slice(dotPlace)}`
+  const shownExponent = leftDigits - dotPlace
+  return (
+    sign + rep + (shownExponent !== 0 ? `E${shownExponent > 0 ? '+' : ''}${shownExponent}` : '')
+  )
 }
 
 export const Calculator = createDerivedStep(
@@ -210,12 +244,9 @@ export const Calculator = createDerivedStep(
   },
   (props) => ({
     prompt: props.children ?? <p>Utilisez Python pour calculer {tex`${props.prompt}`}</p>,
-    tests: [
-      {
-        test: null,
-        check: ({ result }) => result === String(props.answer),
-      },
-    ],
+    tests: (expect) => ({
+      'Résultat final': expect.result().toBe(props.answer),
+    }),
   }),
   {
     children: (props) => (
@@ -233,10 +264,6 @@ export const Calculator = createDerivedStep(
           )}
           grade={(ctx) => ctx.inputs.attempt.isEqual(props.data.prompt)}
           feedback={(ctx) => {
-            const reps = createProjection(
-              () => allKeyed(Object.fromEntries(props.data.inexact!.map((n) => [n, getRep(n)]))),
-              {},
-            )
             return (
               <>
                 <Show when={!ctx.correct}>
@@ -266,16 +293,18 @@ export const Calculator = createDerivedStep(
                       </tr>
                     </thead>
                     <tbody>
-                      <For each={props.data.inexact}>
-                        {(n) => (
-                          <tr>
-                            <td class="px-4 py-2">{tex`${n}`}</td>
-                            <td class="px-4 py-2">
-                              <code>{reps[n]}</code>
-                            </td>
-                          </tr>
-                        )}
-                      </For>
+                      <Boundary>
+                        <For each={props.data.inexact}>
+                          {(n) => (
+                            <tr>
+                              <td class="px-4 py-2">{tex`${n}`}</td>
+                              <td class="px-4 py-2">
+                                <code>{getRep(n)}</code>
+                              </td>
+                            </tr>
+                          )}
+                        </For>
+                      </Boundary>
                     </tbody>
                   </table>
                   <p>
@@ -332,17 +361,15 @@ export const Variables = createDerivedStep(
         pour calculer {props.calculate}.
       </>
     ),
-    tests: [
-      ...Object.entries(props.vars).map(([name, value]) => ({
-        test: name,
-        check: ({ result }: FinalOutput) => result === String(value),
-      })),
-      {
-        desc: `La réponse finale est correcte`,
-        test: null,
-        check: ({ result }: FinalOutput) => result === String(props.answer),
-      },
-    ],
+    tests: (expect) => ({
+      ...Object.fromEntries(
+        Object.entries(props.vars).map(([name, value]) => [
+          `${name} = ${value}`,
+          expect.with(name).toReturn(value),
+        ]),
+      ),
+      'La réponse finale est correcte': expect.result().toBe(props.answer),
+    }),
   }),
 )
 
@@ -363,30 +390,15 @@ export const LinearCombination = createDerivedStep(
         `}
       </>
     ),
-    tests: [
-      {
-        test: null,
-        check: async ({ result }) => {
-          const { result: answer } = await python.output(dedent /* python */ `
-            import numpy as np
-            (${props.c[0]}) * np.array([${props.v[0].join(',')}]) + (${props.c[1]}) * np.array([${props.v[1].join(',')}])
-          `)
-          return result === answer
-        },
-      },
-      {
-        desc: 'numpy est importé',
-        test: (code) => code.includes('numpy'),
-      },
-      {
-        desc: 'Le code comporte une addition ou soustraction',
-        test: (code) => code.includes('+') || code.includes('-'),
-      },
-      {
-        desc: 'Le code comporte au moins deux vecteurs',
-        test: (code) => (code.match(/array/g)?.length ?? 0) >= 2,
-      },
-    ],
+    tests: (expect) => ({
+      'Résultat final': expect.result().toEqualThatOf(dedent /* python */ `
+        import numpy as np
+        (${props.c[0]}) * np.array([${props.v[0].join(',')}]) + (${props.c[1]}) * np.array([${props.v[1].join(',')}])
+      `),
+      'numpy est importé': expect.code.toMatch(/numpy/),
+      'Le code comporte une addition ou soustraction': expect.code.toMatch(/[+-]/),
+      'Le code comporte au moins deux vecteurs': expect.code.toMatch(/array[\s\S]*array/),
+    }),
   }),
 )
 
@@ -408,19 +420,14 @@ export const VectorProduct = createDerivedStep(
         `}
       </>
     ),
-    tests: [
-      {
-        test: null,
-        check: async ({ result }) => {
-          const { result: answer } = await python.output(dedent /* python */ `
-            import numpy as np
-            np.${props.type}([${props.v[0].join(',')}], [${props.v[1].join(',')}])
-          `)
-          return result === answer
-        },
-      },
-    ],
-    check: (code) => code.includes('numpy') && (code.includes(props.type) || code.includes('@')),
+    tests: (expect) => ({
+      'Résultat final': expect.result().toEqualThatOf(dedent /* python */ `
+        import numpy as np
+        np.${props.type}([${props.v[0].join(',')}], [${props.v[1].join(',')}])
+      `),
+      'numpy est importé': expect.code.toMatch(/numpy/),
+      [`${props.type} ou @ est utilisé`]: expect.code.toMatch(new RegExp(`${props.type}|@`)),
+    }),
   }),
 )
 
@@ -444,19 +451,16 @@ export const Vectorization = createDerivedStep(
         `}
       </>
     ),
-    tests: [
-      {
-        test: null,
-        check: async ({ result }) => {
-          const { result: answer } = await python.output(dedent /* python */ `
-            import numpy as np
-            np.${props.fn}([${props.x.join(',')}])
-          `)
-          return result === answer
-        },
-      },
-    ],
-    check: (code) => code.includes('numpy') && code.split(props.fn).length < props.x.length,
+    tests: (expect) => ({
+      'Résultat final': expect.result().toEqualThatOf(dedent /* python */ `
+        import numpy as np
+        np.${props.fn}([${props.x.join(',')}])
+      `),
+      'numpy est importé': expect.code.toMatch(/numpy/),
+      'Le calcul est vectorisé': expect.code.toSatisfy(
+        (code) => code.split(props.fn).length < props.x.length,
+      ),
+    }),
   }),
 )
 
@@ -473,18 +477,12 @@ const Norm = createDerivedStep(PythonCode, { x: v.array(v.number()) }, (props) =
       `}
     </>
   ),
-  tests: [
-    {
-      test: null,
-      check: async ({ result }) => {
-        const { result: answer } = await python.output(dedent /* python */ `
-          import numpy as np
-          np.linalg.norm([${props.x.join(',')}])
-        `)
-        return result === answer
-      },
-    },
-  ],
+  tests: (expect) => ({
+    'Résultat final': expect.result().toEqualThatOf(dedent /* python */ `
+      import numpy as np
+      np.linalg.norm([${props.x.join(',')}])
+    `),
+  }),
 }))
 
 export const NormSequence = () => (
@@ -507,26 +505,18 @@ export function Review() {
             {tex`\vec c = (7, 8, -9)`}.
           </p>
         }
-        tests={[
-          {
-            test: null,
-            check: async ({ result }) => {
-              const { result: answer } = await python.output(dedent /* python */ `
-                import numpy as np
-                a = np.array([1, -2, 3])
-                b = np.array([4, 5, -6])
-                c = np.array([7, 8, -9])
-                np.abs(np.dot(a, np.cross(b, c)))
-              `)
-              return result === answer
-            },
-          },
-        ]}
-        check={(code) =>
-          code.includes('numpy') &&
-          code.includes('cross') &&
-          (code.includes('dot') || code.includes('@'))
-        }
+        tests={(expect) => ({
+          'Résultat final': expect.result().toEqualThatOf(dedent /* python */ `
+            import numpy as np
+            a = np.array([1, -2, 3])
+            b = np.array([4, 5, -6])
+            c = np.array([7, 8, -9])
+            np.abs(np.dot(a, np.cross(b, c)))
+          `),
+          'numpy est importé': expect.code.toMatch(/numpy/),
+          'cross est utilisé': expect.code.toMatch(/cross/),
+          'dot ou @ est utilisé': expect.code.toMatch(/dot|@/),
+        })}
       />
       <PythonCode
         prompt={
@@ -535,21 +525,15 @@ export function Review() {
             {tex`A(-1, 7, -8)`} et {tex`B(4, -17, -6)`}.
           </p>
         }
-        tests={[
-          {
-            test: null,
-            check: async ({ result }) => {
-              const { result: answer } = await python.output(dedent /* python */ `
-                import numpy as np
-                A = np.array([-1, 7, -8])
-                B = np.array([4, -17, -6])
-                np.linalg.norm(A - B)
-              `)
-              return result === answer
-            },
-          },
-        ]}
-        check={(code) => code.includes('numpy')}
+        tests={(expect) => ({
+          'Résultat final': expect.result().toEqualThatOf(dedent /* python */ `
+            import numpy as np
+            A = np.array([-1, 7, -8])
+            B = np.array([4, -17, -6])
+            np.linalg.norm(A - B)
+          `),
+          'numpy est importé': expect.code.toMatch(/numpy/),
+        })}
       />
       <PythonCode
         prompt={
@@ -558,23 +542,18 @@ export function Review() {
             vecteurs {tex`\vec a = (4, -3, 2, 9)`} et {tex`\vec b = (-6, 1, 13, -4)`}.
           </p>
         }
-        tests={[
-          {
-            test: null,
-            check: async ({ result }) => {
-              const { result: answer } = await python.output(dedent /* python */ `
-                import numpy as np
-                a = np.array([4, -3, 2, 9])
-                b = np.array([-6, 1, 13, -4])
-                cos_theta = np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
-                theta = np.arccos(cos_theta)
-                np.degrees(theta)
-              `)
-              return result === answer
-            },
-          },
-        ]}
-        check={(code) => code.includes('numpy') && code.includes('arccos')}
+        tests={(expect) => ({
+          'Résultat final': expect.result().toEqualThatOf(dedent /* python */ `
+            import numpy as np
+            a = np.array([4, -3, 2, 9])
+            b = np.array([-6, 1, 13, -4])
+            cos_theta = np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+            theta = np.arccos(cos_theta)
+            np.degrees(theta)
+          `),
+          'numpy est importé': expect.code.toMatch(/numpy/),
+          'arccos est utilisé': expect.code.toMatch(/arccos/),
+        })}
       />
       <PythonCode
         prompt={
@@ -586,21 +565,15 @@ export function Review() {
             </em>
           </p>
         }
-        tests={[
-          {
-            test: null,
-            check: async ({ result }) => {
-              const { result: answer } = await python.output(dedent /* python */ `
-                import numpy as np
-                np.linalg.norm([3, -2, -4, 9])
-              `)
-              return result === answer
-            },
-          },
-        ]}
-        check={(code) =>
-          code.includes('numpy') && code.includes('sqrt') && !code.includes('linalg')
-        }
+        tests={(expect) => ({
+          'Résultat final': expect.result().toEqualThatOf(dedent /* python */ `
+            import numpy as np
+            np.linalg.norm([3, -2, -4, 9])
+          `),
+          'numpy est importé': expect.code.toMatch(/numpy/),
+          'sqrt est utilisé': expect.code.toMatch(/sqrt/),
+          "linalg n'est pas utilisé": expect.code.not.toMatch(/linalg/),
+        })}
       />
       <PythonCode
         prompt={
@@ -609,21 +582,15 @@ export function Review() {
             vecteur {tex`\vec a = (4, -3, 2, 9)`} sur le vecteur {tex`\vec b = (-6, 1, 13, -4)`}.
           </p>
         }
-        tests={[
-          {
-            test: null,
-            check: async ({ result }) => {
-              const { result: answer } = await python.output(dedent /* python */ `
-                import numpy as np
-                a = np.array([4, -3, 2, 9])
-                b = np.array([-6, 1, 13, -4])
-                (np.dot(a, b) / np.dot(b, b)) * b
-              `)
-              return result === answer
-            },
-          },
-        ]}
-        check={(code) => code.includes('numpy')}
+        tests={(expect) => ({
+          'Résultat final': expect.result().toEqualThatOf(dedent /* python */ `
+            import numpy as np
+            a = np.array([4, -3, 2, 9])
+            b = np.array([-6, 1, 13, -4])
+            (np.dot(a, b) / np.dot(b, b)) * b
+          `),
+          'numpy est importé': expect.code.toMatch(/numpy/),
+        })}
       />
     </Sequence>
   )

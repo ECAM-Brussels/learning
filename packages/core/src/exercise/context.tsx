@@ -10,7 +10,9 @@ export type StepContext = {
   position: number
 }
 
-export const StepContext = createContext<Accessor<StepContext> | null>(null)
+export const StepContext = createContext<Accessor<StepContext & { claim?: () => number }> | null>(
+  null,
+)
 
 export type ExerciseContext = {
   fetchSequence: CachedFunction<

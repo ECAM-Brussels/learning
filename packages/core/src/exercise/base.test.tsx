@@ -2,29 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@solidjs/testing-library'
 import { beforeEach, describe, expect, mock, test } from 'bun:test'
 import * as v from 'valibot'
 
-/**
- * Module mocks — must be registered before `./base` is imported.
- *
- * - No user is logged in, so steps use the real localStorage-backed context.
- * - The remote context and auth/permission helpers pull in server-only modules.
- * - `@learning/components` is reduced to the pieces `Step` renders.
- */
-const hasPermissions = mock(async (_: string[]) => true)
-mock.module('../auth', () => ({ getUser: async () => null }))
-mock.module('./context.remote', () => ({ default: {} }))
-mock.module('../permissions', () => ({ hasPermissions }))
-mock.module('@learning/components', async () => {
-  const { Boundary } = await import('../../../components/src/Boundary')
-  const { Form } = await import('../../../components/src/Form')
-  const { FeedbackContext } = await import('../../../components/src/FeedbackContext')
-  return {
-    Boundary,
-    Form,
-    FeedbackContext,
-    MathField: (props: any) => <input data-testid="math-field" {...props} />,
-    Youtube: (props: { src: string }) => <div data-testid="video" data-src={props.src} />,
-  }
-})
+const { hasPermissions } = await import('./test.mocks')
 
 /**
  * Controllable IntersectionObserver: nothing is visible unless a test opts in.
@@ -207,6 +185,22 @@ describe('Step', () => {
     submit()
     await screen.findByTestId('feedback')
     expect(screen.getByRole('button', { name: 'Soumettre' })).toBeInTheDocument()
+  })
+
+  test('initialState prefills the draft from data', async () => {
+    render(() => (
+      <SumStep id="initial-state" initialState={(data) => ({ answer: String(data.a) })} />
+    ))
+    expect(await screen.findByTestId('current')).toHaveTextContent('2')
+  })
+
+  test('saved state takes precedence over initialState', async () => {
+    localStorage.setItem(
+      storageKey('initial-state-saved'),
+      JSON.stringify([{ data: { a: 2, b: 3 }, state: { answer: '9' }, submitted: false }]),
+    )
+    render(() => <SumStep id="initial-state-saved" initialState={() => ({ answer: 'default' })} />)
+    await waitFor(() => expect(screen.getByTestId('current')).toHaveTextContent('9'))
   })
 
   test('restores a saved submission from storage', async () => {

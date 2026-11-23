@@ -11,13 +11,13 @@ import {
   createOptimisticStore,
   createSignal,
   createStore,
-  isPending,
   Match,
   omit,
   onSettled,
   refresh,
   Show,
   Switch,
+  untrack,
   useContext,
   type Component,
   type ComponentProps,
@@ -30,7 +30,7 @@ import { omitFromJSON } from '../validation'
 import { createIsVisible } from '../visibility'
 import { StepContext } from './context'
 import local from './context.local'
-import remote from './context.remote'
+import remote, { fetchSequence as fetchRemoteSequence } from './context.remote'
 import { ExerciseOptions, Options, OptionsContext } from './options'
 
 type MaybeAsync<T> = T | Promise<T>
@@ -194,6 +194,7 @@ type StepBaseProps<D, I extends v.ObjectSchema<any, any>> = {
       correct?: boolean
     }
   }) => JSX.Element
+  initialState?: (data: Infer<NoInfer<D>, 'output'>) => Partial<v.InferInput<NoInfer<I>>>
   feedback?: (props: {
     data: Infer<NoInfer<D>, 'output'>
     inputs: v.InferOutput<NoInfer<I>>
@@ -243,6 +244,7 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
    * - Is this an exercise (starting step) or a subsequent step?
    */
   const inherited = useContext(StepContext)
+  const slot = untrack(() => inherited?.().claim?.())
   const exerciseContext = useExerciseContext()
   const sequenceContext = createMemo(() => ({
     url: useLocation().pathname,
@@ -250,15 +252,16 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
   }))
   const stepContext = createMemo(() => ({
     ...sequenceContext(),
-    sequencePosition: inherited?.().sequencePosition ?? 0,
+    sequencePosition: slot ?? inherited?.().sequencePosition ?? 0,
     position: inherited?.().position ?? 0,
   }))
   const optionsCtx = useContext(OptionsContext)
   const rawOptions = createMemo(async () => {
     const inherited = optionsCtx()
     const data = exerciseData()
-    const options = typeof props.options === 'function' ? await props.options(data) : props.options
-    return { ...inherited, ...options }
+    const opts = props.options
+    if (typeof opts !== 'function') return { ...inherited, ...opts }
+    return { ...inherited, ...(await opts(data)) }
   })
   const options = createMemo(() => v.parse(Options, rawOptions()))
   onSettled(() => {
@@ -270,7 +273,15 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
 
   const schema = () =>
     StoredStep(props.schema.data as S['data'], props.schema.inputs as S['inputs'])
-  const all = createMemo(() => exerciseContext().fetchSequence(sequenceContext()), {})
+  const all = createMemo(
+    async () => {
+      const seq = sequenceContext()
+      const remoteSequence = fetchRemoteSequence(seq)
+      const localSequence = local.fetchSequence(seq)
+      return (await remoteSequence) ?? (await localSequence)
+    },
+    { name: 'all' },
+  )
   const fetched = createMemo(
     () => all()[stepContext().sequencePosition]?.[stepContext().position] ?? null,
   )
@@ -300,7 +311,10 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
    * as this will be consumed by input components
    */
   const [state, setState] = createStore<Partial<InferShape<S['inputs'], 'input'>>>(
-    () => JSON.parse(JSON.stringify(step.state)),
+    () => ({
+      ...props.initialState?.(step.data),
+      ...JSON.parse(JSON.stringify(step.state)),
+    }),
     {} as any,
   )
   const isValid = createMemo(() => v.safeParse(schema().entries.state, state).success)
@@ -321,17 +335,17 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
   const submit = throttle(
     action(async function* (newState: Partial<InferShape<S['inputs'], 'input'>>) {
       if (!canSubmit()) return
-      setStatus('grading')
       const state = v.parse(schema().entries.state, newState)
       const submitted = Object.keys(state).length > 0
       let correct: boolean | undefined = undefined
       if (submitted) {
+        setStatus('grading')
         affects(step, 'submitted')
         const result = props.grade({ data: step.data, inputs: state })
         correct = Array.isArray(result) ? (await Promise.all(result)).every(Boolean) : await result
+        setStatus('submitting')
       }
       const payload = { ...step, state, submitted, correct }
-      setStatus('submitting')
       yield exerciseContext().saveStep(
         stepContext(),
         JSON.parse(JSON.stringify(payload)),
@@ -501,12 +515,11 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
               <div class="flex items-center gap-4">
                 <button
                   class="my-4 block cursor-pointer rounded-lg bg-green-800 px-3 py-2 font-bold text-green-100 hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
-                  disabled={isPending(() => step.submitted)}
+                  disabled={status() !== 'ready'}
                 >
                   <Switch fallback="Soumettre">
                     <Match when={status() === 'grading'}>Correction en cours...</Match>
                     <Match when={status() === 'submitting'}>Soumission en cours...</Match>
-                    <Match when={isPending(() => step.submitted)}>Soumission en cours...</Match>
                   </Switch>
                 </button>
               </div>

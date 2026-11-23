@@ -1,25 +1,10 @@
-import { Meta } from '@learning/components'
-import { getUser, hasPermissions } from '@learning/core'
-import { type RouteDefinition } from '@solidjs/router'
 import Page from './03-diff.content.mdx'
+import { SessionPage, sessionRoute } from './sessions.meta'
 
-export const route = {
-  preload() {
-    getUser()
-    hasPermissions(['draft:read'])
-  },
-} satisfies RouteDefinition
+export const route = sessionRoute('03-diff')
 
-export default function Diff() {
-  return (
-    <Meta
-      title="Séance 3: Différences"
-      authorized={() => {
-        if (new Date() > new Date('2026-10-16 07:00')) return true
-        return hasPermissions(['draft:read'])
-      }}
-    >
-      <Page />
-    </Meta>
-  )
-}
+export default () => (
+  <SessionPage link="03-diff">
+    <Page />
+  </SessionPage>
+)

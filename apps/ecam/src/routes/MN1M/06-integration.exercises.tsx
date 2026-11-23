@@ -1,7 +1,7 @@
 import { Board } from '@learning/components'
 import { createDerivedStep, expr, Sequence, tex } from '@learning/core'
 import { PythonCode } from '@learning/exercises/python/Code'
-import { dedent, randomInt, range, sum } from 'es-toolkit'
+import { dedent, randomInt, range, round, sum } from 'es-toolkit'
 import { createSignal, createStore, For, Repeat, Show, type ComponentProps } from 'solid-js'
 import * as v from 'valibot'
 
@@ -151,8 +151,8 @@ export const PartitionSequence = () => {
       <PythonCode
         prompt={
           <p>
-            Donnez les <strong>points droits</strong> d'une partition de l'intervalle {tex`[-3, 1]`}{' '}
-            en {tex`70`} intervalles.
+            Donnez les <strong>bornes droites</strong> d'une partition de l'intervalle{' '}
+            {tex`[-3, 1]`} en {tex`70`} intervalles.
           </p>
         }
         tests={(expect) => ({
@@ -212,7 +212,8 @@ export const NumericalIntegral = createDerivedStep(
     tests: (expect) => ({
       'Contient "sum"': expect.code.toMatch(/sum/),
       'Contient "linspace"': expect.code.toMatch(/linspace/),
-      'Le résultat est correct': expect.result().toEqualThatOf(dedent /* python */ `
+      'Le résultat est correct': expect.result().toEqualThatOf(
+        dedent /* python */ `
         import numpy as np
 
         def f(x):
@@ -221,7 +222,9 @@ export const NumericalIntegral = createDerivedStep(
         x, dx = np.linspace(${props.a}, ${props.b}, ${props.n}, endpoint=False, retstep=True)
         y = ${methods[props.method]}
         np.sum(y * dx) ${props.average ? `/ (${props.b - props.a})` : ``}
-      `),
+      `,
+        1e-10,
+      ),
     }),
   }),
 )
@@ -268,7 +271,7 @@ export const KinematicsExample = () => (
         <p>
           Estimez le déplacement net d'un objet dont la vitesse est donnée par{' '}
           {tex`v(t) = 3t^2 + 2t + 1`} sur l'intervalle {tex`[0, 5]`} en utilisant les{' '}
-          <strong>points droits</strong> (et non pas les points milieux) d'une partition de{' '}
+          <strong>bornes droites</strong> (et non pas les points milieux) d'une partition de{' '}
           {tex`100`} intervalles.
         </p>
       }
@@ -281,17 +284,16 @@ export const KinematicsExample = () => (
     <NumericalIntegral
       prompt={
         <p>
-          Estimez le déplacement net par un objet dont la vitesse est donnée par{' '}
-          {tex`v(t) = \sin t`} sur l'intervalle {tex`[0, \pi]`} en utilisant les{' '}
-          <strong>points droits</strong> (et non pas les points milieux) d'une partition de{' '}
-          {tex`200`} intervalles.
+          Estimez le déplacement net d'un objet dont la vitesse est donnée par {tex`v(t) = \sin t`}{' '}
+          sur l'intervalle {tex`[0, \pi]`} en utilisant les <strong>bornes droites</strong> (et non
+          pas les points milieux) d'une partition de {tex`200`} intervalles.
         </p>
       }
       f="\sin(x)"
       a={0}
       b={Math.PI}
       n={200}
-      method="midpoint"
+      method="right"
     />
   </Sequence>
 )
@@ -441,10 +443,10 @@ export const Interpolation = (props: {
                       name={`(${x}, f(${x}))`}
                       onDrag={(P) => {
                         setX((x) => {
-                          x[i()] = P.X()
+                          x[i()] = round(P.X(), 2)
                         })
                         setY((y) => {
-                          y[i()] = P.Y()
+                          y[i()] = round(P.Y(), 2)
                         })
                       }}
                       withLabel={!props.hideLabels}
@@ -528,7 +530,7 @@ export const Antiderivative = createDerivedStep(
     ),
     tests: (expect) => ({
       "L'axe x est nommé": expect.matplotlib.xLabel().toMatch(/x/),
-      "L'axe y est nommé": expect.matplotlib.xLabel().toMatch(/y/),
+      "L'axe y est nommé": expect.matplotlib.yLabel().toMatch(/y/),
       'Graphe de f': expect.matplotlib.plot(props.f, ...props.domain),
       'Graphe de la dérivée de F': expect.matplotlib.plot(props.f, ...props.domain),
       "Calcul d'intégrale indéfinie": expect.code.toMatch(/^\s+.*\bsum\b.*$/m),
