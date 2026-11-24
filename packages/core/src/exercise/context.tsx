@@ -8,6 +8,7 @@ export type StepContext = {
   sequenceId: string
   sequencePosition: number
   position: number
+  generated?: boolean
 }
 
 export const StepContext = createContext<Accessor<StepContext & { claim?: () => number }> | null>(
