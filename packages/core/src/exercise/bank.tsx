@@ -10,134 +10,143 @@ type Params = Record<string, number | string | boolean>
 const Params = v.record(v.string(), v.union([v.number(), v.string(), v.boolean()]))
 
 /**
- * A family of questions generated from a few parameters.
+ * What a student practises, through questions generated from a few parameters.
  *
  * Only the parameters are saved, so `render` must be pure:
  * the same parameters must always give the same question.
  */
-export type Question<P extends Params, D, T extends string = string> = {
+export type Skill<Id extends string, D, T extends string = string> = {
+  /** Saved with the answers, so it must not change once students have answered. */
+  id: Id
   step: StepComponent<any>
   tags?: readonly T[]
-  generate: (random: Random) => P
-  render: (params: P) => D
+  prerequisites?: () => readonly AnySkill[]
+  generate: (random: Random) => Params
+  render: (params: Params) => D
 }
 
-/** The `question` helper passed to `defineQuestions`, typing each question against its step. */
-export type QuestionHelper = <
+type AnySkill = Skill<string, any, any>
+
+/**
+ * Prerequisites are read lazily, so that modules may refer to each other's skills.
+ *
+ * @example
+ * export const addition = defineSkill('arithmetic/addition', {
+ *   step: MultipleChoice,
+ *   prerequisites: () => [counting],
+ *   generate: (random) => ({ a: random.int(1, 10), b: random.int(1, 10) }),
+ *   render: ({ a, b }) => ({
+ *     prompt: <p>Calculez {tex`${a} + ${b}`}</p>,
+ *     choices: { [a + b]: a + b, [a * b]: a * b, [a - b]: a - b },
+ *     answer: String(a + b),
+ *     shuffle: true,
+ *   }),
+ * })
+ */
+export function defineSkill<
+  const Id extends string,
   P extends Params,
   S extends StepSchema,
   const T extends string = never,
->(q: {
-  step: StepComponent<S>
-  tags?: readonly T[]
-  generate: (random: Random) => P
-  render: (params: P) => InferShape<S['data'], 'input'>
-}) => Question<Params, InferShape<S['data'], 'input'>, T>
-
-type QuestionSet = Record<string, Question<any, any, any>>
-
-type UnionToIntersection<U> = (U extends unknown ? (u: U) => void : never) extends (
-  i: infer I,
-) => void
-  ? I
-  : never
-
-const question: QuestionHelper = (q) => q as any
-
-/**
- * Define a set of questions, each answered with its own `step`.
- * Sets can be combined into a bank with `createQuestionBank`.
- *
- * @example
- * const arithmetic = defineQuestions((question) => ({
- *   sum: question({
- *     step: MultipleChoice,
- *     tags: ['arithmetic'],
- *     generate: (random) => ({ a: random.int(1, 10), b: random.int(1, 10) }),
- *     render: ({ a, b }) => ({
- *       prompt: <p>Calculez {tex`${a} + ${b}`}</p>,
- *       choices: { [a + b]: a + b, [a * b]: a * b, [a - b]: a - b },
- *       answer: String(a + b),
- *       shuffle: true,
- *     }),
- *   }),
- *   expand: question({
- *     step: Expand,
- *     generate: (random) => ({ a: random.int(1, 10) }),
- *     render: ({ a }) => ({ expr: `(x + ${a})^2` }),
- *   }),
- * }))
- */
-export function defineQuestions<Q extends QuestionSet>(define: (question: QuestionHelper) => Q): Q {
-  return define(question)
+>(
+  id: Id,
+  skill: {
+    step: StepComponent<S>
+    tags?: readonly T[]
+    prerequisites?: () => readonly AnySkill[]
+    generate: (random: Random) => P
+    render: (params: P) => InferShape<S['data'], 'input'>
+  },
+): Skill<Id, InferShape<S['data'], 'input'>, T> {
+  // The parameters' type only matters between generate and render, which it has been checked for.
+  return { id, ...skill } as unknown as Skill<Id, InferShape<S['data'], 'input'>, T>
 }
 
 /**
- * Create a bank of randomised questions, either from sets made with `defineQuestions`
- * or, as a shortcut for a single set, from the function that defines its questions.
+ * Draws only from the given skills, not from their prerequisites.
  *
  * @example
- * const bank = createQuestionBank(arithmetic, algebra)
+ * const bank = createQuestionBank(addition, ...multiplication)
  *
- * <bank.Practice id="arithmetic" tags={['arithmetic']} />
+ * <bank.Practice id="arithmetic" skills={['arithmetic/addition']} />
  */
-export function createQuestionBank<Q extends QuestionSet>(
-  define: (question: QuestionHelper) => Q,
-): Bank<Q>
-export function createQuestionBank<const Sets extends readonly [QuestionSet, ...QuestionSet[]]>(
-  ...sets: Sets
-): Bank<UnionToIntersection<Sets[number]>>
-export function createQuestionBank(...args: unknown[]) {
-  if (typeof args[0] === 'function') {
-    return bank(defineQuestions(args[0] as (question: QuestionHelper) => QuestionSet))
+export function createQuestionBank<const S extends readonly AnySkill[]>(...skills: S) {
+  return bank<S[number]>(skills)
+}
+
+/**
+ * Checks the skills reachable through prerequisites: their ids are unique, and they form no cycle.
+ */
+function prerequisiteGraph(skills: readonly AnySkill[]) {
+  const byId = new Map<string, AnySkill>()
+  const register = (skill: AnySkill) => {
+    const known = byId.get(skill.id)
+    if (known && known !== skill) throw new Error(`The skill id "${skill.id}" is defined twice`)
+    byId.set(skill.id, skill)
   }
-  const questions: QuestionSet = {}
-  for (const set of args as QuestionSet[]) {
-    for (const [kind, question] of Object.entries(set)) {
-      if (kind in questions) throw new Error(`The question kind "${kind}" is defined twice`)
-      questions[kind] = question
+  for (const skill of skills) {
+    if (byId.has(skill.id)) throw new Error(`The skill id "${skill.id}" is defined twice`)
+    register(skill)
+  }
+
+  const graph = new Map<string, readonly AnySkill[]>()
+  const visit = (skill: AnySkill, path: string[]) => {
+    if (path.includes(skill.id)) {
+      throw new Error(`The prerequisites form a cycle: ${[...path, skill.id].join(' → ')}`)
     }
+    if (graph.has(skill.id)) return
+    const prerequisites = skill.prerequisites?.() ?? []
+    for (const prerequisite of prerequisites) {
+      register(prerequisite)
+      visit(prerequisite, [...path, skill.id])
+    }
+    graph.set(skill.id, prerequisites)
   }
-  return bank(questions)
+  for (const skill of skills) visit(skill, [])
+  return graph
 }
 
-type Bank<Q> = Q extends Record<string, unknown> ? ReturnType<typeof bank<Q>> : never
+function bank<S extends AnySkill>(list: readonly S[]) {
+  type Id = S['id']
+  type Tag = S extends Skill<any, any, infer T> ? T : never
+  type Rendered = S extends Skill<any, infer D, any> ? D : never
+  // `kind` is the name saved answers already use for the skill's id.
+  type Data = { kind: Id; params: Params }
+  type Filter = { skills?: readonly Id[]; tags?: readonly Tag[] }
 
-function bank<Q extends Record<string, unknown>>(set: Q) {
-  type Kind = keyof Q & string
-  type Tag = { [K in Kind]: Q[K] extends Question<any, any, infer T> ? T : never }[Kind]
-  type Rendered = { [K in Kind]: Q[K] extends Question<any, infer D, any> ? D : never }[Kind]
-  type Data = { kind: Kind; params: Params }
-  type Filter = { tags?: readonly Tag[]; kinds?: readonly Kind[] }
-
-  const questions = set as unknown as Record<Kind, Question<Params, Rendered, Tag>>
-  const kinds = Object.keys(questions) as [Kind, ...Kind[]]
-  const Data = v.object({ kind: v.picklist(kinds), params: Params })
+  if (list.length === 0) throw new Error('A question bank needs at least one skill')
+  const graph = prerequisiteGraph(list)
+  const byId = Object.fromEntries(list.map((s) => [s.id, s])) as unknown as Record<
+    Id,
+    Skill<Id, Rendered, Tag>
+  >
+  const skills = list.map((s) => s.id) as [Id, ...Id[]]
+  const Data = v.object({ kind: v.picklist(skills), params: Params })
 
   function available(filter: Filter = {}) {
-    return kinds.filter(
-      (kind) =>
-        (!filter.kinds || filter.kinds.includes(kind)) &&
-        (!filter.tags || questions[kind].tags?.some((tag) => filter.tags!.includes(tag))),
+    return skills.filter(
+      (id) =>
+        (!filter.skills || filter.skills.includes(id)) &&
+        (!filter.tags || byId[id].tags?.some((tag) => filter.tags!.includes(tag))),
     )
   }
 
   function generate(filter: Filter = {}, seed?: string | number): Data {
     const random = createRandom(seed)
-    const kind = random.sample(available(filter))
-    return { kind, params: questions[kind].generate(random) }
+    const id = random.sample(available(filter))
+    return { kind: id, params: byId[id].generate(random) }
   }
 
-  const render = (data: Data): Rendered => questions[data.kind].render(data.params)
+  const render = (data: Data): Rendered => byId[data.kind].render(data.params)
 
-  // The kind is saved with the parameters, so that a saved question is restored with its own step.
+  // The skill is saved with the parameters, so that a saved question is restored with its own step.
   const steps = Object.fromEntries(
-    kinds.map((kind) => [
-      kind,
+    skills.map((id) => [
+      id,
       createDerivedStep(
-        questions[kind].step,
-        { kind: v.literal(kind), params: Params },
-        ({ params }) => questions[kind].render(params) as any,
+        byId[id].step,
+        { kind: v.literal(id), params: Params },
+        ({ params }) => byId[id].render(params) as any,
       ),
     ]),
   ) as unknown as Record<string, Component<{ data: Data }>>
@@ -152,7 +161,7 @@ function bank<Q extends Record<string, unknown>>(set: Q) {
   }
 
   /**
-   * An endless sequence of questions from the bank, optionally restricted to some tags or kinds.
+   * An endless sequence of questions from the bank, optionally restricted to some skills or tags.
    * Resubmissions are off by default, as a new question follows each answer.
    */
   function Practice(props: Filter & { id: string; options?: Options<'input'> }) {
@@ -165,5 +174,12 @@ function bank<Q extends Record<string, unknown>>(set: Q) {
     )
   }
 
-  return { Practice, generate, render, kinds, available, steps }
+  /** Direct prerequisites only; they need not be in any bank. */
+  const prerequisitesOf = (id: Id | (string & {})): readonly AnySkill[] => {
+    const prerequisites = graph.get(id)
+    if (!prerequisites) throw new Error(`The skill "${id}" is not known to this bank`)
+    return prerequisites
+  }
+
+  return { Practice, generate, render, skills, available, steps, prerequisitesOf }
 }

@@ -12,7 +12,7 @@ globalThis.IntersectionObserver ??= class {
   }
 } as any
 
-const { createQuestionBank, defineQuestions } = await import('./bank')
+const { createQuestionBank, defineSkill } = await import('./bank')
 const { createStep } = await import('./base')
 const { createRandom } = await import('../random')
 
@@ -36,26 +36,28 @@ const Product = createStep({
   ),
 })
 
-const bank = createQuestionBank((question) => ({
-  small: question({
-    step: Sum,
-    tags: ['easy'],
-    generate: (random) => ({ n: random.int(1, 10) }),
-    render: ({ n }) => ({ a: n, b: 1 }),
-  }),
-  big: question({
-    step: Sum,
-    tags: ['hard'],
-    generate: (random) => ({ n: random.int(100, 1000) }),
-    render: ({ n }) => ({ a: n, b: n }),
-  }),
-  product: question({
-    step: Product,
-    tags: ['multiplication'],
-    generate: (random) => ({ n: random.int(2, 10) }),
-    render: ({ n }) => ({ x: n, y: 3 }),
-  }),
-}))
+const small = defineSkill('small', {
+  step: Sum,
+  tags: ['easy'],
+  generate: (random) => ({ n: random.int(1, 10) }),
+  render: ({ n }) => ({ a: n, b: 1 }),
+})
+
+const big = defineSkill('big', {
+  step: Sum,
+  tags: ['hard'],
+  generate: (random) => ({ n: random.int(100, 1000) }),
+  render: ({ n }) => ({ a: n, b: n }),
+})
+
+const product = defineSkill('product', {
+  step: Product,
+  tags: ['multiplication'],
+  generate: (random) => ({ n: random.int(2, 10) }),
+  render: ({ n }) => ({ x: n, y: 3 }),
+})
+
+const bank = createQuestionBank(small, big, product)
 
 describe('createRandom', () => {
   test('the same seed gives the same sequence', () => {
@@ -89,10 +91,10 @@ describe('createQuestionBank', () => {
     expect(bank.generate({}, 42)).toEqual(bank.generate({}, 42))
   })
 
-  test('generate only draws from the requested tags or kinds', () => {
+  test('generate only draws from the requested tags or skills', () => {
     for (let seed = 0; seed < 50; seed++) {
       expect(bank.generate({ tags: ['easy'] }, seed).kind).toBe('small')
-      expect(bank.generate({ kinds: ['big'] }, seed).kind).toBe('big')
+      expect(bank.generate({ skills: ['big'] }, seed).kind).toBe('big')
     }
   })
 
@@ -111,7 +113,7 @@ describe('createQuestionBank', () => {
   })
 
   test('a question can be answered with its own step', async () => {
-    render(() => <bank.Practice id="practice-product" kinds={['product']} />)
+    render(() => <bank.Practice id="practice-product" skills={['product']} />)
     await waitFor(() => expect(screen.getByTestId('product')).toHaveTextContent(/^\d+ × 3 = \?/))
   })
 
@@ -143,54 +145,115 @@ describe('createQuestionBank', () => {
   })
 })
 
-describe('composing question sets', () => {
-  const sums = defineQuestions((question) => ({
-    double: question({
+describe('skills', () => {
+  const sums = [
+    defineSkill('sums/double', {
       step: Sum,
-      tags: ['sums'],
+      tags: ['quick'],
       generate: (random) => ({ n: random.int(1, 10) }),
       render: ({ n }) => ({ a: n, b: n }),
     }),
-  }))
-  const products = defineQuestions((question) => ({
-    square: question({
+  ]
+  const products = [
+    defineSkill('products/square', {
       step: Product,
-      tags: ['products'],
       generate: (random) => ({ n: random.int(1, 10) }),
       render: ({ n }) => ({ x: n, y: n }),
     }),
-  }))
-  const combined = createQuestionBank(sums, products)
+  ]
+  const combined = createQuestionBank(...sums, ...products)
 
-  test('a bank draws from every set', () => {
+  test('a bank draws from every skill it is given', () => {
     const drawn = new Set(Array.from({ length: 50 }, (_, seed) => combined.generate({}, seed).kind))
-    expect([...drawn].sort()).toEqual(['double', 'square'])
+    expect([...drawn].sort()).toEqual(['products/square', 'sums/double'])
   })
 
-  test('each question is answered with its own step', async () => {
-    render(() => <combined.Practice id="combined-products" tags={['products']} />)
+  test('each skill is answered with its own step', async () => {
+    render(() => <combined.Practice id="combined-products" skills={['products/square']} />)
     await waitFor(() => expect(screen.getByTestId('product')).toHaveTextContent(/^(\d+) × \1 = \?/))
   })
 
-  test('tags and kinds are typed across sets', () => {
-    expect(combined.generate({ tags: ['sums'] }, 1).kind).toBe('double')
-    // @ts-expect-error: no question has this tag
+  test('ids and tags are typed across groups of skills', () => {
+    expect(combined.generate({ tags: ['quick'] }, 1).kind).toBe('sums/double')
+    // @ts-expect-error: no skill has this tag
     expect(() => combined.generate({ tags: ['typo'] })).toThrow()
+    // @ts-expect-error: no skill has this id
+    expect(() => combined.generate({ skills: ['sums/typo'] })).toThrow()
   })
 
-  test('every question must name its step', () => {
-    defineQuestions((question) => ({
-      // @ts-expect-error: the step is missing
-      missing: question({
-        generate: () => ({}),
-        render: () => ({ a: 1, b: 1 }),
-      }),
-    }))
+  test('every skill must name its step', () => {
+    // @ts-expect-error: the step is missing
+    defineSkill('missing', {
+      generate: () => ({}),
+      render: () => ({ a: 1, b: 1 }),
+    })
   })
 
-  test('a kind defined in two sets is rejected', () => {
-    expect(() => createQuestionBank(sums, sums)).toThrow(
-      'The question kind "double" is defined twice',
+  test('an id given to two skills is rejected', () => {
+    const impostor = defineSkill('sums/double', { ...sums[0]! })
+    expect(() => createQuestionBank(...sums, impostor)).toThrow(
+      'The skill id "sums/double" is defined twice',
     )
+    expect(() => createQuestionBank(...sums, ...sums)).toThrow(
+      'The skill id "sums/double" is defined twice',
+    )
+  })
+})
+
+describe('prerequisites', () => {
+  const skill = (id: string, prerequisites?: Parameters<typeof defineSkill>[1]['prerequisites']) =>
+    defineSkill(id, {
+      step: Sum,
+      prerequisites,
+      generate: () => ({}),
+      render: () => ({ a: 1, b: 1 }),
+    })
+
+  test('a bank knows the prerequisites of its skills, even those in no bank of theirs', () => {
+    const counting = skill('elsewhere/counting')
+    const addition = skill('elsewhere/addition', () => [counting])
+    const doubling = skill('doubling', () => [addition])
+    const practice = createQuestionBank(doubling)
+    expect(practice.skills).toEqual(['doubling'])
+    expect(practice.prerequisitesOf('doubling')).toEqual([addition])
+    expect(practice.prerequisitesOf('elsewhere/addition')).toEqual([counting])
+    expect(practice.prerequisitesOf('elsewhere/counting')).toEqual([])
+    expect(() => practice.prerequisitesOf('nowhere')).toThrow(
+      'The skill "nowhere" is not known to this bank',
+    )
+  })
+
+  test('are read lazily, so a skill may name one defined after it', () => {
+    const late: { current?: ReturnType<typeof skill> } = {}
+    const early = skill('early', () => [late.current!])
+    late.current = skill('late')
+    expect(createQuestionBank(early).prerequisitesOf('early')).toEqual([late.current])
+  })
+
+  test('must not form a cycle', () => {
+    const a: ReturnType<typeof skill> = skill('a', () => [b])
+    const b: ReturnType<typeof skill> = skill('b', () => [a])
+    expect(() => createQuestionBank(a)).toThrow('The prerequisites form a cycle: a → b → a')
+  })
+
+  test('must not reuse the id of another skill', () => {
+    const clash = skill('clash')
+    const other = skill('clash')
+    expect(() =>
+      createQuestionBank(
+        clash,
+        skill('needs', () => [other]),
+      ),
+    ).toThrow('The skill id "clash" is defined twice')
+  })
+
+  test('are skills', () => {
+    defineSkill('typed', {
+      step: Sum,
+      // @ts-expect-error: prerequisites are skills, not ids
+      prerequisites: () => ['small'],
+      generate: () => ({}),
+      render: () => ({ a: 1, b: 1 }),
+    })
   })
 })

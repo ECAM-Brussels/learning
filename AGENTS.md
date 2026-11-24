@@ -70,9 +70,9 @@ otherwise every component in MDX loses its types.
 
 # Generated exercises
 
-For randomised questions, use `createQuestionBank` from `@learning/core` (see `apps/ecam/src/routes/MN1M/exam.exercises.tsx`).
-Each question names the `step` that answers it.
-To share questions between banks, define them with `defineQuestions` and pass several sets to `createQuestionBank`.
+For randomised questions, define skills with `defineSkill` and pass them to `createQuestionBank`, both from `@learning/core` (see `apps/ecam/src/routes/MN1M/exam.exercises.tsx`).
+A skill's id is saved with students' answers: never change it, and namespace new ones (e.g. `'calculus/chain'`).
+Each skill names the `step` that answers its questions, and may list `prerequisites: () => [...]`, other skills from any module.
 Only the parameters returned by `generate` are saved, so `render` must be pure,
 and `generate` must draw from the `random` it receives (not `Math.random`) so questions can be reproduced from a seed in tests.
 With `MultipleChoice`, declare `answer` rather than `grade`: tests can then check every generated question.
