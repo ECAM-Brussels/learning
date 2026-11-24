@@ -11,7 +11,7 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
   en tenant en compte la **priorité des opérations**.
 - Connaître la syntaxe de base: `**` pour l'exponentiation (et non `^`),
   `.` comme séparateur décimal, `1.3e-9` pour la notation scientifique.
-- Connaître les fonctions usuelles de `math` (ou `numpy`):
+- Reconnaître les fonctions usuelles de `math` (ou `numpy`):
   `sqrt`, `sin`, `cos`, `exp`, `log` (logarithme **népérien**), `pi`, etc.
 - Savoir que les fonctions trigonométriques travaillent en **radians**
   et utiliser `radians` pour convertir des degrés.
@@ -19,8 +19,6 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
   et prédire quand un calcul perd de la précision (e.g. `1e14 + 0.001`).
 - Savoir si un nombre a une représentation binaire exacte:
   c'est le cas si et seulement si sa fraction simplifiée s'écrit {tex`\frac{p}{2^q}`}.
-- Convertir un nombre simple du binaire vers la base $10$ et inversement
-  (e.g. {tex`(\texttt{1101.11})_2 = 13.75`}).
 - Distinguer une liste Python d'un vecteur `np.array`:
   `+` concatène les listes mais additionne les vecteurs.
 - Accéder à un élément d'une liste, sachant que la numérotation commence à $0$.
@@ -38,7 +36,6 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
 - Le nombre $0.4$ est-il stocké de manière exacte dans la mémoire de l'ordinateur?
 - Parmi les nombres suivants, lequel est représentable exactement en binaire:
   $0.1$, $0.3$, $0.375$ ou {tex`\frac 1 3`}?
-- Que vaut le nombre binaire {tex`(\texttt{101.01})_2`} en base $10$?
 - Quel est le résultat de `1e16 + 1 - 1e16`?
 - Quel est le résultat de `[1, 2] + [3, 4]`?
 - Quel est le résultat du code suivant:
@@ -81,9 +78,6 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
   $n$ points uniformément espacés, $a$ et $b$ **inclus**, avec un écart de {tex`\frac{b - a}{n - 1}`}.
 - Tracer un graphe avec `plt.plot(x, y)`, où `x` et `y` ont la même dimension.
 - Comprendre que les graphes d'une fonction sont en fait linéaires par morceaux
-- Reconnaître le rôle des instructions de personnalisation:
-  `plt.title`, `plt.xlabel`, `plt.ylabel`, `plt.grid`, `plt.axhline`, `plt.axvline`, `plt.legend`.
-- Comprendre `plt.subplot(i, j, n)`: $n$-ième graphique d'une grille de $i$ lignes et $j$ colonnes.
 
 ### Exemples de questions
 
@@ -141,8 +135,6 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
   ```
 
 - Combien de segments de droite sont tracés par `plt.plot([0, 1, 2], [1, 3, 2])`?
-- Quelle instruction trace l'axe horizontal $y = 0$: `plt.axhline(0)` ou `plt.axvline(0)`?
-- Après `plt.subplot(2, 3, 4)`, où se trouve le graphique sélectionné?
 - Vrai ou faux: les graphes sur Matplotlib ne sont en réalité pas lisses
   et sont composés de segment de droites.
 
