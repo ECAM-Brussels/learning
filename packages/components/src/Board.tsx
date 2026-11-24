@@ -5,6 +5,7 @@ import 'katex/dist/katex.min.css'
 import {
   createContext,
   createEffect,
+  createMemo,
   createSignal,
   deep,
   merge,
@@ -12,6 +13,7 @@ import {
   onSettled,
   Show,
   snapshot,
+  untrack,
   useContext,
 } from 'solid-js'
 import { Boundary } from './Boundary'
@@ -44,6 +46,23 @@ declare global {
       element2D: Point
     }
 
+    interface Slider {
+      point1: JXG.Point
+      point2: JXG.Point
+    }
+
+    interface Curve {
+      /** The domain of an implicit curve, or null for the whole board. */
+      domain: [[number, number], [number, number]] | null
+    }
+
+    // Not in JSXGraph's types.
+    type Surface3D = Omit<GeometryElement, 'setPosition'>
+    interface Surface3DAttributes extends GeometryElementAttributes {
+      stepsU?: number
+      stepsV?: number
+    }
+
     interface View3D {
       objects: Record<string, GeometryElement>
       removeObject(object: unknown): this
@@ -64,7 +83,17 @@ declare global {
 export const BoardContext = createContext<() => JXG.Board | null>(() => null)
 export const View3DContext = createContext<() => JXG.View3D | null>(() => null)
 
+type Coords = [number, number]
 type Coords3D = [number, number, number]
+type Domain2D = [[number, number], [number, number]]
+
+/** Tracks the items of an array prop; other values (absent props, JSXGraph elements) are tracked as a whole. */
+const deepArray = <T,>(value: T): T => (Array.isArray(value) ? deep(value) : value)
+
+/** Redraws after a change that JSXGraph picks up through the functions it was given. */
+const refresh = (el: { board: JXG.Board }) => {
+  el.board.update()
+}
 
 Reflect.set(globalThis, 'katex', katex)
 JXG.Options.text.useKatex = true
@@ -122,7 +151,7 @@ export const Board = Object.assign(
         <Element type="angle" parent={props.points} attrs={attrs}>
           {(angle: JXG.Angle) => {
             createEffect(
-              () => deep(props.points),
+              () => deepArray(props.points),
               ([p1, p2, p3]) => {
                 angle.radiuspoint.moveTo(p1)
                 angle.center.moveTo(p2)
@@ -150,7 +179,7 @@ export const Board = Object.assign(
         <Element type="arc" parent={props.points} attrs={attrs}>
           {(arc: JXG.Arc) => {
             createEffect(
-              () => deep(props.points),
+              () => deepArray(props.points),
               ([center, radius, angle]) => {
                 arc.center.moveTo(center)
                 arc.radiuspoint.moveTo(radius)
@@ -365,22 +394,28 @@ export const Board = Object.assign(
     Plot: (
       props: {
         fn: (x: number) => number
-        domain?: [number, number]
+        /** The whole board's width if omitted. */
+        domain?: Coords
         children?: (plot: JXG.Functiongraph) => JSX.Element
       } & JXG.FunctiongraphAttributes,
     ) => {
       const attrs = omit(props, 'fn', 'domain', 'children')
+      // Fixed wrappers keep plot.Y the same function, which elements built on the plot (e.g. Derivative) rely on.
       return (
-        <Element type="functiongraph" parent={[props.fn, ...(props.domain ?? [])]} attrs={attrs}>
+        <Element
+          type="functiongraph"
+          parent={[
+            (x: number) => props.fn(x),
+            ...(props.domain
+              ? [() => props.domain?.[0] ?? NaN, () => props.domain?.[1] ?? NaN]
+              : []),
+          ]}
+          attrs={attrs}
+        >
           {(plot: JXG.Functiongraph) => {
             createEffect(
-              () => [props.fn, props.domain] as const,
-              ([fn, domain]) => {
-                plot.generateTerm('x', 'x', fn, domain?.[0], domain?.[1])
-                plot.update()
-                plot.updateRenderer()
-                plot.board?.update()
-              },
+              () => [props.fn, deepArray(props.domain)],
+              () => refresh(plot),
             )
             return props.children?.(plot)
           }}
@@ -434,7 +469,7 @@ export const Board = Object.assign(
         >
           {(riemannsum: JXG.Riemannsum) => {
             createEffect(
-              () => [props.f, props.n, props.type, props.domain] as const,
+              () => [props.f, props.n, props.type, deepArray(props.domain)] as const,
               () => {
                 riemannsum.update()
                 riemannsum.updateRenderer()
@@ -462,7 +497,7 @@ export const Board = Object.assign(
         <Element type="sector" parent={props.points} attrs={attrs}>
           {(sector: JXG.Sector) => {
             createEffect(
-              () => deep(props.points),
+              () => deepArray(props.points),
               ([center, radius, angle]) => {
                 sector.center.moveTo(center)
                 sector.radiuspoint.moveTo(radius)
@@ -497,6 +532,265 @@ export const Board = Object.assign(
         </Element>
       )
     },
+    Slider: (
+      props: {
+        from: Coords
+        to: Coords
+        min: number
+        max: number
+        value: number
+        onChange?: (value: number) => void
+        children?: (slider: JXG.Slider) => JSX.Element
+      } & JXG.SliderAttributes,
+    ) => {
+      const attrs = omit(props, 'from', 'to', 'min', 'max', 'value', 'onChange', 'children')
+      return (
+        <Element
+          type="slider"
+          parent={[props.from, props.to, [props.min, props.value, props.max]]}
+          attrs={attrs}
+        >
+          {(slider: JXG.Slider) => {
+            createEffect(
+              () =>
+                [
+                  deepArray(props.from),
+                  deepArray(props.to),
+                  props.min,
+                  props.max,
+                  props.value,
+                ] as const,
+              ([from, to, min, max, value]) => {
+                slider.point1.moveTo(from)
+                slider.point2.moveTo(to)
+                slider.setMin(min).setMax(max)
+                // Setting the value it already has would undo the snapping of a drag.
+                if (slider.Value() !== value) slider.setValue(value)
+                refresh(slider)
+              },
+            )
+            createEffect(
+              () => props.onChange,
+              (onChange) => {
+                if (!onChange) return
+                const handler = () => onChange(slider.Value())
+                slider.on('drag', handler)
+                return () => slider.off('drag', handler)
+              },
+            )
+            return props.children?.(slider)
+          }}
+        </Element>
+      )
+    },
+    /** The tangent to a curve, line or circle at a glider on it. */
+    Tangent: (
+      props: {
+        at: JXG.Glider
+        children?: (tangent: JXG.Tangent) => JSX.Element
+      } & JXG.TangentAttributes,
+    ) => {
+      const attrs = omit(props, 'at', 'children')
+      return (
+        <Element type="tangent" parent={[props.at]} attrs={attrs}>
+          {(tangent: JXG.Tangent) => props.children?.(tangent)}
+        </Element>
+      )
+    },
+    /** The normal to a curve, line or circle at a glider on it. */
+    Normal: (
+      props: {
+        at: JXG.Glider
+        children?: (normal: JXG.Normal) => JSX.Element
+      } & JXG.NormalAttributes,
+    ) => {
+      const attrs = omit(props, 'at', 'children')
+      return (
+        <Element type="normal" parent={[props.at]} attrs={attrs}>
+          {(normal: JXG.Normal) => props.children?.(normal)}
+        </Element>
+      )
+    },
+    /** A parametric curve t ↦ fn(t) for t in the domain. */
+    Curve: (
+      props: {
+        fn: (t: number) => Coords
+        domain: Coords
+        children?: (curve: JXG.Curve) => JSX.Element
+      } & JXG.CurveAttributes,
+    ) => {
+      const attrs = omit(props, 'fn', 'domain', 'children')
+      return (
+        <Element
+          type="curve"
+          parent={[
+            (t: number) => props.fn(t)[0],
+            (t: number) => props.fn(t)[1],
+            () => props.domain[0],
+            () => props.domain[1],
+          ]}
+          attrs={attrs}
+        >
+          {(curve: JXG.Curve) => {
+            createEffect(
+              () => [props.fn, deepArray(props.domain)],
+              () => refresh(curve),
+            )
+            return props.children?.(curve)
+          }}
+        </Element>
+      )
+    },
+    /** A polar curve θ ↦ r(θ) around a center, for θ in the domain. */
+    PolarCurve: (
+      props: {
+        r: (theta: number) => number
+        /** The origin if omitted. */
+        center?: Coords
+        /** [0, 2π] if omitted. */
+        domain?: Coords
+        children?: (curve: JXG.Curve) => JSX.Element
+      } & JXG.CurveAttributes,
+    ) => {
+      const attrs = omit(props, 'r', 'center', 'domain', 'children')
+      return (
+        <Element
+          type="curve"
+          parent={[
+            (theta: number) => props.r(theta),
+            [() => props.center?.[0] ?? 0, () => props.center?.[1] ?? 0],
+            () => props.domain?.[0] ?? 0,
+            () => props.domain?.[1] ?? 2 * Math.PI,
+          ]}
+          attrs={attrs}
+        >
+          {(curve: JXG.Curve) => {
+            createEffect(
+              () => [props.r, deepArray(props.center), deepArray(props.domain)],
+              () => refresh(curve),
+            )
+            return props.children?.(curve)
+          }}
+        </Element>
+      )
+    },
+    /** The derivative of a curve, computed numerically. */
+    Derivative: (
+      props: {
+        of: JXG.Curve
+        children?: (derivative: JXG.Curve) => JSX.Element
+      } & JXG.CurveAttributes,
+    ) => {
+      const attrs = omit(props, 'of', 'children')
+      return (
+        <Element type="derivative" parent={[props.of]} attrs={attrs}>
+          {(derivative: JXG.Curve) => {
+            // JSXGraph copies the curve's domain when it creates the derivative.
+            derivative.minX = () => props.of.minX()
+            derivative.maxX = () => props.of.maxX()
+            return props.children?.(derivative)
+          }}
+        </Element>
+      )
+    },
+    /** The curve fn(x, y) = 0. */
+    ImplicitCurve: (
+      props: {
+        fn: (x: number, y: number) => number
+        /** The whole board if omitted. */
+        domain?: Domain2D
+        children?: (curve: JXG.Curve) => JSX.Element
+      } & JXG.CurveAttributes,
+    ) => {
+      const attrs = omit(props, 'fn', 'domain', 'children')
+      return (
+        <Element
+          type="implicitcurve"
+          parent={[(x: number, y: number) => props.fn(x, y)]}
+          attrs={attrs}
+        >
+          {(curve: JXG.Curve) => {
+            // A domain given as parents could be mistaken for the partial derivatives.
+            createEffect(
+              () => [props.fn, deepArray(props.domain)] as const,
+              ([, domain]) => {
+                curve.domain = domain ?? null
+                refresh(curve)
+              },
+            )
+            return props.children?.(curve)
+          }}
+        </Element>
+      )
+    },
+    /** Arrows showing fn(x, y) on a grid over the domain. */
+    VectorField: (
+      props: {
+        fn: (x: number, y: number) => Coords
+        domain: Domain2D
+        /** Number of arrows along each axis, 10 if omitted. */
+        steps?: number
+        children?: (field: JXG.Curve) => JSX.Element
+      } & JXG.CurveAttributes,
+    ) => {
+      const attrs = omit(props, 'fn', 'domain', 'steps', 'children')
+      return (
+        <Element
+          type="vectorfield"
+          parent={fieldParents(props, (x, y) => props.fn(x, y))}
+          attrs={attrs}
+        >
+          {(field: JXG.Curve) => {
+            createEffect(
+              () => [props.fn, deepArray(props.domain), props.steps],
+              () => refresh(field),
+            )
+            return props.children?.(field)
+          }}
+        </Element>
+      )
+    },
+    /** Segments of slope fn(x, y) on a grid over the domain, for y' = fn(x, y). */
+    SlopeField: (
+      props: {
+        fn: (x: number, y: number) => number
+        domain: Domain2D
+        /** Number of segments along each axis, 10 if omitted. */
+        steps?: number
+        children?: (field: JXG.Curve) => JSX.Element
+      } & JXG.CurveAttributes,
+    ) => {
+      const attrs = omit(props, 'fn', 'domain', 'steps', 'children')
+      return (
+        <Element
+          type="slopefield"
+          parent={fieldParents(props, (x, y) => props.fn(x, y))}
+          attrs={attrs}
+        >
+          {(field: JXG.Curve) => {
+            createEffect(
+              () => [props.fn, deepArray(props.domain), props.steps],
+              () => refresh(field),
+            )
+            return props.children?.(field)
+          }}
+        </Element>
+      )
+    },
+    /** The region below a line or the graph of a function, or above it with `inverse`. */
+    Inequality: (
+      props: {
+        of: JXG.Line | JXG.Curve
+        children?: (region: JXG.Inequality) => JSX.Element
+      } & JXG.InequalityAttributes & { inverse?: boolean },
+    ) => {
+      const attrs = omit(props, 'of', 'children')
+      return (
+        <Element type="inequality" parent={[props.of]} attrs={attrs}>
+          {(region: JXG.Inequality) => props.children?.(region)}
+        </Element>
+      )
+    },
     View3D: (
       props: {
         /** Lower-left corner of the view on the board. */
@@ -517,7 +811,7 @@ export const Board = Object.assign(
         >
           {(view: JXG.View3D) => {
             createEffect(
-              () => deep(props.bounds),
+              () => deepArray(props.bounds),
               (bounds) => {
                 Reflect.set(view, 'bbox3D', bounds)
                 view.board.update()
@@ -531,13 +825,20 @@ export const Board = Object.assign(
     Point3D: (
       props: {
         position: Coords3D
+        /** A 3D element (surface, curve, line, plane…) the point slides on. */
+        on?: Pick<JXG.GeometryElement, 'board' | 'id'>
         children?: (point: JXG.Point3D) => JSX.Element
         onDrag?: (point: JXG.Point3D) => void
       } & JXG.Point3DAttributes,
     ) => {
-      const attrs = omit(props, 'position', 'children', 'onDrag')
+      const attrs = omit(props, 'position', 'on', 'children', 'onDrag')
       return (
-        <Element type="point3d" view parent={props.position} attrs={attrs}>
+        <Element
+          type="point3d"
+          view
+          parent={props.on ? [props.position, props.on] : props.position}
+          attrs={attrs}
+        >
           {(point: JXG.Point3D) => {
             createEffect(
               () => props.onDrag,
@@ -553,7 +854,7 @@ export const Board = Object.assign(
               },
             )
             createEffect(
-              () => deep(props.position),
+              () => deepArray(props.position),
               (position) => {
                 point.setPosition(position)
                 point.board.update()
@@ -579,7 +880,7 @@ export const Board = Object.assign(
             // Points given as elements move on their own; only coordinates are ours to update.
             const { point1, point2 } = vector as unknown as Record<'point1' | 'point2', JXG.Point3D>
             createEffect(
-              () => [deep(props.from), deep(props.to)] as const,
+              () => [deepArray(props.from), deepArray(props.to)] as const,
               ([from, to]) => {
                 if (Array.isArray(from)) point1.setPosition(from)
                 if (Array.isArray(to)) point2.setPosition(to)
@@ -587,6 +888,159 @@ export const Board = Object.assign(
               },
             )
             return props.children?.(vector)
+          }}
+        </Element>
+      )
+    },
+    /** The surface z = fn(x, y) over the domain. */
+    Plot3D: (
+      props: {
+        fn: (x: number, y: number) => number
+        domain: Domain2D
+        children?: (surface: JXG.Surface3D) => JSX.Element
+      } & JXG.Surface3DAttributes,
+    ) => {
+      const attrs = omit(props, 'fn', 'domain', 'children')
+      return (
+        <Element
+          type="functiongraph3d"
+          view
+          parent={[
+            (x: number, y: number) => props.fn(x, y),
+            liveRange(() => props.domain[0]),
+            liveRange(() => props.domain[1]),
+          ]}
+          attrs={attrs}
+        >
+          {(surface: JXG.Surface3D) => {
+            createEffect(
+              () => [props.fn, deepArray(props.domain)],
+              () => refresh(surface),
+            )
+            return props.children?.(surface)
+          }}
+        </Element>
+      )
+    },
+    /** A parametric surface (u, v) ↦ fn(u, v) over the domain. */
+    Surface3D: (
+      props: {
+        fn: (u: number, v: number) => Coords3D
+        domain: Domain2D
+        children?: (surface: JXG.Surface3D) => JSX.Element
+      } & JXG.Surface3DAttributes,
+    ) => {
+      const attrs = omit(props, 'fn', 'domain', 'children')
+      return (
+        <Element
+          type="parametricsurface3d"
+          view
+          parent={[
+            (u: number, v: number) => props.fn(u, v),
+            liveRange(() => props.domain[0]),
+            liveRange(() => props.domain[1]),
+          ]}
+          attrs={attrs}
+        >
+          {(surface: JXG.Surface3D) => {
+            createEffect(
+              () => [props.fn, deepArray(props.domain)],
+              () => refresh(surface),
+            )
+            return props.children?.(surface)
+          }}
+        </Element>
+      )
+    },
+    /** A space curve t ↦ fn(t) for t in the domain. */
+    Curve3D: (
+      props: {
+        fn: (t: number) => Coords3D
+        domain: Coords
+        children?: (curve: JXG.Curve3D) => JSX.Element
+      } & JXG.Curve3DAttributes,
+    ) => {
+      const attrs = omit(props, 'fn', 'domain', 'children')
+      return (
+        <Element
+          type="curve3d"
+          view
+          parent={[(t: number) => props.fn(t), liveRange(() => props.domain)]}
+          attrs={attrs}
+        >
+          {(curve: JXG.Curve3D) => {
+            createEffect(
+              () => [props.fn, deepArray(props.domain)],
+              () => refresh(curve),
+            )
+            return props.children?.(curve)
+          }}
+        </Element>
+      )
+    },
+    /** The line through a point along a direction, limited to a range of multiples of it if given. */
+    Line3D: (
+      props: {
+        point: Coords3D | JXG.Point3D
+        direction: Coords3D
+        range?: Coords
+        children?: (line: JXG.Line3D) => JSX.Element
+      } & JXG.Line3DAttributes,
+    ) => {
+      const attrs = omit(props, 'point', 'direction', 'range', 'children')
+      return (
+        <Element
+          type="line3d"
+          view
+          parent={[
+            point3D(() => props.point),
+            () => props.direction,
+            // Without a range, JSXGraph would take the direction for a second point.
+            [() => props.range?.[0] ?? -Infinity, () => props.range?.[1] ?? Infinity],
+          ]}
+          attrs={attrs}
+        >
+          {(line: JXG.Line3D) => {
+            createEffect(
+              () => [deepArray(props.point), deepArray(props.direction), deepArray(props.range)],
+              () => refresh(line),
+            )
+            return props.children?.(line)
+          }}
+        </Element>
+      )
+    },
+    /** The plane through a point spanned by two directions, limited to ranges of multiples of them if given. */
+    Plane3D: (
+      props: {
+        point: Coords3D | JXG.Point3D
+        directions: [Coords3D, Coords3D]
+        range?: Domain2D
+        children?: (plane: JXG.Plane3D) => JSX.Element
+      } & JXG.Plane3DAttributes,
+    ) => {
+      const attrs = omit(props, 'point', 'directions', 'range', 'children')
+      const bound = (i: 0 | 1, end: 0 | 1) => () =>
+        props.range?.[i][end] ?? (end === 0 ? -Infinity : Infinity)
+      return (
+        <Element
+          type="plane3d"
+          view
+          parent={[
+            point3D(() => props.point),
+            () => props.directions[0],
+            () => props.directions[1],
+            [bound(0, 0), bound(0, 1)],
+            [bound(1, 0), bound(1, 1)],
+          ]}
+          attrs={attrs}
+        >
+          {(plane: JXG.Plane3D) => {
+            createEffect(
+              () => [deepArray(props.point), deepArray(props.directions), deepArray(props.range)],
+              () => refresh(plane as unknown as { board: JXG.Board }),
+            )
+            return props.children?.(plane)
           }}
         </Element>
       )
@@ -626,14 +1080,49 @@ export const Board = Object.assign(
   },
 )
 
+/**
+ * A range whose ends are read when JSXGraph reads them.
+ * JSXGraph reads some ranges whole and others end by end, so neither a function nor a pair of functions would do.
+ */
+function liveRange(range: () => Coords): Coords {
+  return Object.defineProperties([0, 0], {
+    0: { get: () => range()[0] },
+    1: { get: () => range()[1] },
+  }) as Coords
+}
+
+/** A point element as is, or coordinates as functions so that the point follows them. */
+function point3D(point: () => Coords3D | JXG.Point3D) {
+  const p = point()
+  return Array.isArray(p) ? ([0, 1, 2] as const).map((i) => () => (point() as Coords3D)[i]) : p
+}
+
+function fieldParents(
+  props: { domain: Domain2D; steps?: number },
+  fn: (x: number, y: number) => unknown,
+) {
+  const axis = (i: 0 | 1) => [
+    () => props.domain[i][0],
+    () => props.steps ?? 10,
+    () => props.domain[i][1],
+  ]
+  return [fn, axis(0), axis(1)]
+}
+
+const isElement = (value: unknown) =>
+  typeof value === 'object' && value !== null && 'board' in value && 'id' in value
+
 function Element<T extends Pick<JXG.GeometryElement, 'setAttribute' | 'update'>>(props: {
   type: string
   /** Create the element in the enclosing `View3D` rather than on the board. */
   view?: boolean
+  /**
+   * The element is recreated when a parent element is swapped or a parent changes kind (e.g. a domain is added).
+   * Other changes are for each component to apply, typically through functions given as parents.
+   */
   parent: unknown[]
   attrs?: Record<string, unknown>
   children?: (el: T) => JSX.Element
-  onParentChange?: (el: T, parent: unknown[]) => void
   beforeRemove?: (el: T) => void
 }) {
   const board = useContext(BoardContext)
@@ -650,23 +1139,28 @@ function Element<T extends Pick<JXG.GeometryElement, 'setAttribute' | 'update'>>
     return next
   }
 
-  onSettled(() => {
-    const parent = container()
-    if (!parent)
-      throw new Error(`<${props.type}> must be placed inside a ${props.view ? 'View3D' : 'Board'}`)
-    const created = (parent.create as (...args: unknown[]) => T)(props.type, props.parent, attrs())
-    setEl(() => created)
-    return () => {
-      props.beforeRemove?.(created)
-      parent.removeObject(created as unknown as JXG.GeometryElement)
-    }
-  })
+  const shape = createMemo(
+    () => props.parent.map((p) => (isElement(p) ? p : Array.isArray(p) ? 'array' : typeof p)),
+    {
+      name: 'parent-shape',
+      equals: (a, b) => a.length === b.length && a.every((x, i) => x === b[i]),
+    },
+  )
 
   createEffect(
-    () => [el(), deep(props.parent)] as const,
-    ([el, position]) => {
-      if (el) {
-        props.onParentChange?.(el, position)
+    () => [container(), shape()] as const,
+    ([parent]) => {
+      if (!parent)
+        throw new Error(
+          `<${props.type}> must be placed inside a ${props.view ? 'View3D' : 'Board'}`,
+        )
+      const created = untrack(() =>
+        (parent.create as (...args: unknown[]) => T)(props.type, props.parent, attrs()),
+      )
+      setEl(() => created)
+      return () => {
+        props.beforeRemove?.(created)
+        parent.removeObject(created as unknown as JXG.GeometryElement)
       }
     },
   )

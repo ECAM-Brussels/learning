@@ -43,6 +43,17 @@ Components in that file are meant to be _declarative versions_ of their associat
 They are not yet comprehensive or complete.
 By any means improve them, but ensure they are compatible with Solid's reactivity system and are declarative.
 
+A function prop such as `fn` redraws when the function is replaced, not when a signal read inside it changes:
+derive the function from its signals, reading them outside the function it returns.
+
+```tsx
+const f = createMemo(() => {
+  const c = k()
+  return (x: number) => c * x
+})
+<Board.Plot fn={f()} />
+```
+
 # MDX pages
 
 Keep MDX files mostly prose: TypeScript tooling (type errors, autocompletion, refactoring) works poorly inside MDX.

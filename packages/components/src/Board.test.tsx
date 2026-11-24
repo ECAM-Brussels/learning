@@ -1,7 +1,7 @@
 import { render, waitFor } from '@solidjs/testing-library'
 import type { JSX } from '@solidjs/web'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import { createSignal, flush, Show } from 'solid-js'
+import { createMemo, createSignal, flush, Show } from 'solid-js'
 
 // happy-dom lacks the SVG rendering methods JSXGraph calls.
 Object.assign(SVGElement.prototype, {
@@ -11,6 +11,16 @@ Object.assign(SVGElement.prototype, {
   forceRedraw: () => {},
   getBBox: () => ({ x: 0, y: 0, width: 0, height: 0 }),
 })
+// happy-dom does no layout, so boards would have no size, which breaks anything measured in pixels.
+// The board's container is the element with the rounded-xl class from Board.tsx.
+for (const key of ['clientWidth', 'clientHeight', 'offsetWidth', 'offsetHeight']) {
+  Object.defineProperty(HTMLElement.prototype, key, {
+    configurable: true,
+    get(this: HTMLElement) {
+      return this.classList.contains('rounded-xl') ? 500 : 0
+    },
+  })
+}
 const { Board } = await import('./Board')
 const { Boundary } = await import('./Boundary')
 
@@ -21,10 +31,13 @@ const xy = (p: XY) => [p.X() + 0, p.Y() + 0]
 const xyz = (p: XYZ) => [p.X() + 0, p.Y() + 0, p.Z() + 0]
 // Not in JSXGraph's types for every element that has it.
 const value = (el: unknown) => (el as { Value(): number }).Value()
+const slope = (line: unknown) => (line as { getSlope(): number }).getSlope()
 
 /** Simulates what the board does on a pointer drag, which happy-dom cannot dispatch. */
 function drag(point: JXG.Point, to: [number, number]) {
   point.setPosition(JXG.COORDS_BY_USER, to)
+  // The board updates the dragged element before firing `drag`, e.g. so that a glider knows its position.
+  point.update()
   ;(
     point as unknown as { triggerEventHandlers(e: string[], a: unknown[]): void }
   ).triggerEventHandlers(['drag'], [{}])
@@ -45,6 +58,26 @@ const bounds: [[number, number], [number, number], [number, number]] = [
   [-5, 5],
   [-5, 5],
 ]
+
+/** Like renderBoard, inside a 3D view. */
+function renderView<T>(children: (ref: (el: T) => null) => JSX.Element) {
+  return renderBoard<T>((ref) => (
+    <Board.View3D position={[-6, -3]} size={[8, 8]} bounds={bounds}>
+      {children(ref)}
+    </Board.View3D>
+  ))
+}
+
+/** The points of a curve, without the NaNs that separate its pieces. */
+function points(curve: { dataX: number[]; dataY: number[] }) {
+  return curve.dataX
+    .map((x, i) => [x, curve.dataY[i]!] as const)
+    .filter(([x, y]) => !Number.isNaN(x) && !Number.isNaN(y))
+}
+
+type Data = { dataX: number[]; dataY: number[] }
+
+const unit = (v: number[]) => v.map((x) => x / Math.hypot(...v))
 
 describe('Board', () => {
   // Boundary logs the errors it shows, which some of these tests trigger on purpose.
@@ -227,10 +260,7 @@ describe('2D elements', () => {
     ]
     const [points, setPoints] = createSignal(quarter)
     const { el } = await renderBoard<JXG.Angle>((ref) => (
-      // A fixed radius, as the default is in screen pixels and the test board has no size.
-      <Board.Angle points={points()} radius={1}>
-        {ref}
-      </Board.Angle>
+      <Board.Angle points={points()}>{ref}</Board.Angle>
     ))
     expect(value(el())).toBeCloseTo(Math.PI / 2)
     setPoints(at(quarter, 2, 3))
@@ -448,5 +478,456 @@ describe('3D elements', () => {
     ]
     setBox(next)
     await waitFor(() => expect(Reflect.get(el(), 'bbox3D')).toEqual(next))
+  })
+})
+
+describe('calculus elements', () => {
+  const square = () => (x: number) => x * x
+  const cube = () => (x: number) => x ** 3
+
+  test('Slider follows its props and reports drags', async () => {
+    const [value, setValue] = createSignal(5)
+    const [max, setMax] = createSignal(10)
+    const [from, setFrom] = createSignal<[number, number]>([0, 0])
+    const changes: number[] = []
+    const { el } = await renderBoard<JXG.Slider>((ref) => (
+      <Board.Slider
+        from={from()}
+        to={[4, 0]}
+        min={0}
+        max={max()}
+        value={value()}
+        onChange={(v) => changes.push(v)}
+      >
+        {ref}
+      </Board.Slider>
+    ))
+    expect(el().Value()).toBe(5)
+    expect(el().X()).toBe(2)
+    setValue(2)
+    await waitFor(() => expect(el().Value()).toBe(2))
+    setMax(20)
+    await waitFor(() => expect(el().X()).toBeCloseTo(0.4))
+    expect(el().Value()).toBeCloseTo(2)
+    setFrom([-4, 0])
+    await waitFor(() => expect(xy(el().point1)).toEqual([-4, 0]))
+    drag(el(), [0, 0])
+    expect(changes).toEqual([10])
+  })
+
+  test('Tangent and Normal follow the glider they are at', async () => {
+    const [x, setX] = createSignal(1)
+    let normal: JXG.Normal | undefined
+    const { el } = await renderBoard<JXG.Tangent>((ref) => (
+      <Board.Plot fn={(t) => t * t}>
+        {(plot) => (
+          <Board.Glider position={[x(), x() ** 2]} on={plot}>
+            {(glider) => (
+              <>
+                <Board.Tangent at={glider}>{ref}</Board.Tangent>
+                <Board.Normal at={glider}>{(n) => ((normal = n), null)}</Board.Normal>
+              </>
+            )}
+          </Board.Glider>
+        )}
+      </Board.Plot>
+    ))
+    expect(slope(el())).toBeCloseTo(2)
+    expect(slope(normal!)).toBeCloseTo(-0.5)
+    setX(2)
+    await waitFor(() => expect(slope(el())).toBeCloseTo(4))
+    expect(slope(normal!)).toBeCloseTo(-0.25)
+  })
+
+  test('Tangent is rebuilt at another glider', async () => {
+    const [second, setSecond] = createSignal(false)
+    const { el } = await renderBoard<JXG.Tangent>((ref) => (
+      <Board.Plot fn={(t) => t * t}>
+        {(plot) => (
+          <Board.Glider position={[1, 1]} on={plot}>
+            {(first) => (
+              <Board.Glider position={[3, 9]} on={plot}>
+                {(other) => <Board.Tangent at={second() ? other : first}>{ref}</Board.Tangent>}
+              </Board.Glider>
+            )}
+          </Board.Glider>
+        )}
+      </Board.Plot>
+    ))
+    const before = el()
+    expect(slope(before)).toBeCloseTo(2)
+    setSecond(true)
+    await waitFor(() => expect(slope(el())).toBeCloseTo(6))
+    expect(before.id in before.board.objects).toBe(false)
+  })
+
+  test('Plot is not redrawn for a signal read only inside its function', async () => {
+    const [k, setK] = createSignal(1)
+    const { el } = await renderBoard<JXG.Functiongraph>((ref) => (
+      <Board.Plot fn={(x) => k() * x}>{ref}</Board.Plot>
+    ))
+    const drawnSlope = () => {
+      const { points } = el() as unknown as { points: { usrCoords: number[] }[] }
+      const [, x, y] = points.find(({ usrCoords }) => usrCoords[1]! > 0.5)!.usrCoords
+      return y! / x!
+    }
+    expect(drawnSlope()).toBeCloseTo(1)
+    setK(3)
+    flush()
+    expect(drawnSlope()).toBeCloseTo(1)
+  })
+
+  test('Plot is rebuilt when it gains a domain', async () => {
+    const [domain, setDomain] = createSignal<[number, number]>()
+    const { el } = await renderBoard<JXG.Functiongraph>((ref) => (
+      <Board.Plot fn={(x) => x} domain={domain()}>
+        {ref}
+      </Board.Plot>
+    ))
+    const before = el()
+    setDomain([1, 2])
+    await waitFor(() => expect(el() === before).toBe(false))
+    expect([el().minX(), el().maxX()]).toEqual([1, 2])
+    expect(before.id in before.board.objects).toBe(false)
+  })
+
+  test('Curve follows its function and domain', async () => {
+    const [radius, setRadius] = createSignal(1)
+    const [domain, setDomain] = createSignal<[number, number]>([0, Math.PI])
+    const { el } = await renderBoard<JXG.Curve>((ref) => {
+      const circle = createMemo(() => {
+        const r = radius()
+        return (t: number): [number, number] => [r * Math.cos(t), r * Math.sin(t)]
+      })
+      return (
+        <Board.Curve fn={circle()} domain={domain()}>
+          {ref}
+        </Board.Curve>
+      )
+    })
+    expect([el().X(0, false), el().Y(Math.PI / 2, false)]).toEqual([1, 1])
+    setRadius(2)
+    await waitFor(() => expect(el().X(0, false)).toBe(2))
+    setDomain([0, 1])
+    await waitFor(() => expect([el().minX(), el().maxX()]).toEqual([0, 1]))
+  })
+
+  test('PolarCurve follows its radius, center and domain', async () => {
+    const [center, setCenter] = createSignal<[number, number]>()
+    const [domain, setDomain] = createSignal<[number, number]>()
+    const { el } = await renderBoard<JXG.Curve>((ref) => (
+      <Board.PolarCurve r={(theta) => 1 + theta} center={center()} domain={domain()}>
+        {ref}
+      </Board.PolarCurve>
+    ))
+    expect([el().X(0, false), el().Y(0, false)]).toEqual([1, 0])
+    expect([el().minX(), el().maxX()]).toEqual([0, 2 * Math.PI])
+    setCenter([2, 3])
+    await waitFor(() => expect([el().X(0, false), el().Y(0, false)]).toEqual([3, 3]))
+    setDomain([0, Math.PI])
+    await waitFor(() => expect(el().maxX()).toBe(Math.PI))
+  })
+
+  test('Derivative follows the function and domain of its plot', async () => {
+    const [fn, setFn] = createSignal(square)
+    const [domain, setDomain] = createSignal<[number, number]>([-2, 2])
+    const { el } = await renderBoard<JXG.Curve>((ref) => (
+      <Board.Plot fn={fn()} domain={domain()}>
+        {(plot) => <Board.Derivative of={plot}>{ref}</Board.Derivative>}
+      </Board.Plot>
+    ))
+    expect(el().Y(1, false)).toBeCloseTo(2)
+    expect([el().minX(), el().maxX()]).toEqual([-2, 2])
+    setFn(cube)
+    await waitFor(() => expect(el().Y(1, false)).toBeCloseTo(3))
+    setDomain([0, 1])
+    await waitFor(() => expect([el().minX(), el().maxX()]).toEqual([0, 1]))
+  })
+
+  test('ImplicitCurve follows its function', async () => {
+    const [r, setR] = createSignal(1)
+    const { el } = await renderBoard<JXG.Curve>((ref) => {
+      const circle = createMemo(() => {
+        const r2 = r() ** 2
+        return (x: number, y: number) => x * x + y * y - r2
+      })
+      return (
+        <Board.ImplicitCurve
+          fn={circle()}
+          domain={[
+            [-3, 3],
+            [-3, 3],
+          ]}
+        >
+          {ref}
+        </Board.ImplicitCurve>
+      )
+    })
+    const radii = () => points(el() as unknown as Data).map(([x, y]) => Math.hypot(x, y))
+    expect(radii().length).toBeGreaterThan(0)
+    for (const radius of radii()) expect(radius).toBeCloseTo(1, 1)
+    setR(2)
+    await waitFor(() => expect(radii()[0]).toBeCloseTo(2, 1))
+    for (const radius of radii()) expect(radius).toBeCloseTo(2, 1)
+  })
+
+  test('ImplicitCurve is limited to its domain', async () => {
+    const [domain, setDomain] = createSignal<[[number, number], [number, number]]>([
+      [-3, 3],
+      [-3, 3],
+    ])
+    const { el } = await renderBoard<JXG.Curve>((ref) => (
+      <Board.ImplicitCurve fn={(x, y) => x * x + y * y - 4} domain={domain()}>
+        {ref}
+      </Board.ImplicitCurve>
+    ))
+    expect(points(el() as unknown as Data).some(([x]) => x < 0)).toBe(true)
+    setDomain([
+      [0, 3],
+      [-3, 3],
+    ])
+    await waitFor(() =>
+      expect(points(el() as unknown as Data).every(([x]) => x >= -0.1)).toBe(true),
+    )
+  })
+
+  test('VectorField follows its function, domain and steps', async () => {
+    const [vertical, setVertical] = createSignal(false)
+    const [domain, setDomain] = createSignal<[[number, number], [number, number]]>([
+      [0, 2],
+      [0, 2],
+    ])
+    const [steps, setSteps] = createSignal(2)
+    const { el } = await renderBoard<JXG.Curve>((ref) => (
+      <Board.VectorField
+        fn={vertical() ? () => [0, 1] : () => [1, 0]}
+        domain={domain()}
+        steps={steps()}
+      >
+        {ref}
+      </Board.VectorField>
+    ))
+    const data = () => el() as unknown as Data
+    const scale = () => el().getAttribute('scale') as number
+    const firstArrow = () => [
+      data().dataX[0],
+      data().dataY[0],
+      data().dataX[1]! - data().dataX[0]!,
+      data().dataY[1]! - data().dataY[0]!,
+    ]
+    const columns = () => new Set(points(data()).map(([x]) => x)).size
+    expect(firstArrow()).toEqual([0, 0, scale(), 0])
+    setVertical(true)
+    await waitFor(() => expect(firstArrow()).toEqual([0, 0, 0, scale()]))
+    setDomain([
+      [1, 3],
+      [1, 3],
+    ])
+    await waitFor(() => expect(firstArrow().slice(0, 2)).toEqual([1, 1]))
+    const before = columns()
+    setSteps(4)
+    await waitFor(() => expect(columns()).toBeGreaterThan(before))
+  })
+
+  test('SlopeField follows its function', async () => {
+    const [slope, setSlope] = createSignal(1)
+    const { el } = await renderBoard<JXG.Curve>((ref) => (
+      <Board.SlopeField
+        fn={(
+          (m) => () =>
+            m
+        )(slope())}
+        domain={[
+          [0, 2],
+          [0, 2],
+        ]}
+      >
+        {ref}
+      </Board.SlopeField>
+    ))
+    const firstSlope = () => {
+      const { dataX, dataY } = el() as unknown as Data
+      return (dataY[1]! - dataY[0]!) / (dataX[1]! - dataX[0]!)
+    }
+    expect(firstSlope()).toBeCloseTo(1)
+    setSlope(-2)
+    await waitFor(() => expect(firstSlope()).toBeCloseTo(-2))
+  })
+
+  test('Inequality is rebuilt for another boundary', async () => {
+    const [steep, setSteep] = createSignal(false)
+    const { el } = await renderBoard<JXG.Inequality>((ref) => (
+      <Board.Line
+        points={[
+          [0, 0],
+          [1, 1],
+        ]}
+      >
+        {(diagonal) => (
+          <Board.Line
+            points={[
+              [0, 0],
+              [1, 3],
+            ]}
+          >
+            {(other) => <Board.Inequality of={steep() ? other : diagonal}>{ref}</Board.Inequality>}
+          </Board.Line>
+        )}
+      </Board.Line>
+    ))
+    const before = el()
+    expect(points(before as unknown as Data).length).toBeGreaterThan(0)
+    setSteep(true)
+    await waitFor(() => expect(el() === before).toBe(false))
+    expect(before.id in before.board.objects).toBe(false)
+  })
+})
+
+describe('multivariable elements', () => {
+  test('Plot3D follows its function and domain', async () => {
+    const [k, setK] = createSignal(1)
+    const [domain, setDomain] = createSignal<[[number, number], [number, number]]>([
+      [-1, 1],
+      [-1, 1],
+    ])
+    const { el } = await renderView<JXG.Surface3D>((ref) => {
+      const plane = createMemo(() => {
+        const c = k()
+        return (x: number, y: number) => c * (x + y)
+      })
+      return (
+        <Board.Plot3D fn={plane()} domain={domain()}>
+          {ref}
+        </Board.Plot3D>
+      )
+    })
+    const at = (u: number, v: number) =>
+      (el() as unknown as { Z(u: number, v: number): number }).Z(u, v)
+    expect(at(1, 2)).toBe(3)
+    setK(2)
+    await waitFor(() => expect(at(1, 2)).toBe(6))
+    setDomain([
+      [0, 2],
+      [0, 3],
+    ])
+    await waitFor(() => expect(JXG.evaluate(Reflect.get(el(), 'range_v'))).toEqual([0, 3]))
+  })
+
+  test('Surface3D follows its function', async () => {
+    const [r, setR] = createSignal(1)
+    const { el } = await renderView<JXG.Surface3D>((ref) => {
+      const cylinder = createMemo(() => {
+        const radius = r()
+        return (u: number, v: number): [number, number, number] => [
+          radius * Math.cos(u),
+          radius * Math.sin(u),
+          v,
+        ]
+      })
+      return (
+        <Board.Surface3D
+          fn={cylinder()}
+          domain={[
+            [0, 2 * Math.PI],
+            [0, 1],
+          ]}
+        >
+          {ref}
+        </Board.Surface3D>
+      )
+    })
+    const at = (u: number, v: number) => {
+      const s = el() as unknown as Record<'X' | 'Y' | 'Z', (u: number, v: number) => number>
+      return [s.X(u, v), s.Y(u, v), s.Z(u, v)]
+    }
+    expect(at(0, 0.5)).toEqual([1, 0, 0.5])
+    setR(3)
+    await waitFor(() => expect(at(0, 0.5)).toEqual([3, 0, 0.5]))
+  })
+
+  test('Curve3D follows its function and domain', async () => {
+    const [pitch, setPitch] = createSignal(1)
+    const [domain, setDomain] = createSignal<[number, number]>([0, 1])
+    const { el } = await renderView<JXG.Curve3D>((ref) => {
+      const helix = createMemo(() => {
+        const p = pitch()
+        return (t: number): [number, number, number] => [Math.cos(t), Math.sin(t), p * t]
+      })
+      return (
+        <Board.Curve3D fn={helix()} domain={domain()}>
+          {ref}
+        </Board.Curve3D>
+      )
+    })
+    const z = (t: number) => (el() as unknown as { Z(t: number): number }).Z(t)
+    expect(z(2)).toBe(2)
+    setPitch(3)
+    await waitFor(() => expect(z(2)).toBe(6))
+    setDomain([0, 5])
+    await waitFor(() => expect(JXG.evaluate(Reflect.get(el(), 'range'))).toEqual([0, 5]))
+  })
+
+  test('Line3D follows its point and direction', async () => {
+    const [point, setPoint] = createSignal<[number, number, number]>([0, 0, 0])
+    const [direction, setDirection] = createSignal<[number, number, number]>([1, 0, 0])
+    const { el } = await renderView<JXG.Line3D>((ref) => (
+      <Board.Line3D point={point()} direction={direction()}>
+        {ref}
+      </Board.Line3D>
+    ))
+    const line = () => el() as unknown as { point: JXG.Point3D; vec: number[] }
+    expect(line().vec.slice(1)).toEqual([1, 0, 0])
+    setPoint([1, 2, 3])
+    setDirection([0, 0, 2])
+    await waitFor(() => expect(line().vec.slice(1)).toEqual([0, 0, 2]))
+    expect(xyz(line().point)).toEqual([1, 2, 3])
+  })
+
+  test('Plane3D follows its point and directions', async () => {
+    const [point, setPoint] = createSignal<[number, number, number]>([0, 0, 0])
+    const [slope, setSlope] = createSignal(1)
+    const { el } = await renderView<JXG.Plane3D>((ref) => (
+      <Board.Plane3D
+        point={point()}
+        directions={[
+          [1, 0, slope()],
+          [0, 1, 0],
+        ]}
+      >
+        {ref}
+      </Board.Plane3D>
+    ))
+    const plane = () => el() as unknown as { point: JXG.Point3D; vec1: number[] }
+    // JSXGraph normalizes the directions of a plane.
+    expect(plane().vec1.slice(1)).toEqual(unit([1, 0, 1]))
+    setPoint([1, 1, 1])
+    setSlope(4)
+    await waitFor(() => expect(plane().vec1.slice(1)).toEqual(unit([1, 0, 4])))
+    expect(xyz(plane().point)).toEqual([1, 1, 1])
+  })
+
+  test('Point3D slides on the element it is on', async () => {
+    let surface: JXG.Surface3D | undefined
+    const { el } = await renderView<JXG.Point3D>((ref) => (
+      <Board.Plot3D
+        fn={(x, y) => x + y}
+        domain={[
+          [-3, 3],
+          [-3, 3],
+        ]}
+      >
+        {(s) => {
+          surface = s
+          return (
+            <Board.Point3D position={[1, 1, 5]} on={s}>
+              {ref}
+            </Board.Point3D>
+          )
+        }}
+      </Board.Plot3D>
+    ))
+    expect(Reflect.get(el(), 'slide') === surface).toBe(true)
+    const [x, y, z] = xyz(el())
+    expect(z!).toBeCloseTo(x! + y!, 1)
   })
 })
