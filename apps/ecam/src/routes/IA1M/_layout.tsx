@@ -1,4 +1,4 @@
-import { BreadCrumbs, Crumb, Page } from '@learning/components'
+import { BreadCrumbs, Crumb, EnvironmentLanguage, Page } from '@learning/components'
 import { getUser } from '@learning/core'
 import { type RouteDefinition } from '@solidjs/router'
 import type { JSX } from '@solidjs/web/jsx-runtime'
@@ -25,7 +25,9 @@ export default function Layout(props: { children: JSX.Element }) {
       </Show>
       <Crumb href={paths.IA1M} title="Fondations mathématiques de l'IA">
         {/* Italic correction: keep italic text from crowding the following punctuation. */}
-        <div class="[&_em]:pr-[0.20em]">{props.children}</div>
+        <EnvironmentLanguage value="en">
+          <div class="[&_em]:pr-[0.20em]">{props.children}</div>
+        </EnvironmentLanguage>
       </Crumb>
     </Page>
   )
