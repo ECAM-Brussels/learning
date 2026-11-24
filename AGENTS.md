@@ -49,6 +49,9 @@ Keep MDX files mostly prose: TypeScript tooling (type errors, autocompletion, re
 Put exercises, sequences and any non-trivial JSX in a sibling `*.exercises.tsx` file
 and use them as one-line components, e.g. `import * as Exercise from './exam.exercises'` then `<Exercise.Practice id="..." />`.
 Files with an extra dot in their name, such as `*.exercises.tsx` or `*.content.mdx`, are not turned into routes.
+`bun run typecheck` also type-checks MDX files (`scripts/typecheck.mjs`).
+Components the layout passes to MDX without an import must be declared in `MDXProvidedComponents` (`apps/ecam/mdx.d.ts`),
+otherwise every component in MDX loses its types.
 
 # Generated exercises
 
