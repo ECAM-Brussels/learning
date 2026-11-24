@@ -3,7 +3,6 @@ import { faBook } from '@fortawesome/free-solid-svg-icons'
 import {
   Boundary,
   Code,
-  Crumb,
   Definition,
   Example,
   Exercise,
@@ -11,6 +10,7 @@ import {
   Highlight,
   Info,
   Latex,
+  Meta,
   Question,
   Remark,
   Steps,
@@ -149,9 +149,9 @@ export const Layout: ParentComponent = (props) => {
       </Show>
       <div class="container mx-auto">
         <Boundary>
-          <Crumb href="/" title="Accueil" prefix="Learning - ">
+          <Meta href="/" title="Accueil" prefix="Learning - ">
             <div>{props.children}</div>
-          </Crumb>
+          </Meta>
         </Boundary>
       </div>
     </MDXProvider>
