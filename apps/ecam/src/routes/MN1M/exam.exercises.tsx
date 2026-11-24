@@ -1,36 +1,14 @@
 import { Highlight } from '@learning/components'
-import { createDerivedStep, Sequence, tex } from '@learning/core'
+import { createQuestionBank, Sequence, tex, type Random } from '@learning/core'
 import { MultipleChoice } from '@learning/exercises/MultipleChoice'
 import type { JSX } from '@solidjs/web'
-import { randomInt, range, round, sample, sumBy, uniq, without } from 'es-toolkit'
-import * as v from 'valibot'
-
-type Params = Record<string, number>
-
-type Question = {
-  prompt: JSX.Element
-  answer: string
-  choices: Record<string, JSX.Element>
-}
-
-type Generator = {
-  session: Session
-  generate: () => Params
-  render: (p: Params) => Question
-}
-
-export type Session = 1 | 2 | 3 | 4 | 5 | 6
-
-const question = <P extends Params>(g: {
-  session: Session
-  generate: () => P
-  render: (p: P) => Question
-}) => g as unknown as Generator
+import { range, round, sumBy, uniq, without } from 'es-toolkit'
 
 // Rounds away binary noise such as 1.5999999999999999, so that keys stay stable.
 const fmt = (x: number) => String(round(x, 10))
 
-const nonZero = (min: number, max: number) => sample(without(range(min, max + 1), 0))
+const nonZero = (random: Random, min: number, max: number) =>
+  random.sample(without(range(min, max + 1), 0))
 
 const list = (xs: number[]) => `[${xs.map(fmt).join(', ')}]`
 
@@ -48,19 +26,23 @@ function codeChoices(answer: string, distractors: string[]) {
 
 function choices(answer: string, distractors: string[], display: (key: string) => JSX.Element) {
   const keys = uniq([answer, ...distractors]).slice(0, 4)
-  return { answer, choices: Object.fromEntries(keys.map((key) => [key, display(key)])) }
+  return {
+    answer,
+    choices: Object.fromEntries(keys.map((key) => [key, display(key)])),
+    shuffle: true,
+  }
 }
 
 const dual = (real: number, eps: number, symbol = '\\epsilon') =>
   `${fmt(real)} ${eps < 0 ? '-' : '+'} ${fmt(Math.abs(eps))} ${symbol}`
 
-const generators = {
+export const bank = createQuestionBank(MultipleChoice, (question) => ({
   'exact-binary': question({
-    session: 1,
-    generate: () => ({
-      numerator: sample([1, 3, 5, 7]),
-      power: randomInt(1, 4),
-      seed: randomInt(0, 6),
+    tags: ['s1'],
+    generate: (random) => ({
+      numerator: random.sample([1, 3, 5, 7]),
+      power: random.int(1, 4),
+      seed: random.int(0, 6),
     }),
     render: ({ numerator, power, seed }) => {
       const inexact = ['0.1', '0.2', '0.3', '0.6', '0.7', '0.9']
@@ -74,12 +56,12 @@ const generators = {
     },
   }),
   'vector-power': question({
-    session: 1,
-    generate: () => ({
-      a: randomInt(1, 5),
-      b: randomInt(1, 5),
-      c: randomInt(1, 5),
-      k: sample([2, 3]),
+    tags: ['s1'],
+    generate: (random) => ({
+      a: random.int(1, 5),
+      b: random.int(1, 5),
+      c: random.int(1, 5),
+      k: random.sample([2, 3]),
     }),
     render: ({ a, b, c, k }) => ({
       prompt: (
@@ -99,9 +81,9 @@ const generators = {
     }),
   }),
   norm: question({
-    session: 1,
-    generate: () => {
-      const [a, b] = sample([
+    tags: ['s1'],
+    generate: (random) => {
+      const [a, b] = random.sample([
         [3, 4],
         [6, 8],
         [5, 12],
@@ -119,11 +101,11 @@ const generators = {
     }),
   }),
   linspace: question({
-    session: 2,
-    generate: () => ({
-      start: randomInt(0, 3),
-      step: sample([0.25, 0.5, 1, 2]),
-      n: randomInt(3, 6),
+    tags: ['s2'],
+    generate: (random) => ({
+      start: random.int(0, 3),
+      step: random.sample([0.25, 0.5, 1, 2]),
+      n: random.int(3, 6),
     }),
     render: ({ start, step, n }) => {
       const stop = start + step * (n - 1)
@@ -143,12 +125,12 @@ const generators = {
     },
   }),
   'missing-return': question({
-    session: 2,
-    generate: () => ({
-      a: randomInt(2, 6),
-      b: randomInt(1, 6),
-      x: randomInt(1, 5),
-      returns: randomInt(0, 2),
+    tags: ['s2'],
+    generate: (random) => ({
+      a: random.int(2, 6),
+      b: random.int(1, 6),
+      x: random.int(1, 5),
+      returns: random.int(0, 2),
     }),
     render: ({ a, b, x, returns }) => {
       const value = a * x + b
@@ -171,8 +153,8 @@ const generators = {
     },
   }),
   segments: question({
-    session: 2,
-    generate: () => ({ n: randomInt(3, 8) }),
+    tags: ['s2'],
+    generate: (random) => ({ n: random.int(3, 8) }),
     render: ({ n }) => ({
       prompt: (
         <p>
@@ -184,10 +166,10 @@ const generators = {
     }),
   }),
   secant: question({
-    session: 3,
-    generate: () => {
-      const a = randomInt(-3, 4)
-      return { a, b: a + randomInt(1, 4) }
+    tags: ['s3'],
+    generate: (random) => {
+      const a = random.int(-3, 4)
+      return { a, b: a + random.int(1, 4) }
     },
     render: ({ a, b }) => ({
       prompt: (
@@ -200,8 +182,12 @@ const generators = {
     }),
   }),
   'difference-quotient': question({
-    session: 3,
-    generate: () => ({ a: randomInt(1, 5), h: sample([0.1, 0.5, 1]), central: randomInt(0, 2) }),
+    tags: ['s3'],
+    generate: (random) => ({
+      a: random.int(1, 5),
+      h: random.sample([0.1, 0.5, 1]),
+      central: random.int(0, 2),
+    }),
     render: ({ a, h, central }) => ({
       prompt: (
         <p>
@@ -222,12 +208,12 @@ const generators = {
     }),
   }),
   'dual-product': question({
-    session: 4,
-    generate: () => ({
-      a: randomInt(1, 5),
-      b: nonZero(-3, 3),
-      c: randomInt(1, 5),
-      d: nonZero(-3, 3),
+    tags: ['s4'],
+    generate: (random) => ({
+      a: random.int(1, 5),
+      b: nonZero(random, -3, 3),
+      c: random.int(1, 5),
+      d: nonZero(random, -3, 3),
     }),
     render: ({ a, b, c, d }) => ({
       prompt: <p>Que vaut {tex`(${dual(a, b)})(${dual(c, d)})`} après simplification ?</p>,
@@ -239,8 +225,12 @@ const generators = {
     }),
   }),
   tangent: question({
-    session: 4,
-    generate: () => ({ a: randomInt(1, 4), value: randomInt(1, 10), slope: nonZero(-9, 9) }),
+    tags: ['s4'],
+    generate: (random) => ({
+      a: random.int(1, 4),
+      value: random.int(1, 10),
+      slope: nonZero(random, -9, 9),
+    }),
     render: ({ a, value, slope }) => ({
       prompt: (
         <p>
@@ -256,8 +246,8 @@ const generators = {
     }),
   }),
   'newton-root': question({
-    session: 4,
-    generate: () => ({ x0: sample([1, 2, 4]), c: sample([2, 3, 5, 6, 7]) }),
+    tags: ['s4'],
+    generate: (random) => ({ x0: random.sample([1, 2, 4]), c: random.sample([2, 3, 5, 6, 7]) }),
     render: ({ x0, c }) => {
       const step = (x0 ** 2 - c) / (2 * x0)
       return {
@@ -272,8 +262,8 @@ const generators = {
     },
   }),
   'second-derivative-dual': question({
-    session: 5,
-    generate: () => ({ a: randomInt(1, 3), n: randomInt(2, 5) }),
+    tags: ['s5'],
+    generate: (random) => ({ a: random.int(1, 3), n: random.int(2, 5) }),
     render: ({ a, n }) => ({
       prompt: (
         <p>
@@ -290,12 +280,12 @@ const generators = {
     }),
   }),
   'newton-minimum': question({
-    session: 5,
-    generate: () => ({
-      a: sample([1, 2]),
-      b: nonZero(-6, 6),
-      c: randomInt(0, 6),
-      x0: randomInt(-2, 3),
+    tags: ['s5'],
+    generate: (random) => ({
+      a: random.sample([1, 2]),
+      b: nonZero(random, -6, 6),
+      c: random.int(0, 6),
+      x0: random.int(-2, 3),
     }),
     render: ({ a, b, c, x0 }) => ({
       prompt: (
@@ -309,8 +299,12 @@ const generators = {
     }),
   }),
   'gradient-descent': question({
-    session: 5,
-    generate: () => ({ a: sample([1, 2]), x0: nonZero(-3, 3), eta: sample([0.1, 0.25]) }),
+    tags: ['s5'],
+    generate: (random) => ({
+      a: random.sample([1, 2]),
+      x0: nonZero(random, -3, 3),
+      eta: random.sample([0.1, 0.25]),
+    }),
     render: ({ a, x0, eta }) => ({
       prompt: (
         <p>
@@ -327,8 +321,8 @@ const generators = {
     }),
   }),
   'gradient-direction': question({
-    session: 5,
-    generate: () => ({ positive: randomInt(0, 2) }),
+    tags: ['s5'],
+    generate: (random) => ({ positive: random.int(0, 2) }),
     render: ({ positive }) => ({
       prompt: (
         <p>
@@ -342,8 +336,12 @@ const generators = {
     }),
   }),
   midpoints: question({
-    session: 6,
-    generate: () => ({ a: randomInt(0, 3), dx: sample([0.5, 1, 2]), n: randomInt(2, 5) }),
+    tags: ['s6'],
+    generate: (random) => ({
+      a: random.int(0, 3),
+      dx: random.sample([0.5, 1, 2]),
+      n: random.int(2, 5),
+    }),
     render: ({ a, dx, n }) => {
       const left = range(n).map((i) => a + i * dx)
       return {
@@ -362,8 +360,12 @@ const generators = {
     },
   }),
   'integration-rule': question({
-    session: 6,
-    generate: () => ({ b: sample([2, 4]), n: randomInt(1, 3), trapezoid: randomInt(0, 2) }),
+    tags: ['s6'],
+    generate: (random) => ({
+      b: random.sample([2, 4]),
+      n: random.int(1, 3),
+      trapezoid: random.int(0, 2),
+    }),
     render: ({ b, n, trapezoid }) => {
       const dx = b / n
       const f = (x: number) => x ** 2
@@ -388,8 +390,8 @@ const generators = {
     },
   }),
   'integration-code': question({
-    session: 6,
-    generate: () => ({ method: randomInt(0, 3) }),
+    tags: ['s6'],
+    generate: (random) => ({ method: random.int(0, 3) }),
     render: ({ method }) => {
       const code = [
         'f(x + dx / 2)',
@@ -414,48 +416,9 @@ const generators = {
       }
     },
   }),
-} satisfies Record<string, Generator>
+}))
 
-type Kind = keyof typeof generators
-const kinds = Object.keys(generators) as [Kind, ...Kind[]]
-
-// Deterministic shuffle: a reloaded question must keep its choices in the same order.
-function shuffle(keys: string[], seed: string) {
-  const hash = (s: string) => [...s].reduce((h, c) => (Math.imul(h, 31) + c.charCodeAt(0)) | 0, 7)
-  return [...keys].sort((a, b) => hash(seed + a) - hash(seed + b))
-}
-
-const GeneratedQuestion = createDerivedStep(
-  MultipleChoice,
-  { kind: v.picklist(kinds), params: v.record(v.string(), v.number()) },
-  ({ kind, params }) => {
-    const { prompt, answer, choices } = generators[kind].render(params)
-    const order = shuffle(Object.keys(choices), JSON.stringify({ kind, params }))
-    return {
-      prompt,
-      choices: Object.fromEntries(order.map((key) => [key, choices[key]])),
-      grade: (sel) => sel.equals([answer]),
-    }
-  },
-)
-
-export function Practice(props: { id: string; sessions?: Session[] }) {
-  const available = () =>
-    kinds.filter((kind) => !props.sessions || props.sessions.includes(generators[kind].session))
-  return (
-    <Sequence
-      id={props.id}
-      options={{ allowResubmissions: false }}
-      exercise={GeneratedQuestion}
-      next={() => ({
-        data: () => {
-          const kind = sample(available())
-          return { kind, params: generators[kind].generate() }
-        },
-      })}
-    />
-  )
-}
+export const Practice = bank.Practice
 
 export const MockExam = () => (
   <Sequence id="mn1m-mock-exam" options={{ allowResubmissions: false }}>
@@ -471,12 +434,12 @@ export const MockExam = () => (
         C: <code>-1.0</code>,
         D: <code>1e16</code>,
       }}
-      grade={(sel) => sel.equals(['B'])}
+      answer="B"
     />
     <MultipleChoice
       prompt={<p>Lequel de ces nombres est représentable exactement en binaire ?</p>}
       choices={{ A: tex`0.1`, B: tex`0.3`, C: tex`\frac 1 3`, D: tex`0.375` }}
-      grade={(sel) => sel.equals(['D'])}
+      answer="D"
     />
     <MultipleChoice
       prompt={
@@ -491,7 +454,7 @@ export const MockExam = () => (
         C: <code>array([2, 4, 6])</code>,
         D: 'Une erreur',
       }}
-      grade={(sel) => sel.equals(['A'])}
+      answer="A"
     />
     <MultipleChoice
       prompt={
@@ -505,7 +468,7 @@ export const MockExam = () => (
         C: <code>[0, 0.25, 0.5, 0.75, 1]</code>,
         D: <code>[0, 1, 2, 3, 4]</code>,
       }}
-      grade={(sel) => sel.equals(['C'])}
+      answer="C"
     />
     <MultipleChoice
       prompt={
@@ -515,7 +478,7 @@ export const MockExam = () => (
         </>
       }
       choices={{ A: <code>9</code>, B: <code>None</code>, C: 'Une erreur' }}
-      grade={(sel) => sel.equals(['B'])}
+      answer="B"
     />
     <MultipleChoice
       prompt={
@@ -525,7 +488,7 @@ export const MockExam = () => (
         </p>
       }
       choices={{ A: tex`1`, B: tex`2`, C: tex`3`, D: 'Une infinité' }}
-      grade={(sel) => sel.equals(['B'])}
+      answer="B"
     />
     <MultipleChoice
       prompt={
@@ -534,7 +497,7 @@ export const MockExam = () => (
         </p>
       }
       choices={{ A: tex`2`, B: tex`4`, C: tex`8`, D: tex`6` }}
-      grade={(sel) => sel.equals(['B'])}
+      answer="B"
     />
     <MultipleChoice
       prompt={
@@ -544,7 +507,7 @@ export const MockExam = () => (
         </p>
       }
       choices={{ A: tex`2.1`, B: tex`1.9`, C: tex`2.01`, D: tex`2` }}
-      grade={(sel) => sel.equals(['D'])}
+      answer="D"
     />
     <MultipleChoice
       prompt={
@@ -557,7 +520,7 @@ export const MockExam = () => (
         </>
       }
       choices={{ A: <code>2.0</code>, B: <code>1.0</code>, C: <code>0.0</code>, D: 'Une erreur' }}
-      grade={(sel) => sel.equals(['C'])}
+      answer="C"
     />
     <MultipleChoice
       prompt={
@@ -567,7 +530,7 @@ export const MockExam = () => (
         </p>
       }
       choices={{ A: tex`1`, B: tex`10^{-6}`, C: tex`10^{-20}`, D: tex`10^{-30}` }}
-      grade={(sel) => sel.equals(['B'])}
+      answer="B"
     />
     <MultipleChoice
       prompt={<p>Que vaut {tex`(3 + 2 \epsilon) (1 - \epsilon)`} après simplification ?</p>}
@@ -577,7 +540,7 @@ export const MockExam = () => (
         C: tex`3 - \epsilon - 2 \epsilon^2`,
         D: tex`3 + \epsilon`,
       }}
-      grade={(sel) => sel.equals(['B'])}
+      answer="B"
     />
     <MultipleChoice
       prompt={<p>Que vaut {tex`\sin(3 + 4 \epsilon)`} ?</p>}
@@ -586,7 +549,7 @@ export const MockExam = () => (
         B: tex`\sin 3 + (\cos 3) \epsilon`,
         C: tex`\sin 3 + (4 \sin 3) \epsilon`,
       }}
-      grade={(sel) => sel.equals(['A'])}
+      answer="A"
     />
     <MultipleChoice
       prompt={
@@ -601,7 +564,7 @@ export const MockExam = () => (
         C: tex`y = 15(x - 2) + 7`,
         D: tex`y = 7x + 15`,
       }}
-      grade={(sel) => sel.equals(['C'])}
+      answer="C"
     />
     <MultipleChoice
       prompt={
@@ -611,7 +574,7 @@ export const MockExam = () => (
         </p>
       }
       choices={{ A: tex`1.5`, B: tex`1.75`, C: tex`2.25`, D: tex`1` }}
-      grade={(sel) => sel.equals(['B'])}
+      answer="B"
     />
     <MultipleChoice
       prompt={
@@ -621,7 +584,7 @@ export const MockExam = () => (
         </p>
       }
       choices={{ A: tex`3`, B: tex`1`, C: tex`0`, D: tex`6` }}
-      grade={(sel) => sel.equals(['D'])}
+      answer="D"
     />
     <MultipleChoice
       prompt={
@@ -631,7 +594,7 @@ export const MockExam = () => (
         </p>
       }
       choices={{ A: tex`-3`, B: tex`-\frac 5 3`, C: tex`-1.5`, D: tex`1.5` }}
-      grade={(sel) => sel.equals(['C'])}
+      answer="C"
     />
     <MultipleChoice
       prompt={
@@ -641,7 +604,7 @@ export const MockExam = () => (
         </p>
       }
       choices={{ A: tex`1.8`, B: tex`2.4`, C: tex`1.6`, D: tex`0` }}
-      grade={(sel) => sel.equals(['C'])}
+      answer="C"
     />
     <MultipleChoice
       prompt={
@@ -656,7 +619,7 @@ export const MockExam = () => (
         C: tex`0.25 \text{ et } 0.75`,
         D: tex`0.5`,
       }}
-      grade={(sel) => sel.equals(['C'])}
+      answer="C"
     />
     <MultipleChoice
       prompt={
@@ -666,7 +629,7 @@ export const MockExam = () => (
         </p>
       }
       choices={{ A: tex`2.5`, B: tex`\frac 8 3`, C: tex`2`, D: tex`4` }}
-      grade={(sel) => sel.equals(['A'])}
+      answer="A"
     />
     <MultipleChoice
       prompt={
@@ -676,7 +639,7 @@ export const MockExam = () => (
         </p>
       }
       choices={{ A: tex`2`, B: tex`4`, C: tex`8`, D: tex`\frac 8 3` }}
-      grade={(sel) => sel.equals(['B'])}
+      answer="B"
     />
   </Sequence>
 )

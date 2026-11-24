@@ -50,6 +50,13 @@ Put exercises, sequences and any non-trivial JSX in a sibling `*.exercises.tsx` 
 and use them as one-line components, e.g. `import * as Exercise from './exam.exercises'` then `<Exercise.Practice id="..." />`.
 Files with an extra dot in their name, such as `*.exercises.tsx` or `*.content.mdx`, are not turned into routes.
 
+# Generated exercises
+
+For randomised questions, use `createQuestionBank` from `@learning/core` (see `apps/ecam/src/routes/MN1M/exam.exercises.tsx`).
+Only the parameters returned by `generate` are saved, so `render` must be pure,
+and `generate` must draw from the `random` it receives (not `Math.random`) so questions can be reproduced from a seed in tests.
+With `MultipleChoice`, declare `answer` rather than `grade`: tests can then check every generated question.
+
 # French typography
 
 Course content is written in French.
