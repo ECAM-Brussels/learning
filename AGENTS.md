@@ -42,6 +42,8 @@ use the components in `./packages/components/src/Board.tsx`.
 Components in that file are meant to be _declarative versions_ of their associated geometry elements.
 They are not yet comprehensive or complete.
 By any means improve them, but ensure they are compatible with Solid's reactivity system and are declarative.
+For defaults shared by many boards, such as a teacher's preferences for a course,
+wrap them in `BoardDefaults` (e.g. in the folder's `_layout.tsx`) rather than repeating props on every element.
 
 A function prop such as `fn` redraws when the function is replaced, not when a signal read inside it changes:
 derive the function from its signals, reading them outside the function it returns.

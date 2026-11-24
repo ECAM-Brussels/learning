@@ -20,6 +20,13 @@ import { Boundary } from './Boundary'
 
 declare global {
   namespace JXG {
+    /** Options merged into a board's when created with `theme: name`. */
+    const themes: Record<string, unknown>
+
+    interface BoardAttributes {
+      theme?: string
+    }
+
     interface Angle {
       radiuspoint: JXG.Point
       anglepoint: JXG.Point
@@ -95,6 +102,100 @@ const refresh = (el: { board: JXG.Board }) => {
   el.board.update()
 }
 
+/**
+ * JSXGraph options keyed by element type, as in `JXG.Options`.
+ * `elements` applies to every element, for what its type doesn't set itself.
+ */
+export type BoardOptions = {
+  board?: Partial<JXG.BoardAttributes>
+  elements?: JXG.GeometryElementAttributes
+  label?: JXG.LabelOptions
+  ticks?: JXG.TicksAttributes
+  grid?: JXG.GridAttributes
+  angle?: JXG.AngleAttributes
+  arc?: JXG.ArcAttributes
+  arrow?: JXG.ArrowAttributes
+  axis?: JXG.AxisAttributes
+  circle?: JXG.CircleAttributes
+  curve?: JXG.CurveAttributes
+  functiongraph?: JXG.FunctiongraphAttributes
+  glider?: JXG.GliderAttributes
+  implicitcurve?: JXG.CurveAttributes
+  inequality?: JXG.InequalityAttributes
+  integral?: JXG.IntegralAttributes
+  line?: JXG.LineAttributes
+  normal?: JXG.NormalAttributes
+  point?: JXG.PointAttributes
+  polygon?: JXG.PolygonAttributes
+  riemannsum?: JXG.RiemannsumAttributes
+  sector?: JXG.SectorAttributes
+  segment?: JXG.SegmentAttributes
+  slider?: JXG.SliderAttributes
+  slopefield?: JXG.CurveAttributes
+  tangent?: JXG.TangentAttributes
+  text?: JXG.TextAttributes
+  vectorfield?: JXG.CurveAttributes
+  view3d?: JXG.View3DAttributes
+  point3d?: JXG.Point3DAttributes
+  line3d?: JXG.Line3DAttributes
+  plane3d?: JXG.Plane3DAttributes
+  curve3d?: JXG.Curve3DAttributes
+  surface3d?: JXG.Surface3DAttributes
+}
+
+const BoardDefaultsContext = createContext<() => BoardOptions>(() => ({}))
+
+/**
+ * Sets the defaults of the boards inside it, e.g. in a layout for every board of a course.
+ * Options of an inner `BoardDefaults` are merged over those of an outer one.
+ * Props of a board and of its elements still win; a board reads its defaults when it is created.
+ */
+export function BoardDefaults(props: BoardOptions & { children?: JSX.Element }) {
+  const outer = useContext(BoardDefaultsContext)
+  const own = omit(props, 'children')
+  const options = createMemo(() => mergeOptions(outer(), own))
+  return <BoardDefaultsContext value={options}>{props.children}</BoardDefaultsContext>
+}
+
+function mergeOptions<T extends Record<string, unknown>>(
+  base: T,
+  over: Record<string, unknown>,
+): T {
+  const merged: Record<string, unknown> = { ...base }
+  for (const [key, value] of Object.entries(over)) {
+    const current = merged[key]
+    merged[key] =
+      isPlainObject(value) && isPlainObject(current) ? mergeOptions(current, value) : value
+  }
+  return merged as T
+}
+
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && Object.getPrototypeOf(value) === Object.prototype
+
+let themes = 0
+
+/**
+ * Creates a board with the defaults in context, passed as a JSXGraph theme:
+ * initBoard merges a theme into the board's options before it creates anything (e.g. its axes).
+ */
+function initBoard(
+  container: HTMLDivElement,
+  attributes: Partial<JXG.BoardAttributes>,
+  defaults: BoardOptions,
+) {
+  if (Object.keys(defaults).length === 0) return JSXGraph.initBoard(container, attributes)
+  const name = `board-defaults-${themes++}`
+  const base = attributes.theme ? JXG.themes[attributes.theme] : undefined
+  JXG.themes[name] = mergeOptions(isPlainObject(base) ? base : {}, defaults)
+  try {
+    return JSXGraph.initBoard(container, { ...attributes, theme: name })
+  } finally {
+    // The board has copied the theme into its own options.
+    delete JXG.themes[name]
+  }
+}
+
 Reflect.set(globalThis, 'katex', katex)
 JXG.Options.text.useKatex = true
 
@@ -105,6 +206,7 @@ export const Board = Object.assign(
       class?: string
     },
   ) => {
+    const defaults = useContext(BoardDefaultsContext)
     const [board, setBoard] = createSignal<JXG.Board | null>(null)
     const [el, setEl] = createSignal<HTMLDivElement>()
     const attrs = merge(
@@ -114,7 +216,7 @@ export const Board = Object.assign(
       omit(props, 'children', 'class'),
     )
     onSettled(() => {
-      const board = JSXGraph.initBoard(el()!, { ...snapshot(attrs) })
+      const board = initBoard(el()!, { ...snapshot(attrs) }, snapshot(defaults()))
       setBoard(board)
       return () => JXG.JSXGraph.freeBoard(board)
     })

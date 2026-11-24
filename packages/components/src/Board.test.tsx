@@ -21,7 +21,7 @@ for (const key of ['clientWidth', 'clientHeight', 'offsetWidth', 'offsetHeight']
     },
   })
 }
-const { Board } = await import('./Board')
+const { Board, BoardDefaults } = await import('./Board')
 const { Boundary } = await import('./Boundary')
 
 type XY = { X(): number; Y(): number }
@@ -76,6 +76,8 @@ function points(curve: { dataX: number[]; dataY: number[] }) {
 }
 
 type Data = { dataX: number[]; dataY: number[] }
+
+type BoardOptionsLike = { point?: { fillColor?: string } }
 
 const unit = (v: number[]) => v.map((x) => x / Math.hypot(...v))
 
@@ -929,5 +931,121 @@ describe('multivariable elements', () => {
     expect(Reflect.get(el(), 'slide') === surface).toBe(true)
     const [x, y, z] = xyz(el())
     expect(z!).toBeCloseTo(x! + y!, 1)
+  })
+})
+
+describe('BoardDefaults', () => {
+  /** Renders children in a board under the given defaults, like renderBoard. */
+  async function renderWithDefaults<T>(
+    defaults: Parameters<typeof BoardDefaults>[0],
+    children: (ref: (el: T) => null) => JSX.Element,
+    board: Partial<JXG.BoardAttributes> = {},
+  ) {
+    let element: T | undefined
+    render(() => (
+      <BoardDefaults {...defaults}>
+        <Board boundingBox={[-10, 10, 10, -10]} {...board}>
+          {children((el) => ((element = el), null))}
+        </Board>
+      </BoardDefaults>
+    ))
+    await waitFor(() => expect(element).toBeDefined())
+    return () => element!
+  }
+
+  test('sets the defaults of an element type, which the props of an element override', async () => {
+    let other: JXG.Point | undefined
+    const el = await renderWithDefaults<JXG.Point>(
+      { point: { strokeColor: 'red', size: 7 } },
+      (ref) => (
+        <>
+          <Board.Point position={[0, 0]} strokeColor="blue">
+            {ref}
+          </Board.Point>
+          <Board.Point position={[1, 1]}>{(p) => ((other = p), null)}</Board.Point>
+        </>
+      ),
+    )
+    expect([el().getAttribute('strokeColor'), el().getAttribute('size')]).toEqual(['blue', 7])
+    expect(other!.getAttribute('strokeColor')).toBe('red')
+  })
+
+  test('elements sets what no element type sets itself', async () => {
+    let segment: JXG.Segment | undefined
+    const el = await renderWithDefaults<JXG.Point>({ elements: { dash: 2 } }, (ref) => (
+      <>
+        <Board.Point position={[0, 0]}>{ref}</Board.Point>
+        <Board.Segment from={[0, 0]} to={[1, 1]}>
+          {(s) => ((segment = s), null)}
+        </Board.Segment>
+      </>
+    ))
+    expect(el().getAttribute('dash')).toBe(2)
+    expect(segment!.getAttribute('dash')).toBe(2)
+  })
+
+  test('sets the attributes of the board, which its props override', async () => {
+    const withAxes = await renderWithDefaults<JXG.Point>({ board: { axis: true } }, (ref) => (
+      <Board.Point position={[0, 0]}>{ref}</Board.Point>
+    ))
+    expect(Reflect.get(withAxes().board, 'defaultAxes')).toBeTruthy()
+    const without = await renderWithDefaults<JXG.Point>(
+      { board: { axis: true } },
+      (ref) => <Board.Point position={[0, 0]}>{ref}</Board.Point>,
+      { axis: false },
+    )
+    expect(Reflect.get(without().board, 'defaultAxes')).toBeFalsy()
+  })
+
+  test('also applies to what the board creates itself, such as its axes', async () => {
+    const el = await renderWithDefaults<JXG.Point>(
+      { board: { axis: true }, axis: { strokeColor: 'purple' } },
+      (ref) => <Board.Point position={[0, 0]}>{ref}</Board.Point>,
+    )
+    const axes = Reflect.get(el().board, 'defaultAxes') as unknown as { x: JXG.Axis }
+    expect(axes.x.getAttribute('strokeColor')).toBe('purple')
+  })
+
+  test('an inner BoardDefaults is merged over an outer one', async () => {
+    let element: JXG.Point | undefined
+    render(() => (
+      <BoardDefaults point={{ strokeColor: 'red', size: 7 }} board={{ axis: true }}>
+        <BoardDefaults point={{ size: 2 }}>
+          <Board>
+            <Board.Point position={[0, 0]}>{(p) => ((element = p), null)}</Board.Point>
+          </Board>
+        </BoardDefaults>
+      </BoardDefaults>
+    ))
+    await waitFor(() => expect(element).toBeDefined())
+    expect([element!.getAttribute('strokeColor'), element!.getAttribute('size')]).toEqual([
+      'red',
+      2,
+    ])
+    expect(Reflect.get(element!.board, 'defaultAxes')).toBeTruthy()
+  })
+
+  test('is combined with the theme of a board', async () => {
+    const el = await renderWithDefaults<JXG.Point>(
+      { point: { size: 7 } },
+      (ref) => <Board.Point position={[0, 0]}>{ref}</Board.Point>,
+      { theme: 'mono_thin' },
+    )
+    expect(el().getAttribute('size')).toBe(7)
+    expect(el().getAttribute('fillColor')).toBe(
+      (JXG.themes.mono_thin as BoardOptionsLike).point!.fillColor,
+    )
+  })
+
+  test('leaves no theme behind and other boards alone', async () => {
+    const themes = Object.keys(JXG.themes)
+    await renderWithDefaults<JXG.Point>({ point: { size: 7 } }, (ref) => (
+      <Board.Point position={[0, 0]}>{ref}</Board.Point>
+    ))
+    expect(Object.keys(JXG.themes)).toEqual(themes)
+    const { el } = await renderBoard<JXG.Point>((ref) => (
+      <Board.Point position={[0, 0]}>{ref}</Board.Point>
+    ))
+    expect(el().getAttribute('size')).not.toBe(7)
   })
 })
