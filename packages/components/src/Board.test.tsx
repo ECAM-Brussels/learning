@@ -43,7 +43,6 @@ function drag(point: JXG.Point, to: [number, number]) {
   ).triggerEventHandlers(['drag'], [{}])
 }
 
-/** Renders children in a board and returns a getter for the element a child hands to `ref`. */
 async function renderBoard<T>(children: (ref: (el: T) => null) => JSX.Element) {
   let element: T | undefined
   const result = render(() => (
@@ -59,7 +58,6 @@ const bounds: [[number, number], [number, number], [number, number]] = [
   [-5, 5],
 ]
 
-/** Like renderBoard, inside a 3D view. */
 function renderView<T>(children: (ref: (el: T) => null) => JSX.Element) {
   return renderBoard<T>((ref) => (
     <Board.View3D position={[-6, -3]} size={[8, 8]} bounds={bounds}>
@@ -935,7 +933,6 @@ describe('multivariable elements', () => {
 })
 
 describe('BoardDefaults', () => {
-  /** Renders children in a board under the given defaults, like renderBoard. */
   async function renderWithDefaults<T>(
     defaults: Parameters<typeof BoardDefaults>[0],
     children: (ref: (el: T) => null) => JSX.Element,

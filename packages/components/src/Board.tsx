@@ -685,7 +685,6 @@ export const Board = Object.assign(
         </Element>
       )
     },
-    /** The tangent to a curve, line or circle at a glider on it. */
     Tangent: (
       props: {
         at: JXG.Glider
@@ -699,7 +698,6 @@ export const Board = Object.assign(
         </Element>
       )
     },
-    /** The normal to a curve, line or circle at a glider on it. */
     Normal: (
       props: {
         at: JXG.Glider
@@ -713,7 +711,6 @@ export const Board = Object.assign(
         </Element>
       )
     },
-    /** A parametric curve t ↦ fn(t) for t in the domain. */
     Curve: (
       props: {
         fn: (t: number) => Coords
@@ -743,7 +740,6 @@ export const Board = Object.assign(
         </Element>
       )
     },
-    /** A polar curve θ ↦ r(θ) around a center, for θ in the domain. */
     PolarCurve: (
       props: {
         r: (theta: number) => number
@@ -825,7 +821,6 @@ export const Board = Object.assign(
         </Element>
       )
     },
-    /** Arrows showing fn(x, y) on a grid over the domain. */
     VectorField: (
       props: {
         fn: (x: number, y: number) => Coords
@@ -1054,7 +1049,6 @@ export const Board = Object.assign(
         </Element>
       )
     },
-    /** A space curve t ↦ fn(t) for t in the domain. */
     Curve3D: (
       props: {
         fn: (t: number) => Coords3D
