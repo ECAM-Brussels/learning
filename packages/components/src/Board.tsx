@@ -10,6 +10,7 @@ import {
   deep,
   merge,
   omit,
+  onCleanup,
   onSettled,
   Show,
   snapshot,
@@ -1139,6 +1140,37 @@ export const Board = Object.assign(
             return props.children?.(plane)
           }}
         </Element>
+      )
+    },
+    /**
+     * Escape hatch for plain JSXGraph code.
+     * Elements it creates while it runs are removed when it unmounts; ones created later (e.g. in effects) are not.
+     */
+    Custom: (props: {
+      children: (board: JXG.Board, view: JXG.View3D | null) => JSX.Element | void
+    }) => {
+      const board = useContext(BoardContext)
+      const view = useContext(View3DContext)
+      return (
+        <Show when={board()}>
+          {(board) => {
+            const objects = () => board().objects as Record<string, JXG.GeometryElement>
+            const before = new Set(Object.keys(objects()))
+            const result = props.children(board(), view())
+            const created = Object.values(objects()).filter((el) => !before.has(el.id))
+            onCleanup(() => {
+              for (const el of created.reverse()) {
+                // Removing an element also removes the elements built on it.
+                if (!(el.id in objects())) continue
+                const elView = Reflect.get(el, 'is3D')
+                  ? (Reflect.get(el, 'view') as JXG.View3D)
+                  : null
+                ;(elView ?? board()).removeObject(el)
+              }
+            })
+            return result ?? null
+          }}
+        </Show>
       )
     },
     Text: (

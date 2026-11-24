@@ -1,7 +1,7 @@
 import { render, waitFor } from '@solidjs/testing-library'
 import type { JSX } from '@solidjs/web'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import { createMemo, createSignal, flush, Show } from 'solid-js'
+import { createEffect, createMemo, createSignal, flush, Show } from 'solid-js'
 
 // happy-dom lacks the SVG rendering methods JSXGraph calls.
 Object.assign(SVGElement.prototype, {
@@ -1044,5 +1044,96 @@ describe('BoardDefaults', () => {
       <Board.Point position={[0, 0]}>{ref}</Board.Point>
     ))
     expect(el().getAttribute('size')).not.toBe(7)
+  })
+})
+
+describe('Custom', () => {
+  test('removes what it created when unmounted, and only that', async () => {
+    const [shown, setShown] = createSignal(true)
+    let custom: JXG.Point | undefined
+    const { el } = await renderBoard<JXG.Point>((ref) => (
+      <>
+        <Board.Point position={[0, 0]}>{ref}</Board.Point>
+        <Show when={shown()}>
+          <Board.Custom>
+            {(board) => {
+              custom = board.create('point', [1, 1])
+              board.create('segment', [custom, [2, 2]])
+            }}
+          </Board.Custom>
+        </Show>
+      </>
+    ))
+    await waitFor(() => expect(custom).toBeDefined())
+    const board = el().board
+    const count = Object.keys(board.objects).length
+    setShown(false)
+    await waitFor(() => expect(custom!.id in board.objects).toBe(false))
+    expect(Object.keys(board.objects).length).toBeLessThan(count)
+    expect(el().id in board.objects).toBe(true)
+  })
+
+  test('can follow signals with effects', async () => {
+    const [x, setX] = createSignal(1)
+    let point: JXG.Point | undefined
+    render(() => (
+      <Board>
+        <Board.Custom>
+          {(board) => {
+            const p = board.create('point', [x(), 0])
+            createEffect(x, (x) => {
+              p.moveTo([x, 0])
+            })
+            point = p
+          }}
+        </Board.Custom>
+      </Board>
+    ))
+    await waitFor(() => expect(point).toBeDefined())
+    setX(3)
+    await waitFor(() => expect(xy(point!)).toEqual([3, 0]))
+  })
+
+  test('can return Board components built on what it created', async () => {
+    const { el } = await renderBoard<JXG.Tangent>((ref) => (
+      <Board.Custom>
+        {(board) => {
+          const curve = board.create('functiongraph', [(x: number) => x * x])
+          const glider = board.create('glider', [1, 1, curve])
+          return <Board.Tangent at={glider}>{ref}</Board.Tangent>
+        }}
+      </Board.Custom>
+    ))
+    expect(slope(el())).toBeCloseTo(2)
+  })
+
+  test('is given the enclosing 3D view, and removes 3D elements through it', async () => {
+    const [shown, setShown] = createSignal(true)
+    const warnings: unknown[] = []
+    const warn = console.warn
+    console.warn = (...args: unknown[]) => warnings.push(args)
+    try {
+      let point: JXG.Point3D | undefined
+      render(() => (
+        <Board boundingBox={[-10, 10, 10, -10]}>
+          <Board.View3D position={[-6, -3]} size={[8, 8]} bounds={bounds}>
+            <Show when={shown()}>
+              <Board.Custom>
+                {(_, view) => {
+                  point = view!.create('point3d', [1, 2, 3])
+                }}
+              </Board.Custom>
+            </Show>
+          </Board.View3D>
+        </Board>
+      ))
+      await waitFor(() => expect(point).toBeDefined())
+      expect(xyz(point!)).toEqual([1, 2, 3])
+      setShown(false)
+      await waitFor(() => expect(point!.id in point!.board.objects).toBe(false))
+      expect(warnings).toEqual([])
+    } finally {
+      console.warn = warn
+    }
   })
 })

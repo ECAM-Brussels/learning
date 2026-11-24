@@ -42,6 +42,8 @@ use the components in `./packages/components/src/Board.tsx`.
 Components in that file are meant to be _declarative versions_ of their associated geometry elements.
 They are not yet comprehensive or complete.
 By any means improve them, but ensure they are compatible with Solid's reactivity system and are declarative.
+For a one-off construction the components don't cover, use `Board.Custom` with plain JSXGraph code
+rather than adding a component or managing the board by hand.
 For defaults shared by many boards, such as a teacher's preferences for a course,
 wrap them in `BoardDefaults` (e.g. in the folder's `_layout.tsx`) rather than repeating props on every element.
 
