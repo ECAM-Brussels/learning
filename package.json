@@ -3,7 +3,9 @@
   "type": "module",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@mdx-js/language-service": "^0.7.4",
     "@types/bun": "latest",
+    "@volar/typescript": "^2.4.31",
     "eslint": "^10.15.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-mdx": "^3.10.1",
@@ -56,7 +58,7 @@
     "prepare": "lefthook install",
     "test": "bun --env-file=.env ./node_modules/turbo/bin/turbo run test",
     "test:watch": "bun --env-file=.env ./node_modules/turbo/bin/turbo run test:watch",
-    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json"
+    "typecheck": "bun scripts/typecheck.mjs --noEmit -p tsconfig.typecheck.json"
   },
   "workspaces": [
     "apps/*",

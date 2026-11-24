@@ -417,3 +417,37 @@ describe('Sequence with an exercise and a next generator', () => {
     await waitFor(() => expect(stored('gen', 1)?.[0]).toMatchObject({ correct: true }))
   })
 })
+
+describe('Sequence with generated pages: saved data', () => {
+  const seed = (id: string) =>
+    localStorage.setItem(
+      storageKey(id, 0),
+      JSON.stringify([
+        { data: { a: 7, b: 1 }, state: { answer: '8' }, submitted: true, correct: true },
+      ]),
+    )
+
+  test('a next component does not regenerate a saved page', async () => {
+    seed('saved-next')
+    render(() => <Sequence id="saved-next" next={(props) => <Sum a={props.position + 100} />} />)
+    await waitFor(() => expect(sums()[0]).toHaveTextContent('7 + 1 = ?'))
+  })
+
+  test('a next generator does not regenerate a saved page', async () => {
+    seed('saved-gen')
+    render(() => (
+      <Sequence id="saved-gen" exercise={Sum} next={({ position }) => ({ a: position + 100 })} />
+    ))
+    await waitFor(() => expect(sums()[0]).toHaveTextContent('7 + 1 = ?'))
+  })
+
+  test('static children keep their props over saved data', async () => {
+    seed('saved-static')
+    render(() => (
+      <Sequence id="saved-static">
+        <Sum a={100} />
+      </Sequence>
+    ))
+    await waitFor(() => expect(sums()[0]).toHaveTextContent('100 + 1 = ?'))
+  })
+})

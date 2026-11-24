@@ -1,3 +1,4 @@
+import type { JSX } from '@solidjs/web'
 import 'mathlive'
 import type { MathfieldElement, MathfieldElementAttributes } from 'mathlive'
 import { createEffect } from 'solid-js'
@@ -12,7 +13,10 @@ declare module '@solidjs/web' {
   }
 }
 
-export function MathField(props: Partial<MathfieldElementAttributes> & { value: string }) {
+export function MathField(
+  props: Omit<JSX.HTMLAttributes<MathfieldElement>, 'value'> &
+    Partial<MathfieldElementAttributes> & { value: string },
+) {
   let field!: HTMLSpanElement
   let mathfield!: MathfieldElement
   createEffect(

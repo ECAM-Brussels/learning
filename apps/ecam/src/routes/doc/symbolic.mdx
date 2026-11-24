@@ -53,7 +53,7 @@ et ne se base que sur l'arithmétique entière.
     <MathField
       class="border border-gray-200"
       value={expression()}
-      oninput={(e) => setExpression(e.target.value)}
+      onInput={(e) => setExpression(e.currentTarget.value)}
     />
   </p>
   <SymbolicRepresentation expr={expression()} />
@@ -106,7 +106,7 @@ Un flux typique d'utilisation est le suivant:
        <MathField
          class="border border-gray-200"
          value={expression()}
-         oninput={(e) => setExpression(e.target.value)}
+         onInput={(e) => setExpression(e.currentTarget.value)}
        />
        <SymbolicRepresentation expr={expression()} />
      </div>

@@ -1,4 +1,5 @@
 import { tex } from '@learning/core'
+import * as Exercise from './exam.exercises'
 
 # Préparation à l'examen
 
@@ -9,22 +10,20 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
 
 - Pouvoir utiliser Python comme calculatrice scientifique,
   en tenant en compte la **priorité des opérations**.
-- Connaître la syntaxe de base: `**` pour l'exponentiation (et non `^`),
+- Connaître la syntaxe de base : `**` pour l'exponentiation (et non `^`),
   `.` comme séparateur décimal, `1.3e-9` pour la notation scientifique.
-- Connaître les fonctions usuelles de `math` (ou `numpy`):
+- Reconnaître les fonctions usuelles de `math` (ou `numpy`) :
   `sqrt`, `sin`, `cos`, `exp`, `log` (logarithme **népérien**), `pi`, etc.
 - Savoir que les fonctions trigonométriques travaillent en **radians**
-  et utiliser `radians` pour convertir des degrés.
+  et utiliser `radians` pour convertir des degrés en radians.
 - Utiliser le fait que Python fonctionne avec $15$ chiffres significatifs,
   et prédire quand un calcul perd de la précision (e.g. `1e14 + 0.001`).
-- Savoir si un nombre a une représentation binaire exacte:
+- Savoir si un nombre a une représentation binaire exacte :
   c'est le cas si et seulement si sa fraction simplifiée s'écrit {tex`\frac{p}{2^q}`}.
-- Convertir un nombre simple du binaire vers la base $10$ et inversement
-  (e.g. {tex`(\texttt{1101.11})_2 = 13.75`}).
-- Distinguer une liste Python d'un vecteur `np.array`:
+- Distinguer une liste Python d'un vecteur `np.array` :
   `+` concatène les listes mais additionne les vecteurs.
 - Accéder à un élément d'une liste, sachant que la numérotation commence à $0$.
-- Faire des calculs vectoriels avec `numpy`: addition, multiplication par un scalaire,
+- Faire des calculs vectoriels avec `numpy` : addition, multiplication par un scalaire,
   produit scalaire (`np.dot`), produit vectoriel (`np.cross`), norme (`np.linalg.norm`).
 - Comprendre la vectorisation
 - Utiliser le fait que les fonctions de `numpy`, contrairement à `math`, sont vectorisées.
@@ -32,25 +31,24 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
 ### Exemples de questions
 
 - Écrivez le calcul {tex`\displaystyle \frac{7^3}{3 \sin x }`} en Python
-- Quel est le résultat de `3 ** 3`?
-- Quelle instruction calcule $\ln 5$: `math.log(5)`, `math.ln(5)` ou `math.log(5, 10)`?
-- Quelle instruction calcule $\sin 30^\circ$: `math.sin(30)` ou `math.sin(math.radians(30))`?
-- Le nombre $0.4$ est-il stocké de manière exacte dans la mémoire de l'ordinateur?
-- Parmi les nombres suivants, lequel est représentable exactement en binaire:
-  $0.1$, $0.3$, $0.375$ ou {tex`\frac 1 3`}?
-- Que vaut le nombre binaire {tex`(\texttt{101.01})_2`} en base $10$?
-- Quel est le résultat de `1e16 + 1 - 1e16`?
-- Quel est le résultat de `[1, 2] + [3, 4]`?
-- Quel est le résultat du code suivant:
+- Quel est le résultat de `3 ** 3` ?
+- Quelle instruction calcule $\ln 5$ : `math.log(5)`, `math.ln(5)` ou `math.log(5, 10)` ?
+- Quelle instruction calcule $\sin 30^\circ$ : `math.sin(30)` ou `math.sin(math.radians(30))` ?
+- Le nombre $0.4$ est-il stocké de manière exacte dans la mémoire de l'ordinateur ?
+- Parmi les nombres suivants, lequel est représentable exactement en binaire :
+  $0.1$, $0.3$, $0.375$ ou {tex`\frac 1 3`} ?
+- Quel est le résultat de `1e16 + 1 - 1e16` ?
+- Quel est le résultat de `[1, 2] + [3, 4]` ?
+- Quel est le résultat du code suivant :
 
   ```python
   liste = [2, 4, 6, 8]
   liste[1]
   ```
 
-- Quel est le résultat de `np.dot([1, 2, 3], [4, 5, 6])`?
-- Quel est le résultat de `np.linalg.norm([3, 4])`?
-- Quel sera le résultat du code suivant:
+- Quel est le résultat de `np.dot([1, 2, 3], [4, 5, 6])` ?
+- Quel est le résultat de `np.linalg.norm([3, 4])` ?
+- Quel sera le résultat du code suivant :
 
   ```python
   import numpy as np
@@ -59,7 +57,7 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
   x ** 2
   ```
 
-- Que faut-il changer au code suivant pour qu'il fonctionne?
+- Que faut-il changer au code suivant pour qu'il fonctionne ?
 
   ```python
   import math
@@ -74,20 +72,17 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
 - Définir une fonction avec `def`, des paramètres et `return`,
   en respectant l'**indentation** de $4$ espaces.
 - Faire la différence entre une fonction qui **affiche** (`print`) et une fonction qui **retourne** (`return`) une valeur.
-- Comprendre la vectorisation:
+- Comprendre la vectorisation :
   avec `numpy`, la multiplication de deux vecteurs et l'addition d'un scalaire se font **composante par composante**,
   donc les fonctions polynomiales sont automatiquement vectorisées.
-- Prédire le résultat de `np.linspace(a, b, n)`:
+- Prédire le résultat de `np.linspace(a, b, n)` :
   $n$ points uniformément espacés, $a$ et $b$ **inclus**, avec un écart de {tex`\frac{b - a}{n - 1}`}.
 - Tracer un graphe avec `plt.plot(x, y)`, où `x` et `y` ont la même dimension.
 - Comprendre que les graphes d'une fonction sont en fait linéaires par morceaux
-- Reconnaître le rôle des instructions de personnalisation:
-  `plt.title`, `plt.xlabel`, `plt.ylabel`, `plt.grid`, `plt.axhline`, `plt.axvline`, `plt.legend`.
-- Comprendre `plt.subplot(i, j, n)`: $n$-ième graphique d'une grille de $i$ lignes et $j$ colonnes.
 
 ### Exemples de questions
 
-- Quel est le résultat du programme suivant:
+- Quel est le résultat du programme suivant :
 
   ```python
   import numpy as np
@@ -95,8 +90,8 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
   np.linspace(0, 1, 2)
   ```
 
-- Quel est le résultat de `np.linspace(0, 1, 5)`?
-- Quel type de données reçoit-on en sortie du programme suivant:
+- Quel est le résultat de `np.linspace(0, 1, 5)` ?
+- Quel type de données reçoit-on en sortie du programme suivant :
 
   ```python
   import numpy as np
@@ -105,7 +100,7 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
   y
   ```
 
-- Quel est le résultat du programme suivant:
+- Quel est le résultat du programme suivant :
 
   ```python
   import numpy as np
@@ -114,7 +109,7 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
   x**2
   ```
 
-- Quel est le résultat du programme suivant:
+- Quel est le résultat du programme suivant :
 
   ```python
   import numpy as np
@@ -122,7 +117,7 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
   np.array([1, 2, 3]) * np.array([2, 0, -1]) + 1
   ```
 
-- Quel est le résultat du programme suivant:
+- Quel est le résultat du programme suivant :
 
   ```python
   def f(x):
@@ -131,7 +126,7 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
   f(3)
   ```
 
-- Quel est le résultat du programme suivant: `9`, `None` ou une erreur?
+- Quel est le résultat du programme suivant : `9`, `None` ou une erreur ?
 
   ```python
   def f(x):
@@ -140,17 +135,15 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
   f(3)
   ```
 
-- Combien de segments de droite sont tracés par `plt.plot([0, 1, 2], [1, 3, 2])`?
-- Quelle instruction trace l'axe horizontal $y = 0$: `plt.axhline(0)` ou `plt.axvline(0)`?
-- Après `plt.subplot(2, 3, 4)`, où se trouve le graphique sélectionné?
-- Vrai ou faux: les graphes sur Matplotlib ne sont en réalité pas lisses
+- Combien de segments de droite sont tracés par `plt.plot([0, 1, 2], [1, 3, 2])` ?
+- Vrai ou faux : les graphes sur Matplotlib ne sont en réalité pas lisses
   et sont composés de segment de droites.
 
 ## Séance 3
 
 - Calculer la pente d'une droite passant par deux points,
   et la pente de la sécante à $f$ en $a$ et $a + h$.
-- Prédire quand le calcul d'une pente donne faussement $0$:
+- Prédire quand le calcul d'une pente donne faussement $0$ :
   c'est le cas lorsque $\Delta y$ nécessite plus d'environ $15$ chiffres significatifs (e.g. $1 + h = 1$ pour $h = 10^{-20}$).
 - {tex`\displaystyle f'(a) \approx \frac{f(a+h) - f(a)}{h}`} est une bonne approximation si $h$ est petit,
   mais pas si $h$ est trop petit.
@@ -162,15 +155,15 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
 
 ### Exemples de questions
 
-- Que vaut la pente de la sécante à $f(x) = x^2$ en $x = 1$ et $x = 3$?
+- Que vaut la pente de la sécante à $f(x) = x^2$ en $x = 1$ et $x = 3$ ?
 - Pour $f(x) = x^2$, $a = 1$ et $h = 0.1$, que vaut le quotient différentiel avant
-  {tex`\displaystyle \frac{f(a + h) - f(a)}{h}`}?
-  Et le quotient différentiel central?
-- Laquelle des formules suivantes est le quotient différentiel central?
+  {tex`\displaystyle \frac{f(a + h) - f(a)}{h}`} ?
+  Et le quotient différentiel central ?
+- Laquelle des formules suivantes est le quotient différentiel central ?
   {tex`\displaystyle \frac{f(a+h) - f(a)}{h}`},
   {tex`\displaystyle \frac{f(a) - f(a-h)}{h}`} ou
-  {tex`\displaystyle \frac{f(a+h) - f(a-h)}{2h}`}?
-- Quel est le résultat du programme suivant:
+  {tex`\displaystyle \frac{f(a+h) - f(a-h)}{2h}`} ?
+- Quel est le résultat du programme suivant :
 
   ```python
   def f(x):
@@ -182,9 +175,9 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
   ```
 
 - Pour approximer $f'(1)$ avec un quotient différentiel,
-  quel pas $h$ donne le meilleur résultat: $1$, $10^{-6}$, $10^{-20}$ ou $10^{-30}$?
-- Vrai ou faux: `1 + 1e-20 == 1` donne `True` en Python.
-- Vrai ou faux: avec le même pas $h$,
+  quel pas $h$ donne le meilleur résultat : $1$, $10^{-6}$, $10^{-20}$ ou $10^{-30}$ ?
+- Vrai ou faux : `1 + 1e-20 == 1` donne `True` en Python.
+- Vrai ou faux : avec le même pas $h$,
   l'approximation numérique de $f''$ est moins précise que celle de $f'$.
 
 ## Séance 4
@@ -197,22 +190,22 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
 - Comprendre que $f'(a)$ se calcule via `f(a + epsilon).dual`
 - Connaître l'équation de la tangente {tex`y = f'(x_0)(x - x_0) + f(x_0)`}.
 - Appliquer une ou deux itérations de Newton-Raphson à la main {tex`x_{n+1} = x_n - \frac{f(x_n)}{f'(x_n)}`}
-- Reconnaître l'itération de Newton-Raphson en Python: `x = x - f(x) / f(x + epsilon).dual`.
+- Reconnaître l'itération de Newton-Raphson en Python : `x = x - f(x) / f(x + epsilon).dual`.
 - Comprendre qu'une boucle `for i in range(n):` répète $n$ fois les lignes **indentées**.
 
 ### Exemples de questions
 
-- Que vaut $(3 + 2 \epsilon) (1 - \epsilon)$ après simplification?
-- Que vaut $(1 + \epsilon)^3$ après simplification?
+- Que vaut $(3 + 2 \epsilon) (1 - \epsilon)$ après simplification ?
+- Que vaut $(1 + \epsilon)^3$ après simplification ?
 - Calculez {tex`\sqrt{1 + \epsilon}`}
-- Que vaut $\sin(3 + 4 \epsilon)$:
-  $\sin 3 + 4 \cos 3 \, \epsilon$, $\sin 3 + \cos 3 \, \epsilon$ ou $\sin 3 + 4 \sin 3 \, \epsilon$?
-- Que vaut `(2 + 3 * epsilon).dual`?
-- Le code `f(2 + epsilon)` affiche `7 + 15ε`. Que vaut $f'(2)$?
-- Quelle instruction calcule $f'(a)$: `f(a).dual`, `f(a + epsilon).dual` ou `f(a + epsilon).real`?
+- Que vaut $\sin(3 + 4 \epsilon)$ :
+  $\sin 3 + (4 \cos 3) \epsilon$, $\sin 3 + (\cos 3) \epsilon$ ou $\sin 3 + (4 \sin 3) \epsilon$ ?
+- Que vaut `(2 + 3 * epsilon).dual` ?
+- Le code `f(2 + epsilon)` affiche `7 + 15ε`. Que vaut $f'(2)$ ?
+- Quelle instruction calcule $f'(a)$ : `f(a).dual`, `f(a + epsilon).dual` ou `f(a + epsilon).real` ?
 - En appliquant une itération de Newton-Raphson à $f(x) = x^2 - 3$ en partant de $x_0 = 2$,
-  que vaut $x_1$?
-- Combien de fois le mot `Bonjour` est-il affiché par le programme suivant?
+  que vaut $x_1$ ?
+- Combien de fois le mot `Bonjour` est-il affiché par le programme suivant ?
 
   ```python
   for i in range(5):
@@ -231,28 +224,28 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
   sachant que la condition du `while` est le **contraire** de la condition d'arrêt.
 - Pouvoir appliquer une itération de la descente de gradient à la main {tex`x_{n+1} = x_n - \eta f'(x_n)`}.
 - Savoir dans quelle direction la descente de gradient se déplace selon le signe de $f'(x_n)$.
-- Comprendre le rôle du taux d'apprentissage $\eta$:
-  trop grand, les déplacements sont trop importants;
+- Comprendre le rôle du taux d'apprentissage $\eta$ :
+  trop grand, les déplacements sont trop importants ;
   trop petit, la convergence est très lente.
 - Savoir que Newton-Raphson nécessite $f'$ et $f''$,
   alors que la descente de gradient ne nécessite que $f'$.
 
 ### Exemples de questions
 
-- Quelle instruction permet de calculer la dérivée seconde d'une fonction $f$ en un point $a$?
-  `f(a + epsilon + epsilon**2).dual.dual` ou `f(a + epsilon + delta).dual.dual`?
-- Sachant que $\epsilon^2 = \delta^2 = 0$, que vaut le coefficient de $\epsilon\delta$ dans $(1 + \epsilon + \delta)^3$?
+- Quelle instruction permet de calculer la dérivée seconde d'une fonction $f$ en un point $a$ ?
+  `f(a + epsilon + epsilon**2).dual.dual` ou `f(a + epsilon + delta).dual.dual` ?
+- Sachant que $\epsilon^2 = \delta^2 = 0$, que vaut le coefficient de $\epsilon\delta$ dans $(1 + \epsilon + \delta)^3$ ?
 - En appliquant une itération de Newton-Raphson pour minimiser $f(x) = x^2 + 3x + 5$ en partant de $x_0 = 0$,
-  que vaut $x_1$?
+  que vaut $x_1$ ?
 - En appliquant une itération de la descente de gradient à $f(x) = x^2$
-  avec $x_0 = 2$ et $\eta = 0.1$, que vaut $x_1$?
+  avec $x_0 = 2$ et $\eta = 0.1$, que vaut $x_1$ ?
 - Lors d'une descente de gradient, si $f'(x_n) > 0$,
-  le point {tex`x_{n+1}`} est-il à gauche ou à droite de $x_n$?
-- Quelle boucle correspond à la condition d'arrêt $|f'(x)| \leq 10^{-6}$:
-  `while np.abs(diff(x)) > 1e-6:` ou `while np.abs(diff(x)) <= 1e-6:`?
-- Laquelle de ces itérations est une descente de gradient:
-  `x = x - diff(x) / diff2(x)` ou `x = x - eta * diff(x)`?
-- Quelle méthode ne nécessite que la dérivée première: Newton-Raphson ou la descente de gradient?
+  le point {tex`x_{n+1}`} est-il à gauche ou à droite de $x_n$ ?
+- Quelle boucle correspond à la condition d'arrêt $|f'(x)| \leq 10^{-6}$ :
+  `while np.abs(diff(x)) > 1e-6:` ou `while np.abs(diff(x)) <= 1e-6:` ?
+- Laquelle de ces itérations est une descente de gradient :
+  `x = x - diff(x) / diff2(x)` ou `x = x - eta * diff(x)` ?
+- Quelle méthode ne nécessite que la dérivée première : Newton-Raphson ou la descente de gradient ?
 
 ## Séance 6
 
@@ -260,14 +253,14 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
 - Créer une partition de $[a, b]$ en $n$ sous-intervalles avec
   `x, dx = np.linspace(a, b, n, endpoint=False, retstep=True)`,
   sachant que {tex`\mathrm{d}x = \frac{b - a}{n}`} et que $b$ est **exclu**.
-- Obtenir les points gauches (`x`), milieux (`x + dx / 2`) et droits (`x + dx`) de chaque sous-intervalle.
+- Obtenir les bornes gauches (`x`), les points milieux (`x + dx / 2`) et les bornes droites (`x + dx`) de chaque sous-intervalle.
 - Calculer une moyenne avec `np.sum(x) / len(x)`,
   et la valeur moyenne d'une fonction avec `np.sum(f(x_m)) / n`.
 - Calculer un déplacement à partir d'une vitesse avec `np.sum(v(t_m) * dt)`.
 - Faire le lien entre `np.sum(f(x) * dx)` et la notation {tex`\int_a^b f(x) \, \mathrm{d}x`}.
 - Reconnaître la méthode d'intégration utilisée
   (point milieu, trapèzes ou Simpson) à partir d'un code ou d'un schéma.
-- Connaître les poids de chaque méthode:
+- Connaître les poids de chaque méthode :
 
   |                       | `f(x)`           | `f(x + dx / 2)`  | `f(x + dx)`      |
   | --------------------- | ---------------- | ---------------- | ---------------- |
@@ -279,14 +272,14 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
 
 ### Exemples de questions
 
-- Quel est le résultat de `np.linspace(0, 1, 4, endpoint=False)`?
-- Quel est le pas {tex`\mathrm{d}x`} d'une partition de $[0, 2]$ en $4$ sous-intervalles?
-- Quels sont les points milieux d'une partition de $[0, 1]$ en $2$ sous-intervalles?
-- Quel est le résultat de `np.sum([1, 7, 4]) / len([1, 7, 4])`?
+- Quel est le résultat de `np.linspace(0, 1, 4, endpoint=False)` ?
+- Quel est le pas {tex`\mathrm{d}x`} d'une partition de $[0, 2]$ en $4$ sous-intervalles ?
+- Quels sont les points milieux d'une partition de $[0, 1]$ en $2$ sous-intervalles ?
+- Quel est le résultat de `np.sum([1, 7, 4]) / len([1, 7, 4])` ?
 - Une particule a pour vitesse $v(t)$.
-  Quelle instruction approxime son déplacement entre $t = a$ et $t = b$:
-  `np.sum(v(t_m) * dt)`, `np.sum(v(t_m)) * n` ou `v(b) - v(a)`?
-- Quelle méthode d'intégration est utilisée dans le code suivant?
+  Quelle instruction approxime son déplacement entre $t = a$ et $t = b$ :
+  `np.sum(v(t_m) * dt)`, `np.sum(v(t_m)) * n` ou `v(b) - v(a)` ?
+- Quelle méthode d'intégration est utilisée dans le code suivant ?
 
   ```python
   x, dx = np.linspace(a, b, n, endpoint=False, retstep=True)
@@ -294,7 +287,7 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
   np.sum(y * dx)
   ```
 
-- Quelle méthode d'intégration est utilisée dans le code suivant?
+- Quelle méthode d'intégration est utilisée dans le code suivant ?
 
   ```python
   x, dx = np.linspace(a, b, n, endpoint=False, retstep=True)
@@ -302,8 +295,22 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
   np.sum(y * dx)
   ```
 
-- Quels sont les poids de la règle de Simpson pour les points gauche, milieu et droit?
+- Quels sont les poids de la règle de Simpson pour la borne gauche, le point milieu et la borne droite ?
 - Avec la méthode du point milieu et $2$ sous-intervalles,
-  que vaut l'approximation de {tex`\int_0^2 x^2 \, \mathrm{d}x`}?
+  que vaut l'approximation de {tex`\int_0^2 x^2 \, \mathrm{d}x`} ?
 - Avec la règle des trapèzes et $1$ seul sous-intervalle,
-  que vaut l'approximation de {tex`\int_0^2 x^2 \, \mathrm{d}x`}?
+  que vaut l'approximation de {tex`\int_0^2 x^2 \, \mathrm{d}x`} ?
+
+## Examen blanc
+
+Cet examen blanc contient $20$ questions à choix multiple, corrigées automatiquement.
+Chaque question a une seule bonne réponse.
+
+<Exercise.MockExam />
+
+## Entraînement
+
+Les questions suivantes sont générées aléatoirement et couvrent les six séances.
+Une nouvelle question apparaît après chaque réponse, sans limite.
+
+<Exercise.Practice id="mn1m-practice" />

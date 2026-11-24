@@ -28,6 +28,8 @@
     "noPropertyAccessFromIndexSignature": false
   },
   "mdx": {
-    "checkMdx": false
+    "checkMdx": true,
+    // Same syntax extensions as satteri's `features` in packages/mdx/config.ts
+    "plugins": ["remark-math", "remark-directive"]
   }
 }

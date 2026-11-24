@@ -15,7 +15,15 @@
     "./MultipleChoice": "./MultipleChoice.tsx"
   },
   "private": true,
+  "scripts": {
+    "test": "bun test --conditions=browser",
+    "test:watch": "bun test --conditions=browser --watch"
+  },
   "devDependencies": {
+    "@happy-dom/global-registrator": "catalog:",
+    "@solidjs/compiler": "catalog:",
+    "@solidjs/testing-library": "catalog:",
+    "@testing-library/jest-dom": "catalog:",
     "@types/bun": "latest"
   },
   "peerDependencies": {

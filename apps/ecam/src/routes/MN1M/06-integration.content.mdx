@@ -60,7 +60,7 @@ x, dx = np.linspace(0, 1, 10, endpoint=False, retstep=True)
 print("Partition:      ", x)
 print("Bornes gauches: ", x)
 print("Bornes droites: ", x + dx)
-print("Points milieux: ", (x + dx / 2))
+print("Points milieux: ", x + dx / 2)
 print("Pas:            ", dx)
 ```
 
@@ -70,6 +70,8 @@ print("Pas:            ", dx)
 Remarquez que `x` est un vecteur, et `dx` est un scalaire.
 La somme `x + dx` est le vecteur dont les composantes sont les sommes de chaque composante de `x` avec le scalaire `dx`.
 :::
+
+Pour les questions suivantes, veuillez ne pas utiliser `print` pour afficher les résultats.
 
 <Exercise.PartitionSequence />
 

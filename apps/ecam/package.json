@@ -7,7 +7,9 @@
     "start": "bunx --bun vite",
     "dev": "bunx --bun vite",
     "build": "vite build",
-    "serve": "vite preview"
+    "serve": "vite preview",
+    "test": "bun test --conditions=browser",
+    "test:watch": "bun test --conditions=browser --watch"
   },
   "license": "MIT",
   "devDependencies": {

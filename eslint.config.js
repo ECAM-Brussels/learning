@@ -23,6 +23,8 @@ export default defineConfig(
       '@typescript-eslint/no-namespace': 'off',
       '@typescript-eslint/triple-slash-reference': ['error', { path: 'always' }],
       'no-empty': ['error', { allowEmptyCatch: true }],
+      // French prose needs no-break spaces before punctuation (see AGENTS.md).
+      'no-irregular-whitespace': ['error', { skipJSXText: true, skipStrings: true }],
       // Solid refs (`let el!: HTMLElement` + `ref={el}`) are assigned by the compiler.
       'no-unassigned-vars': 'off',
       '@typescript-eslint/no-unused-vars': [

@@ -448,7 +448,7 @@ const TrueOrFalse = createDerivedStep(
       ['A', 'Vrai'],
       ['B', 'Faux'],
     ]),
-    grade: (sel) => sel.equals([props.answer ? 'A' : 'B']),
+    answer: props.answer ? 'A' : 'B',
   }),
 )
 

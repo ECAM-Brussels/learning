@@ -127,7 +127,7 @@ export function Sequence<T extends object>(props: Props<T> & { id: string }) {
             {range(length()).map(
               (i) =>
                 (pages[i] ??= () => (
-                  <StepContext value={() => stepContext(i)}>
+                  <StepContext value={() => ({ ...stepContext(i), generated: true })}>
                     <Boundary fallback="Chargement de l'exercice...">
                       {'exercise' in props ? (
                         <Scope>

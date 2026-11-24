@@ -43,6 +43,34 @@ Components in that file are meant to be _declarative versions_ of their associat
 They are not yet comprehensive or complete.
 By any means improve them, but ensure they are compatible with Solid's reactivity system and are declarative.
 
+# MDX pages
+
+Keep MDX files mostly prose: TypeScript tooling (type errors, autocompletion, refactoring) works poorly inside MDX.
+Put exercises, sequences and any non-trivial JSX in a sibling `*.exercises.tsx` file
+and use them as one-line components, e.g. `import * as Exercise from './exam.exercises'` then `<Exercise.Practice id="..." />`.
+Files with an extra dot in their name, such as `*.exercises.tsx` or `*.content.mdx`, are not turned into routes.
+`bun run typecheck` also type-checks MDX files (`scripts/typecheck.mjs`).
+Components the layout passes to MDX without an import must be declared in `MDXProvidedComponents` (`apps/ecam/mdx.d.ts`),
+otherwise every component in MDX loses its types.
+
+# Generated exercises
+
+For randomised questions, use `createQuestionBank` from `@learning/core` (see `apps/ecam/src/routes/MN1M/exam.exercises.tsx`).
+Only the parameters returned by `generate` are saved, so `render` must be pure,
+and `generate` must draw from the `random` it receives (not `Math.random`) so questions can be reproduced from a seed in tests.
+With `MultipleChoice`, declare `answer` rather than `grade`: tests can then check every generated question.
+
+# French typography
+
+Course content is written in French.
+In French prose, put a no-break space before two-part punctuation, never a normal space or no space:
+
+- narrow no-break space (U+202F) before `?`, `!` and `;`: `Que vaut x ?`
+- no-break space (U+00A0) before `:`: `Le programme suivant :`
+
+Type the actual characters, both in Markdown and in JSX text.
+This applies to prose only: never inside code, `tex` templates, `$…$` math or JavaScript (e.g. object keys like `A:`).
+
 # Comments
 
 Don't write comments that restate what the code already says,

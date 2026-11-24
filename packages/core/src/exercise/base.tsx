@@ -97,7 +97,7 @@ type ResolveShape<T> = T extends ObjectLikeSchema
       ? RawObjectSchema<T>
       : never
 
-type InferShape<T, U extends 'input' | 'output' = 'input'> = U extends 'output'
+export type InferShape<T, U extends 'input' | 'output' = 'input'> = U extends 'output'
   ? v.InferOutput<ResolveShape<T>>
   : v.InferInput<ResolveShape<T>>
 
@@ -162,7 +162,7 @@ export type StoredStep<
   ? v.InferOutput<ReturnType<typeof StoredStep<D, I>>>
   : v.InferInput<ReturnType<typeof StoredStep<D, I>>>
 
-type StepSchema = { inputs: RawShape; data: Shape }
+export type StepSchema = { inputs: RawShape; data: Shape }
 
 type Infer<T, U extends 'input' | 'output' = 'input'> =
   T extends v.BaseSchema<any, any, any>
@@ -254,6 +254,7 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
     ...sequenceContext(),
     sequencePosition: slot ?? inherited?.().sequencePosition ?? 0,
     position: inherited?.().position ?? 0,
+    generated: props.id === undefined && (inherited?.().generated ?? false),
   }))
   const optionsCtx = useContext(OptionsContext)
   const rawOptions = createMemo(async () => {
@@ -285,14 +286,17 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
   const fetched = createMemo(
     () => all()[stepContext().sequencePosition]?.[stepContext().position] ?? null,
   )
+  const isGenerated = () =>
+    typeof props.data === 'function' ||
+    (stepContext().generated === true && stepContext().position === 0)
   const [step, setStep] = createOptimisticStore(() => {
     return v.parse(schema(), {
       state: {},
       ...(fetched() ?? {}),
       data: {
         ...exerciseData(),
-        // Override with saved data only if the data comes from a generator
-        ...(typeof props.data === 'function' ? fetched()?.data : {}),
+        // Static data comes from the source code, which may have been edited since it was saved
+        ...(isGenerated() ? fetched()?.data : {}),
       },
     })
   }, {} as any)
@@ -439,9 +443,9 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
           <Field
             class="rounded border border-gray-200"
             value={step.state[name] ?? ''}
-            onInput={(e) => {
+            onInput={(e: { currentTarget: { value: string } }) => {
               setState((s) => {
-                s[name] = e.target.value as any
+                s[name] = e.currentTarget.value as any
               })
             }}
             readonly={!canSubmit()}
@@ -600,7 +604,7 @@ export function createStep<S extends StepSchema>(step: Omit<StepProps<S>, 'data'
   return Object.assign(StepComponent, { config: step })
 }
 
-type StepComponent<S extends StepSchema> = ReturnType<typeof createStep<S>>
+export type StepComponent<S extends StepSchema> = ReturnType<typeof createStep<S>>
 
 export function createDerivedStep<R extends Shape, S extends StepSchema>(
   component: StepComponent<S>,
