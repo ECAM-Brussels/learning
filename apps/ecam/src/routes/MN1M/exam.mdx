@@ -252,7 +252,7 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
 - Créer une partition de $[a, b]$ en $n$ sous-intervalles avec
   `x, dx = np.linspace(a, b, n, endpoint=False, retstep=True)`,
   sachant que {tex`\mathrm{d}x = \frac{b - a}{n}`} et que $b$ est **exclu**.
-- Obtenir les points gauches (`x`), milieux (`x + dx / 2`) et droits (`x + dx`) de chaque sous-intervalle.
+- Obtenir les bornes gauches (`x`), les points milieux (`x + dx / 2`) et les bornes droites (`x + dx`) de chaque sous-intervalle.
 - Calculer une moyenne avec `np.sum(x) / len(x)`,
   et la valeur moyenne d'une fonction avec `np.sum(f(x_m)) / n`.
 - Calculer un déplacement à partir d'une vitesse avec `np.sum(v(t_m) * dt)`.
@@ -294,7 +294,7 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
   np.sum(y * dx)
   ```
 
-- Quels sont les poids de la règle de Simpson pour les points gauche, milieu et droit?
+- Quels sont les poids de la règle de Simpson pour la borne gauche, le point milieu et la borne droite?
 - Avec la méthode du point milieu et $2$ sous-intervalles,
   que vaut l'approximation de {tex`\int_0^2 x^2 \, \mathrm{d}x`}?
 - Avec la règle des trapèzes et $1$ seul sous-intervalle,
