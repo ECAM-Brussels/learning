@@ -9,7 +9,7 @@ import * as v from 'valibot'
 
 export function Integer(rawProps: {
   mode?: 'decimal' | 'base' | 'both'
-  base?: 2
+  base?: 2 | 10
   value?: number
   showCalculation?: boolean
   precision?: number

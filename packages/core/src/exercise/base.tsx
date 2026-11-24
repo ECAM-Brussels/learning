@@ -443,9 +443,9 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
           <Field
             class="rounded border border-gray-200"
             value={step.state[name] ?? ''}
-            onInput={(e) => {
+            onInput={(e: { currentTarget: { value: string } }) => {
               setState((s) => {
-                s[name] = e.target.value as any
+                s[name] = e.currentTarget.value as any
               })
             }}
             readonly={!canSubmit()}
