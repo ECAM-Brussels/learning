@@ -43,6 +43,13 @@ Components in that file are meant to be _declarative versions_ of their associat
 They are not yet comprehensive or complete.
 By any means improve them, but ensure they are compatible with Solid's reactivity system and are declarative.
 
+# MDX pages
+
+Keep MDX files mostly prose: TypeScript tooling (type errors, autocompletion, refactoring) works poorly inside MDX.
+Put exercises, sequences and any non-trivial JSX in a sibling `*.exercises.tsx` file
+and use them as one-line components, e.g. `import * as Exercise from './exam.exercises'` then `<Exercise.Practice id="..." />`.
+Files with an extra dot in their name, such as `*.exercises.tsx` or `*.content.mdx`, are not turned into routes.
+
 # French typography
 
 Course content is written in French.
