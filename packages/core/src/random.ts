@@ -5,7 +5,7 @@
  * which lets saved exercises be rebuilt identically and generated questions be reproduced in tests.
  */
 export function createRandom(seed: string | number = Math.random()) {
-  let state = typeof seed === 'string' ? hash(seed) : Math.floor(seed * 2 ** 32) >>> 0
+  let state = hash(String(seed))
   function float() {
     state = (state + 0x6d2b79f5) | 0
     let t = Math.imul(state ^ (state >>> 15), 1 | state)

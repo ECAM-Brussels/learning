@@ -36,8 +36,9 @@ function choices(answer: string, distractors: string[], display: (key: string) =
 const dual = (real: number, eps: number, symbol = '\\epsilon') =>
   `${fmt(real)} ${eps < 0 ? '-' : '+'} ${fmt(Math.abs(eps))} ${symbol}`
 
-export const bank = createQuestionBank(MultipleChoice, (question) => ({
+export const bank = createQuestionBank((question) => ({
   'exact-binary': question({
+    step: MultipleChoice,
     tags: ['s1'],
     generate: (random) => ({
       numerator: random.sample([1, 3, 5, 7]),
@@ -56,6 +57,7 @@ export const bank = createQuestionBank(MultipleChoice, (question) => ({
     },
   }),
   'vector-power': question({
+    step: MultipleChoice,
     tags: ['s1'],
     generate: (random) => ({
       a: random.int(1, 5),
@@ -81,6 +83,7 @@ export const bank = createQuestionBank(MultipleChoice, (question) => ({
     }),
   }),
   norm: question({
+    step: MultipleChoice,
     tags: ['s1'],
     generate: (random) => {
       const [a, b] = random.sample([
@@ -101,6 +104,7 @@ export const bank = createQuestionBank(MultipleChoice, (question) => ({
     }),
   }),
   linspace: question({
+    step: MultipleChoice,
     tags: ['s2'],
     generate: (random) => ({
       start: random.int(0, 3),
@@ -125,6 +129,7 @@ export const bank = createQuestionBank(MultipleChoice, (question) => ({
     },
   }),
   'missing-return': question({
+    step: MultipleChoice,
     tags: ['s2'],
     generate: (random) => ({
       a: random.int(2, 6),
@@ -153,6 +158,7 @@ export const bank = createQuestionBank(MultipleChoice, (question) => ({
     },
   }),
   segments: question({
+    step: MultipleChoice,
     tags: ['s2'],
     generate: (random) => ({ n: random.int(3, 8) }),
     render: ({ n }) => ({
@@ -166,6 +172,7 @@ export const bank = createQuestionBank(MultipleChoice, (question) => ({
     }),
   }),
   secant: question({
+    step: MultipleChoice,
     tags: ['s3'],
     generate: (random) => {
       const a = random.int(-3, 4)
@@ -182,6 +189,7 @@ export const bank = createQuestionBank(MultipleChoice, (question) => ({
     }),
   }),
   'difference-quotient': question({
+    step: MultipleChoice,
     tags: ['s3'],
     generate: (random) => ({
       a: random.int(1, 5),
@@ -208,6 +216,7 @@ export const bank = createQuestionBank(MultipleChoice, (question) => ({
     }),
   }),
   'dual-product': question({
+    step: MultipleChoice,
     tags: ['s4'],
     generate: (random) => ({
       a: random.int(1, 5),
@@ -225,6 +234,7 @@ export const bank = createQuestionBank(MultipleChoice, (question) => ({
     }),
   }),
   tangent: question({
+    step: MultipleChoice,
     tags: ['s4'],
     generate: (random) => ({
       a: random.int(1, 4),
@@ -246,6 +256,7 @@ export const bank = createQuestionBank(MultipleChoice, (question) => ({
     }),
   }),
   'newton-root': question({
+    step: MultipleChoice,
     tags: ['s4'],
     generate: (random) => ({ x0: random.sample([1, 2, 4]), c: random.sample([2, 3, 5, 6, 7]) }),
     render: ({ x0, c }) => {
@@ -262,6 +273,7 @@ export const bank = createQuestionBank(MultipleChoice, (question) => ({
     },
   }),
   'second-derivative-dual': question({
+    step: MultipleChoice,
     tags: ['s5'],
     generate: (random) => ({ a: random.int(1, 3), n: random.int(2, 5) }),
     render: ({ a, n }) => ({
@@ -280,6 +292,7 @@ export const bank = createQuestionBank(MultipleChoice, (question) => ({
     }),
   }),
   'newton-minimum': question({
+    step: MultipleChoice,
     tags: ['s5'],
     generate: (random) => ({
       a: random.sample([1, 2]),
@@ -299,6 +312,7 @@ export const bank = createQuestionBank(MultipleChoice, (question) => ({
     }),
   }),
   'gradient-descent': question({
+    step: MultipleChoice,
     tags: ['s5'],
     generate: (random) => ({
       a: random.sample([1, 2]),
@@ -321,6 +335,7 @@ export const bank = createQuestionBank(MultipleChoice, (question) => ({
     }),
   }),
   'gradient-direction': question({
+    step: MultipleChoice,
     tags: ['s5'],
     generate: (random) => ({ positive: random.int(0, 2) }),
     render: ({ positive }) => ({
@@ -336,6 +351,7 @@ export const bank = createQuestionBank(MultipleChoice, (question) => ({
     }),
   }),
   midpoints: question({
+    step: MultipleChoice,
     tags: ['s6'],
     generate: (random) => ({
       a: random.int(0, 3),
@@ -360,6 +376,7 @@ export const bank = createQuestionBank(MultipleChoice, (question) => ({
     },
   }),
   'integration-rule': question({
+    step: MultipleChoice,
     tags: ['s6'],
     generate: (random) => ({
       b: random.sample([2, 4]),
@@ -390,6 +407,7 @@ export const bank = createQuestionBank(MultipleChoice, (question) => ({
     },
   }),
   'integration-code': question({
+    step: MultipleChoice,
     tags: ['s6'],
     generate: (random) => ({ method: random.int(0, 3) }),
     render: ({ method }) => {

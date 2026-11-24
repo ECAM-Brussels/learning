@@ -12,7 +12,7 @@ globalThis.IntersectionObserver ??= class {
   }
 } as any
 
-const { createQuestionBank } = await import('./bank')
+const { createQuestionBank, defineQuestions } = await import('./bank')
 const { createStep } = await import('./base')
 const { createRandom } = await import('../random')
 
@@ -26,16 +26,34 @@ const Sum = createStep({
   ),
 })
 
-const bank = createQuestionBank(Sum, (question) => ({
+const Product = createStep({
+  schema: { data: { x: 'number', y: 'number' }, inputs: { answer: 'string' } } as const,
+  grade: ({ data, inputs }) => Number(inputs.answer) === data.x * data.y,
+  prompt: (p) => (
+    <p data-testid="product">
+      {p.data.x} × {p.data.y} = ?{p.inputs.answer}
+    </p>
+  ),
+})
+
+const bank = createQuestionBank((question) => ({
   small: question({
+    step: Sum,
     tags: ['easy'],
     generate: (random) => ({ n: random.int(1, 10) }),
     render: ({ n }) => ({ a: n, b: 1 }),
   }),
   big: question({
+    step: Sum,
     tags: ['hard'],
     generate: (random) => ({ n: random.int(100, 1000) }),
     render: ({ n }) => ({ a: n, b: n }),
+  }),
+  product: question({
+    step: Product,
+    tags: ['multiplication'],
+    generate: (random) => ({ n: random.int(2, 10) }),
+    render: ({ n }) => ({ x: n, y: 3 }),
   }),
 }))
 
@@ -47,6 +65,11 @@ describe('createRandom', () => {
     }
     expect(draw('a')).toEqual(draw('a'))
     expect(draw('a')).not.toEqual(draw('b'))
+  })
+
+  test('different integer seeds give different sequences', () => {
+    const first = (seed: number) => createRandom(seed).int(0, 2 ** 30)
+    expect(new Set([0, 1, 2, 3, 4].map(first)).size).toBe(5)
   })
 
   test('int excludes its upper bound', () => {
@@ -87,6 +110,22 @@ describe('createQuestionBank', () => {
     await waitFor(() => expect(screen.getByTestId('sum')).toHaveTextContent(/^\d \+ 1 = \?/))
   })
 
+  test('a question can be answered with its own step', async () => {
+    render(() => <bank.Practice id="practice-product" kinds={['product']} />)
+    await waitFor(() => expect(screen.getByTestId('product')).toHaveTextContent(/^\d+ × 3 = \?/))
+  })
+
+  test('Practice restores a saved question with its own step', async () => {
+    localStorage.setItem(
+      '/:practice-saved-step:0',
+      JSON.stringify([
+        { data: { kind: 'product', params: { n: 4 } }, state: {}, submitted: false },
+      ]),
+    )
+    render(() => <bank.Practice id="practice-saved-step" tags={['easy']} />)
+    await waitFor(() => expect(screen.getByTestId('product')).toHaveTextContent('4 × 3 = ?'))
+  })
+
   test('Practice restores a saved question instead of generating a new one', async () => {
     localStorage.setItem(
       '/:practice-saved:0',
@@ -101,5 +140,57 @@ describe('createQuestionBank', () => {
     )
     render(() => <bank.Practice id="practice-saved" tags={['easy']} />)
     await waitFor(() => expect(screen.getAllByTestId('sum')[0]).toHaveTextContent('500 + 500 = ?'))
+  })
+})
+
+describe('composing question sets', () => {
+  const sums = defineQuestions((question) => ({
+    double: question({
+      step: Sum,
+      tags: ['sums'],
+      generate: (random) => ({ n: random.int(1, 10) }),
+      render: ({ n }) => ({ a: n, b: n }),
+    }),
+  }))
+  const products = defineQuestions((question) => ({
+    square: question({
+      step: Product,
+      tags: ['products'],
+      generate: (random) => ({ n: random.int(1, 10) }),
+      render: ({ n }) => ({ x: n, y: n }),
+    }),
+  }))
+  const combined = createQuestionBank(sums, products)
+
+  test('a bank draws from every set', () => {
+    const drawn = new Set(Array.from({ length: 50 }, (_, seed) => combined.generate({}, seed).kind))
+    expect([...drawn].sort()).toEqual(['double', 'square'])
+  })
+
+  test('each question is answered with its own step', async () => {
+    render(() => <combined.Practice id="combined-products" tags={['products']} />)
+    await waitFor(() => expect(screen.getByTestId('product')).toHaveTextContent(/^(\d+) × \1 = \?/))
+  })
+
+  test('tags and kinds are typed across sets', () => {
+    expect(combined.generate({ tags: ['sums'] }, 1).kind).toBe('double')
+    // @ts-expect-error: no question has this tag
+    expect(() => combined.generate({ tags: ['typo'] })).toThrow()
+  })
+
+  test('every question must name its step', () => {
+    defineQuestions((question) => ({
+      // @ts-expect-error: the step is missing
+      missing: question({
+        generate: () => ({}),
+        render: () => ({ a: 1, b: 1 }),
+      }),
+    }))
+  })
+
+  test('a kind defined in two sets is rejected', () => {
+    expect(() => createQuestionBank(sums, sums)).toThrow(
+      'The question kind "double" is defined twice',
+    )
   })
 })
