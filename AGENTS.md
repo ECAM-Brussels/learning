@@ -43,6 +43,17 @@ Components in that file are meant to be _declarative versions_ of their associat
 They are not yet comprehensive or complete.
 By any means improve them, but ensure they are compatible with Solid's reactivity system and are declarative.
 
+# French typography
+
+Course content is written in French.
+In French prose, put a no-break space before two-part punctuation, never a normal space or no space:
+
+- narrow no-break space (U+202F) before `?`, `!` and `;`: `Que vaut x ?`
+- no-break space (U+00A0) before `:`: `Le programme suivant :`
+
+Type the actual characters, both in Markdown and in JSX text.
+This applies to prose only: never inside code, `tex` templates, `$…$` math or JavaScript (e.g. object keys like `A:`).
+
 # Comments
 
 Don't write comments that restate what the code already says,
