@@ -15,7 +15,7 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
 - Reconnaître les fonctions usuelles de `math` (ou `numpy`) :
   `sqrt`, `sin`, `cos`, `exp`, `log` (logarithme **népérien**), `pi`, etc.
 - Savoir que les fonctions trigonométriques travaillent en **radians**
-  et utiliser `radians` pour convertir des degrés.
+  et utiliser `radians` pour convertir des degrés en radians.
 - Utiliser le fait que Python fonctionne avec $15$ chiffres significatifs,
   et prédire quand un calcul perd de la précision (e.g. `1e14 + 0.001`).
 - Savoir si un nombre a une représentation binaire exacte :
@@ -199,7 +199,7 @@ Elle n'est pour le moment pas exhaustive et sera complétée au fur et à mesure
 - Que vaut $(1 + \epsilon)^3$ après simplification ?
 - Calculez {tex`\sqrt{1 + \epsilon}`}
 - Que vaut $\sin(3 + 4 \epsilon)$ :
-  $\sin 3 + 4 \cos 3 \, \epsilon$, $\sin 3 + \cos 3 \, \epsilon$ ou $\sin 3 + 4 \sin 3 \, \epsilon$ ?
+  $\sin 3 + (4 \cos 3) \epsilon$, $\sin 3 + (\cos 3) \epsilon$ ou $\sin 3 + (4 \sin 3) \epsilon$ ?
 - Que vaut `(2 + 3 * epsilon).dual` ?
 - Le code `f(2 + epsilon)` affiche `7 + 15ε`. Que vaut $f'(2)$ ?
 - Quelle instruction calcule $f'(a)$ : `f(a).dual`, `f(a + epsilon).dual` ou `f(a + epsilon).real` ?

@@ -582,9 +582,9 @@ export const MockExam = () => (
     <MultipleChoice
       prompt={<p>Que vaut {tex`\sin(3 + 4 \epsilon)`} ?</p>}
       choices={{
-        A: tex`\sin 3 + 4 \cos 3 \, \epsilon`,
-        B: tex`\sin 3 + \cos 3 \, \epsilon`,
-        C: tex`\sin 3 + 4 \sin 3 \, \epsilon`,
+        A: tex`\sin 3 + (4 \cos 3) \epsilon`,
+        B: tex`\sin 3 + (\cos 3) \epsilon`,
+        C: tex`\sin 3 + (4 \sin 3) \epsilon`,
       }}
       grade={(sel) => sel.equals(['A'])}
     />
