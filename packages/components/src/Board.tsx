@@ -23,8 +23,30 @@ declare global {
       anglepoint: JXG.Point
     }
 
+    // JSXGraph's types name these radiusPoint and anglePoint, which don't exist at runtime.
+    interface Sector {
+      radiuspoint: JXG.Point
+      anglepoint: JXG.Point
+    }
+
+    interface Integral {
+      curveLeft: JXG.Glider
+      curveRight: JXG.Glider
+    }
+
     interface Circle {
       setRadius(radius: string | number | (() => number)): this
+    }
+
+    // At runtime a GeometryElement, but with its own `setPosition`.
+    interface Point3D extends Omit<GeometryElement, 'setPosition'> {
+      setPosition(coords: [number, number, number], noevent?: boolean): this
+      element2D: Point
+    }
+
+    interface View3D {
+      objects: Record<string, GeometryElement>
+      removeObject(object: unknown): this
     }
 
     interface Functiongraph {
@@ -40,6 +62,9 @@ declare global {
 }
 
 export const BoardContext = createContext<() => JXG.Board | null>(() => null)
+export const View3DContext = createContext<() => JXG.View3D | null>(() => null)
+
+type Coords3D = [number, number, number]
 
 Reflect.set(globalThis, 'katex', katex)
 JXG.Options.text.useKatex = true
@@ -83,6 +108,7 @@ export const Board = Object.assign(
   {
     Angle: (
       props: {
+        /** A point on the first side, the vertex, and a point on the second side. */
         points: [
           [number, number] | JXG.Point,
           [number, number] | JXG.Point,
@@ -110,6 +136,7 @@ export const Board = Object.assign(
     },
     Arc: (
       props: {
+        /** The center, the start of the arc, and a point giving the direction of its end. */
         points: [
           [number, number] | JXG.Point,
           [number, number] | JXG.Point,
@@ -123,11 +150,11 @@ export const Board = Object.assign(
         <Element type="arc" parent={props.points} attrs={attrs}>
           {(arc: JXG.Arc) => {
             createEffect(
-              () => props.points,
-              ([p1, p2, p3]) => {
-                arc.radiuspoint.moveTo(p1)
-                arc.center.moveTo(p2)
-                arc.anglepoint.moveTo(p3)
+              () => deep(props.points),
+              ([center, radius, angle]) => {
+                arc.center.moveTo(center)
+                arc.radiuspoint.moveTo(radius)
+                arc.anglepoint.moveTo(angle)
               },
             )
             return props.children?.(arc)
@@ -267,8 +294,10 @@ export const Board = Object.assign(
         <Element type="integral" parent={[props.domain, props.curve]} attrs={attrs}>
           {(integral: JXG.Integral) => {
             createEffect(
-              () => [props.curve, props.domain] as const,
-              () => {
+              () => [props.curve, ...props.domain] as const,
+              ([curve, a, b]) => {
+                integral.curveLeft.moveTo([a, curve.Y(a, false)])
+                integral.curveRight.moveTo([b, curve.Y(b, false)])
                 integral.update()
                 integral.updateRenderer()
                 integral.board?.update()
@@ -394,7 +423,13 @@ export const Board = Object.assign(
       return (
         <Element
           type="riemannsum"
-          parent={[props.f, () => props.n, () => props.type ?? 'left', ...props.domain]}
+          parent={[
+            (x: number) => props.f(x),
+            () => props.n,
+            () => props.type ?? 'left',
+            () => props.domain[0],
+            () => props.domain[1],
+          ]}
           attrs={attrs}
         >
           {(riemannsum: JXG.Riemannsum) => {
@@ -413,6 +448,7 @@ export const Board = Object.assign(
     },
     Sector: (
       props: {
+        /** The center, the start of the arc, and a point giving the direction of its end. */
         points: [
           [number, number] | JXG.Point,
           [number, number] | JXG.Point,
@@ -426,11 +462,11 @@ export const Board = Object.assign(
         <Element type="sector" parent={props.points} attrs={attrs}>
           {(sector: JXG.Sector) => {
             createEffect(
-              () => props.points,
-              ([p1, p2, p3]) => {
-                sector.radiusPoint.moveTo(p1)
-                sector.center.moveTo(p2)
-                sector.anglePoint.moveTo(p3)
+              () => deep(props.points),
+              ([center, radius, angle]) => {
+                sector.center.moveTo(center)
+                sector.radiuspoint.moveTo(radius)
+                sector.anglepoint.moveTo(angle)
               },
             )
             return props.children?.(sector)
@@ -457,6 +493,100 @@ export const Board = Object.assign(
               },
             )
             return props.children?.(segment)
+          }}
+        </Element>
+      )
+    },
+    View3D: (
+      props: {
+        /** Lower-left corner of the view on the board. */
+        position: [number, number]
+        size: [number, number]
+        bounds: [[number, number], [number, number], [number, number]]
+        children?: JSX.Element
+      } & JXG.View3DAttributes,
+    ) => {
+      const attrs = omit(props, 'position', 'size', 'bounds', 'children')
+      return (
+        <Element
+          type="view3d"
+          parent={[props.position, props.size, props.bounds]}
+          attrs={attrs}
+          // Removing the view from the board would remove its 3D elements the wrong way.
+          beforeRemove={(view: JXG.View3D) => view.removeObject(Object.values(view.objects))}
+        >
+          {(view: JXG.View3D) => {
+            createEffect(
+              () => deep(props.bounds),
+              (bounds) => {
+                Reflect.set(view, 'bbox3D', bounds)
+                view.board.update()
+              },
+            )
+            return <View3DContext value={() => view}>{props.children}</View3DContext>
+          }}
+        </Element>
+      )
+    },
+    Point3D: (
+      props: {
+        position: Coords3D
+        children?: (point: JXG.Point3D) => JSX.Element
+        onDrag?: (point: JXG.Point3D) => void
+      } & JXG.Point3DAttributes,
+    ) => {
+      const attrs = omit(props, 'position', 'children', 'onDrag')
+      return (
+        <Element type="point3d" view parent={props.position} attrs={attrs}>
+          {(point: JXG.Point3D) => {
+            createEffect(
+              () => props.onDrag,
+              (onDrag) => {
+                if (!onDrag) return
+                // The drag is on the 2D projection, and fires before the board recomputes the 3D coordinates.
+                const handler = () => {
+                  point.update()
+                  onDrag(point)
+                }
+                point.element2D.on('drag', handler)
+                return () => point.element2D.off('drag', handler)
+              },
+            )
+            createEffect(
+              () => deep(props.position),
+              (position) => {
+                point.setPosition(position)
+                point.board.update()
+              },
+            )
+            return props.children?.(point)
+          }}
+        </Element>
+      )
+    },
+    /** An arrow between two 3D points; set `lastArrow: false` for a plain segment. */
+    Vector3D: (
+      props: {
+        from: Coords3D | JXG.Point3D
+        to: Coords3D | JXG.Point3D
+        children?: (vector: JXG.Line3D) => JSX.Element
+      } & JXG.Line3DAttributes,
+    ) => {
+      const attrs = merge({ lastArrow: true }, omit(props, 'from', 'to', 'children'))
+      return (
+        <Element type="line3d" view parent={[props.from, props.to]} attrs={attrs}>
+          {(vector: JXG.Line3D) => {
+            // Points given as elements move on their own; only coordinates are ours to update.
+            const { point1, point2 } = vector as unknown as Record<'point1' | 'point2', JXG.Point3D>
+            createEffect(
+              () => [deep(props.from), deep(props.to)] as const,
+              ([from, to]) => {
+                if (Array.isArray(from)) point1.setPosition(from)
+                if (Array.isArray(to)) point2.setPosition(to)
+                vector.board.update()
+              },
+            )
+            return props.children?.(vector)
           }}
         </Element>
       )
@@ -496,14 +626,19 @@ export const Board = Object.assign(
   },
 )
 
-function Element<T extends JXG.GeometryElement>(props: {
+function Element<T extends Pick<JXG.GeometryElement, 'setAttribute' | 'update'>>(props: {
   type: string
+  /** Create the element in the enclosing `View3D` rather than on the board. */
+  view?: boolean
   parent: unknown[]
   attrs?: Record<string, unknown>
   children?: (el: T) => JSX.Element
   onParentChange?: (el: T, parent: unknown[]) => void
+  beforeRemove?: (el: T) => void
 }) {
   const board = useContext(BoardContext)
+  const view = useContext(View3DContext)
+  const container = () => (props.view ? view() : board())
   const [el, setEl] = createSignal<T>()
 
   const attrs = () => {
@@ -516,10 +651,14 @@ function Element<T extends JXG.GeometryElement>(props: {
   }
 
   onSettled(() => {
-    const created = board()?.create(props.type, props.parent, attrs()) as any
-    setEl(created)
+    const parent = container()
+    if (!parent)
+      throw new Error(`<${props.type}> must be placed inside a ${props.view ? 'View3D' : 'Board'}`)
+    const created = (parent.create as (...args: unknown[]) => T)(props.type, props.parent, attrs())
+    setEl(() => created)
     return () => {
-      board()?.removeObject(created)
+      props.beforeRemove?.(created)
+      parent.removeObject(created as unknown as JXG.GeometryElement)
     }
   })
 
