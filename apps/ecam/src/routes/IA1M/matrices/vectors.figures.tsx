@@ -1,5 +1,6 @@
-import { Board, BoardContext } from '@learning/components'
-import { createMemo, createSignal, onSettled, useContext } from 'solid-js'
+import { Board } from '@learning/components'
+import type { JSX } from '@solidjs/web'
+import { createMemo, createSignal } from 'solid-js'
 
 // The span (lines, planes and their labels) is drawn in a muted green,
 // distinct from the blue of x and the amber of y.
@@ -232,27 +233,62 @@ export function LinearCombination2D() {
  * built on alpha x1 and beta x2.
  */
 export function LinearCombination3D() {
+  const { x1, x2, alpha, beta } = LINEAR_COMBINATION_3D
+  const alphaX1 = x1.map((c) => alpha * c) as Vec3
+  const betaX2 = x2.map((c) => beta * c) as Vec3
+  const x3: Vec3 = [alphaX1[0] + betaX2[0], alphaX1[1] + betaX2[1], alphaX1[2] + betaX2[2]]
+
+  const side = (from: Vec3, to: Vec3, color: string, arrow: boolean) => (
+    <Board.Vector3D
+      from={from}
+      to={to}
+      strokeColor={color}
+      strokeWidth={2}
+      dash={2}
+      lastArrow={arrow}
+    />
+  )
+
   return (
     <Board boundingBox={[-8, 8, 8, -8]} class="h-120 w-120">
-      <LinearCombination3DView />
+      {/* Created before the view, so that the view's labels are drawn over it. */}
       <Board.Text
         position={[-7.4, 7.2]}
-        content={coefficientsTeX(LINEAR_COMBINATION_3D.alpha, LINEAR_COMBINATION_3D.beta)}
+        content={coefficientsTeX(alpha, beta)}
         anchorX="left"
         anchorY="middle"
         fontSize={COEFFICIENT_FONT_SIZE}
         fixed
       />
+      {/* The vectors point mostly upwards (z from -0.3 to 2.1), so the origin is placed low in the box. */}
+      <View3D zRange={[-1.5, 4.5]}>
+        <ClippedPlane u={x1} v={x2} />
+        {side([0, 0, 0], alphaX1, X1_COLOR, true)}
+        {side([0, 0, 0], betaX2, X2_COLOR, true)}
+        {side(betaX2, x3, X1_COLOR, false)}
+        {side(alphaX1, x3, X2_COLOR, false)}
+        <Arrow3D to={x1} color={X1_COLOR} />
+        <Arrow3D to={x2} color={X2_COLOR} />
+        <Arrow3D to={x3} color={X3_COLOR} />
+        <VectorName3D position={x1} tex="\mathbf{x_1}" color={X1_COLOR} />
+        {/* Beside the tip rather than above it, where the dashed beta x2 continues. */}
+        <VectorName3D position={x2} tex="\mathbf{x_2}" color={X2_COLOR} toTheRight />
+        <VectorName3D position={x3} tex="\mathbf{x_3}" color={X3_COLOR} />
+        <VectorName3D position={alphaX1} tex="\alpha\mathbf{x_1}" color={X1_COLOR} />
+        <VectorName3D position={betaX2} tex="\beta\mathbf{x_2}" color={X2_COLOR} />
+      </View3D>
     </Board>
   )
 }
+
+type Vec3 = [number, number, number]
 
 const LINEAR_COMBINATION_3D = {
   // With the default camera (az = 1, el = 0.3), the viewing direction is about (0.80, 0.52, 0.30):
   // the plane span(x1, x2) faces it within about 16 degrees, so it is seen almost head-on.
   // x1 is not perpendicular to x2 (about 64 degrees) and is about 1.7 times as long.
-  x1: [-1.2, 2.3, 0.3] as [number, number, number],
-  x2: [-0.3, 0.4, 1.4] as [number, number, number],
+  x1: [-1.2, 2.3, 0.3] as Vec3,
+  x2: [-0.3, 0.4, 1.4] as Vec3,
   alpha: -1,
   beta: 1.5,
 }
@@ -262,9 +298,36 @@ const LINEAR_COMBINATION_3D = {
  * and the plane span(x, y) that they generate.
  */
 export function SpanOfTwoVectors() {
+  const [x, setX] = createSignal<Vec3>([2, -1, 0.5], { name: 'spanOfTwoVectorsX' })
+  const [y, setY] = createSignal<Vec3>([0.5, 2, 1.5], { name: 'spanOfTwoVectorsY' })
+
+  // The label lies in the plane, at 0.9 (x + y), between the two arrows.
+  // It is pulled back towards the origin when needed, to stay inside the box [-3, 3]^3.
+  const labelPosition = createMemo(
+    (): Vec3 => {
+      const sum = [0, 1, 2].map((i) => x()[i]! + y()[i]!)
+      const scale = Math.min(-0.8, 2.7 / (Math.max(...sum.map(Math.abs)) || 1))
+      return sum.map((c) => scale * c) as Vec3
+    },
+    { name: 'spanOfTwoVectorsLabelPosition' },
+  )
+
   return (
     <Board boundingBox={[-8, 8, 8, -8]} class="h-120 w-120">
-      <SpanOfTwoVectorsView />
+      <View3D>
+        <Board.Point3D
+          position={x()}
+          onDrag={(point) => setX(coordinates(point))}
+          {...vectorHead('\\mathbf{x}', '#0369a1', [10, 18])}
+        />
+        <Board.Point3D
+          position={y()}
+          onDrag={(point) => setY(coordinates(point))}
+          {...vectorHead('\\mathbf{y}', '#b45309')}
+        />
+        <PlaneSpan x={x()} y={y()} />
+        <SpanLabel3D position={labelPosition()} tex="\mathrm{span}(\mathbf{x},\mathbf{y})" />
+      </View3D>
     </Board>
   )
 }
@@ -274,9 +337,32 @@ export function SpanOfTwoVectors() {
  * and the line span(x) = span(y) that they generate.
  */
 export function SpanOfParallelVectors() {
+  // With the default camera (az = 1, el = 0.3, parallel projection), x is almost
+  // perpendicular to the viewing direction, so it is seen without foreshortening,
+  // and x and y point between the drawn axes rather than along them.
+  const x: Vec3 = [-1, 0.5, 1.5]
+  const y = x.map((c) => -1.25 * c) as Vec3
+
   return (
     <Board boundingBox={[-8, 8, 8, -8]} class="h-120 w-120">
-      <SpanOfParallelVectorsView />
+      <View3D>
+        <Board.Vector3D
+          from={[0, 0, 0]}
+          to={x}
+          lastArrow={false}
+          straightFirst
+          straightLast
+          strokeColor={SPAN_LABEL_COLOR}
+          strokeWidth={2}
+          dash={2}
+        />
+        <SpanLabel3D position={x.map((c) => 1.6 * c) as Vec3} tex="\mathrm{span}(\mathbf{x})" />
+        <Arrow3D to={x} color="#0369a1" />
+        <Arrow3D to={y} color="#b45309" />
+        {/* Invisible points (size 0) that only carry the names just above the arrowheads. */}
+        <Board.Point3D position={x} {...vectorName('\\mathbf{x}', [-10, 4])} />
+        <Board.Point3D position={y} {...vectorName('\\mathbf{y}', [-10, 10])} />
+      </View3D>
     </Board>
   )
 }
@@ -286,229 +372,153 @@ export function SpanOfParallelVectors() {
  * and the plane span(x, y) that they generate.
  */
 export function SpanOfIndependentVectors() {
+  const x: Vec3 = [1.6, -0.8, 0.6]
+  const y: Vec3 = [0.5, 2, 1.5]
+
   return (
     <Board boundingBox={[-8, 8, 8, -8]} class="h-120 w-120">
-      <SpanOfIndependentVectorsView />
+      <View3D>
+        {/* Invisible heads (size 0) that only carry the names just above the arrowheads. */}
+        <Board.Point3D position={x} {...vectorName('\\mathbf{x}', [-10, 4])} />
+        <Board.Point3D position={y} {...vectorName('\\mathbf{y}', [-10, 5])} />
+        <PlaneSpan x={x} y={y} />
+        <SpanLabel3D position={[2.1, 1.2, 2.1]} tex="\mathrm{span}(\mathbf{x},\mathbf{y})" />
+      </View3D>
     </Board>
   )
 }
 
-// Board.tsx has no 3D components yet, so the 3D views below are built imperatively.
-// az and el are JSXGraph's camera angles (in radians); 1 and 0.3 are its defaults.
-function createView3D(
-  board: JXG.Board,
-  zRange: [number, number] = [-3, 3],
-  camera = { az: 1, el: 0.3 },
-) {
-  return board.create(
-    'view3d',
-    [
-      [-6, -3],
-      [12, 10],
-      [[-3, 3], [-3, 3], zRange],
-    ],
-    {
-      depthOrder: { enabled: true },
-      az: { slider: { start: camera.az } },
-      el: { slider: { start: camera.el } },
-      xAxis: { name: 'x' },
-      yAxis: { name: 'y' },
-      zAxis: { name: 'z' },
-      xPlaneRear: { fillOpacity: 0.1 },
-      yPlaneRear: { fillOpacity: 0.1 },
-      zPlaneRear: { fillOpacity: 0.1 },
-    },
-  ) as JXG.View3D
+/**
+ * Three linearly independent vectors in space:
+ * the same x1 and x2 as in LinearCombination3D, and x3 outside their plane.
+ */
+export function IndependentVectors3D() {
+  const { x1, x2 } = LINEAR_COMBINATION_3D
+  // x3 is about 0.39 x1 + 0.86 x2 + 3 n, where n is the unit normal to the plane.
+  // Its projection onto the plane is deliberately on neither span(x1) nor span(x2).
+  const x3: Vec3 = [1.9, 2.6, 1.5]
+  const foot = projectOntoPlane(x3, x1, x2)
+
+  return (
+    <Board boundingBox={[-8, 8, 8, -8]} class="h-120 w-120">
+      {/* Created before the view, so that the view's labels are drawn over it. */}
+      <Board.Text
+        position={[-7.4, 7.2]}
+        content={`{\\color{${X3_COLOR}}\\mathbf{x_3}} \\notin \\mathrm{span}(\\mathbf{x_1},\\mathbf{x_2})`}
+        anchorX="left"
+        anchorY="middle"
+        fontSize={COEFFICIENT_FONT_SIZE}
+        fixed
+      />
+      {/* Seen from higher up than the other figures (el = 0.9 instead of 0.3),
+          the plane, which is nearly vertical, is tilted by about 50 degrees,
+          so the dashed line from x3 to the plane is long and x3 visibly sticks out below it. */}
+      <View3D zRange={[-1.5, 4.5]} camera={{ az: 1.08, el: 0.9 }}>
+        <ClippedPlane u={x1} v={x2} />
+        <Arrow3D to={x1} color={X1_COLOR} />
+        <Arrow3D to={x2} color={X2_COLOR} />
+        <Arrow3D to={x3} color={X3_COLOR} />
+        <Board.Vector3D
+          from={x3}
+          to={foot}
+          lastArrow={false}
+          strokeColor={X3_COLOR}
+          strokeWidth={2}
+          dash={2}
+        />
+        <Board.Point3D
+          position={foot}
+          name=""
+          size={3}
+          fixed
+          fillColor={X3_COLOR}
+          strokeColor={X3_COLOR}
+        />
+        <VectorName3D position={x1} tex="\mathbf{x_1}" color={X1_COLOR} />
+        <VectorName3D position={x2} tex="\mathbf{x_2}" color={X2_COLOR} toTheRight />
+        {/* Beside the tip rather than above it, where the dashed projection line goes. */}
+        <VectorName3D position={x3} tex="\mathbf{x_3}" color={X3_COLOR} toTheRight />
+      </View3D>
+    </Board>
+  )
 }
 
-// The typings omit point attributes such as size from Point3DAttributes,
-// although point3d accepts them.
+// az and el are JSXGraph's camera angles (in radians); 1 and 0.3 are its defaults.
+function View3D(props: {
+  zRange?: [number, number]
+  camera?: { az: number; el: number }
+  children: JSX.Element
+}) {
+  return (
+    <Board.View3D
+      position={[-6, -3]}
+      size={[12, 10]}
+      bounds={[[-3, 3], [-3, 3], props.zRange ?? [-3, 3]]}
+      depthOrder={{ enabled: true }}
+      az={{ slider: { start: props.camera?.az ?? 1 } }}
+      el={{ slider: { start: props.camera?.el ?? 0.3 } }}
+      xAxis={{ name: 'x' }}
+      yAxis={{ name: 'y' }}
+      zAxis={{ name: 'z' }}
+      xPlaneRear={{ fillOpacity: 0.1 }}
+      yPlaneRear={{ fillOpacity: 0.1 }}
+      zPlaneRear={{ fillOpacity: 0.1 }}
+    >
+      {props.children}
+    </Board.View3D>
+  )
+}
+
+const coordinates = (point: JXG.Point3D): Vec3 => [point.X(), point.Y(), point.Z()]
+
 // labelOffset is in pixels; [10, 10] is JSXGraph's default.
 function vectorHead(
   name: string,
   color: string,
   labelOffset: [number, number] = [10, 10],
-): JXG.PointAttributes {
+): JXG.Point3DAttributes {
   return { name, size: 5, fillColor: color, strokeColor: color, label: { offset: labelOffset } }
 }
 
 // An invisible point (size 0) at an arrowhead that only carries the vector's name,
 // placed with a pixel offset from the arrowhead.
-function vectorName(name: string, offset: [number, number]): JXG.PointAttributes {
+function vectorName(name: string, offset: [number, number]): JXG.Point3DAttributes {
   return { name, size: 0, fixed: true, label: { offset, anchorX: 'middle', anchorY: 'bottom' } }
 }
 
-function createArrow3D(
-  view: JXG.View3D,
-  head: [number, number, number] | JXG.Point3D,
-  color: string,
-) {
-  view.create('line3d', [[0, 0, 0], head], {
-    strokeColor: color,
-    strokeWidth: 3,
-    lastArrow: true,
-  })
+function Arrow3D(props: { to: Vec3; color: string }) {
+  return <Board.Vector3D from={[0, 0, 0]} to={props.to} strokeColor={props.color} strokeWidth={3} />
 }
 
-// JSXGraph's own dependency graph keeps the arrows and the plane in sync with the dragged heads,
-// which is why no Solid signal is needed here.
-function SpanOfTwoVectorsView() {
-  const board = useContext(BoardContext)
-
-  onSettled(() => {
-    const view = createView3D(board()!)
-    const x = view.create('point3d', [2, -1, 0.5], vectorHead('\\mathbf{x}', '#0369a1', [10, 18]))
-    const y = view.create('point3d', [0.5, 2, 1.5], vectorHead('\\mathbf{y}', '#b45309'))
-
-    createPlaneSpan(view, x, y)
-
-    // The label lies in the plane, at 0.9 (x + y), between the two arrows.
-    // It is pulled back towards the origin when needed, to stay inside the box [-3, 3]^3.
-    const labelPosition = () => {
-      const sum = [x.X() + y.X(), x.Y() + y.Y(), x.Z() + y.Z()]
-      const scale = Math.min(-0.8, 2.7 / (Math.max(...sum.map(Math.abs)) || 1))
-      return sum.map((c) => scale * c)
-    }
-    view.create('point3d', [labelPosition], {
-      name: '\\mathrm{span}(\\mathbf{x},\\mathbf{y})',
-      size: 0,
-      fixed: true,
-      label: { strokeColor: SPAN_LABEL_COLOR },
-    } as JXG.PointAttributes)
-  })
-
-  return null
-}
-
-function SpanOfIndependentVectorsView() {
-  const board = useContext(BoardContext)
-
-  onSettled(() => {
-    const view = createView3D(board()!)
-    // Invisible heads (size 0) that only carry the names just above the arrowheads.
-    const x = view.create('point3d', [1.6, -0.8, 0.6], vectorName('\\mathbf{x}', [-10, 4]))
-    const y = view.create('point3d', [0.5, 2, 1.5], vectorName('\\mathbf{y}', [-10, 5]))
-    createPlaneSpan(view, x, y)
-    view.create('point3d', [2.1, 1.2, 2.1], {
-      name: '\\mathrm{span}(\\mathbf{x},\\mathbf{y})',
-      size: 0,
-      fixed: true,
-      label: { strokeColor: SPAN_LABEL_COLOR },
-    } as JXG.PointAttributes)
-  })
-
-  return null
-}
-
-function createPlaneSpan(view: JXG.View3D, x: JXG.Point3D, y: JXG.Point3D) {
-  view.create(
-    'plane3d',
-    [
-      [0, 0, 0],
-      () => [x.X(), x.Y(), x.Z()],
-      () => [y.X(), y.Y(), y.Z()],
-      [-Infinity, Infinity],
-      [-Infinity, Infinity],
-    ],
-    {
-      fillColor: SPAN_COLOR,
-      fillOpacity: 0.25,
-      strokeColor: SPAN_LABEL_COLOR,
-    },
+// An invisible point (size 0) that only carries the name of a span.
+function SpanLabel3D(props: { position: Vec3; tex: string }) {
+  return (
+    <Board.Point3D
+      position={props.position}
+      name={props.tex}
+      size={0}
+      fixed
+      label={{ strokeColor: SPAN_LABEL_COLOR }}
+    />
   )
-  createArrow3D(view, x, '#0369a1')
-  createArrow3D(view, y, '#b45309')
 }
 
-function SpanOfParallelVectorsView() {
-  const board = useContext(BoardContext)
-
-  onSettled(() => {
-    const view = createView3D(board()!)
-    // With the default camera (az = 1, el = 0.3, parallel projection), x is almost
-    // perpendicular to the viewing direction, so it is seen without foreshortening,
-    // and x and y point between the drawn axes rather than along them.
-    const x: [number, number, number] = [-1, 0.5, 1.5]
-    const y = x.map((c) => -1.25 * c) as [number, number, number]
-
-    view.create('line3d', [[0, 0, 0], x], {
-      straightFirst: true,
-      straightLast: true,
-      strokeColor: SPAN_LABEL_COLOR,
-      strokeWidth: 2,
-      dash: 2,
-    })
-    view.create(
-      'point3d',
-      x.map((c) => 1.6 * c),
-      {
-        name: '\\mathrm{span}(\\mathbf{x})',
-        size: 0,
-        fixed: true,
-        label: { strokeColor: SPAN_LABEL_COLOR },
-      } as JXG.PointAttributes,
-    )
-
-    createArrow3D(view, x, '#0369a1')
-    createArrow3D(view, y, '#b45309')
-    // Invisible points (size 0) that only carry the names just above the arrowheads.
-    view.create('point3d', x, vectorName('\\mathbf{x}', [-10, 4]))
-    view.create('point3d', y, vectorName('\\mathbf{y}', [-10, 10]))
-  })
-
-  return null
+// The plane span(x, y), and the arrows x and y.
+function PlaneSpan(props: { x: Vec3; y: Vec3 }) {
+  return (
+    <>
+      <Board.Plane3D
+        point={[0, 0, 0]}
+        directions={[props.x, props.y]}
+        fillColor={SPAN_COLOR}
+        fillOpacity={0.25}
+        strokeColor={SPAN_LABEL_COLOR}
+      />
+      <Arrow3D to={props.x} color="#0369a1" />
+      <Arrow3D to={props.y} color="#b45309" />
+    </>
+  )
 }
-
-function LinearCombination3DView() {
-  const board = useContext(BoardContext)
-
-  onSettled(() => {
-    // The vectors point mostly upwards (z from -0.3 to 2.1), so the origin is placed low in the box.
-    const view = createView3D(board()!, [-1.5, 4.5])
-    const { x1, x2, alpha, beta } = LINEAR_COMBINATION_3D
-    const alphaX1 = x1.map((c) => alpha * c) as [number, number, number]
-    const betaX2 = x2.map((c) => beta * c) as [number, number, number]
-    const x3: [number, number, number] = [
-      alphaX1[0] + betaX2[0],
-      alphaX1[1] + betaX2[1],
-      alphaX1[2] + betaX2[2],
-    ]
-
-    createClippedPlane(view, x1, x2)
-
-    const side = (
-      from: [number, number, number],
-      to: [number, number, number],
-      color: string,
-      arrow: boolean,
-    ) =>
-      view.create('line3d', [from, to], {
-        strokeColor: color,
-        strokeWidth: 2,
-        dash: 2,
-        lastArrow: arrow,
-      })
-    side([0, 0, 0], alphaX1, X1_COLOR, true)
-    side([0, 0, 0], betaX2, X2_COLOR, true)
-    side(betaX2, x3, X1_COLOR, false)
-    side(alphaX1, x3, X2_COLOR, false)
-
-    createArrow3D(view, x1, X1_COLOR)
-    createArrow3D(view, x2, X2_COLOR)
-    createArrow3D(view, x3, X3_COLOR)
-
-    createVectorName(view, x1, '\\mathbf{x_1}', X1_COLOR)
-    // Beside the tip rather than above it, where the dashed beta x2 continues.
-    createVectorName(view, x2, '\\mathbf{x_2}', X2_COLOR, true)
-    createVectorName(view, x3, '\\mathbf{x_3}', X3_COLOR)
-    createVectorName(view, alphaX1, '\\alpha\\mathbf{x_1}', X1_COLOR)
-    createVectorName(view, betaX2, '\\beta\\mathbf{x_2}', X2_COLOR)
-  })
-
-  return null
-}
-
-type Vec3 = [number, number, number]
 
 // The polygon cut out of the plane span(u, v) by the box `bounds`
 // (Sutherland–Hodgman clipping of a large parallelogram against each face of the box).
@@ -548,104 +558,40 @@ function clipPlane(
 
 // The plane span(u, v) clipped to the box, except at the top, where it stops at z = 3.5
 // (below the box's 4.5) to stay clear of the text in the top-left corner.
-function createClippedPlane(view: JXG.View3D, u: Vec3, v: Vec3) {
-  view.create(
-    'polygon3d',
-    clipPlane(u, v, [
-      [-3, 3],
-      [-3, 3],
-      [-1.5, 3.5],
-    ]),
-    {
-      fillColor: SPAN_COLOR,
-      fillOpacity: 0.2,
-      vertices: { visible: false },
-      borders: { strokeColor: SPAN_LABEL_COLOR, strokeWidth: 1 },
-    } as JXG.Polygon3DAttributes,
+function ClippedPlane(props: { u: Vec3; v: Vec3 }) {
+  return (
+    <Board.Polygon3D
+      points={clipPlane(props.u, props.v, [
+        [-3, 3],
+        [-3, 3],
+        [-1.5, 3.5],
+      ])}
+      fillColor={SPAN_COLOR}
+      fillOpacity={0.2}
+      vertices={{ visible: false }}
+      borders={{ strokeColor: SPAN_LABEL_COLOR, strokeWidth: 1 }}
+    />
   )
 }
 
 // An invisible point at `position` that only carries a coloured name,
 // above it or, with toTheRight, beside it.
-function createVectorName(
-  view: JXG.View3D,
-  position: Vec3,
-  tex: string,
-  color: string,
-  toTheRight = false,
-) {
-  view.create('point3d', position, {
-    name: tex,
-    size: 0,
-    fixed: true,
-    label: {
-      offset: toTheRight ? [12, 0] : [0, 8],
-      anchorX: toTheRight ? 'left' : 'middle',
-      anchorY: toTheRight ? 'middle' : 'bottom',
-      strokeColor: color,
-      fontSize: LABEL_FONT_SIZE,
-    },
-  } as JXG.PointAttributes)
-}
-
-/**
- * Three linearly independent vectors in space:
- * the same x1 and x2 as in LinearCombination3D, and x3 outside their plane.
- */
-export function IndependentVectors3D() {
+function VectorName3D(props: { position: Vec3; tex: string; color: string; toTheRight?: boolean }) {
   return (
-    <Board boundingBox={[-8, 8, 8, -8]} class="h-120 w-120">
-      <IndependentVectors3DView />
-      <Board.Text
-        position={[-7.4, 7.2]}
-        content={`{\\color{${X3_COLOR}}\\mathbf{x_3}} \\notin \\mathrm{span}(\\mathbf{x_1},\\mathbf{x_2})`}
-        anchorX="left"
-        anchorY="middle"
-        fontSize={COEFFICIENT_FONT_SIZE}
-        fixed
-      />
-    </Board>
+    <Board.Point3D
+      position={props.position}
+      name={props.tex}
+      size={0}
+      fixed
+      label={{
+        offset: props.toTheRight ? [12, 0] : [0, 8],
+        anchorX: props.toTheRight ? 'left' : 'middle',
+        anchorY: props.toTheRight ? 'middle' : 'bottom',
+        strokeColor: props.color,
+        fontSize: LABEL_FONT_SIZE,
+      }}
+    />
   )
-}
-
-function IndependentVectors3DView() {
-  const board = useContext(BoardContext)
-
-  onSettled(() => {
-    // Seen from higher up than the other figures (el = 0.9 instead of 0.3),
-    // the plane, which is nearly vertical, is tilted by about 50 degrees,
-    // so the dashed line from x3 to the plane is long and x3 visibly sticks out below it.
-    const view = createView3D(board()!, [-1.5, 4.5], { az: 1.08, el: 0.9 })
-    const { x1, x2 } = LINEAR_COMBINATION_3D
-    // x3 is about 0.39 x1 + 0.86 x2 + 3 n, where n is the unit normal to the plane.
-    // Its projection onto the plane is deliberately on neither span(x1) nor span(x2).
-    const x3: Vec3 = [1.9, 2.6, 1.5]
-    const foot = projectOntoPlane(x3, x1, x2)
-
-    createClippedPlane(view, x1, x2)
-    createArrow3D(view, x1, X1_COLOR)
-    createArrow3D(view, x2, X2_COLOR)
-    createArrow3D(view, x3, X3_COLOR)
-    view.create('line3d', [x3, foot], {
-      strokeColor: X3_COLOR,
-      strokeWidth: 2,
-      dash: 2,
-    })
-    view.create('point3d', foot, {
-      name: '',
-      size: 3,
-      fixed: true,
-      fillColor: X3_COLOR,
-      strokeColor: X3_COLOR,
-    } as JXG.PointAttributes)
-
-    createVectorName(view, x1, '\\mathbf{x_1}', X1_COLOR)
-    createVectorName(view, x2, '\\mathbf{x_2}', X2_COLOR, true)
-    // Beside the tip rather than above it, where the dashed projection line goes.
-    createVectorName(view, x3, '\\mathbf{x_3}', X3_COLOR, true)
-  })
-
-  return null
 }
 
 // The orthogonal projection of p onto the plane span(u, v).
