@@ -6,7 +6,7 @@ import stringify from 'safe-stable-stringify'
 export type Exchange = { path: string; body: unknown; status: number; response: unknown }
 
 /** Shared with SymAPI's tests, which check that it still gives every recorded response. */
-export const contractFile = resolve(import.meta.dir, '../../../apps/symapi/tests/contract.json')
+export const contractFile = resolve(import.meta.dir, '../../apps/symapi/tests/contract.json')
 
 const origin = 'http://symapi.test'
 const key = (path: string, body: unknown) => `${path} ${stringify(body)}`

@@ -2,7 +2,7 @@ import { mock } from 'bun:test'
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import '../components/test.setup'
-import { replaySymapi } from './src/symapi.replay'
+import { replaySymapi } from './symapi.replay'
 
 const rootEnv = resolve(import.meta.dir, '../../.env')
 // `process.loadEnvFile` is missing from some Bun builds; the root `test` script passes --env-file anyway.

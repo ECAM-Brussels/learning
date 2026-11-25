@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
+import { takeSymapiRequests } from '../symapi.replay'
 import { decrypt } from './crypto'
 import { expr } from './expr'
-import { takeSymapiRequests } from './symapi.replay'
 
 type Test<T = any> = {
   desc: string
