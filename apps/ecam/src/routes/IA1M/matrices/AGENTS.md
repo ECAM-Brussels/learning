@@ -53,3 +53,9 @@ instead of
 
 We can use this linear form to write a linear equation:
 {tex`y(\mathbf{x})=\mathbf{\tilde{w}}^T\mathbf{\tilde{x}}=0.`}
+
+## Figures
+
+When you generate a figure, make sure the labels of the objects
+don't overlap with other information on the figure,
+such as the axis or other vectors or arrowheads etc.
