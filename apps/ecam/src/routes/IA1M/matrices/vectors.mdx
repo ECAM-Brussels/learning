@@ -424,7 +424,7 @@ are _linearly dependent_.
 The vector {tex`\mathbf{y}`} does not add a new direction
 to the span of {tex`\mathbf{x}`}.
 
-Examples of two **linearly dependent** vectors in
+Figures of two **linearly dependent** vectors in
 {tex`\mathbb{R}^2`} (left) and {tex`\mathbb{R}^3`} (right):
 
 <div class="items-center lg:grid lg:grid-cols-2 lg:gap-8">
@@ -441,7 +441,7 @@ if {tex`\mathbf{y}`} is not in the span of {tex`\mathbf{x}`},
 that is, when it actually adds a new direction:
 the span then grows from a line to a plane.
 
-Examples of two **linearly independent** vectors in
+Figures of two **linearly independent** vectors in
 {tex`\mathbb{R}^2`} (left) and {tex`\mathbb{R}^3`} (right):
 
 <div class="items-center lg:grid lg:grid-cols-2 lg:gap-8">
@@ -451,6 +451,55 @@ Examples of two **linearly independent** vectors in
 <SpanOfIndependentVectors />
 
 </div>
+
+:::example[Two independent vectors in ℝ²]
+
+Take the vectors of the left figure above:
+
+{tex`
+\mathbf{x}=\begin{bmatrix}
+2 \\
+1
+\end{bmatrix},
+\qquad
+\mathbf{y}=\begin{bmatrix}
+1 \\
+3
+\end{bmatrix}`}
+
+If {tex`\mathbf{y}`} were in the span of {tex`\mathbf{x}`},
+there would be a scalar {tex`\alpha`} such that
+{tex`\mathbf{y}=\alpha\mathbf{x}`},
+which is obviously impossible since {tex`\mathbf{y}`} is not
+parallel to {tex`\mathbf{x}`}.
+So {tex`\mathbf{x}`} and {tex`\mathbf{y}`} are linearly independent,
+and their span is the whole plane {tex`\mathbb{R}^2`}.
+
+:::
+
+:::example[Two dependent vectors in ℝ³]
+
+Consider
+
+{tex`
+\mathbf{x}=\begin{bmatrix}
+1 \\
+2 \\
+-3
+\end{bmatrix},
+\qquad
+\mathbf{y}=\begin{bmatrix}
+2 \\
+4 \\
+-6
+\end{bmatrix}`}
+
+In this case, {tex`\mathbf{y}=2\mathbf{x}`},
+so {tex`\mathbf{x}`} and {tex`\mathbf{y}`} are parallel,
+{tex`\mathbf{y}`} is in the span of {tex`\mathbf{x}`}:
+we conclude that {tex`\mathbf{x}`} and {tex`\mathbf{y}`} are linearly dependent.
+
+:::
 
 ### Case of three vectors
 
@@ -470,7 +519,7 @@ In other words:
 {tex`
 \mathbf{x_3} \in \mathrm{span}(\mathbf{x_1},\mathbf{x_2}).`}
 
-Examples of three **linearly dependent** vectors in
+Figures of three **linearly dependent** vectors in
 {tex`\mathbb{R}^2`} (left) and {tex`\mathbb{R}^3`} (right):
 
 <div class="items-center lg:grid lg:grid-cols-2 lg:gap-8">
