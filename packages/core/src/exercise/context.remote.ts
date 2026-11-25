@@ -83,6 +83,8 @@ export const saveStep = async (rawCtx: StepContext, step: StoredStep, options: O
   'use server'
   await ensurePermissions(['exercise:answerOwn'])
   const ctx = v.parse(StepContext, rawCtx)
+  const { name, data, state, submitted, correct } = step
+  const row = { name, data, state, submitted, correct }
   const currentExercise = and(
     eq(tables.steps.userEmail, ctx.userEmail),
     eq(tables.steps.url, ctx.url),
@@ -106,7 +108,7 @@ export const saveStep = async (rawCtx: StepContext, step: StoredStep, options: O
     }
     await tx
       .insert(tables.steps)
-      .values({ ...ctx, ...step })
+      .values({ ...ctx, ...row })
       .onConflictDoUpdate({
         target: [
           tables.steps.userEmail,
@@ -115,7 +117,7 @@ export const saveStep = async (rawCtx: StepContext, step: StoredStep, options: O
           tables.steps.sequencePosition,
           tables.steps.position,
         ],
-        set: { ...step, deleted: false },
+        set: { ...row, deleted: false },
         setWhere: sql`${tables.steps.submitted} = false`,
         targetWhere: sql`${tables.steps.deleted} = false`,
       })

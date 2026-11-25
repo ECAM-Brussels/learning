@@ -42,6 +42,21 @@ use the components in `./packages/components/src/Board.tsx`.
 Components in that file are meant to be _declarative versions_ of their associated geometry elements.
 They are not yet comprehensive or complete.
 By any means improve them, but ensure they are compatible with Solid's reactivity system and are declarative.
+For a one-off construction the components don't cover, use `Board.Custom` with plain JSXGraph code
+rather than adding a component or managing the board by hand.
+For defaults shared by many boards, such as a teacher's preferences for a course,
+wrap them in `BoardDefaults` (e.g. in the folder's `_layout.tsx`) rather than repeating props on every element.
+
+A function prop such as `fn` redraws when the function is replaced, not when a signal read inside it changes:
+derive the function from its signals, reading them outside the function it returns.
+
+```tsx
+const f = createMemo(() => {
+  const c = k()
+  return (x: number) => c * x
+})
+<Board.Plot fn={f()} />
+```
 
 # MDX pages
 
@@ -55,10 +70,22 @@ otherwise every component in MDX loses its types.
 
 # Generated exercises
 
-For randomised questions, use `createQuestionBank` from `@learning/core` (see `apps/ecam/src/routes/MN1M/exam.exercises.tsx`).
+For randomised questions, define skills with `defineSkill` and pass them to `createQuestionBank`, both from `@learning/core` (see `apps/ecam/src/routes/MN1M/exam.exercises.tsx`).
+A skill's id is saved with students' answers: never change it, and namespace new ones (e.g. `'calculus/chain'`).
+Each skill names the `step` that answers its questions, and may list `prerequisites: () => [...]`, other skills from any module.
 Only the parameters returned by `generate` are saved, so `render` must be pure,
 and `generate` must draw from the `random` it receives (not `Math.random`) so questions can be reproduced from a seed in tests.
 With `MultipleChoice`, declare `answer` rather than `grade`: tests can then check every generated question.
+
+# SymAPI
+
+`expr` in `@learning/core` asks SymAPI (`apps/symapi`, FastAPI and sympy) whatever Compute Engine can't decide.
+Tests don't need SymAPI running: they answer its requests from `apps/symapi/tests/contract.json`,
+and SymAPI's own tests check that it still gives every response recorded there.
+After changing what `expr` asks, or adding a test that asks something new,
+record the contract again with `bun run test:record` in `packages/core`, where SymAPI is running (the dev container).
+Record with the whole suite, never a single file: the contract is replaced by the requests of that run.
+SymAPI's own tests (pytest) run with the others in `bun run test` and `bun run dev`.
 
 # French typography
 

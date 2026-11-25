@@ -16,19 +16,26 @@ type Prettify<T> = {
   [K in keyof T]: T[K]
 } & {}
 
+type NextProps = {
+  position: number
+  progress: Record<number, boolean | null | undefined>
+  /**
+   * The data saved for this position, if it was already generated.
+   * Use it to choose which exercise to restore, since the saved data only reaches the step once it is rendered.
+   */
+  saved: unknown
+}
+
 type Props<T extends object> = Prettify<
   {
     options?: Options<'input'>
   } & (
     | {
         exercise: Component<T>
-        next: (props: {
-          position: number
-          progress: Record<number, boolean | null | undefined>
-        }) => Promise<T> | T
+        next: (props: NextProps) => Promise<T> | T
       }
     | {
-        next: Component<{ position: number; progress: Record<number, boolean | null | undefined> }>
+        next: Component<NextProps>
       }
     | {
         children: JSX.Element
@@ -43,7 +50,7 @@ type Props<T extends object> = Prettify<
  *
  * 1. By statically predefining the sequence via children
  * 2. By dynamically generating the next exercise via the `next` prop,
- *    which takes a component that receives the current position and progress of the sequence.
+ *    which takes a component that receives the current position, progress and saved data of the sequence.
  *    Alternatively, `next` can generate only the props,
  *    and the exercise component can be specified via the `exercise` prop.
  *
@@ -99,6 +106,16 @@ export function Sequence<T extends object>(props: Props<T> & { id: string }) {
     },
     { name: 'progress' },
   )
+  const savedSteps = createMemo(
+    async () => {
+      const seq = sequence()
+      const remoteSequence = fetchRemoteSequence(seq)
+      const localSequence = local.fetchSequence(seq)
+      return (await remoteSequence) ?? (await localSequence)
+    },
+    { name: 'saved-steps' },
+  )
+  const saved = (position: number) => savedSteps()[position]?.[0]?.data
   const filteredProgress = createMemo(() =>
     Object.fromEntries(
       Object.entries(progress()).filter(([_pos, value]) => typeof value === 'boolean'),
@@ -133,7 +150,7 @@ export function Sequence<T extends object>(props: Props<T> & { id: string }) {
                         <Scope>
                           {() => {
                             const next = createMemo(() =>
-                              props.next({ position: i, progress: progress() }),
+                              props.next({ position: i, progress: progress(), saved: saved(i) }),
                             )
                             const Exercise = dynamic(() => props.exercise)
                             return <Exercise {...next()} />
@@ -142,7 +159,7 @@ export function Sequence<T extends object>(props: Props<T> & { id: string }) {
                       ) : (
                         (() => {
                           const Next = dynamic(() => props.next)
-                          return <Next position={i} progress={progress()} />
+                          return <Next position={i} progress={progress()} saved={saved(i)} />
                         })()
                       )}
                     </Boundary>

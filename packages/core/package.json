@@ -19,6 +19,7 @@
   "scripts": {
     "codegen": "openapi-typescript http://localhost:8088/openapi.json -o ./src/symapi.d.ts && prettier --write ./src/symapi.d.ts",
     "test": "bun test --conditions=browser --coverage --coverage-reporter=lcov",
+    "test:record": "SYMAPI_RECORD=1 bun test --conditions=browser",
     "test:watch": "bun test --conditions=browser --watch --coverage"
   },
   "dependencies": {

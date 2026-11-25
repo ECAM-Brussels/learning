@@ -36,3 +36,8 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # Python
 .venv
 __pycache__
+
+# Python coverage
+.coverage
+coverage.xml
+.pytest_cache

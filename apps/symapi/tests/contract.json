@@ -1,0 +1,2959 @@
+[
+  {
+    "path": "/expr/compare",
+    "body": {
+      "expr1": [
+        "Power",
+        "x",
+        2
+      ],
+      "expr2": 0,
+      "comparison": "geq"
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/compare",
+    "body": {
+      "expr1": 3,
+      "expr2": 3,
+      "comparison": "geq"
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/compare",
+    "body": {
+      "expr1": "x",
+      "expr2": 0,
+      "comparison": "gt"
+    },
+    "status": 200,
+    "response": null
+  },
+  {
+    "path": "/expr/compare",
+    "body": {
+      "expr1": [
+        "Power",
+        "ExponentialE",
+        "x"
+      ],
+      "expr2": 0,
+      "comparison": "gt"
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/compare",
+    "body": {
+      "expr1": [
+        "Power",
+        "x",
+        2
+      ],
+      "expr2": 0,
+      "comparison": "gt"
+    },
+    "status": 200,
+    "response": null
+  },
+  {
+    "path": "/expr/compare",
+    "body": {
+      "expr1": 3,
+      "expr2": 3,
+      "comparison": "gt"
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/compare",
+    "body": {
+      "expr1": [
+        "Power",
+        "x",
+        2
+      ],
+      "expr2": 0,
+      "comparison": "leq"
+    },
+    "status": 200,
+    "response": null
+  },
+  {
+    "path": "/expr/compare",
+    "body": {
+      "expr1": 2,
+      "expr2": 3,
+      "comparison": "leq"
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/compare",
+    "body": {
+      "expr1": [
+        "Power",
+        "x",
+        2
+      ],
+      "expr2": 0,
+      "comparison": "lt"
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/compare",
+    "body": {
+      "expr1": 3,
+      "expr2": 2,
+      "comparison": "lt"
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/degree",
+    "body": {
+      "expr": [
+        "Add",
+        [
+          "Power",
+          "x",
+          3
+        ],
+        "x"
+      ],
+      "x": "x"
+    },
+    "status": 200,
+    "response": 3
+  },
+  {
+    "path": "/expr/degree",
+    "body": {
+      "expr": [
+        "Divide",
+        1,
+        "x"
+      ],
+      "x": "x"
+    },
+    "status": 422,
+    "response": {
+      "detail": "1/x is not a polynomial in x"
+    }
+  },
+  {
+    "path": "/expr/degree",
+    "body": {
+      "expr": [
+        "InvisibleOperator",
+        [
+          "Power",
+          "x",
+          2
+        ],
+        [
+          "Power",
+          "y",
+          3
+        ]
+      ],
+      "x": "x"
+    },
+    "status": 200,
+    "response": 2
+  },
+  {
+    "path": "/expr/degree",
+    "body": {
+      "expr": [
+        "InvisibleOperator",
+        [
+          "Power",
+          "x",
+          2
+        ],
+        [
+          "Power",
+          "y",
+          3
+        ]
+      ],
+      "x": "y"
+    },
+    "status": 200,
+    "response": 3
+  },
+  {
+    "path": "/expr/degree",
+    "body": {
+      "expr": [
+        "Power",
+        "x",
+        2
+      ],
+      "x": "x"
+    },
+    "status": 200,
+    "response": 2
+  },
+  {
+    "path": "/expr/degree",
+    "body": {
+      "expr": [
+        "Power",
+        "x",
+        2
+      ],
+      "x": "y"
+    },
+    "status": 200,
+    "response": 0
+  },
+  {
+    "path": "/expr/degree",
+    "body": {
+      "expr": [
+        "Power",
+        [
+          "Delimiter",
+          [
+            "Add",
+            "x",
+            1
+          ]
+        ],
+        2
+      ],
+      "x": "x"
+    },
+    "status": 200,
+    "response": 2
+  },
+  {
+    "path": "/expr/degree",
+    "body": {
+      "expr": [
+        "Sin",
+        "x"
+      ],
+      "x": "x"
+    },
+    "status": 422,
+    "response": {
+      "detail": "sin(x) is not a polynomial in x"
+    }
+  },
+  {
+    "path": "/expr/degree",
+    "body": {
+      "expr": [
+        "Sqrt",
+        "x"
+      ],
+      "x": "x"
+    },
+    "status": 422,
+    "response": {
+      "detail": "sqrt(x) is not a polynomial in x"
+    }
+  },
+  {
+    "path": "/expr/degree",
+    "body": {
+      "expr": [
+        "Subtract",
+        [
+          "Power",
+          "x",
+          2
+        ],
+        [
+          "Power",
+          "x",
+          2
+        ]
+      ],
+      "x": "x"
+    },
+    "status": 200,
+    "response": null
+  },
+  {
+    "path": "/expr/degree",
+    "body": {
+      "expr": 0,
+      "x": "x"
+    },
+    "status": 200,
+    "response": null
+  },
+  {
+    "path": "/expr/degree",
+    "body": {
+      "expr": 5,
+      "x": "x"
+    },
+    "status": 200,
+    "response": 0
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": "x",
+      "expr2": "x"
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Abs",
+        "ImaginaryUnit"
+      ],
+      "expr2": 1
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Abs",
+        [
+          "Add",
+          1,
+          "ImaginaryUnit"
+        ]
+      ],
+      "expr2": [
+        "Sqrt",
+        2
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Abs",
+        [
+          "Negate",
+          5
+        ]
+      ],
+      "expr2": [
+        "Negate",
+        5
+      ]
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Add",
+        "x",
+        "x"
+      ],
+      "expr2": [
+        "InvisibleOperator",
+        2,
+        "x"
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Add",
+        [
+          "Cos",
+          "x"
+        ],
+        [
+          "InvisibleOperator",
+          "ImaginaryUnit",
+          [
+            "Sin",
+            "x"
+          ]
+        ]
+      ],
+      "expr2": [
+        "Power",
+        "ExponentialE",
+        [
+          "InvisibleOperator",
+          "ImaginaryUnit",
+          "x"
+        ]
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Add",
+        [
+          "Power",
+          "ImaginaryUnit",
+          2
+        ],
+        1
+      ],
+      "expr2": 0
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Add",
+        [
+          "Power",
+          [
+            "Sin",
+            "x"
+          ],
+          2
+        ],
+        [
+          "Power",
+          [
+            "Cos",
+            "x"
+          ],
+          2
+        ]
+      ],
+      "expr2": 1
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Add",
+        [
+          "Power",
+          0,
+          2
+        ],
+        1
+      ],
+      "expr2": 0
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Add",
+        [
+          "Subtract",
+          [
+            "Power",
+            2,
+            2
+          ],
+          [
+            "InvisibleOperator",
+            5,
+            2
+          ]
+        ],
+        6
+      ],
+      "expr2": 0
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Add",
+        0.1,
+        0.2
+      ],
+      "expr2": 0.3
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Add",
+        1,
+        "ImaginaryUnit"
+      ],
+      "expr2": [
+        "InvisibleOperator",
+        [
+          "Sqrt",
+          2
+        ],
+        [
+          "Power",
+          "ExponentialE",
+          [
+            "InvisibleOperator",
+            "ImaginaryUnit",
+            [
+              "Divide",
+              "Pi",
+              4
+            ]
+          ]
+        ]
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Arcsin",
+        1
+      ],
+      "expr2": [
+        "Divide",
+        "Pi",
+        2
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Argument",
+        [
+          "Add",
+          1,
+          "ImaginaryUnit"
+        ]
+      ],
+      "expr2": [
+        "Divide",
+        "Pi",
+        4
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Conjugate",
+        "x"
+      ],
+      "expr2": "x"
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Conjugate",
+        [
+          "Add",
+          1,
+          "ImaginaryUnit"
+        ]
+      ],
+      "expr2": [
+        "Subtract",
+        1,
+        "ImaginaryUnit"
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Derivative",
+        [
+          "Derivative",
+          [
+            "Power",
+            "x",
+            3
+          ],
+          "x"
+        ],
+        "x"
+      ],
+      "expr2": [
+        "InvisibleOperator",
+        6,
+        "x"
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Derivative",
+        [
+          "InvisibleOperator",
+          [
+            "Delimiter",
+            [
+              "Subtract",
+              "x",
+              2
+            ]
+          ],
+          [
+            "Delimiter",
+            [
+              "Subtract",
+              "x",
+              3
+            ]
+          ]
+        ],
+        "x"
+      ],
+      "expr2": [
+        "Subtract",
+        [
+          "InvisibleOperator",
+          2,
+          "x"
+        ],
+        5
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Derivative",
+        [
+          "Power",
+          "t",
+          3
+        ],
+        "t"
+      ],
+      "expr2": [
+        "InvisibleOperator",
+        3,
+        [
+          "Power",
+          "t",
+          2
+        ]
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Derivative",
+        [
+          "Power",
+          "x",
+          2
+        ],
+        "y"
+      ],
+      "expr2": 0
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Derivative",
+        5,
+        "x"
+      ],
+      "expr2": 0
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Divide",
+        1,
+        0
+      ],
+      "expr2": 0
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Divide",
+        1,
+        3
+      ],
+      "expr2": 0.333
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Equal",
+        "x",
+        2
+      ],
+      "expr2": [
+        "Equal",
+        2,
+        "x"
+      ]
+    },
+    "status": 422,
+    "response": {
+      "detail": "Cannot compare equations/inequalities with equal; use equivalent"
+    }
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Factorial",
+        5
+      ],
+      "expr2": 120
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Floor",
+        "x"
+      ],
+      "expr2": 1
+    },
+    "status": 422,
+    "response": {
+      "detail": [
+        {
+          "type": "value_error",
+          "loc": [
+            "body",
+            "expr1"
+          ],
+          "msg": "Value error, Unsupported MathJSON function: 'Floor'",
+          "input": [
+            "Floor",
+            "x"
+          ],
+          "ctx": {
+            "error": {}
+          }
+        }
+      ]
+    }
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Imaginary",
+        [
+          "Add",
+          3,
+          [
+            "InvisibleOperator",
+            4,
+            "ImaginaryUnit"
+          ]
+        ]
+      ],
+      "expr2": 4
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Integrate",
+        "x",
+        "x"
+      ],
+      "expr2": [
+        "Divide",
+        [
+          "Power",
+          "x",
+          2
+        ],
+        2
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Integrate",
+        "x",
+        [
+          "Tuple",
+          "x",
+          0,
+          0
+        ]
+      ],
+      "expr2": 0
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Integrate",
+        "x",
+        [
+          "Tuple",
+          "x",
+          0,
+          1
+        ]
+      ],
+      "expr2": [
+        "Divide",
+        1,
+        2
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Integrate",
+        "x",
+        [
+          "Tuple",
+          "x",
+          1,
+          0
+        ]
+      ],
+      "expr2": [
+        "Negate",
+        [
+          "Divide",
+          1,
+          2
+        ]
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Integrate",
+        [
+          "Divide",
+          1,
+          "x"
+        ],
+        [
+          "Tuple",
+          "x",
+          1,
+          "ExponentialE"
+        ]
+      ],
+      "expr2": 1
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "InvisibleOperator",
+        [
+          "Delimiter",
+          [
+            "Subtract",
+            "x",
+            2
+          ]
+        ],
+        [
+          "Delimiter",
+          [
+            "Subtract",
+            "x",
+            3
+          ]
+        ]
+      ],
+      "expr2": [
+        "Add",
+        [
+          "Subtract",
+          [
+            "Power",
+            "x",
+            2
+          ],
+          [
+            "InvisibleOperator",
+            5,
+            "x"
+          ]
+        ],
+        6
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Lb",
+        8
+      ],
+      "expr2": 3
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Ln",
+        "ExponentialE"
+      ],
+      "expr2": 1
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Ln",
+        [
+          "InvisibleOperator",
+          "x",
+          "y"
+        ]
+      ],
+      "expr2": [
+        "Add",
+        [
+          "Ln",
+          "x"
+        ],
+        [
+          "Ln",
+          "y"
+        ]
+      ]
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Log",
+        100
+      ],
+      "expr2": 2
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Mod",
+        [
+          "Negate",
+          7
+        ],
+        3
+      ],
+      "expr2": 2
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Multiply",
+        "x",
+        "x"
+      ],
+      "expr2": [
+        "Power",
+        "x",
+        2
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Normal",
+        [
+          "Series",
+          [
+            "Ln",
+            "x"
+          ],
+          "x",
+          1,
+          2
+        ]
+      ],
+      "expr2": [
+        "Subtract",
+        [
+          "Delimiter",
+          [
+            "Subtract",
+            "x",
+            1
+          ]
+        ],
+        [
+          "Divide",
+          [
+            "Power",
+            [
+              "Delimiter",
+              [
+                "Subtract",
+                "x",
+                1
+              ]
+            ],
+            2
+          ],
+          2
+        ]
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Normal",
+        [
+          "Series",
+          [
+            "Power",
+            "ExponentialE",
+            "x"
+          ],
+          "x",
+          0,
+          0
+        ]
+      ],
+      "expr2": 1
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Normal",
+        [
+          "Series",
+          [
+            "Power",
+            "ExponentialE",
+            "x"
+          ],
+          "x",
+          0,
+          3
+        ]
+      ],
+      "expr2": [
+        "Add",
+        1,
+        "x",
+        [
+          "Divide",
+          [
+            "Power",
+            "x",
+            2
+          ],
+          2
+        ],
+        [
+          "Divide",
+          [
+            "Power",
+            "x",
+            3
+          ],
+          6
+        ]
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Power",
+        "ImaginaryUnit",
+        2
+      ],
+      "expr2": [
+        "Negate",
+        1
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Power",
+        "x",
+        2
+      ],
+      "expr2": [
+        "Multiply",
+        "x",
+        "x"
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Real",
+        [
+          "Add",
+          3,
+          [
+            "InvisibleOperator",
+            4,
+            "ImaginaryUnit"
+          ]
+        ]
+      ],
+      "expr2": 3
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Root",
+        8,
+        3
+      ],
+      "expr2": 2
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Sec",
+        "x"
+      ],
+      "expr2": [
+        "Divide",
+        1,
+        [
+          "Cos",
+          "x"
+        ]
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Simplify",
+        [
+          "Add",
+          "x",
+          "x"
+        ]
+      ],
+      "expr2": [
+        "InvisibleOperator",
+        2,
+        "x"
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Simplify",
+        [
+          "Subtract",
+          [
+            "Power",
+            2,
+            2
+          ],
+          [
+            "Power",
+            2,
+            2
+          ]
+        ]
+      ],
+      "expr2": 0
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Simplify",
+        [
+          "Subtract",
+          [
+            "Power",
+            3,
+            2
+          ],
+          [
+            "Power",
+            1,
+            2
+          ]
+        ]
+      ],
+      "expr2": 8
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Simplify",
+        [
+          "Subtract",
+          2,
+          1
+        ]
+      ],
+      "expr2": 1
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Sqrt",
+        [
+          "Power",
+          "x",
+          2
+        ]
+      ],
+      "expr2": "x"
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Sqrt",
+        [
+          "Power",
+          "x",
+          2
+        ]
+      ],
+      "expr2": [
+        "Abs",
+        "x"
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Subs",
+        [
+          "Derivative",
+          [
+            "InvisibleOperator",
+            "x",
+            [
+              "Power",
+              "y",
+              2
+            ]
+          ],
+          "x"
+        ],
+        [
+          "Tuple",
+          "x",
+          "y"
+        ],
+        [
+          "Tuple",
+          "y",
+          2
+        ]
+      ],
+      "expr2": 4
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Subs",
+        [
+          "Derivative",
+          [
+            "Power",
+            "x",
+            2
+          ],
+          "x"
+        ],
+        "x",
+        3
+      ],
+      "expr2": 6
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Subs",
+        [
+          "Derivative",
+          [
+            "Power",
+            "x",
+            3
+          ],
+          "x"
+        ],
+        "x",
+        [
+          "Add",
+          1,
+          1
+        ]
+      ],
+      "expr2": 12
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Subs",
+        [
+          "Derivative",
+          [
+            "Subtract",
+            [
+              "Power",
+              "x",
+              2
+            ],
+            [
+              "InvisibleOperator",
+              4,
+              "x"
+            ]
+          ],
+          "x"
+        ],
+        "x",
+        2
+      ],
+      "expr2": 0
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Subs",
+        [
+          "Integrate",
+          [
+            "InvisibleOperator",
+            "x",
+            "t"
+          ],
+          [
+            "Tuple",
+            "x",
+            0,
+            1
+          ]
+        ],
+        "t",
+        2
+      ],
+      "expr2": 1
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Subtract",
+        [
+          "Multiply",
+          0,
+          0
+        ],
+        [
+          "Multiply",
+          0,
+          1
+        ]
+      ],
+      "expr2": 0
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Subtract",
+        [
+          "Multiply",
+          0,
+          0
+        ],
+        [
+          "Multiply",
+          1,
+          0
+        ]
+      ],
+      "expr2": 0
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Subtract",
+        [
+          "Multiply",
+          1,
+          1
+        ],
+        [
+          "Multiply",
+          0,
+          0
+        ]
+      ],
+      "expr2": 1
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Subtract",
+        [
+          "Power",
+          "x",
+          2
+        ],
+        [
+          "Power",
+          "x",
+          2
+        ]
+      ],
+      "expr2": 0
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Subtract",
+        [
+          "Power",
+          [
+            "Cosh",
+            "x"
+          ],
+          2
+        ],
+        [
+          "Power",
+          [
+            "Sinh",
+            "x"
+          ],
+          2
+        ]
+      ],
+      "expr2": 1
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Subtract",
+        2,
+        2
+      ],
+      "expr2": 0
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Subtract",
+        3,
+        3
+      ],
+      "expr2": 0
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": 1,
+      "expr2": 1
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": 2,
+      "expr2": 2
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": 2,
+      "expr2": 3
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/equivalent",
+    "body": {
+      "expr1": [
+        "Add",
+        "x",
+        "x"
+      ],
+      "expr2": [
+        "InvisibleOperator",
+        2,
+        "x"
+      ]
+    },
+    "status": 422,
+    "response": {
+      "detail": "expr1 must be an equation"
+    }
+  },
+  {
+    "path": "/expr/equivalent",
+    "body": {
+      "expr1": [
+        "Equal",
+        "x",
+        2
+      ],
+      "expr2": [
+        "Equal",
+        "x",
+        3
+      ]
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/equivalent",
+    "body": {
+      "expr1": [
+        "Equal",
+        "x",
+        2
+      ],
+      "expr2": [
+        "Equal",
+        [
+          "InvisibleOperator",
+          2,
+          "x"
+        ],
+        4
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/inSet",
+    "body": {
+      "expr1": "ImaginaryUnit",
+      "expr2": "RealNumbers"
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/inSet",
+    "body": {
+      "expr1": "Pi",
+      "expr2": "RationalNumbers"
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/inSet",
+    "body": {
+      "expr1": "x",
+      "expr2": "RationalNumbers"
+    },
+    "status": 200,
+    "response": null
+  },
+  {
+    "path": "/expr/inSet",
+    "body": {
+      "expr1": "x",
+      "expr2": "RealNumbers"
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/inSet",
+    "body": {
+      "expr1": [
+        "Divide",
+        1,
+        2
+      ],
+      "expr2": "Integers"
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/inSet",
+    "body": {
+      "expr1": [
+        "Divide",
+        1,
+        2
+      ],
+      "expr2": [
+        "Interval",
+        0,
+        1
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/inSet",
+    "body": {
+      "expr1": [
+        "Negate",
+        2
+      ],
+      "expr2": "NonNegativeIntegers"
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/inSet",
+    "body": {
+      "expr1": 0,
+      "expr2": [
+        "Interval",
+        0,
+        [
+          "Open",
+          1
+        ]
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/inSet",
+    "body": {
+      "expr1": 1,
+      "expr2": "x"
+    },
+    "status": 422,
+    "response": {
+      "detail": "x is not a set"
+    }
+  },
+  {
+    "path": "/expr/inSet",
+    "body": {
+      "expr1": 1,
+      "expr2": [
+        "Interval",
+        [
+          "Open",
+          0
+        ],
+        [
+          "Open",
+          1
+        ]
+      ]
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/inSet",
+    "body": {
+      "expr1": 2,
+      "expr2": "NonNegativeIntegers"
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/inSet",
+    "body": {
+      "expr1": 3,
+      "expr2": [
+        "Set",
+        1,
+        2
+      ]
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/isExpanded",
+    "body": {
+      "expr": [
+        "Add",
+        [
+          "Power",
+          "x",
+          2
+        ],
+        [
+          "InvisibleOperator",
+          2,
+          "x"
+        ],
+        1
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/isExpanded",
+    "body": {
+      "expr": [
+        "Power",
+        "x",
+        2
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/isExpanded",
+    "body": {
+      "expr": [
+        "Power",
+        [
+          "Delimiter",
+          [
+            "Add",
+            "x",
+            1
+          ]
+        ],
+        2
+      ]
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/isFactored",
+    "body": {
+      "expr": [
+        "InvisibleOperator",
+        [
+          "Delimiter",
+          [
+            "Subtract",
+            "x",
+            1
+          ]
+        ],
+        [
+          "Delimiter",
+          [
+            "Add",
+            "x",
+            1
+          ]
+        ]
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/isFactored",
+    "body": {
+      "expr": [
+        "Power",
+        "x",
+        2
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/isFactored",
+    "body": {
+      "expr": [
+        "Subtract",
+        [
+          "Power",
+          "x",
+          2
+        ],
+        1
+      ]
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/isPartialFractionDecomposition",
+    "body": {
+      "expr": [
+        "Power",
+        "x",
+        2
+      ]
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/isTrue",
+    "body": {
+      "expr": [
+        "Equal",
+        "x",
+        2
+      ]
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/isTrue",
+    "body": {
+      "expr": [
+        "Equal",
+        [
+          "Add",
+          2,
+          2
+        ],
+        4
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/isTrue",
+    "body": {
+      "expr": [
+        "Equal",
+        [
+          "Add",
+          2,
+          2
+        ],
+        5
+      ]
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/isTrue",
+    "body": {
+      "expr": [
+        "Less",
+        1,
+        2
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/isTrue",
+    "body": {
+      "expr": [
+        "LessEqual",
+        2,
+        1
+      ]
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/isTrue",
+    "body": {
+      "expr": [
+        "NotEqual",
+        1,
+        2
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/isTrue",
+    "body": {
+      "expr": [
+        "Power",
+        "x",
+        2
+      ]
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/latex",
+    "body": {
+      "expr": [
+        "Abs",
+        [
+          "Simplify",
+          [
+            "Power",
+            "x",
+            2
+          ]
+        ]
+      ]
+    },
+    "status": 200,
+    "response": "\\left|{x^{2}}\\right|"
+  },
+  {
+    "path": "/expr/latex",
+    "body": {
+      "expr": [
+        "Derivative",
+        "x",
+        "x"
+      ]
+    },
+    "status": 200,
+    "response": "1"
+  },
+  {
+    "path": "/expr/latex",
+    "body": {
+      "expr": [
+        "Derivative",
+        [
+          "InvisibleOperator",
+          [
+            "Delimiter",
+            [
+              "Subtract",
+              "x",
+              2
+            ]
+          ],
+          [
+            "Delimiter",
+            [
+              "Subtract",
+              "x",
+              3
+            ]
+          ]
+        ],
+        "x"
+      ]
+    },
+    "status": 200,
+    "response": "2 x - 5"
+  },
+  {
+    "path": "/expr/latex",
+    "body": {
+      "expr": [
+        "Derivative",
+        [
+          "Power",
+          "x",
+          2
+        ],
+        "x"
+      ]
+    },
+    "status": 200,
+    "response": "2 x"
+  },
+  {
+    "path": "/expr/latex",
+    "body": {
+      "expr": [
+        "Derivative",
+        [
+          "Sin",
+          "x"
+        ],
+        "x"
+      ]
+    },
+    "status": 200,
+    "response": "\\cos{\\left(x \\right)}"
+  },
+  {
+    "path": "/expr/latex",
+    "body": {
+      "expr": [
+        "Expand",
+        [
+          "Power",
+          "x",
+          2
+        ]
+      ]
+    },
+    "status": 200,
+    "response": "x^{2}"
+  },
+  {
+    "path": "/expr/latex",
+    "body": {
+      "expr": [
+        "Expand",
+        [
+          "Power",
+          [
+            "Delimiter",
+            [
+              "Add",
+              "x",
+              1
+            ]
+          ],
+          2
+        ]
+      ]
+    },
+    "status": 200,
+    "response": "x^{2} + 2 x + 1"
+  },
+  {
+    "path": "/expr/latex",
+    "body": {
+      "expr": [
+        "Factor",
+        [
+          "Add",
+          [
+            "Subtract",
+            [
+              "Power",
+              "x",
+              2
+            ],
+            [
+              "InvisibleOperator",
+              5,
+              "x"
+            ]
+          ],
+          6
+        ]
+      ]
+    },
+    "status": 200,
+    "response": "\\left(x - 3\\right) \\left(x - 2\\right)"
+  },
+  {
+    "path": "/expr/latex",
+    "body": {
+      "expr": [
+        "Simplify",
+        [
+          "Power",
+          "x",
+          2
+        ]
+      ]
+    },
+    "status": 200,
+    "response": "x^{2}"
+  },
+  {
+    "path": "/expr/latex",
+    "body": {
+      "expr": [
+        "Subs",
+        [
+          "Derivative",
+          [
+            "Power",
+            "x",
+            2
+          ],
+          "x"
+        ],
+        "x",
+        1
+      ]
+    },
+    "status": 200,
+    "response": "2"
+  },
+  {
+    "path": "/expr/latex",
+    "body": {
+      "expr": [
+        "Subs",
+        [
+          "Derivative",
+          [
+            "Power",
+            "x",
+            2
+          ],
+          "x"
+        ],
+        "x",
+        3
+      ]
+    },
+    "status": 200,
+    "response": "6"
+  },
+  {
+    "path": "/expr/match",
+    "body": {
+      "expr1": [
+        "Add",
+        [
+          "Power",
+          "x",
+          2
+        ],
+        [
+          "InvisibleOperator",
+          2,
+          "x"
+        ],
+        1
+      ],
+      "expr2": [
+        "Power",
+        [
+          "Delimiter",
+          [
+            "Add",
+            "a",
+            "b"
+          ]
+        ],
+        2
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/match",
+    "body": {
+      "expr1": [
+        "Power",
+        "x",
+        2
+      ],
+      "expr2": [
+        "Power",
+        "a",
+        2
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/match",
+    "body": {
+      "expr1": [
+        "Subtract",
+        [
+          "Power",
+          "x",
+          2
+        ],
+        4
+      ],
+      "expr2": [
+        "InvisibleOperator",
+        [
+          "Delimiter",
+          [
+            "Add",
+            "a",
+            "b"
+          ]
+        ],
+        [
+          "Delimiter",
+          [
+            "Subtract",
+            "a",
+            "b"
+          ]
+        ]
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/match",
+    "body": {
+      "expr1": [
+        "Subtract",
+        [
+          "Power",
+          "x",
+          2
+        ],
+        4
+      ],
+      "expr2": [
+        "Power",
+        [
+          "Delimiter",
+          [
+            "Add",
+            "a",
+            "b"
+          ]
+        ],
+        2
+      ]
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/roots",
+    "body": {
+      "expr": [
+        "Add",
+        [
+          "Power",
+          "x",
+          2
+        ],
+        1
+      ],
+      "complex": false
+    },
+    "status": 200,
+    "response": []
+  },
+  {
+    "path": "/expr/roots",
+    "body": {
+      "expr": [
+        "Equal",
+        [
+          "Power",
+          "x",
+          2
+        ],
+        4
+      ],
+      "complex": false
+    },
+    "status": 200,
+    "response": [
+      "-2",
+      "2"
+    ]
+  },
+  {
+    "path": "/expr/roots",
+    "body": {
+      "expr": [
+        "Power",
+        "x",
+        2
+      ],
+      "complex": false
+    },
+    "status": 200,
+    "response": [
+      "0"
+    ]
+  },
+  {
+    "path": "/expr/roots",
+    "body": {
+      "expr": [
+        "Power",
+        [
+          "Delimiter",
+          [
+            "Subtract",
+            "x",
+            1
+          ]
+        ],
+        2
+      ],
+      "complex": false
+    },
+    "status": 200,
+    "response": [
+      "1"
+    ]
+  },
+  {
+    "path": "/expr/roots",
+    "body": {
+      "expr": [
+        "Sin",
+        "x"
+      ],
+      "complex": false
+    },
+    "status": 422,
+    "response": {
+      "detail": "Cannot list the roots of sin(x): Union(ImageSet(Lambda(_n, 2*_n*pi), Integers), ImageSet(Lambda(_n, 2*_n*pi + pi), Integers))"
+    }
+  },
+  {
+    "path": "/expr/roots",
+    "body": {
+      "expr": [
+        "Subtract",
+        [
+          "Power",
+          "x",
+          2
+        ],
+        1
+      ],
+      "complex": false
+    },
+    "status": 200,
+    "response": [
+      "-1",
+      "1"
+    ]
+  },
+  {
+    "path": "/expr/roots",
+    "body": {
+      "expr": [
+        "Subtract",
+        [
+          "Power",
+          "x",
+          2
+        ],
+        2
+      ],
+      "complex": false
+    },
+    "status": 200,
+    "response": [
+      "\\sqrt{2}",
+      "- \\sqrt{2}"
+    ]
+  },
+  {
+    "path": "/expr/roots",
+    "body": {
+      "expr": [
+        "Subtract",
+        [
+          "Power",
+          "x",
+          3
+        ],
+        1
+      ],
+      "complex": false
+    },
+    "status": 200,
+    "response": [
+      "1"
+    ]
+  },
+  {
+    "path": "/expr/roots",
+    "body": {
+      "expr": [
+        "Subtract",
+        [
+          "Power",
+          "y",
+          2
+        ],
+        1
+      ],
+      "complex": false
+    },
+    "status": 200,
+    "response": [
+      "-1",
+      "1"
+    ]
+  },
+  {
+    "path": "/expr/roots",
+    "body": {
+      "expr": 0,
+      "complex": false
+    },
+    "status": 422,
+    "response": {
+      "detail": "Cannot list the roots of 0: Reals"
+    }
+  },
+  {
+    "path": "/expr/roots",
+    "body": {
+      "expr": [
+        "Add",
+        [
+          "Power",
+          "x",
+          2
+        ],
+        1
+      ],
+      "complex": true
+    },
+    "status": 200,
+    "response": [
+      "i",
+      "- i"
+    ]
+  },
+  {
+    "path": "/expr/roots",
+    "body": {
+      "expr": [
+        "Power",
+        "x",
+        2
+      ],
+      "complex": true
+    },
+    "status": 200,
+    "response": [
+      "0"
+    ]
+  },
+  {
+    "path": "/expr/roots",
+    "body": {
+      "expr": [
+        "Subtract",
+        [
+          "Power",
+          "x",
+          3
+        ],
+        1
+      ],
+      "complex": true
+    },
+    "status": 200,
+    "response": [
+      "1",
+      "- \\frac{1}{2} - \\frac{\\sqrt{3} i}{2}",
+      "- \\frac{1}{2} + \\frac{\\sqrt{3} i}{2}"
+    ]
+  },
+  {
+    "path": "/expr/setEqual",
+    "body": {
+      "expr1": [
+        "Intersect",
+        [
+          "Set",
+          1,
+          2
+        ],
+        [
+          "Set",
+          2,
+          3
+        ]
+      ],
+      "expr2": [
+        "Set",
+        2
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/setEqual",
+    "body": {
+      "expr1": [
+        "Set",
+        1,
+        2
+      ],
+      "expr2": [
+        "Set",
+        1,
+        3
+      ]
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/setEqual",
+    "body": {
+      "expr1": [
+        "Set",
+        1,
+        2
+      ],
+      "expr2": [
+        "Set",
+        2,
+        1
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/setEqual",
+    "body": {
+      "expr1": [
+        "Set",
+        1
+      ],
+      "expr2": [
+        "Set",
+        1
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/setEqual",
+    "body": {
+      "expr1": [
+        "Solve",
+        [
+          "Add",
+          [
+            "Power",
+            "x",
+            2
+          ],
+          1
+        ],
+        "x",
+        "ComplexNumbers"
+      ],
+      "expr2": [
+        "Set",
+        "ImaginaryUnit",
+        [
+          "Negate",
+          "ImaginaryUnit"
+        ]
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/setEqual",
+    "body": {
+      "expr1": [
+        "Solve",
+        [
+          "Add",
+          [
+            "Power",
+            "x",
+            2
+          ],
+          1
+        ],
+        "x",
+        "RealNumbers"
+      ],
+      "expr2": "EmptySet"
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/setEqual",
+    "body": {
+      "expr1": [
+        "Solve",
+        [
+          "Power",
+          "x",
+          2
+        ],
+        "x",
+        "RealNumbers"
+      ],
+      "expr2": [
+        "Set",
+        0
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/setEqual",
+    "body": {
+      "expr1": [
+        "Solve",
+        [
+          "Subtract",
+          "y",
+          1
+        ],
+        "y",
+        "RealNumbers"
+      ],
+      "expr2": [
+        "Set",
+        1
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/setEqual",
+    "body": {
+      "expr1": [
+        "Solve",
+        [
+          "Subtract",
+          [
+            "Power",
+            "x",
+            2
+          ],
+          4
+        ],
+        "x",
+        "ComplexNumbers"
+      ],
+      "expr2": [
+        "Set",
+        [
+          "Negate",
+          2
+        ],
+        2
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/setEqual",
+    "body": {
+      "expr1": [
+        "Solve",
+        [
+          "Subtract",
+          [
+            "Power",
+            "x",
+            2
+          ],
+          4
+        ],
+        "x",
+        "RealNumbers"
+      ],
+      "expr2": [
+        "Set",
+        [
+          "Negate",
+          2
+        ],
+        2
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/setEqual",
+    "body": {
+      "expr1": [
+        "Solve",
+        [
+          "Subtract",
+          [
+            "Power",
+            "x",
+            3
+          ],
+          1
+        ],
+        "x",
+        "RealNumbers"
+      ],
+      "expr2": [
+        "Set",
+        1
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/subset",
+    "body": {
+      "expr1": [
+        "Set",
+        1
+      ],
+      "expr2": [
+        "Set",
+        1,
+        2
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/subset",
+    "body": {
+      "expr1": [
+        "Set",
+        3
+      ],
+      "expr2": [
+        "Set",
+        1,
+        2
+      ]
+    },
+    "status": 200,
+    "response": false
+  }
+]

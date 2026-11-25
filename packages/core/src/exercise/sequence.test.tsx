@@ -433,6 +433,21 @@ describe('Sequence with generated pages: saved data', () => {
     await waitFor(() => expect(sums()[0]).toHaveTextContent('7 + 1 = ?'))
   })
 
+  test('next receives the data saved for its position', async () => {
+    seed('saved-prop')
+    const received: unknown[] = []
+    render(() => (
+      <Sequence
+        id="saved-prop"
+        next={(props) => {
+          received.push(props.saved)
+          return <Sum a={props.position} />
+        }}
+      />
+    ))
+    await waitFor(() => expect(received).toContainEqual({ a: 7, b: 1 }))
+  })
+
   test('a next generator does not regenerate a saved page', async () => {
     seed('saved-gen')
     render(() => (
