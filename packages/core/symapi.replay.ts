@@ -31,6 +31,7 @@ export function replaySymapi() {
   const contract: Exchange[] = recording ? [] : JSON.parse(readFileSync(contractFile, 'utf8'))
   const exchanges = new Map(contract.map((e) => [key(e.path, e.body), e]))
   const realFetch = globalThis.fetch
+  let failed = false
 
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = input instanceof Request ? input.url : String(input)
@@ -46,8 +47,13 @@ export function replaySymapi() {
             'record it with `bun run test:record` in packages/core, with SymAPI running',
         )
       }
-      const res = await realFetch(upstream + path, init)
-      exchange = { path, body, status: res.status, response: await res.json() }
+      try {
+        const res = await realFetch(upstream + path, init)
+        exchange = { path, body, status: res.status, response: await res.json() }
+      } catch (error) {
+        failed = true
+        throw error
+      }
       exchanges.set(key(path, body), exchange)
     }
     return Response.json(exchange.response, { status: exchange.status })
@@ -55,6 +61,10 @@ export function replaySymapi() {
 
   if (recording) {
     afterAll(() => {
+      if (failed) {
+        console.error('SymAPI did not answer every request: contract.json was left as it was')
+        return
+      }
       const sorted = [...exchanges.entries()].sort(([a], [b]) => a.localeCompare(b))
       const contract = sorted.map(([, exchange]) => exchange)
       writeFileSync(contractFile, JSON.stringify(contract, null, 2) + '\n')
