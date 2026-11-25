@@ -77,6 +77,16 @@ Only the parameters returned by `generate` are saved, so `render` must be pure,
 and `generate` must draw from the `random` it receives (not `Math.random`) so questions can be reproduced from a seed in tests.
 With `MultipleChoice`, declare `answer` rather than `grade`: tests can then check every generated question.
 
+# SymAPI
+
+`expr` in `@learning/core` asks SymAPI (`apps/symapi`, FastAPI and sympy) whatever Compute Engine can't decide.
+Tests don't need SymAPI running: they answer its requests from `apps/symapi/tests/contract.json`,
+and SymAPI's own tests check that it still gives every response recorded there.
+After changing what `expr` asks, or adding a test that asks something new,
+record the contract again with `bun run test:record` in `packages/core`, where SymAPI is running (the dev container).
+Record with the whole suite, never a single file: the contract is replaced by the requests of that run.
+SymAPI's own tests (pytest) run with the others in `bun run test` and `bun run dev`.
+
 # French typography
 
 Course content is written in French.

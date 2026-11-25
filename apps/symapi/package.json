@@ -3,6 +3,8 @@
   "private": true,
   "scripts": {
     "dev": "uv run python -m fastapi dev main.py --port 8088",
+    "test": "uv run pytest",
+    "test:watch": "uv run watchfiles --ignore-paths .coverage,coverage.xml pytest .",
     "lint": "uv run python -m black .",
     "lint:check": "uv run python -m black --check ."
   }
