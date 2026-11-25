@@ -1,6 +1,9 @@
 import { defineMeta } from '@learning/components'
 import { tex } from '@learning/core'
 import {
+  IndependentVectors3D,
+  LinearCombination2D,
+  LinearCombination3D,
   SpanOfIndependentVectors,
   SpanOfIndependentVectors2D,
   SpanOfParallelVectors,
@@ -398,14 +401,16 @@ the span is a subspace of {tex`\mathbb{R}^n`}.
 
 ## Linear independence
 
+### Case of two vectors
+
+:::question
+
 What is the span
 of two parallel vectors {tex`\mathbf{x}`} and {tex`\mathbf{y}`}?
-If
 
-{tex`
-\mathbf{y}=\lambda\mathbf{x},`}
+:::
 
-then
+If {tex`\mathbf{y}=\lambda\mathbf{x},`} then
 
 {tex`
 \mathrm{span}(\mathbf{x},\mathbf{y})
@@ -419,8 +424,8 @@ are _linearly dependent_.
 The vector {tex`\mathbf{y}`} does not add a new direction
 to the span of {tex`\mathbf{x}`}.
 
-In {tex`\mathbb{R}^2`} (left) and {tex`\mathbb{R}^3`} (right),
-two linearly dependent vectors and their span look like this:
+Examples of two **linearly dependent** vectors in
+{tex`\mathbb{R}^2`} (left) and {tex`\mathbb{R}^3`} (right):
 
 <div class="items-center lg:grid lg:grid-cols-2 lg:gap-8">
 
@@ -436,8 +441,8 @@ if {tex`\mathbf{y}`} is not in the span of {tex`\mathbf{x}`},
 that is, when it actually adds a new direction:
 the span then grows from a line to a plane.
 
-In {tex`\mathbb{R}^2`} (left) and {tex`\mathbb{R}^3`} (right),
-two linearly independent vectors and their span look like this:
+Examples of two **linearly independent** vectors in
+{tex`\mathbb{R}^2`} (left) and {tex`\mathbb{R}^3`} (right):
 
 <div class="items-center lg:grid lg:grid-cols-2 lg:gap-8">
 
@@ -447,8 +452,10 @@ two linearly independent vectors and their span look like this:
 
 </div>
 
+### Case of three vectors
+
 Three vectors {tex`\mathbf{x_1},\mathbf{x_2},\mathbf{x_3}`}
-are _linearly dependent_ if one of them can be expressed
+are _linearly dependent_ if (at least) one of them can be expressed
 as a linear combination of the others,
 for example:
 
@@ -462,6 +469,31 @@ In other words:
 
 {tex`
 \mathbf{x_3} \in \mathrm{span}(\mathbf{x_1},\mathbf{x_2}).`}
+
+Examples of three **linearly dependent** vectors in
+{tex`\mathbb{R}^2`} (left) and {tex`\mathbb{R}^3`} (right):
+
+<div class="items-center lg:grid lg:grid-cols-2 lg:gap-8">
+
+<LinearCombination2D />
+
+<LinearCombination3D />
+
+</div>
+
+In {tex`\mathbb{R}^2`}, three vectors cannot be linearly independent:
+it is always possible to express (at least) one of them as a linear combination of the other two.
+In {tex`\mathbb{R}^3`}, however, three vectors can be linearly independent,
+for example if they are not coplanar.
+
+For example, the vectors {tex`\mathbf{x_1}`} and {tex`\mathbf{x_2}`} below
+are the same as in the previous figure,
+but {tex`\mathbf{x_3}`} now points out of their plane:
+the three vectors are linearly independent.
+
+<IndependentVectors3D />
+
+### General case
 
 :::definition[Linear independence]
 
