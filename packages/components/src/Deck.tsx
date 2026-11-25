@@ -12,6 +12,7 @@ import {
   useContext,
 } from 'solid-js'
 import './Deck.css'
+import { useMeta } from './Meta'
 
 type RevealPlugin = NonNullable<RevealConfig['plugins']>[number]
 type RevealEvent = Event & Record<string, unknown>
@@ -64,6 +65,11 @@ type DeckProps = {
   plugins?: RevealPlugin[]
   /** Sizes the deck; 16:9 and as wide as its container by default. */
   class?: string
+  /**
+   * The deck is the whole page, as a page whose frontmatter has `deck: true`:
+   * the page leaves out its table of contents, and the deck fits in the window.
+   */
+  page?: boolean
   children?: JSX.Element
   onReady?: (deck: RevealApi) => void
   onSlideChange?: (event: RevealEvent) => void
@@ -147,7 +153,14 @@ function DeckRoot(props: DeckProps) {
   return (
     <DeckContext value={{ deck, synced, changed }}>
       <div
-        class={['not-prose mx-auto my-4 shadow', props.class ?? 'aspect-video w-full']}
+        data-deck-page={props.page || undefined}
+        class={[
+          'not-prose mx-auto my-4 shadow',
+          props.class ??
+            (props.page
+              ? 'aspect-video w-full max-w-[calc((100dvh-10rem)*16/9)]'
+              : 'aspect-video w-full'),
+        ]}
         style={{
           '--m-dark': '#23373b',
           '--m-accent': '#eb811b',
@@ -235,7 +248,15 @@ function Section(props: Omit<SlideProps, 'title'>) {
   )
   return (
     <section ref={setEl} class="h-full" {...data()}>
-      <div class={['flex h-full flex-col text-left text-[32px] leading-snug', props.class]}>
+      <div
+        class={[
+          'flex h-full flex-col text-left text-[32px] leading-snug',
+          // Like Beamer's \alert; in MDX, bold text and headings are the page's, which a deck can't swap.
+          '[&_strong]:font-normal [&_strong]:text-(--m-accent)',
+          '[&_:is(h3,h4,h5,h6)]:text-(--m-accent) [&_h3]:text-[36px]',
+          props.class,
+        ]}
+      >
         {props.children}
       </div>
     </section>
@@ -269,33 +290,41 @@ function Slide(props: SlideProps) {
   )
 }
 
-/** The title slide: title, subtitle, an accent rule, then who, where and when. */
+/**
+ * The title slide: title, subtitle, an accent rule, then who, where and when.
+ * What it is not given comes from the page's `defineMeta`.
+ */
 function Title(
   props: Omit<SlideProps, 'title'> & {
-    title: JSX.Element
+    title?: JSX.Element
     subtitle?: JSX.Element
     author?: JSX.Element
     institute?: JSX.Element
     date?: JSX.Element
   },
 ) {
+  const meta = useMeta()
   const section = omit(props, 'title', 'subtitle', 'author', 'institute', 'date', 'children')
+  const subtitle = () => props.subtitle ?? meta?.subtitle
+  const author = () => props.author ?? meta?.author
+  const institute = () => props.institute ?? meta?.institute
+  const date = () => props.date ?? meta?.date
   return (
     <Section {...section}>
       <div class="flex flex-1 flex-col justify-center gap-3 px-24">
-        <h1 class="text-[56px] leading-tight">{props.title}</h1>
-        <Show when={props.subtitle}>
-          <p class="text-[36px] opacity-80">{props.subtitle}</p>
+        <h1 class="text-[56px] leading-tight">{props.title ?? meta?.title}</h1>
+        <Show when={subtitle()}>
+          <p class="text-[36px] opacity-80">{subtitle()}</p>
         </Show>
         <hr class="my-6 border-t-2 border-(--m-accent)" />
-        <Show when={props.author}>
-          <p>{props.author}</p>
+        <Show when={author()}>
+          <p>{author()}</p>
         </Show>
-        <Show when={props.institute}>
-          <p class="text-[26px] opacity-80">{props.institute}</p>
+        <Show when={institute()}>
+          <p class="text-[26px] opacity-80">{institute()}</p>
         </Show>
-        <Show when={props.date}>
-          <p class="text-[26px] opacity-80">{props.date}</p>
+        <Show when={date()}>
+          <p class="text-[26px] opacity-80">{date()}</p>
         </Show>
         {props.children}
       </div>
@@ -373,6 +402,11 @@ function Fragment(props: {
   )
 }
 
+/** Its children side by side, in columns of equal width. */
+function Columns(props: { class?: string; children?: JSX.Element }) {
+  return <div class={['grid auto-cols-fr grid-flow-col gap-8', props.class]}>{props.children}</div>
+}
+
 /** Speaker notes, shown in the speaker view (press S) when the deck has the notes plugin. */
 function Notes(props: { children?: JSX.Element }) {
   return <aside class="notes">{props.children}</aside>
@@ -390,6 +424,7 @@ export const Deck = Object.assign(DeckRoot, {
   Standout,
   Stack,
   Fragment,
+  Columns,
   Notes,
   Alert,
 })

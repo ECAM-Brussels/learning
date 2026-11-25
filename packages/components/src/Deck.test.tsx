@@ -3,7 +3,14 @@ import type { JSX } from '@solidjs/web'
 import { describe, expect, mock, spyOn, test } from 'bun:test'
 import type { RevealApi } from 'reveal.js'
 import { createSignal, flush, For, Show, type ComponentProps } from 'solid-js'
-import { Deck, useDeck } from './Deck'
+
+// Meta, which a title slide reads, needs the router's location.
+mock.module('@solidjs/router', () => ({
+  useLocation: () => ({ pathname: '/slides' }),
+}))
+
+const { Deck, useDeck } = await import('./Deck')
+const { defineMeta } = await import('./Meta')
 
 type DeckProps = ComponentProps<typeof Deck>
 
@@ -92,6 +99,18 @@ describe('Deck', () => {
     // reveal.js gives plugins another object than its instance, for the same presentation.
     expect(initialized?.getRevealElement()).toBe(deck.getRevealElement())
     expect(deck.hasPlugin('probe')).toBe(true)
+  })
+
+  test('marks itself as the whole page, for the page to make room', async () => {
+    const { container } = await renderDeck(() => <Deck.Slide />, { page: true })
+    const frame = container.querySelector('.reveal')!.parentElement!
+    expect(frame).toHaveAttribute('data-deck-page')
+    expect(frame).toHaveClass('aspect-video', 'w-full', 'max-w-[calc((100dvh-10rem)*16/9)]')
+  })
+
+  test('is part of the page by default', async () => {
+    const { container } = await renderDeck(() => <Deck.Slide />)
+    expect(container.querySelector('[data-deck-page]')).toBeNull()
   })
 
   test('takes the size of its class instead of the default', async () => {
@@ -351,6 +370,26 @@ describe('Deck.Title', () => {
     const { container } = await renderDeck(() => <Deck.Title title="Dérivées" />)
     expect(container.querySelectorAll('.slides p')).toHaveLength(0)
   })
+
+  test("takes what it is not given from the page's defineMeta", async () => {
+    const Page = defineMeta({
+      title: 'Dérivées',
+      subtitle: 'Analyse 1',
+      author: 'Jane Doe',
+      institute: 'ECAM',
+      date: '2026',
+    })
+    await renderDeck(() => (
+      <Page>
+        <Deck.Title author="John Doe" />
+      </Page>
+    ))
+    expect(slides().getByRole('heading', { level: 1, hidden: true })).toHaveTextContent('Dérivées')
+    for (const text of ['Analyse 1', 'John Doe', 'ECAM', '2026']) {
+      expect(slides().getByText(text)).toBeInTheDocument()
+    }
+    expect(slides().queryByText('Jane Doe')).toBeNull()
+  })
 })
 
 describe('Deck.Section', () => {
@@ -470,6 +509,23 @@ describe('Deck.Fragment', () => {
     deck.next()
     expect(slides().getByText('First')).toHaveClass('visible')
     expect(slides().getByText('Second')).not.toHaveClass('visible')
+  })
+})
+
+describe('Deck.Columns', () => {
+  test('lays its children side by side, whatever their number', async () => {
+    await renderDeck(() => (
+      <Deck.Slide>
+        <Deck.Columns class="items-center">
+          <div>A</div>
+          <div>B</div>
+          <div>C</div>
+        </Deck.Columns>
+      </Deck.Slide>
+    ))
+    const columns = slides().getByText('A').parentElement!
+    expect(columns).toHaveClass('grid', 'grid-flow-col', 'auto-cols-fr', 'items-center')
+    expect(columns.children).toHaveLength(3)
   })
 })
 

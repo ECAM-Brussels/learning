@@ -3,6 +3,10 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "test": "bun test --coverage --coverage-reporter=lcov",
+    "test:watch": "bun test --watch --coverage"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
@@ -12,7 +16,8 @@
   "dependencies": {
     "@solidjs/web": "catalog:",
     "satteri": "^0.9.5",
-    "solid-js": "catalog:"
+    "solid-js": "catalog:",
+    "yaml": "^2.9.1"
   },
   "exports": {
     ".": "./index.tsx",

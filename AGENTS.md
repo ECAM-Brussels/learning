@@ -67,6 +67,15 @@ Files with an extra dot in their name, such as `*.exercises.tsx` or `*.content.m
 `bun run typecheck` also type-checks MDX files (`scripts/typecheck.mjs`).
 Components the layout passes to MDX without an import must be declared in `MDXProvidedComponents` (`apps/ecam/mdx.d.ts`),
 otherwise every component in MDX loses its types.
+Write LaTeX that contains curly braces with `tex` from `@learning/core` (``{tex`\frac{a}{b}`}``, ``{tex.display`…`}``), not `$…$`:
+the MDX language server reads the braces as expressions.
+Leave a blank line before the `:::` that closes a directive after a list,
+otherwise Markdown, and Prettier, take it as part of the last item.
+
+A page whose frontmatter is `deck: true` is a reveal.js presentation (`packages/mdx/deck.ts`):
+`#` opens a section, `##` a slide, `---` a slide without title, and a top-level `<Deck.…>` element is a slide of its own.
+Only `deck` goes in the frontmatter: the title slide comes from `defineMeta`.
+See `apps/ecam/src/routes/doc/presentation.mdx`.
 
 # Generated exercises
 

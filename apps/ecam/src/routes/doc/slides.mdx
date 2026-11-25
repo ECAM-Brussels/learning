@@ -1,4 +1,5 @@
 import { defineMeta } from '@learning/components'
+import { paths } from '../../router'
 import * as Example from './slides.deck'
 
 export default defineMeta({ title: 'Les présentations' })
@@ -16,20 +17,75 @@ Cliquez sur la présentation pour la piloter au clavier :
 - `F` affiche la présentation en plein écran, `Échap` montre une vue d'ensemble ;
 - `S` ouvre la vue présentateur, avec les notes, si le plugin de notes est chargé.
 
-## Les slides
+## Une page présentation
+
+Une page MDX dont le frontmatter dit `deck: true` devient une présentation :
+la page lui laisse toute sa largeur, sans table des matières.
+Seul `deck` va dans le frontmatter : le titre et le reste vont dans `defineMeta`, comme pour toute page,
+et la présentation s'ouvre sur un slide de titre construit à partir de ceux-ci.
+
+```mdx
+---
+deck: true
+---
+
+import { defineMeta } from '@learning/components'
+import { tex } from '@learning/core'
+
+export default defineMeta({ title: 'Les dérivées', author: 'Prénom Nom', date: 'Novembre 2026' })
+
+# Définition
+
+## Taux d'accroissement
+
+La dérivée de **f** en $a$ est la limite
+
+{tex.display`f'(a) = \lim_{h \to 0} \frac{f(a + h) - f(a)}{h}`}
+
+. . .
+
+:::incremental
+
+- elle mesure la pente de la tangente ;
+- elle mesure une vitesse instantanée.
+
+:::
+
+<Deck.Standout>Des questions ?</Deck.Standout>
+```
+
+| Syntaxe                       | Effet                                            |
+| ----------------------------- | ------------------------------------------------ |
+| `# Titre`                     | Le début d'une partie (`Deck.Section`)           |
+| `## Titre`                    | Un slide avec ce titre                           |
+| `---`                         | Un slide sans titre                              |
+| `<Deck.Standout>`, `<Deck.…>` | Un slide à part entière, écrit en JSX            |
+| `. . .`                       | La suite du slide apparaît à l'étape suivante    |
+| `:::incremental`              | Les éléments de la liste apparaissent un par un  |
+| `:::notes`                    | Les notes du présentateur ou de la présentatrice |
+| `::::columns` et `:::column`  | Des colonnes côte à côte                         |
+
+Le texte en **gras** prend la couleur d'accent, comme `\alert` dans Beamer.
+Pour le LaTeX qui contient des accolades, utilisez `tex` de `@learning/core` :
+dans `$…$`, les accolades troublent le serveur de langage MDX, qui y voit des expressions.
+
+<a href={paths.doc.presentation}>Un exemple complet</a> montre chacune de ces syntaxes.
+
+## Les slides en JSX
 
 Une présentation est un `Deck` dont les enfants sont des slides :
 
-| Composant       | Rôle                                                               |
-| --------------- | ------------------------------------------------------------------ |
-| `Deck.Title`    | Le titre, avec un sous-titre, l'auteur·e, l'institution et la date |
-| `Deck.Section`  | Le début d'une partie, avec une barre de progression               |
-| `Deck.Slide`    | Un slide, avec un titre facultatif                                 |
-| `Deck.Standout` | Un slide sombre pour une phrase marquante                          |
-| `Deck.Stack`    | Des slides empilés verticalement                                   |
+| Composant       | Rôle                                                                                                |
+| --------------- | --------------------------------------------------------------------------------------------------- |
+| `Deck.Title`    | Le titre, avec un sous-titre, l'auteur·e, l'institution et la date, par défaut ceux de `defineMeta` |
+| `Deck.Section`  | Le début d'une partie, avec une barre de progression                                                |
+| `Deck.Slide`    | Un slide, avec un titre facultatif                                                                  |
+| `Deck.Standout` | Un slide sombre pour une phrase marquante                                                           |
+| `Deck.Stack`    | Des slides empilés verticalement                                                                    |
 
 Dans un slide, `Deck.Fragment` fait apparaître son contenu au fil de la présentation,
-`Deck.Alert` met un mot en évidence
+`Deck.Alert` met un mot en évidence,
+`Deck.Columns` met ses enfants côte à côte
 et `Deck.Notes` contient les notes du présentateur ou de la présentatrice.
 
 ```tsx

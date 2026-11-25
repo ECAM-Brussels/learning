@@ -11,6 +11,7 @@ declare module '*.mdx' {
 // so that the MDX type checker knows them when a page uses them without importing them.
 interface MDXProvidedComponents {
   Code: typeof import('@learning/components').Code
+  Deck: typeof import('@learning/components').Deck
   Highlight: typeof import('@learning/components').Highlight
   Latex: typeof import('@learning/components').Latex
   Steps: typeof import('@learning/components').Steps

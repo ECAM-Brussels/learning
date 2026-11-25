@@ -23,6 +23,8 @@ type Components = Partial<
     Steps: Component<{
       children: JSX.Element[]
     }>
+    /** What a page whose frontmatter has `deck: true` is made of (see deck.ts). */
+    Deck: Component<{ page?: boolean; children?: JSX.Element }>
   } & {
     [K in LowercaseKey]?: ParentComponent
   }
