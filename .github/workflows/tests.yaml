@@ -1,18 +1,11 @@
 name: Tests
 on: [push, pull_request]
 jobs:
-  test:
+  javascript:
+    name: JavaScript
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-
-      - name: 'Set up Python'
-        uses: actions/setup-python@v6
-        with:
-          python-version-file: './apps/symapi/.python-version'
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -20,18 +13,42 @@ jobs:
       - name: Install JS deps
         run: bun install
 
+      # SymAPI's answers are replayed from apps/symapi/tests/contract.json.
       - name: Run tests
-        env:
-          SYMAPI_URL: http://localhost:8088
-        run: |
-          bun dev --filter=@learning/symapi &
-          for i in {1..30}; do
-            curl -fsS http://localhost:8088/openapi.json > /dev/null && break || echo "waiting..."
-            sleep 1
-          done || exit 1
-          bun run test
+        run: bun run test
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          flags: javascript
+
+  symapi:
+    name: SymAPI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/symapi
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: './apps/symapi/.python-version'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install Python deps
+        run: uv sync --locked
+
+      - name: Run tests
+        run: uv run pytest --cov-report=xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./apps/symapi/coverage.xml
+          flags: symapi

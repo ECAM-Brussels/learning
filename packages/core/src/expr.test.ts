@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { decrypt } from './crypto'
 import { expr } from './expr'
+import { takeSymapiRequests } from './symapi.replay'
 
 type Test<T = any> = {
   desc: string
@@ -1217,5 +1218,213 @@ describe('vector', () => {
 
   test('dot: throws on different dimensions', () => {
     expect(() => expr([1, 2], 'vector').dot([1, 2, 3])).toThrow()
+  })
+})
+
+describe('requests to SymAPI', () => {
+  const x2 = expr('x^2')
+  const asked = async (promise: () => unknown) => {
+    takeSymapiRequests()
+    const result = await promise()
+    return { result, requests: takeSymapiRequests() }
+  }
+
+  test.each<{ desc: string; promise: () => unknown; requests: { path: string; body: unknown }[] }>([
+    {
+      desc: 'isEqual asks equal with both expressions',
+      promise: () => x2.isEqual('x \\cdot x'),
+      requests: [{ path: '/expr/equal', body: { expr1: x2.json, expr2: expr('x \\cdot x').json } }],
+    },
+    {
+      desc: 'isEqual awaits a promised expression first',
+      promise: () => x2.isEqual(Promise.resolve('x \\cdot x')),
+      requests: [{ path: '/expr/equal', body: { expr1: x2.json, expr2: expr('x \\cdot x').json } }],
+    },
+    {
+      desc: 'checkRoot asks whether the substituted expression equals 0',
+      promise: () => expr('x - 2').checkRoot(2),
+      requests: [{ path: '/expr/equal', body: { expr1: expr('2 - 2').json, expr2: 0 } }],
+    },
+    {
+      desc: 'degree asks in x by default',
+      promise: () => x2.degree(),
+      requests: [{ path: '/expr/degree', body: { expr: x2.json, x: 'x' } }],
+    },
+    {
+      desc: 'degree asks in the given variable',
+      promise: () => x2.degree('y'),
+      requests: [{ path: '/expr/degree', body: { expr: x2.json, x: 'y' } }],
+    },
+    ...(['gt', 'geq', 'lt', 'leq'] as const).map((comparison) => ({
+      desc: `${comparison} asks compare with comparison ${comparison}`,
+      promise: () => x2[comparison](0),
+      requests: [{ path: '/expr/compare', body: { expr1: x2.json, expr2: 0, comparison } }],
+    })),
+    {
+      desc: 'in asks inSet with the set second',
+      promise: () => expr(2).in('\\mathbb{N}'),
+      requests: [{ path: '/expr/inSet', body: { expr1: 2, expr2: expr('\\mathbb{N}').json } }],
+    },
+    {
+      desc: 'isEquivalent asks equivalent',
+      promise: () => expr('x = 2').isEquivalent('2x = 4'),
+      requests: [
+        {
+          path: '/expr/equivalent',
+          body: { expr1: expr('x = 2').json, expr2: expr('2x = 4').json },
+        },
+      ],
+    },
+    ...(['isExpanded', 'isFactored', 'isTrue', 'isPartialFractionDecomposition'] as const).map(
+      (method) => ({
+        desc: `${method} asks ${method} with the expression`,
+        promise: () => x2[method](),
+        requests: [{ path: `/expr/${method}`, body: { expr: x2.json } }],
+      }),
+    ),
+    {
+      desc: 'matches asks match with the pattern second',
+      promise: () => x2.matches('a^2'),
+      requests: [{ path: '/expr/match', body: { expr1: x2.json, expr2: expr('a^2').json } }],
+    },
+    {
+      desc: 'roots asks for real roots by default',
+      promise: () => x2.roots(),
+      requests: [{ path: '/expr/roots', body: { expr: x2.json, complex: false } }],
+    },
+    {
+      desc: 'roots asks for complex roots on demand',
+      promise: () => x2.roots(true),
+      requests: [{ path: '/expr/roots', body: { expr: x2.json, complex: true } }],
+    },
+    {
+      desc: 'latex leaves expressions without instructions to Compute Engine',
+      promise: () => x2.latex(),
+      requests: [],
+    },
+    {
+      desc: 'latex asks SymAPI to carry out instructions',
+      promise: () => x2.diff().latex(),
+      requests: [{ path: '/expr/latex', body: { expr: ['Derivative', x2.json, 'x'] } }],
+    },
+    {
+      desc: 'apply asks for the latex once, then parses it',
+      promise: () => x2.expand().apply(),
+      requests: [{ path: '/expr/latex', body: { expr: ['Expand', x2.json] } }],
+    },
+    {
+      desc: 'python with sympy carries out instructions first',
+      promise: () => x2.diff().python(true),
+      requests: [{ path: '/expr/latex', body: { expr: ['Derivative', x2.json, 'x'] } }],
+    },
+    {
+      desc: 'isEqual with an error is decided by Compute Engine',
+      promise: () => expr('\\pi').isEqual(3.14, 0.01),
+      requests: [],
+    },
+    {
+      desc: 'isEqual with an error carries out instructions first',
+      promise: () => x2.diff().subs({ x: 1 }).isEqual(2, 0.01),
+      requests: [
+        { path: '/expr/latex', body: { expr: ['Subs', ['Derivative', x2.json, 'x'], 'x', 1] } },
+      ],
+    },
+    {
+      desc: 'set isEqual asks setEqual',
+      promise: () => expr('\\{1\\}', 'set').isEqual('\\{1\\}'),
+      requests: [
+        {
+          path: '/expr/setEqual',
+          body: { expr1: expr('\\{1\\}').json, expr2: expr('\\{1\\}').json },
+        },
+      ],
+    },
+    {
+      desc: 'set isSubset asks subset',
+      promise: () => expr('\\{1\\}', 'set').isSubset('\\{1, 2\\}'),
+      requests: [
+        {
+          path: '/expr/subset',
+          body: { expr1: expr('\\{1\\}').json, expr2: expr('\\{1, 2\\}').json },
+        },
+      ],
+    },
+    {
+      desc: 'solve sends a Solve instruction over the reals by default',
+      promise: () => x2.solve().isEqual('\\{0\\}'),
+      requests: [
+        {
+          path: '/expr/setEqual',
+          body: {
+            expr1: ['Solve', x2.json, 'x', 'RealNumbers'],
+            expr2: expr('\\{0\\}').json,
+          },
+        },
+      ],
+    },
+    {
+      desc: 'vector isEqual asks equal once per component',
+      promise: () => expr([1, 'x'], 'vector').isEqual([1, 'x']),
+      requests: [
+        { path: '/expr/equal', body: { expr1: 1, expr2: 1 } },
+        { path: '/expr/equal', body: { expr1: 'x', expr2: 'x' } },
+      ],
+    },
+    {
+      desc: 'vector isEqual does not ask when dimensions differ',
+      promise: () => expr([1], 'vector').isEqual([1, 2]),
+      requests: [],
+    },
+    {
+      desc: 'quantity isEqual is decided by Compute Engine',
+      promise: () => expr(1000, 'g').isEqual(1, 'kg'),
+      requests: [],
+    },
+    {
+      desc: 'Compute Engine methods do not ask SymAPI',
+      promise: () => [
+        x2.evaluate(),
+        x2.N(),
+        x2.subs({ x: 2 }).N(),
+        x2.count('x'),
+        x2.hasSymbol(),
+        x2.python(),
+        expr('1 + i').isComplexRectangular(),
+      ],
+      requests: [],
+    },
+  ])('$desc', async ({ promise, requests }) => {
+    expect((await asked(promise)).requests).toEqual(requests)
+  })
+
+  test.each<{ desc: string; promise: () => Promise<unknown>; result: unknown }>([
+    {
+      desc: 'an undecidable comparison is undefined, not null',
+      promise: () => expr('x').gt(0),
+      result: undefined,
+    },
+    {
+      desc: 'an undecidable membership is undefined, not null',
+      promise: () => expr('x').in('\\mathbb{Q}'),
+      result: undefined,
+    },
+    {
+      desc: 'the degree of 0 is -Infinity, not null',
+      promise: () => expr(0).degree(),
+      result: -Infinity,
+    },
+    {
+      desc: 'roots are returned as latex strings',
+      promise: () => expr('x^2 - 1').roots(),
+      result: ['-1', '1'],
+    },
+  ])('$desc', async ({ promise, result }) => {
+    expect(await promise()).toEqual(result)
+  })
+
+  test('errors from SymAPI reject with its status and detail', async () => {
+    await expect(expr('\\sin x').degree()).rejects.toThrow(
+      /^HTTP 422: .* is not a polynomial in x$/,
+    )
   })
 })
