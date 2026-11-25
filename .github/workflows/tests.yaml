@@ -15,7 +15,7 @@ jobs:
 
       # SymAPI's answers are replayed from apps/symapi/tests/contract.json.
       - name: Run tests
-        run: bun run test
+        run: bun run test --filter='!@learning/symapi'
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5

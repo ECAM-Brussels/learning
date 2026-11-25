@@ -6,9 +6,12 @@
     "ghcr.io/devcontainers-extra/features/bun:1": {},
     "ghcr.io/devcontainer-community/devcontainer-features/astral.sh-uv:1": {}
   },
+  "containerEnv": {
+    "UV_PROJECT_ENVIRONMENT": "/home/vscode/.venvs/symapi"
+  },
   "postCreateCommand": "uv python install \"$(cat apps/symapi/.python-version)\" && cd apps/symapi && uv sync --frozen --dev",
   "remoteEnv": {
-    "PATH": "${containerWorkspaceFolder}/apps/symapi/.venv/bin:${containerEnv:PATH}"
+    "PATH": "/home/vscode/.venvs/symapi/bin:${containerEnv:PATH}"
   },
   "customizations": {
     "vscode": {
@@ -29,7 +32,7 @@
         "editor.formatOnSave": true,
         "prettier.configPath": "prettier.config.js",
         "prettier.prettierPath": "./node_modules/prettier",
-        "python.defaultInterpreterPath": "${containerWorkspaceFolder}/apps/symapi/.venv/bin/python"
+        "python.defaultInterpreterPath": "/home/vscode/.venvs/symapi/bin/python"
       }
     }
   }

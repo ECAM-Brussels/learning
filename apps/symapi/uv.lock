@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = ">=3.13"
 resolution-markers = [
     "python_full_version >= '3.14'",
@@ -901,6 +901,7 @@ dev = [
     { name = "black" },
     { name = "pytest" },
     { name = "pytest-cov" },
+    { name = "watchfiles" },
 ]
 
 [package.metadata]
@@ -915,6 +916,7 @@ dev = [
     { name = "black", specifier = ">=26.3.1" },
     { name = "pytest", specifier = ">=9.2.0" },
     { name = "pytest-cov", specifier = ">=7.1.0" },
+    { name = "watchfiles", specifier = ">=1.1.1" },
 ]
 
 [[package]]

@@ -84,7 +84,7 @@ Tests don't need SymAPI running: they answer its requests from `apps/symapi/test
 and SymAPI's own tests check that it still gives every response recorded there.
 After changing what `expr` asks, or adding a test that asks something new,
 record the contract again with `bun run test:record` in `packages/core`, where SymAPI is running (the dev container).
-SymAPI's tests run with `uv run pytest` in `apps/symapi`, in the dev container: its `.venv` belongs to the container.
+SymAPI's own tests (pytest) run with the others in `bun run test` and `bun run dev`.
 
 # French typography
 
