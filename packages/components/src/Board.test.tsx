@@ -1020,6 +1020,97 @@ describe('BoardDefaults', () => {
   })
 })
 
+describe('defaults that differ from JSXGraph', () => {
+  const visible = (el: JXG.GeometryElement) => Boolean(Reflect.get(el, 'visPropCalc').visible)
+  const label = (el: JXG.GeometryElement) => Reflect.get(el, 'label') as JXG.Text
+
+  test('labels position themselves, unless BoardDefaults or props say otherwise', async () => {
+    const { el } = await renderBoard<JXG.Point>((ref) => (
+      <Board.Point position={[0, 0]} name="A">
+        {ref}
+      </Board.Point>
+    ))
+    expect(label(el()).getAttribute('autoPosition')).toBe(true)
+
+    let fromDefaults: JXG.Point | undefined
+    render(() => (
+      <BoardDefaults label={{ autoPosition: false }}>
+        <Board>
+          <Board.Point position={[0, 0]} name="B">
+            {(p) => ((fromDefaults = p), null)}
+          </Board.Point>
+        </Board>
+      </BoardDefaults>
+    ))
+    const { el: off } = await renderBoard<JXG.Point>((ref) => (
+      <Board.Point position={[0, 0]} name="C" label={{ autoPosition: false }}>
+        {ref}
+      </Board.Point>
+    ))
+    await waitFor(() => expect(fromDefaults).toBeDefined())
+    expect(label(fromDefaults!).getAttribute('autoPosition')).toBe(false)
+    expect(label(off()).getAttribute('autoPosition')).toBe(false)
+  })
+
+  test('labels in a 3D view keep their place, unless an element asks otherwise', async () => {
+    let placed: JXG.Point3D | undefined
+    const { el } = await renderView<JXG.Point3D>((ref) => (
+      <>
+        <Board.Point3D position={[1, 1, 1]} name="P">
+          {ref}
+        </Board.Point3D>
+        <Board.Point3D position={[2, 2, 2]} name="Q" label={{ autoPosition: true }}>
+          {(p) => ((placed = p), null)}
+        </Board.Point3D>
+      </>
+    ))
+    await waitFor(() => expect(placed).toBeDefined())
+    const point2D = (p: JXG.Point3D) => Reflect.get(p, 'element2D') as JXG.Point
+    expect(label(point2D(el())).getAttribute('autoPosition')).toBe(false)
+    expect(label(point2D(placed!)).getAttribute('autoPosition')).toBe(true)
+  })
+
+  test('coordinates create hidden points, while points passed stay visible', async () => {
+    let given: JXG.Point | undefined
+    let polygon: JXG.Polygon | undefined
+    const { el: angle } = await renderBoard<JXG.Angle>((ref) => (
+      <Board.Point position={[0, 0]}>
+        {(p) => {
+          given = p
+          return (
+            <>
+              <Board.Angle points={[[1, 0], p, [0, 1]]}>{ref}</Board.Angle>
+              <Board.Polygon points={[[2, 2], [3, 2], p]}>
+                {(el) => ((polygon = el), null)}
+              </Board.Polygon>
+            </>
+          )
+        }}
+      </Board.Point>
+    ))
+    await waitFor(() => expect(polygon).toBeDefined())
+    expect([angle().radiuspoint, angle().anglepoint].map(visible)).toEqual([false, false])
+    expect(polygon!.vertices.slice(0, 2).map(visible)).toEqual([false, false])
+    expect(visible(given!)).toBe(true)
+  })
+
+  test('an integral shows no points at its bounds', async () => {
+    const { el } = await renderBoard<JXG.Integral>((ref) => (
+      <Board.Plot fn={(x) => x * x}>
+        {(curve) => (
+          <Board.Integral curve={curve} domain={[0, 1]}>
+            {ref}
+          </Board.Integral>
+        )}
+      </Board.Plot>
+    ))
+    const points = ['curveLeft', 'curveRight', 'baseLeft', 'baseRight'].map(
+      (key) => Reflect.get(el(), key) as JXG.Point,
+    )
+    expect(points.map(visible)).toEqual([false, false, false, false])
+  })
+})
+
 describe('Custom', () => {
   test('removes what it created when unmounted, and only that', async () => {
     const [shown, setShown] = createSignal(true)

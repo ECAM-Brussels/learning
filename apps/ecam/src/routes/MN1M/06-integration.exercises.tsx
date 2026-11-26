@@ -479,7 +479,6 @@ export const Interpolation = (props: {
                   }}
                   name={`(${x}, f(${x}))`}
                   fixed={props.f !== undefined}
-                  label={{ autoPosition: true }}
                   withLabel={!props.hideLabels}
                 />
               )}
@@ -493,18 +492,10 @@ export const Interpolation = (props: {
         name="P(x)"
         withLabel={!props.hideLabels}
         strokeWidth={2}
-        label={{ autoPosition: true }}
       >
         {(curve) => (
           <Show when={props.area}>
-            <Board.Integral
-              curve={curve}
-              domain={[Math.min(...x), Math.max(...x)]}
-              baseLeft={{ visible: false }}
-              baseRight={{ visible: false }}
-              curveLeft={{ visible: false }}
-              curveRight={{ visible: false }}
-            />
+            <Board.Integral curve={curve} domain={[Math.min(...x), Math.max(...x)]} />
           </Show>
         )}
       </Board.Plot>

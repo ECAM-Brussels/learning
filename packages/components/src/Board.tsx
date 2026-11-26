@@ -111,6 +111,9 @@ const refresh = (el: { board: JXG.Board }) => {
   el.board.update()
 }
 
+/** JSXGraph's types omit the `label` that these elements accept. */
+type WithLabel<T> = T & { label?: JXG.LabelOptions }
+
 /**
  * JSXGraph options keyed by element type, as in `JXG.Options`.
  * `elements` applies to every element, for what its type doesn't set itself.
@@ -145,11 +148,13 @@ export type BoardOptions = {
   text?: JXG.TextAttributes
   vectorfield?: JXG.CurveAttributes
   view3d?: JXG.View3DAttributes
-  point3d?: JXG.Point3DAttributes
+  /** The axes of a `View3D`. */
+  axes3d?: Partial<Record<'xAxis' | 'yAxis' | 'zAxis', JXG.Line3DAttributes>>
+  point3d?: WithLabel<JXG.Point3DAttributes>
   line3d?: JXG.Line3DAttributes
-  plane3d?: JXG.Plane3DAttributes
-  curve3d?: JXG.Curve3DAttributes
-  surface3d?: JXG.Surface3DAttributes
+  plane3d?: WithLabel<JXG.Plane3DAttributes>
+  curve3d?: WithLabel<JXG.Curve3DAttributes>
+  surface3d?: WithLabel<JXG.Surface3DAttributes>
 }
 
 const BoardDefaultsContext = createContext<() => BoardOptions>(() => ({}))
@@ -182,6 +187,32 @@ function mergeOptions<T extends Record<string, unknown>>(
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && Object.getPrototypeOf(value) === Object.prototype
 
+const fixedLabel = { label: { autoPosition: false } }
+
+/**
+ * Where these components depart from JSXGraph's defaults.
+ * A board's theme, `BoardDefaults` and props override them.
+ */
+const builtInDefaults: BoardOptions = {
+  label: { autoPosition: true },
+  // Points JSXGraph creates for coordinates or bounds: a position is not a point.
+  // Points passed as elements keep their own attributes.
+  polygon: { vertices: { visible: false } },
+  integral: {
+    curveLeft: { visible: false },
+    curveRight: { visible: false },
+    baseLeft: { visible: false },
+    baseRight: { visible: false },
+  },
+  // A 3D view has hundreds of elements for each label to avoid, on every update, e.g. at each step of a rotation.
+  point3d: fixedLabel,
+  line3d: fixedLabel,
+  curve3d: fixedLabel,
+  surface3d: fixedLabel,
+  plane3d: fixedLabel,
+  axes3d: { xAxis: fixedLabel, yAxis: fixedLabel, zAxis: fixedLabel },
+}
+
 let themes = 0
 
 /**
@@ -193,10 +224,12 @@ function initBoard(
   attributes: Partial<JXG.BoardAttributes>,
   defaults: BoardOptions,
 ) {
-  if (Object.keys(defaults).length === 0) return JSXGraph.initBoard(container, attributes)
   const name = `board-defaults-${themes++}`
   const base = attributes.theme ? JXG.themes[attributes.theme] : undefined
-  JXG.themes[name] = mergeOptions(isPlainObject(base) ? base : {}, defaults)
+  JXG.themes[name] = mergeOptions(
+    mergeOptions(builtInDefaults, isPlainObject(base) ? base : {}),
+    defaults,
+  )
   try {
     return JSXGraph.initBoard(container, { ...attributes, theme: name })
   } finally {
@@ -207,6 +240,23 @@ function initBoard(
 
 Reflect.set(globalThis, 'katex', katex)
 JXG.Options.text.useKatex = true
+
+// JSXGraph places every label with autoPosition at each update, even empty labels of hidden points,
+// such as the dozens a 3D view creates: each tries 12 places against every element of the board.
+type TextInternals = JXG.Text & {
+  plaintext: string
+  element?: { visPropCalc: { visible: boolean } }
+  visPropCalc: { visible: boolean }
+  updateRenderer(): JXG.Text
+  updateRendererGeneric(method: string): JXG.Text
+}
+const textPrototype = (JXG as unknown as { Text: { prototype: TextInternals } }).Text.prototype
+const updateTextRenderer = textPrototype.updateRenderer
+textPrototype.updateRenderer = function (this: TextInternals) {
+  const shown =
+    this.visPropCalc.visible && this.element?.visPropCalc.visible !== false && this.plaintext !== ''
+  return shown ? updateTextRenderer.call(this) : this.updateRendererGeneric('updateText')
+}
 
 export const Board = Object.assign(
   (
@@ -261,6 +311,11 @@ export const Board = Object.assign(
       return (
         <Element type="angle" parent={props.points} attrs={attrs}>
           {(angle: JXG.Angle) => {
+            // JSXGraph creates an angle's points from the global point options, which no angle attribute reaches.
+            const created = [angle.radiuspoint, angle.center, angle.anglepoint]
+            untrack(() => props.points).forEach((p, i) => {
+              if (Array.isArray(p)) created[i]!.setAttribute({ visible: false })
+            })
             createEffect(
               () => deepArray(props.points),
               ([p1, p2, p3]) => {
@@ -935,7 +990,7 @@ export const Board = Object.assign(
         on?: Pick<JXG.GeometryElement, 'board' | 'id'>
         children?: (point: JXG.Point3D) => JSX.Element
         onDrag?: (point: JXG.Point3D) => void
-      } & JXG.Point3DAttributes,
+      } & WithLabel<JXG.Point3DAttributes>,
     ) => {
       const attrs = omit(props, 'position', 'on', 'children', 'onDrag')
       return (
@@ -1004,7 +1059,7 @@ export const Board = Object.assign(
         fn: (x: number, y: number) => number
         domain: Domain2D
         children?: (surface: JXG.Surface3D) => JSX.Element
-      } & JXG.Surface3DAttributes,
+      } & WithLabel<JXG.Surface3DAttributes>,
     ) => {
       const attrs = omit(props, 'fn', 'domain', 'children')
       return (
@@ -1034,7 +1089,7 @@ export const Board = Object.assign(
         fn: (u: number, v: number) => Coords3D
         domain: Domain2D
         children?: (surface: JXG.Surface3D) => JSX.Element
-      } & JXG.Surface3DAttributes,
+      } & WithLabel<JXG.Surface3DAttributes>,
     ) => {
       const attrs = omit(props, 'fn', 'domain', 'children')
       return (
@@ -1063,7 +1118,7 @@ export const Board = Object.assign(
         fn: (t: number) => Coords3D
         domain: Coords
         children?: (curve: JXG.Curve3D) => JSX.Element
-      } & JXG.Curve3DAttributes,
+      } & WithLabel<JXG.Curve3DAttributes>,
     ) => {
       const attrs = omit(props, 'fn', 'domain', 'children')
       return (
@@ -1122,7 +1177,7 @@ export const Board = Object.assign(
         directions: [Coords3D, Coords3D]
         range?: Domain2D
         children?: (plane: JXG.Plane3D) => JSX.Element
-      } & JXG.Plane3DAttributes,
+      } & WithLabel<JXG.Plane3DAttributes>,
     ) => {
       const attrs = omit(props, 'point', 'directions', 'range', 'children')
       const bound = (i: 0 | 1, end: 0 | 1) => () =>
@@ -1284,14 +1339,16 @@ function Element<T extends Pick<JXG.GeometryElement, 'setAttribute' | 'update'>>
   )
 
   createEffect(
-    () => [container(), shape()] as const,
-    ([parent]) => {
+    // Read here rather than in the callback: the compiler may turn a prop into a memo (e.g. for a ternary),
+    // which can only be created where there is an owner.
+    () => [container(), shape(), untrack(() => props.parent)] as const,
+    ([parent, , parents]) => {
       if (!parent)
         throw new Error(
           `<${props.type}> must be placed inside a ${props.view ? 'View3D' : 'Board'}`,
         )
       const created = untrack(() =>
-        (parent.create as (...args: unknown[]) => T)(props.type, props.parent, attrs()),
+        (parent.create as (...args: unknown[]) => T)(props.type, parents, attrs()),
       )
       setEl(() => created)
       return () => {
