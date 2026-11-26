@@ -386,84 +386,130 @@ function expression(input: Math) {
   }
 }
 
+type QuantityJson = readonly ['Quantity', MathJsonExpression, MathJsonExpression]
+
+const isQuantityJson = (json: unknown): json is QuantityJson =>
+  Array.isArray(json) && json[0] === 'Quantity' && json.length === 3
+
 const Unit = v.pipe(
   v.custom<MathJsonExpression>(() => true),
   v.transform((rawUnit) => {
     const unit =
       typeof rawUnit === 'string' && rawUnit.includes('\\') ? ce.parse(rawUnit).json : rawUnit
     const json = ce.expr(['Quantity', 1, unit]).json
-    return Array.isArray(json) && json[0] === 'Quantity' ? (json[2] as MathJsonExpression) : unit
+    return isQuantityJson(json) ? json[2] : unit
   }),
+  // Compute Engine reads N (newton) inside a compound unit as its N() function and leaves an
+  // Error node: reject it here, or isEqual would quietly grade every such answer as wrong.
+  v.check(
+    (unit) => !hasErrorNode(unit),
+    ({ input }) => `Invalid unit: ${stringify(input)}`,
+  ),
+  // Compute Engine takes any symbol for a unit, but cannot convert an unknown one, even to itself.
+  v.check(
+    (unit) =>
+      hasErrorNode(unit) ||
+      isQuantityJson(ce.expr(['UnitConvert', ['Quantity', 1, unit], unit]).evaluate().json),
+    ({ input }) => `Unknown unit: ${stringify(input)}`,
+  ),
 )
 type Unit = v.InferInput<typeof Unit>
 
-const QuantityInput = v.union([
+const quantityJson = (magnitude: MathJsonExpression, unit: MathJsonExpression) =>
+  ['Quantity', typeof magnitude === 'number' ? String(magnitude) : magnitude, unit] as const
+
+/** A quantity, or what one is made from: `[magnitude, unit]`, `['Quantity', magnitude, unit]` or `{ magnitude, unit }`. */
+const QuantityValue = v.union([
+  v.pipe(
+    v.custom<{ json: QuantityJson }>(
+      (value) => typeof value === 'object' && value !== null && isQuantityJson((value as any).json),
+    ),
+    v.transform(({ json }) => json),
+  ),
   v.pipe(
     v.tuple([v.literal('Quantity'), Math, Unit]),
-    v.transform(([_, magnitude, unit]) => ['Quantity', magnitude.json, unit] as const),
+    v.transform(([_, magnitude, unit]) => quantityJson(magnitude.json, unit)),
   ),
   v.pipe(
     v.tuple([Math, Unit]),
-    v.transform(
-      ([magnitude, unit]) =>
-        [
-          'Quantity',
-          typeof magnitude.json === 'number' ? String(magnitude.json) : magnitude.json,
-          unit,
-        ] as const,
-    ),
+    v.transform(([magnitude, unit]) => quantityJson(magnitude.json, unit)),
   ),
   v.pipe(
-    v.tuple([v.looseObject({ magnitude: Expression, unit: Unit })]),
-    v.transform(([v]) => ['Quantity', v.magnitude.json, v.unit] as const),
+    v.looseObject({ magnitude: Expression, unit: Unit }),
+    v.transform(({ magnitude, unit }) => quantityJson(magnitude.json, unit)),
+  ),
+])
+export type QuantityLike = v.InferInput<typeof QuantityValue>
+
+const QuantityArgs = v.union([
+  v.pipe(
+    v.tuple([v.literal('Quantity'), Math, Unit]),
+    v.transform(([_, magnitude, unit]) => quantityJson(magnitude.json, unit)),
+  ),
+  v.pipe(
+    v.tuple([Math, Unit]),
+    v.transform(([magnitude, unit]) => quantityJson(magnitude.json, unit)),
+  ),
+  v.pipe(
+    v.tuple([QuantityValue]),
+    v.transform(([json]) => json),
   ),
 ])
 
-const QuantityWithError = v.union([
-  v.tuple([QuantityInput, v.number()]),
-  v.pipe(
-    QuantityInput,
-    v.transform((quantity) => [quantity, 0] as const),
-  ),
-])
-
-export function quantity(...rawQuantity: v.InferInput<typeof QuantityInput>) {
-  const result = v.safeParse(QuantityInput, rawQuantity)
+export function quantity(...rawQuantity: v.InferInput<typeof QuantityArgs>) {
+  const result = v.safeParse(QuantityArgs, rawQuantity)
   if (!result.success)
     throw new Error(
       `La quantité ${JSON.stringify(rawQuantity)} n'a pas pu être parsée:\n${JSON.stringify(result.issues, null, 2)}`,
     )
   const json = result.output
 
+  function evaluate(method: string, ...args: MathJsonExpression[]) {
+    return ce.expr([method, ...args]).evaluate().json
+  }
+
   function apply(method: string, ...args: MathJsonExpression[]) {
-    const json = ce.expr([method, ...args]).evaluate().json
-    if (!Array.isArray(json) || json[0] !== 'Quantity' || json.length !== 3)
+    const json = evaluate(method, ...args)
+    if (!isQuantityJson(json))
       throw new Error(
         `Expected a Quantity as result of applying ${method} to ${stringify(args)}, but got ${stringify(json)}`,
       )
-    return quantity(json[1], json[2])
+    return quantity({ json: json[1] }, json[2])
   }
+
+  const compatible = (other: QuantityJson) =>
+    isQuantityJson(evaluate('UnitConvert', other, json[2] as MathJsonExpression))
 
   return {
     convert: (unit: Unit) => apply('UnitConvert', json, v.parse(Unit, unit)),
     magnitude: expression({ json: json[1] }),
-    subtract: (...rawOther: v.InferInput<typeof QuantityInput>) =>
-      apply('Subtract', json, v.parse(QuantityInput, rawOther)),
+    subtract: (other: QuantityLike) => apply('Subtract', json, v.parse(QuantityValue, other)),
     unit: json[2],
     json,
-    isEqual: async (...rawArgs: v.InferInput<typeof QuantityWithError>) => {
-      const [other, error] = v.parse(QuantityWithError, rawArgs)
-      try {
-        return (
-          quantity({ json: json[1] }, json[2])
-            .subtract({ json: other[1] }, other[2])
-            .convert(other[2])
-            .magnitude.abs()
-            .N() <= error
+    /**
+     * False when the units measure different things, undefined when Compute Engine cannot tell
+     * (e.g. symbolic magnitudes). The tolerance is in the unit of `other` unless it has its own.
+     */
+    isEqual: async (
+      rawOther: QuantityLike,
+      options: { tolerance?: number | QuantityLike } = {},
+    ): Promise<boolean | undefined> => {
+      const other = v.parse(QuantityValue, rawOther)
+      if (!compatible(other)) return false
+      const tolerance =
+        options.tolerance === undefined || typeof options.tolerance === 'number'
+          ? quantity(options.tolerance ?? 0, other[2])
+          : quantity(options.tolerance)
+      if (!compatible(tolerance.json))
+        throw new Error(
+          `The tolerance ${stringify(tolerance.json)} is not in a unit compatible with ${stringify(json)}`,
         )
-      } catch {
-        return false
-      }
+      const difference = apply('Subtract', json, other)
+        .convert(tolerance.unit as Unit)
+        .magnitude.abs()
+        .N()
+      if (Number.isNaN(difference)) return undefined
+      return difference <= tolerance.magnitude.N()
     },
     latex: () => ce.expr(json, { form: 'raw' }).latex,
     N: (precision?: number) => quantity(expression({ json: json[1] }).N(precision), json[2]),
@@ -484,49 +530,72 @@ export function set(input: Math) {
   }
 }
 
-const Vector = v.array(Math)
+const isVector = (value: unknown): value is { components: ReturnType<typeof expression>[] } =>
+  typeof value === 'object' && value !== null && 'components' in value && 'cross' in value
 
-export function vector(rawComponents: Math[]) {
-  const components = v.parse(Vector, rawComponents)
+/** A vector, or the list of its components. */
+const VectorValue = v.union([
+  v.pipe(
+    v.custom<{ components: ReturnType<typeof expression>[] }>(isVector),
+    v.transform(({ components }) => components.map(({ rawInput, json }) => ({ rawInput, json }))),
+  ),
+  v.array(Math),
+])
+export type VectorLike = v.InferInput<typeof VectorValue>
+
+// Results are kept in canonical form, which folds numbers (0 × 1 - 1 × 0 = 0)
+// but leaves symbolic terms as written.
+const canonical = (json: MathJsonExpression) => ce.expr(json).json
+
+export function vector(rawInput: VectorLike) {
+  const components = v.parse(VectorValue, rawInput)
+  const fromJson = (jsons: MathJsonExpression[]) =>
+    vector(jsons.map((json) => ({ json: canonical(json) })))
+  const sameDimension = (rawOther: VectorLike, operation: string) => {
+    const other = v.parse(VectorValue, rawOther)
+    if (components.length !== other.length)
+      throw new Error(`Cannot compute the ${operation} of vectors of different dimensions`)
+    return other
+  }
+  const componentwise = (rawOther: VectorLike, operation: 'Add' | 'Subtract') => {
+    const other = sameDimension(rawOther, operation === 'Add' ? 'sum' : 'difference')
+    return fromJson(components.map((c, i) => [operation, c.json, other[i]!.json]))
+  }
+
   return {
-    cross: (rawOther: Math[]) => {
-      const other = v.parse(Vector, rawOther)
+    components: components.map((c) => expression(c)),
+    json: ['List', ...components.map((c) => c.json)] as MathJsonExpression,
+    rawInput,
+    toJSON: () => rawInput,
+    add: (other: VectorLike) => componentwise(other, 'Add'),
+    subtract: (other: VectorLike) => componentwise(other, 'Subtract'),
+    scale: (factor: Math) => {
+      const k = v.parse(Math, factor).json
+      return fromJson(components.map((c) => ['Multiply', k, c.json]))
+    },
+    cross: (rawOther: VectorLike) => {
+      const other = v.parse(VectorValue, rawOther)
       if (components.length !== 3 || other.length !== 3)
         throw new Error(`Cross product is only defined for 3-dimensional vectors`)
-      return vector([
-        {
-          json: [
-            'Subtract',
-            ['Multiply', components[1]!.json, other[2]!.json],
-            ['Multiply', components[2]!.json, other[1]!.json],
-          ],
-        },
-        {
-          json: [
-            'Subtract',
-            ['Multiply', components[2]!.json, other[0]!.json],
-            ['Multiply', components[0]!.json, other[2]!.json],
-          ],
-        },
-        {
-          json: [
-            'Subtract',
-            ['Multiply', components[0]!.json, other[1]!.json],
-            ['Multiply', components[1]!.json, other[0]!.json],
-          ],
-        },
-      ])
+      const [a, b] = [components.map((c) => c.json), other.map((c) => c.json)]
+      const minor = (i: number, j: number): MathJsonExpression => [
+        'Subtract',
+        ['Multiply', a[i]!, b[j]!],
+        ['Multiply', a[j]!, b[i]!],
+      ]
+      return fromJson([minor(1, 2), minor(2, 0), minor(0, 1)])
     },
-    dot: (rawOther: Math[]) => {
-      const other = v.parse(Vector, rawOther)
-      if (components.length !== other.length)
-        throw new Error(`Cannot compute the dot product of vectors of different dimensions`)
+    dot: (rawOther: VectorLike) => {
+      const other = sameDimension(rawOther, 'dot product')
       return expression({
-        json: ['Add', ...components.map((c, i) => ['Multiply', c.json, other[i]!.json] as const)],
+        json: canonical([
+          'Add',
+          ...components.map((c, i) => ['Multiply', c.json, other[i]!.json] as const),
+        ]),
       })
     },
-    isEqual: async (rawOther: Math[]) => {
-      const other = v.parse(Vector, rawOther)
+    isEqual: async (rawOther: VectorLike) => {
+      const other = v.parse(VectorValue, rawOther)
       if (components.length !== other.length) return false
       const results = await mapAsync(range(components.length), async (i) =>
         expression(components[i]!).isEqual(other[i]!),
@@ -541,14 +610,9 @@ export function vector(rawComponents: Math[]) {
     },
     norm: () =>
       expression({
-        json: ['Sqrt', ['Add', ...components.map((c) => ['Power', c.json, 2] as const)]],
+        json: canonical(['Sqrt', ['Add', ...components.map((c) => ['Power', c.json, 2] as const)]]),
       }),
-    simplify: () =>
-      vector(
-        components.map((c) => ({
-          json: ['Simplify', c.json],
-        })),
-      ),
+    simplify: () => vector(components.map((c) => ({ json: ['Simplify', c.json] }))),
   }
 }
 
@@ -557,12 +621,12 @@ export type Quantity = ReturnType<typeof quantity>
 export function expr(input: undefined, type?: undefined): undefined
 export function expr(input: Math, type?: undefined): Expression<'output'>
 export function expr(input: Math, type: 'set'): ReturnType<typeof set>
-export function expr(input: Math[], type: 'vector'): ReturnType<typeof vector>
+export function expr(input: VectorLike, type: 'vector'): ReturnType<typeof vector>
 export function expr(input: Math, type: string): Quantity
-export function expr(input?: Math | Math[], type?: string) {
+export function expr(input?: Math | VectorLike, type?: string) {
   if (input === undefined) return undefined
   if (type === undefined) return expression(input as Math)
-  if (type === 'vector') return vector(input as Math[])
+  if (type === 'vector') return vector(input as VectorLike)
   if (type === 'set') return set(input as Math)
   return quantity(input as Math, type)
 }
