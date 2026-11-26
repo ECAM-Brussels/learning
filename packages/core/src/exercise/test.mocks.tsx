@@ -16,6 +16,7 @@ mock.module('@learning/components', async () => {
   const { Pagination } = await import('../../../components/src/Pagination')
   const { Scope } = await import('../../../components/src/Scope')
   const { Attempt } = await import('../../../components/src/Attempt')
+  const { Table } = await import('../../../components/src/Table')
   return {
     Attempt,
     Boundary,
@@ -23,6 +24,7 @@ mock.module('@learning/components', async () => {
     FeedbackContext,
     Pagination,
     Scope,
+    Table,
     MathField: (props: any) => <input data-testid="math-field" {...props} />,
     Youtube: (props: { src: string }) => <div data-testid="video" data-src={props.src} />,
     Highlight: (props: { code: string }) => <pre>{props.code}</pre>,

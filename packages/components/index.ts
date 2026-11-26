@@ -26,6 +26,7 @@ export * from './src/Page'
 export * from './src/Pagination'
 export * from './src/Scope'
 export * from './src/SymbolicRepresentation'
+export * from './src/Table'
 export * from './src/Youtube'
 
 export const MathField = clientOnly(() => import('./src/MathField'), { lazy: true })
