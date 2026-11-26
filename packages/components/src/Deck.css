@@ -1,0 +1,3 @@
+/* reveal.js's styles go in Tailwind's components layer, so that utilities override them: unlayered, they would win. */
+@layer theme, base, components, utilities;
+@import 'reveal.js/reveal.css' layer(components);

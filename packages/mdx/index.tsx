@@ -23,6 +23,8 @@ type Components = Partial<
     Steps: Component<{
       children: JSX.Element[]
     }>
+    /** What a `:::::deck` block is made of (see deck.ts). */
+    Deck: Component<{ children?: JSX.Element }>
   } & {
     [K in LowercaseKey]?: ParentComponent
   }

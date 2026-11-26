@@ -16,6 +16,11 @@ type Meta = {
   /** Inherited by the levels inside; French if no level sets it. */
   lang?: Lang
   authorized?: () => boolean | Promise<boolean>
+  /** Shown with the title on a presentation's title slide, like the next three. */
+  subtitle?: string
+  author?: string
+  institute?: string
+  date?: string
 }
 
 const MetaContext = createContext<{
@@ -25,6 +30,7 @@ const MetaContext = createContext<{
   setCrumbs: (update: (crumbs: Crumb[]) => void) => void
   prefix: () => string | undefined
   lang: () => Lang
+  meta: Meta
 } | null>(null)
 
 const unauthorized = {
@@ -62,7 +68,7 @@ export function Meta(props: Meta & { children: JSX.Element }) {
   })
 
   return (
-    <MetaContext value={{ level, crumbs, setCrumbs, prefix, lang }}>
+    <MetaContext value={{ level, crumbs, setCrumbs, prefix, lang, meta: props }}>
       <Title>
         {prefix()} {props.title}
       </Title>
@@ -81,6 +87,11 @@ export function defineMeta(meta: Meta) {
 
 export function useCrumbs(): readonly Crumb[] {
   return useContext(MetaContext)?.crumbs ?? []
+}
+
+/** The innermost level's metadata, usually the page's. */
+export function useMeta(): Meta | undefined {
+  return useContext(MetaContext)?.meta
 }
 
 export function useLang(): () => Lang {

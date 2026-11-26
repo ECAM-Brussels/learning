@@ -3,6 +3,7 @@ import { faBook } from '@fortawesome/free-solid-svg-icons'
 import {
   Boundary,
   Code,
+  Deck,
   Definition,
   Example,
   Exercise,
@@ -129,6 +130,7 @@ export const Layout: ParentComponent = (props) => {
             <Latex {...attrs} />
           </Boundary>
         ),
+        Deck,
         Steps: (attrs) => (
           <Boundary>
             <Steps {...attrs} />
