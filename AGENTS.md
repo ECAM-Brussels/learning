@@ -46,6 +46,15 @@ For a one-off construction the components don't cover, use `Board.Custom` with p
 rather than adding a component or managing the board by hand.
 For defaults shared by many boards, such as a teacher's preferences for a course,
 wrap them in `BoardDefaults` (e.g. in the folder's `_layout.tsx`) rather than repeating props on every element.
+Keep JSXGraph's attribute names and shapes; where these components depart from its defaults, do it in `builtInDefaults` in `Board.tsx`.
+
+JSXGraph places labels away from other elements with `label: { autoPosition: true }`: never reimplement label placement.
+It is on by default on 2D boards; set `label: { autoPosition: false }` to keep a label where `offset` puts it.
+In a 3D view it is off by default, because each label is checked against the view's hundreds of elements at every update:
+turn it on for the labels that need it, e.g. `<Board.Point3D label={{ autoPosition: true }} …/>`, rather than for the whole view.
+Rotation stays smooth with 3 or 4 such labels, but not with about 20.
+Coordinates are positions, not points: points JSXGraph creates for coordinates or bounds (polygon vertices, an angle's points, an integral's bounds) are hidden.
+For a visible point, pass a `<Board.Point>`.
 
 A function prop such as `fn` redraws when the function is replaced, not when a signal read inside it changes:
 derive the function from its signals, reading them outside the function it returns.
@@ -67,6 +76,60 @@ Files with an extra dot in their name, such as `*.exercises.tsx` or `*.content.m
 `bun run typecheck` also type-checks MDX files (`scripts/typecheck.mjs`).
 Components the layout passes to MDX without an import must be declared in `MDXProvidedComponents` (`apps/ecam/mdx.d.ts`),
 otherwise every component in MDX loses its types.
+Write LaTeX that contains curly braces with `tex` from `@learning/core` (``{tex`\frac{a}{b}`}``, ``{tex.display`…`}``), not `$…$`:
+the MDX language server reads the braces as expressions.
+Leave a blank line before the `:::` that closes a directive after a list,
+otherwise Markdown, and Prettier, take it as part of the last item.
+
+A `:::::deck` block is a reveal.js presentation (`packages/mdx/deck.ts`):
+`#` opens a section, `##` a slide, `---` a slide without title, and a top-level `<Deck.…>` element is a slide of its own.
+Each section is a vertical stack of its slides, `<Deck.…>` ones included; slides before the first `#` stay horizontal.
+Its fence needs more colons than any directive inside it.
+It opens on a title slide only when its brackets give one, as `:::::deck[title="…" subtitle="…"]` (also `author`, `institute`, `date`):
+brackets rather than `{…}` attributes, which trip the MDX language server; what it is not given comes from the page's `defineMeta`.
+See `apps/ecam/src/routes/doc/presentation.mdx`.
+
+# Exercise steps
+
+Every exercise component is a step made with `createStep` or `createDerivedStep` from `@learning/core`,
+so that it exposes the `options`, `feedback` and `children` props, and its data as props too, like any other step,
+and can be the `step` of a skill.
+Never write a function component that returns a step as JSX to preset some of its props:
+
+```tsx
+// Wrong: Representable hides `options` and `feedback`, and its data is not saved or checkable
+export const Representable = (props: { x: string }) => (
+  <MultipleChoice prompt={…} choices={…} answer={…} />
+)
+
+// Right
+export const Representable = createDerivedStep(
+  MultipleChoice,
+  { x: 'expr' },
+  (data) => ({ prompt: …, choices: …, answer: isDyadic(data.x) ? 'true' : 'false' }),
+  { feedback: (ctx) => … },
+)
+```
+
+A step's data reaches it either directly, as the props declared in `schema.data` of `createStep`,
+or through the data function of `createDerivedStep`, which turns the derived step's own props into the base step's data:
+only the derived step's props are saved, so the data function must be pure, which is also what generation needs.
+The fourth argument of `createDerivedStep` replaces parts of the base step, such as `feedback` or `children`.
+Declare steps at module level, never inside a component.
+Using a step with fixed props, such as several instances in a `Sequence`, is fine:
+the rule is about components that define a kind of exercise.
+
+Python exercises are `PythonCode` steps, or steps derived from it,
+and write their tests with `expect`: `tests={(expect) => ({ 'description': expect.… })}`.
+The array of `{ desc, test, check }` tests and the steps built on it (`Matplotlib`, `PythonFunction`) are deprecated.
+If `expect` lacks a check that several exercises need, add it to `expect` in `packages/repl/index.ts`.
+
+Put a step in `packages/exercises` (`@learning/exercises`) whenever it could help teach more than the page it was written for:
+a skill or concept also taught elsewhere, such as factorising, a derivative at a point, a numerical method or a Python construct.
+Keep in the route folder only steps tied to that page's content or story.
+Package steps take everything as props and never refer to a course;
+file them by subject (`math/algebra`, `numerical`, `python`, …) and add them to the package's `exports`.
+When unsure whether a step belongs in the package, ask.
 
 # Generated exercises
 

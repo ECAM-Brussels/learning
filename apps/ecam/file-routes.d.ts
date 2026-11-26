@@ -185,6 +185,12 @@ declare module "virtual:file-routes" {
       $$route?: undefined;
     },
     {
+      path: "/doc/presentation";
+      page: true;
+      $component: FileRouteLazyRef;
+      $$route?: undefined;
+    },
+    {
       path: "/doc/quickstart";
       page: true;
       $component: FileRouteLazyRef;
@@ -192,6 +198,12 @@ declare module "virtual:file-routes" {
     },
     {
       path: "/doc/setup";
+      page: true;
+      $component: FileRouteLazyRef;
+      $$route?: undefined;
+    },
+    {
+      path: "/doc/slides";
       page: true;
       $component: FileRouteLazyRef;
       $$route?: undefined;
@@ -245,6 +257,14 @@ declare module "virtual:file-routes" {
           children?: undefined;
         },
         {
+          path: "/slides";
+          id: "/slides";
+          page: true;
+          $component: FileRouteLazyRef;
+          $$route?: undefined;
+          children?: undefined;
+        },
+        {
           path: "/exercise";
           id: "/exercise";
           page: true;
@@ -263,6 +283,14 @@ declare module "virtual:file-routes" {
         {
           path: "/quickstart";
           id: "/quickstart";
+          page: true;
+          $component: FileRouteLazyRef;
+          $$route?: undefined;
+          children?: undefined;
+        },
+        {
+          path: "/presentation";
+          id: "/presentation";
           page: true;
           $component: FileRouteLazyRef;
           $$route?: undefined;

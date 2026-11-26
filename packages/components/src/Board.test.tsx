@@ -2,25 +2,8 @@ import { render, waitFor } from '@solidjs/testing-library'
 import type { JSX } from '@solidjs/web'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { createEffect, createMemo, createSignal, flush, Show } from 'solid-js'
+import { drag } from './jsxgraphStubs'
 
-// happy-dom lacks the SVG rendering methods JSXGraph calls.
-Object.assign(SVGElement.prototype, {
-  suspendRedraw: () => 0,
-  unsuspendRedraw: () => {},
-  unsuspendRedrawAll: () => {},
-  forceRedraw: () => {},
-  getBBox: () => ({ x: 0, y: 0, width: 0, height: 0 }),
-})
-// happy-dom does no layout, so boards would have no size, which breaks anything measured in pixels.
-// The board's container is the element with the rounded-xl class from Board.tsx.
-for (const key of ['clientWidth', 'clientHeight', 'offsetWidth', 'offsetHeight']) {
-  Object.defineProperty(HTMLElement.prototype, key, {
-    configurable: true,
-    get(this: HTMLElement) {
-      return this.classList.contains('rounded-xl') ? 500 : 0
-    },
-  })
-}
 const { Board, BoardDefaults } = await import('./Board')
 const { Boundary } = await import('./Boundary')
 
@@ -32,16 +15,6 @@ const xyz = (p: XYZ) => [p.X() + 0, p.Y() + 0, p.Z() + 0]
 // Not in JSXGraph's types for every element that has it.
 const value = (el: unknown) => (el as { Value(): number }).Value()
 const slope = (line: unknown) => (line as { getSlope(): number }).getSlope()
-
-/** Simulates what the board does on a pointer drag, which happy-dom cannot dispatch. */
-function drag(point: JXG.Point, to: [number, number]) {
-  point.setPosition(JXG.COORDS_BY_USER, to)
-  // The board updates the dragged element before firing `drag`, e.g. so that a glider knows its position.
-  point.update()
-  ;(
-    point as unknown as { triggerEventHandlers(e: string[], a: unknown[]): void }
-  ).triggerEventHandlers(['drag'], [{}])
-}
 
 async function renderBoard<T>(children: (ref: (el: T) => null) => JSX.Element) {
   let element: T | undefined
@@ -1118,6 +1091,97 @@ describe('BoardDefaults', () => {
   })
 })
 
+describe('defaults that differ from JSXGraph', () => {
+  const visible = (el: JXG.GeometryElement) => Boolean(Reflect.get(el, 'visPropCalc').visible)
+  const label = (el: JXG.GeometryElement) => Reflect.get(el, 'label') as JXG.Text
+
+  test('labels position themselves, unless BoardDefaults or props say otherwise', async () => {
+    const { el } = await renderBoard<JXG.Point>((ref) => (
+      <Board.Point position={[0, 0]} name="A">
+        {ref}
+      </Board.Point>
+    ))
+    expect(label(el()).getAttribute('autoPosition')).toBe(true)
+
+    let fromDefaults: JXG.Point | undefined
+    render(() => (
+      <BoardDefaults label={{ autoPosition: false }}>
+        <Board>
+          <Board.Point position={[0, 0]} name="B">
+            {(p) => ((fromDefaults = p), null)}
+          </Board.Point>
+        </Board>
+      </BoardDefaults>
+    ))
+    const { el: off } = await renderBoard<JXG.Point>((ref) => (
+      <Board.Point position={[0, 0]} name="C" label={{ autoPosition: false }}>
+        {ref}
+      </Board.Point>
+    ))
+    await waitFor(() => expect(fromDefaults).toBeDefined())
+    expect(label(fromDefaults!).getAttribute('autoPosition')).toBe(false)
+    expect(label(off()).getAttribute('autoPosition')).toBe(false)
+  })
+
+  test('labels in a 3D view keep their place, unless an element asks otherwise', async () => {
+    let placed: JXG.Point3D | undefined
+    const { el } = await renderView<JXG.Point3D>((ref) => (
+      <>
+        <Board.Point3D position={[1, 1, 1]} name="P">
+          {ref}
+        </Board.Point3D>
+        <Board.Point3D position={[2, 2, 2]} name="Q" label={{ autoPosition: true }}>
+          {(p) => ((placed = p), null)}
+        </Board.Point3D>
+      </>
+    ))
+    await waitFor(() => expect(placed).toBeDefined())
+    const point2D = (p: JXG.Point3D) => Reflect.get(p, 'element2D') as JXG.Point
+    expect(label(point2D(el())).getAttribute('autoPosition')).toBe(false)
+    expect(label(point2D(placed!)).getAttribute('autoPosition')).toBe(true)
+  })
+
+  test('coordinates create hidden points, while points passed stay visible', async () => {
+    let given: JXG.Point | undefined
+    let polygon: JXG.Polygon | undefined
+    const { el: angle } = await renderBoard<JXG.Angle>((ref) => (
+      <Board.Point position={[0, 0]}>
+        {(p) => {
+          given = p
+          return (
+            <>
+              <Board.Angle points={[[1, 0], p, [0, 1]]}>{ref}</Board.Angle>
+              <Board.Polygon points={[[2, 2], [3, 2], p]}>
+                {(el) => ((polygon = el), null)}
+              </Board.Polygon>
+            </>
+          )
+        }}
+      </Board.Point>
+    ))
+    await waitFor(() => expect(polygon).toBeDefined())
+    expect([angle().radiuspoint, angle().anglepoint].map(visible)).toEqual([false, false])
+    expect(polygon!.vertices.slice(0, 2).map(visible)).toEqual([false, false])
+    expect(visible(given!)).toBe(true)
+  })
+
+  test('an integral shows no points at its bounds', async () => {
+    const { el } = await renderBoard<JXG.Integral>((ref) => (
+      <Board.Plot fn={(x) => x * x}>
+        {(curve) => (
+          <Board.Integral curve={curve} domain={[0, 1]}>
+            {ref}
+          </Board.Integral>
+        )}
+      </Board.Plot>
+    ))
+    const points = ['curveLeft', 'curveRight', 'baseLeft', 'baseRight'].map(
+      (key) => Reflect.get(el(), key) as JXG.Point,
+    )
+    expect(points.map(visible)).toEqual([false, false, false, false])
+  })
+})
+
 describe('Custom', () => {
   test('removes what it created when unmounted, and only that', async () => {
     const [shown, setShown] = createSignal(true)
@@ -1206,5 +1270,33 @@ describe('Custom', () => {
     } finally {
       console.warn = warn
     }
+  })
+})
+
+describe('elements built on a point', () => {
+  const named = (name: string) =>
+    (
+      Object.values(JXG.boards as Record<string, JXG.Board>).at(-1)!
+        .objectsList as JXG.GeometryElement[]
+    ).find((el) => el.name === name) as JXG.Point
+
+  test.each<[string, (P: JXG.Point) => JSX.Element]>([
+    ['Arrow', (P) => <Board.Arrow from={[0, 0]} to={P} />],
+    ['Circle', (P) => <Board.Circle center={P} radius={1} />],
+    ['Line', (P) => <Board.Line points={[[0, 0], P]} />],
+    ['Polygon', (P) => <Board.Polygon points={[[0, 0], [1, 0], P]} />],
+    ['Segment', (P) => <Board.Segment from={[0, 0]} to={P} />],
+  ])('%s leaves the point where it is, and follows it', async (_, element) => {
+    render(() => (
+      <Board boundingBox={[-10, 10, 10, -10]}>
+        <Board.Point name="Z" position={[2, 1]}>
+          {element}
+        </Board.Point>
+      </Board>
+    ))
+    await waitFor(() => expect(named('Z')).toBeDefined())
+    expect(xy(named('Z'))).toEqual([2, 1])
+    drag(named('Z'), [3, -2])
+    expect(xy(named('Z'))).toEqual([3, -2])
   })
 })

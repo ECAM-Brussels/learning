@@ -1,11 +1,12 @@
 import { db, tables } from '@learning/db'
 import { query } from '@solidjs/router'
 import { getRequestEvent } from '@solidjs/web'
+import { live } from '@solidjs/web/server-functions'
 import { and, eq, gte, sql } from 'drizzle-orm'
 import * as v from 'valibot'
 import { ensurePermissions } from '../permissions'
 import type { StoredStep } from './base'
-import type { ExerciseContext } from './context'
+import type { ExerciseContext, ExerciseStats } from './context'
 import type { Options } from './options'
 
 function addEmail<T>(ctx: T) {
@@ -31,6 +32,49 @@ const StepContext = v.pipe(
   v.transform(addEmail),
 )
 type StepContext = v.InferInput<typeof StepContext>
+
+const ExerciseKey = v.object({
+  ...RawSequence.entries,
+  sequencePosition: v.number(),
+})
+type ExerciseKey = v.InferInput<typeof ExerciseKey>
+
+/**
+ * In-process notifications of saved answers, enough for the single Bun server.
+ * Several server instances would need Postgres LISTEN/NOTIFY instead.
+ */
+const changes = new EventTarget()
+const changeKey = (ctx: ExerciseKey) =>
+  JSON.stringify([ctx.url, ctx.sequenceId, ctx.sequencePosition])
+const notifyChange = (ctx: ExerciseKey) => changes.dispatchEvent(new Event(changeKey(ctx)))
+
+/**
+ * Yields once per batch of changes to an exercise, until `signal` aborts.
+ * Changes made while the consumer is busy are coalesced into one.
+ */
+async function* changesOf(ctx: ExerciseKey, signal?: AbortSignal) {
+  let dirty = false
+  let wake = () => {}
+  const listener = () => {
+    dirty = true
+    wake()
+  }
+  const key = changeKey(ctx)
+  changes.addEventListener(key, listener)
+  // An async generator's return() waits for its pending await, so a disconnect must wake it
+  signal?.addEventListener('abort', listener)
+  try {
+    while (!signal?.aborted) {
+      if (!dirty) await new Promise<void>((resolve) => (wake = resolve))
+      if (signal?.aborted) return
+      dirty = false
+      yield
+    }
+  } finally {
+    changes.removeEventListener(key, listener)
+    signal?.removeEventListener('abort', listener)
+  }
+}
 
 export const fetchSequence = query(async (rawCtx: SequenceContext) => {
   'use server'
@@ -122,6 +166,7 @@ export const saveStep = async (rawCtx: StepContext, step: StoredStep, options: O
         targetWhere: sql`${tables.steps.deleted} = false`,
       })
   })
+  notifyChange(ctx)
 }
 
 export const reset = async (rawCtx: Omit<StepContext, 'position'>, options: Options) => {
@@ -161,6 +206,7 @@ export const reset = async (rawCtx: Omit<StepContext, 'position'>, options: Opti
       correct: null,
     })
   })
+  notifyChange(ctx)
 }
 
 export const getStats = query(async (rawSequence: SequenceContext) => {
@@ -185,7 +231,38 @@ export const getStats = query(async (rawSequence: SequenceContext) => {
     .innerJoin(tables.user, eq(tables.user.email, exercise.userEmail))
     .where(and(eq(exercise.url, sequence.url), eq(exercise.sequenceId, sequence.sequenceId)))
     .groupBy(exercise.userEmail, tables.user.name)
+    .orderBy(tables.user.name)
 }, 'getStats')
+
+async function exerciseStats(ctx: ExerciseKey): Promise<ExerciseStats> {
+  const students = await db
+    .select({
+      email: exercise.userEmail,
+      name: tables.user.name,
+      correct: exercise.correct,
+      submitted: exercise.submitted,
+    })
+    .from(exercise)
+    .innerJoin(tables.user, eq(tables.user.email, exercise.userEmail))
+    .where(
+      and(
+        eq(exercise.url, ctx.url),
+        eq(exercise.sequenceId, ctx.sequenceId),
+        eq(exercise.sequencePosition, ctx.sequencePosition),
+      ),
+    )
+    .orderBy(tables.user.name)
+  return { students }
+}
+
+export const watchStats = live(async function* (rawCtx: ExerciseKey) {
+  'use server'
+  await ensurePermissions(['exercise:read'])
+  const ctx = v.parse(ExerciseKey, rawCtx)
+  const signal = getRequestEvent()?.request.signal
+  yield await exerciseStats(ctx)
+  for await (const _ of changesOf(ctx, signal)) yield await exerciseStats(ctx)
+})
 
 const exercise = db
   .select({
@@ -200,6 +277,7 @@ const exercise = db
         else true
       end
     `.as('correct'),
+    submitted: sql<boolean>`bool_or(${tables.steps.submitted})`.as('submitted'),
   })
   .from(tables.steps)
   .where(and(eq(tables.steps.deleted, false)))
@@ -211,4 +289,11 @@ const exercise = db
   )
   .as('exercise')
 
-export default { fetchSequence, getProgress, saveStep, reset, getStats } as ExerciseContext
+export default {
+  fetchSequence,
+  getProgress,
+  saveStep,
+  reset,
+  getStats,
+  watchStats,
+} as ExerciseContext

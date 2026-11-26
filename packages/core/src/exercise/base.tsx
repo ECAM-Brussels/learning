@@ -32,6 +32,7 @@ import { StepContext } from './context'
 import local from './context.local'
 import remote, { fetchSequence as fetchRemoteSequence } from './context.remote'
 import { ExerciseOptions, Options, OptionsContext } from './options'
+import { ExerciseStats } from './stats'
 
 type MaybeAsync<T> = T | Promise<T>
 
@@ -384,6 +385,12 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
     if (!step.submitted) return false
     return options().allowResets && (await hasPermissions(['exercise:deleteOwn']))
   })
+  const watchStats = createMemo(async () => {
+    const watch = exerciseContext().watchStats
+    if (!watch || stepContext().position !== 0) return null
+    if (!(await hasPermissions(['exercise:read']))) return null
+    return watch
+  })
   const [resetting, setResetting] = createOptimistic(false)
   /**
    * Handle resetting the whole exercise
@@ -548,14 +555,26 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
           </ExerciseOptions>
         </StepBoundary>
       </Show>
-      <Show when={canReset()}>
-        <button
-          class="cursor-pointer rounded-xl px-4 py-2 text-sm text-gray-500 hover:bg-gray-50"
-          onClick={reset}
-        >
-          Recommencer l'exercice
-        </button>
-      </Show>
+      <div class="flex flex-wrap">
+        <Show when={canReset()}>
+          <button
+            class="cursor-pointer rounded-xl px-4 py-2 text-sm text-gray-500 hover:bg-gray-50"
+            onClick={reset}
+          >
+            Recommencer l'exercice
+          </button>
+        </Show>
+        <Show when={watchStats()}>
+          {(watch) => (
+            <ExerciseStats
+              watch={() => {
+                const { position, ...ctx } = stepContext()
+                return watch()(ctx)
+              }}
+            />
+          )}
+        </Show>
+      </div>
     </div>
   )
 }

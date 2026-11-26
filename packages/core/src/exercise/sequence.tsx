@@ -2,15 +2,18 @@ import { Boundary, Pagination, Scope } from '@learning/components'
 import { useLocation } from '@solidjs/router'
 import { dynamic, type JSX } from '@solidjs/web'
 import { range } from 'es-toolkit'
-import { createMemo, onSettled, refresh, useContext, type Component } from 'solid-js'
+import { createMemo, onSettled, refresh, Show, useContext, type Component } from 'solid-js'
 import * as v from 'valibot'
+import { hasPermissions } from '../permissions'
 import { StepContext } from './context'
 import local from './context.local'
 import {
   fetchSequence as fetchRemoteSequence,
   getProgress as getRemoteProgress,
+  getStats as getRemoteStats,
 } from './context.remote'
 import { Options, OptionsContext } from './options'
+import { SequenceStats } from './stats'
 
 type Prettify<T> = {
   [K in keyof T]: T[K]
@@ -127,6 +130,7 @@ export function Sequence<T extends object>(props: Props<T> & { id: string }) {
     position: 0,
   })
   const length = createMemo(() => Object.keys(filteredProgress()).length + 1)
+  const canSeeStats = createMemo(() => hasPermissions(['exercise:read']), { name: 'canSeeStats' })
   const pages: (() => JSX.Element)[] = []
   return (
     <OptionsContext value={rawOptions}>
@@ -168,6 +172,13 @@ export function Sequence<T extends object>(props: Props<T> & { id: string }) {
             )}
           </Pagination>
         )}
+      </Boundary>
+      <Boundary>
+        <Show when={canSeeStats()}>
+          <div class="mx-8">
+            <SequenceStats fetch={() => getRemoteStats(sequence())} />
+          </div>
+        </Show>
       </Boundary>
     </OptionsContext>
   )

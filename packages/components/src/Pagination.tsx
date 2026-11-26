@@ -11,8 +11,8 @@ export function Pagination(rawProps: {
 }) {
   const props = merge({ showFeedback: true }, rawProps)
   const [current, _setCurrent] = createSignal(() => props.current ?? 1)
-  createEffect(current, (current) => {
-    if (props.current !== current) {
+  createEffect(current, (current, previous) => {
+    if (previous !== undefined && props.current !== current) {
       props.onChange?.(current)
     }
   })

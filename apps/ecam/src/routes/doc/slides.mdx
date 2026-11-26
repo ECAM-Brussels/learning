@@ -1,0 +1,120 @@
+import { defineMeta } from '@learning/components'
+import { paths } from '../../router'
+import * as Example from './slides.deck'
+
+export default defineMeta({ title: 'Les présentations' })
+
+# Les présentations
+
+`Deck` affiche une présentation [reveal.js](https://revealjs.com) dans une page,
+avec l'apparence du thème Beamer _Metropolis_.
+
+<Example.Demo />
+
+Cliquez sur la présentation pour la piloter au clavier :
+
+- `Espace` passe au slide suivant, les flèches se déplacent dans les deux directions ;
+- `F`, ou le bouton en bas à gauche, affiche la présentation en plein écran, `Échap` montre une vue d'ensemble ;
+- `S` ouvre la vue présentateur, avec les notes, si le plugin de notes est chargé.
+
+## Une présentation en Markdown
+
+Un bloc `:::::deck` écrit une présentation en Markdown, au milieu d'une page comme les autres blocs.
+Elle s'ouvre sur un slide de titre si ses crochets en décrivent un :
+`title`, `subtitle`, `author`, `institute` et `date`, comme `:::::deck[title="Les dérivées" date="Lundi"]`.
+Ce que le slide de titre ne précise pas vient du `defineMeta` de la page.
+
+```mdx
+import { defineMeta } from '@learning/components'
+import { tex } from '@learning/core'
+
+export default defineMeta({ title: 'Les dérivées', author: 'Prénom Nom', date: 'Novembre 2026' })
+
+:::::deck[title="Les dérivées" subtitle="Analyse 1"]
+
+# Définition
+
+## Taux d'accroissement
+
+La dérivée de **f** en $a$ est la limite
+
+{tex.display`f'(a) = \lim_{h \to 0} \frac{f(a + h) - f(a)}{h}`}
+
+. . .
+
+:::incremental
+
+- elle mesure la pente de la tangente ;
+- elle mesure une vitesse instantanée.
+
+:::
+
+<Deck.Standout>Des questions ?</Deck.Standout>
+```
+
+| Syntaxe                       | Effet                                             |
+| ----------------------------- | ------------------------------------------------- |
+| `# Titre`                     | Une partie, dont les slides s'empilent en colonne |
+| `## Titre`                    | Un slide avec ce titre                            |
+| `---`                         | Un slide sans titre                               |
+| `<Deck.Standout>`, `<Deck.…>` | Un slide écrit en JSX                             |
+| `. . .`                       | La suite du slide apparaît à l'étape suivante     |
+| `:::incremental`              | Les éléments de la liste apparaissent un par un   |
+| `:::notes`                    | Les notes du présentateur ou de la présentatrice  |
+| `::::columns` et `:::column`  | Des colonnes côte à côte                          |
+
+Chaque partie forme une pile verticale, ouverte par son slide de partie :
+la flèche droite passe à la partie suivante, la flèche bas au slide suivant de la partie.
+Les slides qui précèdent le premier `#` restent côte à côte.
+
+Les deux-points du bloc sont plus nombreux que ceux des blocs qu'il contient, comme `::::columns`.
+
+Le texte en **gras** prend la couleur d'accent, comme `\alert` dans Beamer.
+Pour le LaTeX qui contient des accolades, utilisez `tex` de `@learning/core` :
+dans `$…$`, les accolades troublent le serveur de langage MDX, qui y voit des expressions.
+
+<a href={paths.doc.presentation}>Un exemple complet</a> montre chacune de ces syntaxes.
+
+## Les slides en JSX
+
+Une présentation est un `Deck` dont les enfants sont des slides :
+
+| Composant       | Rôle                                                                                                |
+| --------------- | --------------------------------------------------------------------------------------------------- |
+| `Deck.Title`    | Le titre, avec un sous-titre, l'auteur·e, l'institution et la date, par défaut ceux de `defineMeta` |
+| `Deck.Section`  | Le début d'une partie, avec une barre de progression                                                |
+| `Deck.Slide`    | Un slide, avec un titre facultatif                                                                  |
+| `Deck.Standout` | Un slide sombre pour une phrase marquante                                                           |
+| `Deck.Stack`    | Des slides empilés verticalement                                                                    |
+
+Dans un slide, `Deck.Fragment` fait apparaître son contenu au fil de la présentation,
+`Deck.Alert` met un mot en évidence,
+`Deck.Columns` met ses enfants côte à côte
+et `Deck.Notes` contient les notes du présentateur ou de la présentatrice.
+
+```tsx
+<Deck>
+  <Deck.Title title="Les dérivées" author="Prénom Nom" />
+  <Deck.Section title="Définition" />
+  <Deck.Slide title="Taux d'accroissement">
+    <p>
+      La dérivée de <Deck.Alert>f</Deck.Alert> en {tex`a`} est…
+    </p>
+    <ul>
+      <Deck.Fragment as="li">la pente de la tangente</Deck.Fragment>
+    </ul>
+  </Deck.Slide>
+  <Deck.Standout>Des questions ?</Deck.Standout>
+</Deck>
+```
+
+Comme pour les autres composants, la présentation va dans un fichier `*.deck.tsx` voisin de la page,
+et la page l'importe : `import * as Slides from './cours.deck'` puis `<Slides.Derivees />`.
+
+## Configuration
+
+`config` reçoit les [options de reveal.js](https://revealjs.com/config/),
+par exemple `config={{ transition: 'slide' }}`,
+et `plugins` ses plugins, comme `reveal.js/plugin/notes`.
+`class` change la taille de la présentation, en 16:9 sur toute la largeur par défaut.
+Les couleurs sont les variables CSS `--m-dark`, `--m-accent` et `--m-light`.

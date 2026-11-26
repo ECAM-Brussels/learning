@@ -1,0 +1,68 @@
+import { defineMeta } from '@learning/components'
+import { tex } from '@learning/core'
+
+export default defineMeta({
+  title: 'Les dérivées',
+  subtitle: 'Analyse 1',
+  author: 'Prénom Nom',
+  institute: 'ECAM Brussels Engineering School',
+  date: 'Novembre 2026',
+})
+
+:::::deck[title="Les dérivées"]
+
+# Définition
+
+## Taux d'accroissement
+
+La dérivée de **f** en $a$ est la limite
+
+{tex.display`f'(a) = \lim_{h \to 0} \frac{f(a + h) - f(a)}{h}`}
+
+si cette limite existe :
+
+:::incremental
+
+- elle mesure la pente de la tangente ;
+- elle mesure une vitesse instantanée.
+
+:::
+
+:::notes
+Rappeler la définition de la tangente avant de passer à la suite.
+:::
+
+## Deux colonnes
+
+::::columns
+:::column
+
+### Dérivable
+
+$x^2$, $\sin x$, $e^x$
+:::
+:::column
+
+### Non dérivable en 0
+
+$|x|$, $\sqrt[3] x$
+:::
+::::
+
+# Exemple
+
+## Dérivée de $x^2$
+
+Calculons la dérivée de $x^2$ en $a$.
+
+. . .
+
+{tex.display`\frac{(a + h)^2 - a^2}{h} = 2a + h \to 2a`}
+
+---
+
+Un slide sans titre, après une ligne horizontale.
+
+<Deck.Standout>Des questions ?</Deck.Standout>
+
+:::::

@@ -3,6 +3,10 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "test": "bun test --coverage --coverage-reporter=lcov",
+    "test:watch": "bun test --watch --coverage"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },

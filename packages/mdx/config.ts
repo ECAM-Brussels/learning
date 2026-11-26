@@ -1,4 +1,5 @@
 import { defineMdastPlugin } from 'satteri'
+import { deck } from './deck'
 
 function component(
   name: string,
@@ -138,5 +139,6 @@ const steps = defineMdastPlugin({
 export default {
   features: { math: true, directive: true },
   mdx: { jsx: true, providerImportSource: '@learning/mdx' },
-  mdastPlugins: [code, steps, directives, math],
+  // deck last: it moves what the others have turned into components.
+  mdastPlugins: [code, steps, directives, math, deck],
 }
