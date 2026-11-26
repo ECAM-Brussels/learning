@@ -12,6 +12,18 @@ GlobalRegistrator.register({ url: 'http://localhost/' })
 // Keep Bun's networking: happy-dom's fetch enforces browser CORS rules on server calls.
 Object.assign(globalThis, { fetch, Request, Response, Headers })
 
+// happy-dom leaves an element empty for `textContent = 0`, where browsers write "0";
+// Solid then finds no text node to update when the number changes.
+for (const prototype of [Node.prototype, Element.prototype]) {
+  const textContent = Object.getOwnPropertyDescriptor(prototype, 'textContent')!
+  Object.defineProperty(prototype, 'textContent', {
+    ...textContent,
+    set(value: unknown) {
+      textContent.set!.call(this, value == null ? value : String(value))
+    },
+  })
+}
+
 /**
  * Compile Solid JSX with Solid's own compiler (Bun's built-in JSX transform is React-style).
  * Run tests with `--conditions=browser` so `solid-js`/`@solidjs/web` resolve to their client builds.
