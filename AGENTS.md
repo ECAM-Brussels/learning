@@ -7,41 +7,32 @@ reactivity is fine-grained through signals,
 and effects/memos have Solid-specific semantics.
 Do not port React patterns.
 
-## Versioned skills (in node_modules — read on demand)
-
-The installed packages ship agent skills that match their exact installed versions:
+## Solid diagnostics
 
 - `node_modules/solid-js/skills/reactivity-diagnostics/SKILL.md`
-  — repair guide mapping every dev-mode diagnostic code (e.g. `REACTIVE_WRITE_IN_OWNED_SCOPE`, `STRICT_READ_UNTRACKED`) to its prescribed fix.
-  Read it whenever a Solid diagnostic code appears in test output or the browser console.
+  — repair guide mapping every dev-mode diagnostic code (e.g. `REACTIVE_WRITE_IN_OWNED_SCOPE`, `STRICT_READ_UNTRACKED`) to its fix.
+  Read it whenever a diagnostic code appears.
 - `node_modules/@solidjs/diagnostics/skills/agent-loops/SKILL.md`
-  — how to capture reactive evidence (which scopes re-ran and why, wasted recomputes, cost tables) and assert budgets, in tests and against live pages.
+  — how to capture which scopes re-ran and why, from a page open on the dev server (`diagnostics: true` in `vite.config.ts`).
 
-## Reactive diagnostics — capture evidence instead of guessing
+Tests load Solid's production build, which reports no diagnostics:
+to see them, add `--conditions=development`, e.g. `bun test --conditions=development --conditions=browser`.
+The browser console shows them on the dev server.
+Name your signals/memos/effects (the `{ name: "..." }` option): diagnostics report scopes by name.
 
-Use these whenever you are debugging reactivity (something doesn't update, updates too often, or is slow)
-or verifying a change didn't regress update granularity:
+## Running
 
-- **In tests:** `captureArtifact()` from `@solidjs/diagnostics` wraps a scenario
-  and returns a serializable artifact of diagnostics + rerun attribution;
-  matchers from `@solidjs/diagnostics/vitest` (`toHaveNoDiagnostics`, `toStayWithinRerunBudget`, `toHaveNoWaste`, …) assert on it.
-  No browser needed.
-- **Against the running dev server** (`diagnostics: true` in vite.config.ts; dev-only, no-op in builds).
-  Requires an open page connected to the dev server (e.g. via a browser tool):
-  - `GET /__solid/diagnostics` — status and connected client count
-  - `POST /__solid/diagnostics` with JSON `{"method":"begin"}` then `{"method":"end"}` — capture a session into an artifact
-  - `{"method":"whyDidRun","params":{"name":"<scope name>"}}` — recorded re-runs of one named scope in the open session
-  - `{"method":"costs"}` — running cost tables for the open session
+- `bun run dev`, in the dev container where SymAPI runs, serves the site on port 3000 and runs every test suite in watch mode.
+- `bun run test` runs every suite once; in a package, `bun run test` runs its own (`bun test --conditions=browser`).
+- `bun run typecheck` type-checks the whole repository; `bun run lint` fixes and formats.
 
-Name your signals/memos/effects (the `{ name: "..." }` option) — attribution reports scopes by name.
-
-# Visualizations with JSXGraph
+## Visualizations with JSXGraph
 
 If asked to create a visualization with JSXGraph,
 use the components in `./packages/components/src/Board.tsx`.
 Components in that file are meant to be _declarative versions_ of their associated geometry elements.
 They are not yet comprehensive or complete.
-By any means improve them, but ensure they are compatible with Solid's reactivity system and are declarative.
+By all means improve them, but ensure they are compatible with Solid's reactivity system and are declarative.
 For a one-off construction the components don't cover, use `Board.Custom` with plain JSXGraph code
 rather than adding a component or managing the board by hand.
 For defaults shared by many boards, such as a teacher's preferences for a course,
@@ -52,7 +43,6 @@ JSXGraph places labels away from other elements with `label: { autoPosition: tru
 It is on by default on 2D boards; set `label: { autoPosition: false }` to keep a label where `offset` puts it.
 In a 3D view it is off by default, because each label is checked against the view's hundreds of elements at every update:
 turn it on for the labels that need it, e.g. `<Board.Point3D label={{ autoPosition: true }} …/>`, rather than for the whole view.
-Rotation stays smooth with 3 or 4 such labels, but not with about 20.
 Coordinates are positions, not points: points JSXGraph creates for coordinates or bounds (polygon vertices, an angle's points, an integral's bounds) are hidden.
 For a visible point, pass a `<Board.Point>`.
 
@@ -67,7 +57,7 @@ const f = createMemo(() => {
 <Board.Plot fn={f()} />
 ```
 
-# MDX pages
+## MDX pages
 
 Keep MDX files mostly prose: TypeScript tooling (type errors, autocompletion, refactoring) works poorly inside MDX.
 Put exercises, sequences and any non-trivial JSX in a sibling `*.exercises.tsx` file
@@ -89,7 +79,7 @@ It opens on a title slide only when its brackets give one, as `:::::deck[title="
 brackets rather than `{…}` attributes, which trip the MDX language server; what it is not given comes from the page's `defineMeta`.
 See `apps/ecam/src/routes/doc/presentation.mdx`.
 
-# Exercise steps
+## Exercise steps
 
 Every exercise component is a step made with `createStep` or `createDerivedStep` from `@learning/core`,
 so that it exposes the `options`, `feedback` and `children` props, and its data as props too, like any other step,
@@ -111,13 +101,19 @@ export const Representable = createDerivedStep(
 )
 ```
 
-A step's data reaches it either directly, as the props declared in `schema.data` of `createStep`,
-or through the data function of `createDerivedStep`, which turns the derived step's own props into the base step's data:
-only the derived step's props are saved, so the data function must be pure, which is also what generation needs.
+A step gets its data from the props declared in `schema.data` (`createStep`),
+or from the data function of `createDerivedStep`, which maps the derived step's props to the base step's data.
+Only the derived step's props are saved, so the data function must be pure.
 The fourth argument of `createDerivedStep` replaces parts of the base step, such as `feedback` or `children`.
 Declare steps at module level, never inside a component.
 Using a step with fixed props, such as several instances in a `Sequence`, is fine:
 the rule is about components that define a kind of exercise.
+
+Students' answers are saved with each step's data (its props, except those wrapped in `omitFromJSON`), `name` and inputs.
+The database is purged at the start of each academic year, when the `next` branch is merged into `main`.
+Until then, on `main` and branches merged into it, never change what an existing step saves, even to follow these rules:
+turning a function component into a derived step, or replacing `Matplotlib` with `PythonCode`, changes it.
+Make such changes on `next`; new steps follow these rules everywhere.
 
 Python exercises are `PythonCode` steps, or steps derived from it,
 and write their tests with `expect`: `tests={(expect) => ({ 'description': expect.… })}`.
@@ -131,7 +127,7 @@ Package steps take everything as props and never refer to a course;
 file them by subject (`math/algebra`, `numerical`, `python`, …) and add them to the package's `exports`.
 When unsure whether a step belongs in the package, ask.
 
-# Generated exercises
+## Generated exercises
 
 For randomised questions, define skills with `defineSkill` and pass them to `createQuestionBank`, both from `@learning/core` (see `apps/ecam/src/routes/MN1M/exam.exercises.tsx`).
 A skill's id is saved with students' answers: never change it, and namespace new ones (e.g. `'calculus/chain'`).
@@ -140,7 +136,7 @@ Only the parameters returned by `generate` are saved, so `render` must be pure,
 and `generate` must draw from the `random` it receives (not `Math.random`) so questions can be reproduced from a seed in tests.
 With `MultipleChoice`, declare `answer` rather than `grade`: tests can then check every generated question.
 
-# SymAPI
+## SymAPI
 
 `expr` in `@learning/core` asks SymAPI (`apps/symapi`, FastAPI and sympy) whatever Compute Engine can't decide.
 Tests don't need SymAPI running: they answer its requests from `apps/symapi/tests/contract.json`,
@@ -148,9 +144,8 @@ and SymAPI's own tests check that it still gives every response recorded there.
 After changing what `expr` asks, or adding a test that asks something new,
 record the contract again with `bun run test:record` in `packages/core`, where SymAPI is running (the dev container).
 Record with the whole suite, never a single file: the contract is replaced by the requests of that run.
-SymAPI's own tests (pytest) run with the others in `bun run test` and `bun run dev`.
 
-# French typography
+## French typography
 
 Course content is written in French.
 In French prose, put a no-break space before two-part punctuation, never a normal space or no space:
@@ -161,7 +156,7 @@ In French prose, put a no-break space before two-part punctuation, never a norma
 Type the actual characters, both in Markdown and in JSX text.
 This applies to prose only: never inside code, `tex` templates, `$…$` math or JavaScript (e.g. object keys like `A:`).
 
-# Comments
+## Comments
 
 Don't write comments that restate what the code already says,
 such as comments on self-explanatory lines or doc comments that repeat a name or signature.
