@@ -1,0 +1,159 @@
+import { defineMeta } from '@learning/components'
+import * as Demo from './new-exercise.demo'
+
+export default defineMeta({ title: "Créer un nouveau type d'exercice" })
+
+# Créer un nouveau type d'exercice
+
+Quand aucun [exercice prêt à l'emploi](/doc/exercises) ne convient,
+vous pouvez en créer un.
+C'est la seule partie de la plateforme qui demande un peu de programmation,
+en TypeScript, le langage des fichiers `.tsx`.
+L'assistant de programmation peut écrire l'exercice à partir de votre description :
+cette page vous aidera à relire ce qu'il propose.
+
+Il y a deux manières de créer un exercice :
+**adapter** un exercice existant, la plus simple,
+ou en **construire** un nouveau.
+Dans les deux cas, l'exercice s'écrit dans un fichier `.exercises.tsx` voisin de la page,
+puis s'utilise comme n'importe quel autre.
+
+## Adapter un exercice existant
+
+Supposons que vous vouliez demander souvent l'image d'un nombre par une fonction.
+L'exercice `Simple` pose déjà une question à réponse libre :
+il suffit de lui dire comment construire l'énoncé et la correction à partir de $f$ et de $a$.
+
+```tsx
+// functions.exercises.tsx
+import { createDerivedStep, tex } from '@learning/core'
+import { Simple } from '@learning/exercises/math/Simple'
+
+export const Evaluation = createDerivedStep(Simple, { f: 'expr', a: 'expr' }, (data) => ({
+  prompt: (
+    <p>
+      Calculez {tex`f(${data.a})`} pour {tex`f(x) = ${data.f}`}.
+    </p>
+  ),
+  label: tex`f(${data.a}) =`,
+  grade: (attempt) => data.f.subs({ x: data.a }).isEqual(attempt),
+}))
+```
+
+`createDerivedStep` reçoit trois choses :
+
+1. l'exercice de départ, ici `Simple` ;
+2. les données du nouvel exercice et leur type, ici deux expressions `f` et `a` ;
+3. une fonction qui, à partir de ces données, donne les attributs de l'exercice de départ.
+
+Le nouvel exercice s'utilise ensuite avec ses propres données :
+
+```mdx
+import * as Exercice from './functions.exercises'
+
+<Exercice.Evaluation id="image-de-3" f="x^2 + 1" a="3" />
+```
+
+<Demo.Evaluation id="demo-evaluation" f="x^2 + 1" a="3" />
+
+Les types de données possibles sont `'expr'` (une expression mathématique), `'number'`, `'string'`, `'boolean'`,
+et `'jsx'` (un morceau de page, comme un énoncé).
+Seules les données sont sauvegardées avec les réponses :
+la fonction doit donc toujours donner la même question pour les mêmes données.
+
+On peut aussi remplacer la correction détaillée de l'exercice de départ,
+en ajoutant `{ feedback: … }` comme quatrième argument.
+
+## Construire un exercice
+
+Pour un exercice entièrement nouveau, `createStep` décrit chacune de ses parties :
+
+```tsx
+import { Attempt } from '@learning/components'
+import { createStep, expr, tex } from '@learning/core'
+import { Show } from 'solid-js'
+
+export const Slope = createStep({
+  schema: {
+    data: { x1: 'number', y1: 'number', x2: 'number', y2: 'number' },
+    inputs: { attempt: 'expr' },
+  },
+  prompt: (ctx) => (
+    <>
+      <p>
+        Quelle est la pente de la droite qui passe par {tex`(${ctx.data.x1}, ${ctx.data.y1})`} et{' '}
+        {tex`(${ctx.data.x2}, ${ctx.data.y2})`} ?
+      </p>
+      <Attempt>
+        {tex`m =`} {ctx.inputs.attempt}
+      </Attempt>
+    </>
+  ),
+  grade: (ctx) =>
+    ctx.inputs.attempt.isEqual(
+      expr('\\frac{a}{b}').subs({ a: ctx.data.y2 - ctx.data.y1, b: ctx.data.x2 - ctx.data.x1 }),
+    ),
+  feedback: (ctx) => (
+    <Show when={!ctx.correct}>
+      <p>
+        La pente est le quotient{' '}
+        {tex`\frac{\Delta y}{\Delta x} = \frac{${ctx.data.y2} - ${ctx.data.y1}}{${ctx.data.x2} - ${ctx.data.x1}}`}
+        . Essayez à nouveau :
+      </p>
+      <ctx.Self />
+    </Show>
+  ),
+})
+```
+
+<Demo.Slope id="demo-pente" x1={1} y1={2} x2={3} y2={8} />
+
+| Partie     | Rôle                                                                                            |
+| ---------- | ----------------------------------------------------------------------------------------------- |
+| `schema`   | Les données de la question (`data`) et les réponses de l'étudiant·e (`inputs`), avec leur type  |
+| `prompt`   | L'énoncé ; `ctx.data` contient les données, et `ctx.inputs.attempt` est le champ de réponse     |
+| `grade`    | Renvoie vrai si la réponse est juste ; avec une liste de conditions, toutes doivent être vraies |
+| `feedback` | Facultatif : ce qui s'affiche après la réponse, selon `ctx.correct`                             |
+
+La balise `Attempt` centre la ligne de réponse et y ajoute une coche verte ou une croix rouge après la correction.
+Un champ de type `'expr'` est un éditeur de formules ;
+un champ de type `'string'` est un champ de texte ordinaire.
+
+Dans la correction, `<ctx.Self />` repose la même question :
+l'étudiant·e qui s'est trompé·e peut réessayer après l'explication.
+On peut aussi y placer d'autres exercices,
+par exemple une question plus simple qui prépare la réponse à la première,
+comme le fait `Factor`.
+La page [Guider l'étudiant·e pas à pas](/doc/remediation) montre comment construire ainsi une conversation entière.
+
+## Demander à l'assistant
+
+:::info[Un exemple de demande]
+Décrivez l'exercice comme à un·e collègue :
+les données qui changent d'une question à l'autre, l'énoncé,
+ce qui compte comme une bonne réponse,
+et ce que la correction doit expliquer.
+
+> Dans `functions.exercises.tsx`, crée un exercice qui demande l'équation de la tangente au graphe de f en x = a.
+> Les données sont f et a.
+> Accepte toute équation équivalente à y = f'(a)(x - a) + f(a).
+> Si la réponse est fausse, rappelle la formule de la tangente et repose la question.
+> Ajoute-le à la page `functions.mdx` avec f(x) = x^2 et a = 1.
+
+Vérifiez ensuite l'exercice dans le navigateur, en répondant juste puis faux.
+:::
+
+## Les règles à respecter
+
+- Un nouveau type d'exercice se crée toujours avec `createDerivedStep` ou `createStep`,
+  jamais avec une fonction qui renvoie un autre exercice déjà rempli :
+  ses options, sa correction et ses données ne seraient plus accessibles.
+- Déclarez l'exercice en haut niveau d'un fichier `.exercises.tsx`, avec `export const`.
+- Si l'exercice peut servir dans d'autres cours,
+  il a sa place dans le dossier `packages/exercises`, rangé par matière :
+  parlez-en à l'équipe.
+- Une fois qu'un exercice a reçu des réponses d'étudiant·es,
+  ne changez plus ses données ni leur type pendant l'année académique,
+  car les réponses sont sauvegardées avec elles.
+  Les modifications de ce genre se font sur la branche `next`,
+  publiée au début de chaque année, quand les réponses sont effacées.

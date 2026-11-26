@@ -1,0 +1,170 @@
+import { defineMeta, Youtube } from '@learning/components'
+import { tex } from '@learning/core'
+
+export default defineMeta({ title: 'Rédiger une page' })
+
+# Rédiger une page
+
+Une page `.mdx` s'écrit comme un document texte, au format [Markdown](https://www.markdownguide.org/basic-syntax/).
+Quelques symboles suffisent pour la mise en forme,
+et des balises comme `<Factor />` ajoutent des éléments interactifs.
+
+## Le texte
+
+```md
+# Titre de la page
+
+## Une section
+
+### Une sous-section
+
+Un paragraphe, avec du texte en **gras** et en _italique_.
+Une ligne qui suit directement fait partie du même paragraphe.
+
+Une ligne vide commence un nouveau paragraphe.
+
+- une liste à puces
+- avec deux éléments
+
+1. une liste numérotée
+2. avec deux éléments
+
+Un [lien vers une autre page](/MA1M/limits) et un [lien externe](https://www.ecam.be).
+
+| Colonne 1 | Colonne 2 |
+| --------- | --------- |
+| a         | b         |
+```
+
+:::info[Une proposition par ligne]
+Allez à la ligne à la fin de chaque proposition, et pas seulement de chaque phrase.
+Le paragraphe s'affiche de la même manière,
+mais lorsque vous modifierez une proposition, la modification sera facile à repérer.
+:::
+
+## Les formules
+
+Une formule s'écrit en LaTeX, entre dollars dans le texte : `$x^2 + 1$` donne $x^2 + 1$.
+Entre doubles dollars, elle est centrée sur sa propre ligne :
+
+```md
+$$
+\int_0^1 x^2 \, \mathrm{d}x = \frac 1 3
+$$
+```
+
+Les accolades ont un sens particulier dans un fichier `.mdx` :
+l'éditeur les souligne parfois en rouge dans les formules.
+Pour une formule qui contient des accolades, comme une fraction, préférez la fonction `tex`,
+importée en haut du fichier :
+
+```mdx
+import { tex } from '@learning/core'
+
+La dérivée est {tex`f'(x) = \frac{1}{x}`}.
+
+{tex.display`\lim_{x \to 0} \frac{\sin x}{x} = 1`}
+```
+
+`tex` affiche la formule dans le texte, et `tex.display` la centre sur sa ligne :
+
+{tex.display`\lim_{x \to 0} \frac{\sin x}{x} = 1`}
+
+## Les encadrés
+
+Un encadré commence par trois deux-points suivis de son type,
+avec un titre facultatif entre crochets,
+et se termine par trois deux-points.
+
+```md
+:::definition[Fonction continue]
+Une fonction est continue en $a$ si sa limite en $a$ vaut $f(a)$.
+:::
+```
+
+:::definition[Fonction continue]
+Une fonction est continue en $a$ si sa limite en $a$ vaut $f(a)$.
+:::
+
+Les types disponibles sont `definition`, `example`, `exercise`, `info`, `question` et `remark`.
+
+:::example
+Un exemple.
+:::
+
+:::question
+Une question à se poser avant de continuer ?
+:::
+
+:::remark
+Une remarque.
+:::
+
+Si un encadré se termine par une liste, laissez une ligne vide avant les trois deux-points de fin.
+
+## Les étapes
+
+Un encadré `steps` contenant une liste numérotée affiche ses éléments un par un,
+avec des flèches pour avancer et reculer :
+pratique pour détailler une démonstration.
+
+```md
+:::steps
+
+1. On factorise : $x^2 - 1 = (x - 1)(x + 1)$.
+2. On simplifie la fraction par $x - 1$.
+3. On calcule la limite : $x + 1 \to 2$.
+
+:::
+```
+
+:::steps
+
+1. On factorise : $x^2 - 1 = (x - 1)(x + 1)$.
+2. On simplifie la fraction par $x - 1$.
+3. On calcule la limite : $x + 1 \to 2$.
+
+:::
+
+## Le code
+
+Un bloc entre trois accents graves affiche du code coloré.
+Avec `python run`, l'étudiant·e peut le modifier et l'exécuter dans sa page :
+
+````md
+```python run
+print(0.1 + 0.2)
+```
+````
+
+```python run
+print(0.1 + 0.2)
+```
+
+L'option `math` ajoute NumPy et affiche les graphiques Matplotlib :
+écrivez `python run math`.
+
+## Les vidéos et les animations GeoGebra
+
+Importez le composant en haut du fichier, puis placez-le où la vidéo doit apparaître :
+
+```mdx
+import { Geogebra, Youtube } from '@learning/components'
+
+<Youtube src="https://www.youtube.com/watch?v=WUvTyaaNkzM" />
+
+<Geogebra id="G2yWterN" width={800} height={600} />
+```
+
+<Youtube src="https://www.youtube.com/watch?v=WUvTyaaNkzM" class="mx-auto" />
+
+Pour GeoGebra, `id` est la fin de l'adresse de l'animation sur [geogebra.org](https://www.geogebra.org).
+
+## La typographie française
+
+Le contenu des cours est en français.
+Avant `?`, `!` et `;`, mettez une espace fine insécable (le caractère U+202F),
+et avant `:`, une espace insécable (U+00A0) :
+elles empêchent le signe de passer seul à la ligne suivante.
+Le plus simple est de copier ces caractères depuis une page existante,
+ou de demander à l'assistant de programmation de corriger la typographie d'un fichier.

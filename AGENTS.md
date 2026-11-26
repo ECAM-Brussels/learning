@@ -29,6 +29,13 @@ Name your signals/memos/effects (the `{ name: "..." }` option): diagnostics repo
   in a package, `bun run test` runs its own (`bun test --conditions=browser`).
 - `bun run typecheck` type-checks the whole repository; `bun run lint` fixes and formats.
 
+## Teacher documentation
+
+`apps/ecam/src/routes/doc` documents the platform for teachers, in French, with English page names.
+Whenever a change affects what teachers write, see or run
+(exercises and their props, components, MDX syntax, scripts, setup),
+update these pages and their live examples (`*.demo.tsx`) in the same change.
+
 ## Visualizations with JSXGraph
 
 If asked to create a visualization with JSXGraph,

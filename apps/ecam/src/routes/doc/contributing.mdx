@@ -1,0 +1,75 @@
+import { defineMeta } from '@learning/components'
+
+export default defineMeta({ title: 'Proposer ses modifications' })
+
+# Proposer ses modifications
+
+Vos modifications restent sur votre ordinateur jusqu'à ce que vous les proposiez.
+Une autre personne de l'équipe les relit,
+puis elles sont publiées sur le site.
+Tout se fait depuis Visual Studio Code, avec [Git](https://git-scm.com/) et GitHub.
+
+## Le vocabulaire
+
+| Terme            | Sens                                                                                     |
+| ---------------- | ---------------------------------------------------------------------------------------- |
+| **dépôt**        | Le projet, avec tout l'historique de ses modifications                                   |
+| **branche**      | Une version parallèle du projet, où vous travaillez sans gêner les autres                |
+| **commit**       | Un ensemble de modifications enregistré dans l'historique, avec un message qui le décrit |
+| **push**         | L'envoi de vos commits sur GitHub                                                        |
+| **pull request** | La demande d'intégrer une branche au site publié, la branche `main`                      |
+
+## Les étapes
+
+1. **Créer une branche.**
+   Cliquez sur le nom de la branche en bas à gauche de Visual Studio Code (d'habitude `main`),
+   choisissez **Create new branch** et donnez-lui un nom qui décrit votre travail,
+   comme `ma1m-limits`.
+2. **Modifier les fichiers**, et vérifier le résultat dans le navigateur.
+3. **Enregistrer un commit.**
+   Ouvrez le panneau **Source Control** (l'icône des branches, à gauche),
+   relisez les fichiers modifiés,
+   écrivez un message qui décrit les modifications,
+   comme « Ajouter les exercices sur les limites »,
+   et cliquez sur **Commit**.
+   Choisissez **Yes** si Visual Studio Code propose d'ajouter tous les fichiers.
+4. **Envoyer la branche**, avec le bouton **Publish Branch** puis **Sync Changes**.
+5. **Ouvrir une pull request** sur [GitHub](https://github.com/ECAM-Brussels/learning/pulls) :
+   GitHub propose de le faire pour la branche que vous venez d'envoyer.
+   Décrivez ce que vous avez fait, et demandez une relecture.
+
+Vous pouvez enregistrer plusieurs commits sur une branche avant d'ouvrir la pull request,
+et en ajouter après pour tenir compte de la relecture.
+
+## Les vérifications automatiques
+
+Avant chaque commit, la plateforme vérifie vos fichiers :
+elle les met en forme, et cherche les erreurs dans le code et les pages.
+Si elle trouve une erreur, le commit est refusé et un message l'explique.
+Copiez ce message à l'assistant de programmation, qui vous aidera à corriger l'erreur.
+
+Sur GitHub, la pull request lance aussi les tests de la plateforme :
+une coche verte indique que tout va bien.
+
+## Ce qu'il ne faut pas changer pendant l'année
+
+Les réponses des étudiant·es sont sauvegardées avec l'identifiant de leur exercice,
+sa position dans sa séquence, et ses données.
+Pendant l'année académique, sur la branche `main` :
+
+- ne changez pas l'`id` d'une séquence ou d'un exercice déjà utilisé ;
+- n'insérez ni ne déplacez d'exercice dans une séquence déjà utilisée :
+  ajoutez-les à la fin ;
+- ne changez pas l'identifiant d'une compétence ;
+- ne changez pas les données d'un type d'exercice déjà utilisé.
+
+Les réponses sont effacées au début de chaque année académique.
+Les modifications qui ne respectent pas ces règles se préparent sur la branche `next`,
+publiée à ce moment-là :
+créez votre branche à partir de `next` au lieu de `main`.
+
+## Les conventions d'écriture
+
+- Une proposition par ligne dans les fichiers `.mdx`, comme expliqué dans [Rédiger une page](/doc/writing).
+- La typographie française : une espace insécable avant `:`, et une espace fine insécable avant `?`, `!` et `;`.
+- Des noms de fichiers en anglais, en minuscules et sans espaces, comme `partial-derivatives.mdx`.

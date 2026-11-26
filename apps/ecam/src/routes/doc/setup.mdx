@@ -1,25 +1,64 @@
 import { defineMeta } from '@learning/components'
 
-export default defineMeta({
-  title: 'Setup',
-})
+export default defineMeta({ title: 'Installer la plateforme' })
 
-## Prérequis
+# Installer la plateforme
 
-1. Installez [Git](https://git-scm.com/),
-   un logiciel de contrôle de version.
+Vous travaillerez sur une copie de la plateforme qui tourne sur votre ordinateur.
+Vos modifications y apparaissent immédiatement,
+et ne sont publiées que lorsque vous les [proposez](/doc/contributing).
 
-2. Installez [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+## Logiciels à installer
 
-3. Installer [Visual Studio Code](https://code.visualstudio.com/)
-   ou un autre éditeur de texte de votre choix.
+1. [Git](https://git-scm.com/), qui garde l'historique des modifications.
+2. [Docker Desktop](https://www.docker.com/products/docker-desktop/), qui fait tourner la plateforme dans un « conteneur » :
+   un ordinateur virtuel où tout est déjà installé.
+3. [Visual Studio Code](https://code.visualstudio.com/), l'éditeur de texte,
+   avec son extension _Dev Containers_.
 
-## Lancer le projet
+Il vous faut aussi un compte [GitHub](https://github.com),
+et l'accès au projet `ECAM-Brussels/learning` :
+demandez-le à l'équipe.
 
-1. Ouvrez le projet dans Visual Studio Code avec le containeur de développement.
+## Récupérer le projet
 
-2. Dans un terminal du containeur, exécutez la commande
+1. Démarrez Docker Desktop.
+2. Dans Visual Studio Code, ouvrez la palette de commandes (`Ctrl+Maj+P`, ou `Cmd+Maj+P` sur Mac),
+   choisissez **Dev Containers: Clone Repository in Container Volume**
+   et collez l'adresse `https://github.com/ECAM-Brussels/learning.git`.
+3. Patientez :
+   la première ouverture installe le conteneur et prend plusieurs minutes.
+   Les suivantes sont rapides.
 
-   ```bash
-   bun dev
-   ```
+Si vous avez déjà cloné le projet ailleurs,
+ouvrez son dossier et choisissez **Reopen in Container** quand Visual Studio Code le propose.
+
+## Les réglages
+
+La plateforme lit ses réglages dans un fichier `.env` à la racine du projet.
+Copiez le fichier `.env.example` sous le nom `.env`,
+puis demandez à l'équipe les valeurs qui manquent,
+notamment celles de la connexion avec un compte Microsoft.
+
+:::info
+Le fichier `.env` contient des mots de passe :
+il reste sur votre ordinateur et n'est jamais publié.
+:::
+
+## Lancer la plateforme
+
+Ouvrez un terminal (menu **Terminal**, puis **Nouveau terminal**) et tapez
+
+```bash
+bun dev
+```
+
+La commande démarre la base de données, la plateforme et ses tests.
+Quand elle a fini, ouvrez [http://localhost:3000](http://localhost:3000) dans votre navigateur.
+Chaque fois que vous enregistrez un fichier, la page se met à jour d'elle-même.
+
+Pour arrêter la plateforme, cliquez dans le terminal et tapez `Ctrl+C`.
+
+:::remark[Si une page ne se met pas à jour]
+Arrêtez la plateforme avec `Ctrl+C`, puis relancez `bun dev`.
+:::

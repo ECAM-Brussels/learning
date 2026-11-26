@@ -1,0 +1,148 @@
+import { defineMeta } from '@learning/components'
+import * as Demo from './remediation.demo'
+
+export default defineMeta({ title: "Guider l'étudiant·e pas à pas" })
+
+# Guider l'étudiant·e pas à pas
+
+La plupart des plateformes posent une question, attendent une réponse et affichent une correction.
+Ici, un exercice peut mener une véritable conversation :
+après une erreur, il pose d'autres questions, choisies selon la réponse,
+pour retrouver ce qui bloque l'étudiant·e.
+Chacune de ces questions peut à son tour en poser d'autres :
+la remédiation est **récursive**.
+Une fois la difficulté levée, on revient à la question qui l'avait révélée,
+puis à celle d'avant, jusqu'à la question de départ :
+le retour en arrière est récursif lui aussi.
+
+## Un exemple
+
+Répondez faux à la limite suivante, puis faites-vous guider :
+
+<Demo.Limit id="demo-limite" numerator="x^2 - 1" denominator="x - 1" a="1" limit="2" />
+
+Selon vos réponses, la conversation peut prendre ce chemin :
+
+1. Calculer la limite : réponse fausse.
+   1. Factoriser le numérateur : réponse fausse.
+      1. Trouver une racine du numérateur.
+      2. Trouver le facteur associé à cette racine : réponse fausse, explication, nouvelle tentative.
+      3. Factoriser à nouveau le numérateur : réponse juste.
+   2. Calculer à nouveau la limite : réponse juste.
+
+Seule la première étape appartient à l'exercice de la limite.
+La factorisation est l'exercice `Factor`, avec sa propre remédiation :
+l'exercice de la limite en profite sans rien écrire de plus.
+
+## Les trois pièces
+
+Une conversation se construit avec trois pièces, présentes dans tout exercice :
+
+| Pièce          | Rôle                                                                                   |
+| -------------- | -------------------------------------------------------------------------------------- |
+| `feedback`     | Ce qui s'affiche après chaque réponse ; `ctx.correct` indique si elle était juste      |
+| le contenu     | Ce qui est placé entre les balises de l'exercice n'apparaît qu'après une bonne réponse |
+| `<ctx.Self />` | Pose à nouveau la même question, avec les mêmes données                                |
+
+`feedback` peut contenir n'importe quoi, et en particulier d'autres exercices.
+Le contenu d'un exercice permet d'enchaîner sur la suite une fois qu'il est réussi.
+`<ctx.Self />`, placé à la fin, ramène à la question de départ.
+
+## Le code de l'exemple
+
+```tsx
+// limits.exercises.tsx
+import { Attempt } from '@learning/components'
+import { createStep, tex } from '@learning/core'
+import { Factor } from '@learning/exercises/math/algebra/Factor'
+import { Show } from 'solid-js'
+
+export const Limit = createStep({
+  schema: {
+    data: { numerator: 'expr', denominator: 'expr', a: 'expr', limit: 'expr' },
+    inputs: { attempt: 'expr' },
+  },
+  prompt: (ctx) => (
+    <>
+      <p>Calculez la limite suivante.</p>
+      <Attempt>
+        {tex`\lim_{x \to ${ctx.data.a}} \frac{${ctx.data.numerator}}{${ctx.data.denominator}} =`}{' '}
+        {ctx.inputs.attempt}
+      </Attempt>
+    </>
+  ),
+  grade: (ctx) => ctx.inputs.attempt.isEqual(ctx.data.limit),
+  feedback: (ctx) => (
+    <Show when={!ctx.correct}>
+      <p>
+        En {tex`x = ${ctx.data.a}`}, le numérateur et le dénominateur s'annulent. Commencez par
+        factoriser le numérateur.
+      </p>
+      <Factor expr={ctx.data.numerator}>
+        <p>Simplifiez maintenant la fraction, puis calculez à nouveau la limite.</p>
+        <ctx.Self />
+      </Factor>
+    </Show>
+  ),
+})
+```
+
+`<Show when={!ctx.correct}>` n'affiche la remédiation qu'après une mauvaise réponse.
+L'exercice `Factor` est placé dans `feedback` :
+il apparaît sous la réponse fausse, et se corrige comme n'importe quel exercice.
+Ce qui est entre ses balises n'apparaît qu'une fois la factorisation réussie,
+même si l'étudiant·e a dû passer par la remédiation de `Factor` pour y arriver.
+`<ctx.Self />` repose enfin la limite.
+
+La page [Créer un nouveau type d'exercice](/doc/new-exercise) explique `createStep` en détail.
+
+## Ajouter une remédiation à un exercice existant
+
+`feedback` peut aussi être donné à un exercice existant, directement dans la page,
+pour remplacer sa correction :
+
+```mdx
+import { tex } from '@learning/core'
+import { Expand } from '@learning/exercises/math/algebra/Expand'
+import { Show } from 'solid-js'
+
+<Expand
+  id="developpement"
+  expr="(x + 2)^2"
+  feedback={(ctx) => (
+    <Show when={!ctx.correct}>
+      <p>Rappelez-vous que {tex`(a + b)^2 = a^2 + 2ab + b^2`}.</p>
+      <ctx.Self />
+    </Show>
+  )}
+/>
+```
+
+Pour une remédiation qui servira souvent, préférez un nouveau type d'exercice :
+elle sera écrite une seule fois, et l'éditeur y détectera mieux les erreurs.
+
+## Demander à l'assistant
+
+:::info[Un exemple de demande]
+Décrivez le chemin de la conversation :
+la question de départ, et pour chaque erreur, la question qui la suit.
+Citez les exercices existants à réutiliser.
+
+> Crée un exercice qui demande la limite de p(x) / q(x) en x = a,
+> lorsque le numérateur et le dénominateur s'annulent en a.
+> Les données sont p, q, a et la limite.
+> Si la réponse est fausse, demande de factoriser le numérateur avec `Factor`,
+> puis repose la limite avec `Self`.
+
+Essayez ensuite chaque chemin, en répondant juste, puis faux à chaque étape.
+:::
+
+## Conseils
+
+- Une étape, une question :
+  une remédiation est faite de petites questions, plus faciles que celle qui a échoué.
+- Réutilisez les exercices existants comme étapes :
+  ils apportent leur propre remédiation.
+- Terminez la remédiation par `<ctx.Self />`,
+  pour que l'étudiant·e applique ce qu'il ou elle vient de comprendre à la question de départ.
+- Essayez chaque chemin dans le navigateur : en répondant juste, puis faux à chaque étape.

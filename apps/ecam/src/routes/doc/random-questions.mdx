@@ -1,0 +1,102 @@
+import { defineMeta } from '@learning/components'
+import * as Demo from './random-questions.demo'
+
+export default defineMeta({ title: 'Générer des questions aléatoires' })
+
+# Générer des questions aléatoires
+
+Plutôt que d'écrire chaque question,
+on peut décrire une **compétence** :
+comment tirer les données d'une question au hasard, et comment en faire un exercice.
+La plateforme pose alors autant de questions que l'étudiant·e le souhaite,
+toujours différentes.
+
+<Demo.Practice id="demo-entrainement" />
+
+## Décrire une compétence
+
+```tsx
+// derivatives.exercises.tsx
+import { createQuestionBank, defineSkill, tex } from '@learning/core'
+import { MultipleChoice } from '@learning/exercises/MultipleChoice'
+
+const powerRule = defineSkill('MA1M/power-rule', {
+  step: MultipleChoice,
+  generate: (random) => ({ a: random.int(2, 10), n: random.int(2, 7) }),
+  render: ({ a, n }) => ({
+    prompt: <p>Quelle est la dérivée de {tex`${a}x^{${n}}`} ?</p>,
+    choices: {
+      right: tex`${a * n}x^{${n - 1}}`,
+      exponent: tex`${a}x^{${n - 1}}`,
+      coefficient: tex`${a * n}x^{${n}}`,
+      antiderivative: tex`\frac{${a}}{${n + 1}}x^{${n + 1}}`,
+    },
+    answer: 'right',
+    shuffle: true,
+  }),
+})
+
+export const bank = createQuestionBank(powerRule)
+```
+
+`defineSkill` reçoit l'identifiant de la compétence, puis :
+
+| Partie          | Rôle                                                                       |
+| --------------- | -------------------------------------------------------------------------- |
+| `step`          | L'exercice qui pose la question, ici un choix multiple                     |
+| `generate`      | Tire les données de la question au hasard, avec `random`                   |
+| `render`        | Transforme ces données en attributs de l'exercice : énoncé, choix, réponse |
+| `tags`          | Facultatif : des étiquettes pour regrouper les compétences, comme `['s1']` |
+| `prerequisites` | Facultatif : les compétences qui la précèdent, comme `() => [addition]`    |
+
+`createQuestionBank` rassemble les compétences en une banque de questions,
+et la page affiche un entraînement sans fin avec `Practice` :
+
+```mdx
+import * as Exercice from './derivatives.exercises'
+
+<Exercice.bank.Practice id="entrainement" />
+```
+
+`Practice` peut se limiter à certaines compétences, `skills={['MA1M/power-rule']}`,
+ou à certaines étiquettes, `tags={['s1']}`.
+
+## Demander à l'assistant
+
+:::info[Un exemple de demande]
+Décrivez la forme des questions, les valeurs possibles des données,
+et surtout les erreurs fréquentes :
+elles donnent les mauvais choix d'un choix multiple.
+
+> Ajoute à `derivatives.exercises.tsx` une compétence `MA1M/chain-rule` :
+> un choix multiple qui demande la dérivée de (a x + b)^n,
+> avec a et b des entiers de 1 à 9 et n de 2 à 5.
+> Les mauvais choix correspondent à l'oubli du facteur a, à l'oubli de l'exposant n,
+> et à un exposant resté égal à n.
+
+Faites défiler une dizaine de questions pour vérifier qu'elles sont toutes correctes.
+:::
+
+## Tirer au hasard
+
+| Fonction                    | Résultat                                             |
+| --------------------------- | ---------------------------------------------------- |
+| `random.int(2, 10)`         | Un entier de $2$ à $9$ : la seconde borne est exclue |
+| `random.sample([1, 3, 5])`  | Un élément de la liste                               |
+| `random.shuffle([1, 2, 3])` | La liste dans un ordre aléatoire                     |
+| `random.float()`            | Un nombre entre $0$ et $1$                           |
+
+## Les règles à respecter
+
+- Seules les données tirées par `generate` sont sauvegardées avec la réponse :
+  `render` doit toujours donner la même question pour les mêmes données.
+- Tirez au hasard uniquement avec `random`, jamais avec `Math.random` :
+  une question peut alors être reproduite exactement, par exemple pour la tester.
+- L'identifiant d'une compétence est sauvegardé avec les réponses :
+  ne le changez jamais, et préfixez-le par le cours, comme `'MA1M/power-rule'`.
+- Avec un choix multiple, indiquez la bonne réponse avec `answer` :
+  un test peut alors générer des centaines de questions et vérifier chacune,
+  comme le fait `apps/ecam/src/routes/MN1M/exam.exercises.test.tsx`.
+- Vérifiez que deux choix ne peuvent jamais être identiques,
+  quelles que soient les données :
+  ici, leurs exposants ou leurs coefficients diffèrent toujours.

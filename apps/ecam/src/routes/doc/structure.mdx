@@ -1,0 +1,101 @@
+import { defineMeta } from '@learning/components'
+
+export default defineMeta({ title: "L'organisation des cours" })
+
+# L'organisation des cours
+
+## Un fichier, une page
+
+Tous les cours se trouvent dans le dossier `apps/ecam/src/routes`.
+Chaque fichier de ce dossier est une page du site,
+et son adresse suit le chemin du fichier :
+
+| Fichier                  | Adresse de la page |
+| ------------------------ | ------------------ |
+| `routes/index.mdx`       | `/`                |
+| `routes/MA1M/index.mdx`  | `/MA1M`            |
+| `routes/MA1M/limits.mdx` | `/MA1M/limits`     |
+| `routes/doc/setup.mdx`   | `/doc/setup`       |
+
+Un fichier `index` est la page d'accueil de son dossier.
+Choisissez des noms de fichiers en anglais, en minuscules et sans espaces, comme `partial-derivatives.mdx`.
+
+On rencontre deux sortes de fichiers :
+
+- les fichiers **`.mdx`** contiennent le texte des pages,
+  écrit comme un document, avec quelques balises pour les exercices ;
+- les fichiers **`.tsx`** contiennent du code,
+  par exemple les exercices d'un chapitre ou la mise en page d'un cours.
+
+Un fichier dont le nom contient un point de plus, comme `limits.exercises.tsx` ou `limits.content.mdx`,
+n'est **pas** une page :
+il sert à ranger ce qu'une page importe.
+
+## Le cadre d'un cours : `_layout.tsx`
+
+Le fichier `_layout.tsx` d'un dossier entoure toutes ses pages.
+Il donne le nom du cours, affiché dans le fil d'Ariane en haut de chaque page,
+et peut régler les exercices de tout le cours.
+Voici celui d'un cours minimal :
+
+```tsx
+import { BreadCrumbs, Meta, Page } from '@learning/components'
+import { ExerciseOptions } from '@learning/core'
+import type { JSX } from '@solidjs/web/jsx-runtime'
+import { paths } from '../../router'
+
+export default function Layout(props: { children: JSX.Element }) {
+  return (
+    <Page>
+      <BreadCrumbs />
+      <Meta href={paths.MA1M} title="Mathématiques de base">
+        <ExerciseOptions allowResubmissions>{props.children}</ExerciseOptions>
+      </Meta>
+    </Page>
+  )
+}
+```
+
+Vous n'aurez à le modifier que pour changer le nom du cours ou les [options des exercices](/doc/exercises).
+
+## Créer une page
+
+1. Créez le fichier, par exemple `routes/MA1M/limits.mdx`.
+2. Donnez-lui un titre, affiché dans le fil d'Ariane et l'onglet du navigateur :
+
+   ```mdx
+   import { defineMeta } from '@learning/components'
+
+   export default defineMeta({ title: 'Les limites' })
+
+   # Les limites
+
+   Le texte de la page commence ici.
+   ```
+
+3. Ouvrez `http://localhost:3000/MA1M/limits` :
+   la page existe déjà.
+4. Ajoutez un lien depuis la page d'accueil du cours, par exemple `[Les limites](/MA1M/limits)`.
+
+## Créer un cours
+
+1. Créez un dossier, par exemple `routes/PH1M`.
+2. Copiez-y le `_layout.tsx` d'un autre cours,
+   et remplacez le nom du cours ainsi que `paths.MA1M` par `paths.PH1M`.
+3. Créez sa page d'accueil, `routes/PH1M/index.mdx`.
+4. Ajoutez une carte vers le cours sur la page d'accueil du site, `routes/index.mdx`,
+   en copiant celles qui s'y trouvent déjà.
+
+## Les images
+
+Placez l'image à côté de la page,
+importez-la en haut du fichier et affichez-la avec la balise `img` :
+
+```mdx
+import schema from './schema.png'
+
+<img src={schema} alt="Schéma du circuit" class="mx-auto w-1/2" />
+```
+
+L'attribut `class` règle la taille et la position :
+`mx-auto` centre l'image et `w-1/2` lui donne la moitié de la largeur de la page.

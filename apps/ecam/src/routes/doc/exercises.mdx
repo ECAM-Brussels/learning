@@ -1,0 +1,172 @@
+import { defineMeta } from '@learning/components'
+import { Expand } from '@learning/exercises/math/algebra/Expand'
+import * as Demo from './exercises.demo'
+
+export default defineMeta({ title: 'Ajouter des exercices' })
+
+# Ajouter des exercices
+
+## Un exercice est une balise
+
+Sur la plateforme, un exercice s'ajoute comme une balise dans le texte.
+La balise porte le nom de l'exercice,
+et ses attributs donnent les données de la question :
+
+```mdx
+import { Expand } from '@learning/exercises/math/algebra/Expand'
+
+<Expand id="developpement" expr="(x + 1)(x - 3)" />
+```
+
+<Expand id="demo-developpement" expr="(x + 1)(x - 3)" />
+
+La ligne `import` en haut du fichier indique où trouver l'exercice.
+Les expressions mathématiques s'écrivent en LaTeX, entre guillemets, comme `expr="\sin(2x)"`.
+L'attribut `id` identifie l'exercice pour sauvegarder les réponses des étudiant·es :
+donnez-en un à chaque exercice qui n'est pas dans une séquence.
+
+## Les exercices prêts à l'emploi
+
+| Exercice               | Importé depuis                                        | Attributs                            |
+| ---------------------- | ----------------------------------------------------- | ------------------------------------ |
+| `Expand`               | `@learning/exercises/math/algebra/Expand`             | `expr`                               |
+| `Factor`               | `@learning/exercises/math/algebra/Factor`             | `expr`                               |
+| `CompleteSquare`       | `@learning/exercises/math/algebra/CompleteSquare`     | `expr`                               |
+| `Derivative`           | `@learning/exercises/math/calculus/Derivative`        | `f`                                  |
+| `DerivativeAtPoint`    | `@learning/exercises/math/calculus/DerivativeAtPoint` | `f`, `x`                             |
+| `Antiderivative`       | `@learning/exercises/math/calculus/Integrate`         | `expr`                               |
+| `Integrate`            | `@learning/exercises/math/calculus/Integrate`         | `expr`, `low`, `high`                |
+| `DifferentialQuotient` | `@learning/exercises/numerical/DifferentialQuotient`  | `f`, `x`, `h`, `type`                |
+| `MultipleChoice`       | `@learning/exercises/MultipleChoice`                  | voir ci-dessous                      |
+| `Simple`               | `@learning/exercises/math/Simple`                     | voir ci-dessous                      |
+| `PythonCode`           | `@learning/exercises/python/Code`                     | voir [Exercices Python](/doc/python) |
+
+Plusieurs exercices guident l'étudiant·e qui se trompe.
+Par exemple, après une mauvaise factorisation,
+`Factor` demande d'abord une racine du polynôme, puis le facteur qui lui correspond.
+
+## Les séquences
+
+Une séquence regroupe des exercices, avec une pagination et une barre de progression :
+
+```mdx
+import { Sequence } from '@learning/core'
+import { Factor } from '@learning/exercises/math/algebra/Factor'
+
+<Sequence id="factorisation">
+  <Factor expr="x^2 - 5x + 6" />
+  <Factor expr="x^2 - 9" />
+  <Factor expr="2x^2 + 4x + 2" />
+</Sequence>
+```
+
+<Demo.Factorisation />
+
+Les réponses sont sauvegardées par séquence et par position dans la séquence.
+
+:::info[Une fois les exercices utilisés par les étudiant·es]
+Ne changez plus l'`id` d'une séquence,
+et n'insérez ni ne déplacez d'exercice à l'intérieur :
+les réponses déjà données seraient associées au mauvais exercice.
+Ajoutez plutôt les nouveaux exercices à la fin, ou dans une nouvelle séquence.
+:::
+
+## Les choix multiples
+
+`MultipleChoice` reçoit l'énoncé (`prompt`), les choix (`choices`) et la bonne réponse (`answer`) :
+
+```tsx
+<MultipleChoice
+  id="derivee-exponentielle"
+  prompt={<p>Quelle fonction est égale à sa dérivée ?</p>}
+  choices={{ A: tex`x^2`, B: tex`e^x`, C: tex`\ln x`, D: tex`\sin x` }}
+  answer="B"
+  shuffle
+/>
+```
+
+<Demo.ChoixMultiple />
+
+Avec une seule bonne réponse, les choix sont des boutons radio ;
+avec plusieurs, écrivez `answer={['A', 'C']}` et les choix deviennent des cases à cocher.
+`shuffle` mélange les choix, dans un ordre propre à chaque étudiant·e.
+
+## Les réponses libres
+
+`Simple` pose une question dont la réponse est une expression,
+et `grade` décide si la réponse est juste :
+
+```tsx
+<Simple
+  id="integrale"
+  prompt={<p>Que vaut {tex`\displaystyle \int_0^1 x^2 \, \mathrm{d}x`} ?</p>}
+  label="\int_0^1 x^2 \, \mathrm{d}x ="
+  grade={(attempt) => attempt.isEqual('\\frac{1}{3}')}
+/>
+```
+
+<Demo.ReponseLibre />
+
+`attempt` est la réponse de l'étudiant·e,
+et `isEqual` vérifie qu'elle est mathématiquement égale à $\frac 1 3$ :
+`0.333` serait refusé, mais `\frac{2}{6}` accepté.
+Dans les chaînes de caractères du code, les barres obliques inverses se doublent : `'\\frac{1}{3}'`.
+La page [Manipuler des expressions](/doc/symbolic) présente les autres vérifications possibles.
+
+## Après une bonne réponse
+
+Ce qui est placé entre les balises d'un exercice n'apparaît qu'après une bonne réponse :
+une explication, ou un exercice qui va plus loin.
+
+```mdx
+<Factor id="difference-de-carres" expr="x^2 - 9">
+  Vous avez reconnu une différence de carrés : $a^2 - b^2 = (a - b)(a + b)$.
+</Factor>
+```
+
+## Les options
+
+L'attribut `options` règle le comportement d'un exercice ou d'une séquence :
+
+```mdx
+<Sequence id="factorisation" options={{ allowResubmissions: true, video: 'https://www.youtube.com/watch?v=…' }}>
+```
+
+| Option               | Effet                                                                                 |
+| -------------------- | ------------------------------------------------------------------------------------- |
+| `allowResubmissions` | L'étudiant·e peut corriger sa réponse et la soumettre à nouveau (non par défaut)      |
+| `allowResets`        | Le bouton « Recommencer l'exercice » est affiché (oui par défaut)                     |
+| `showFeedback`       | La correction est affichée, éventuellement à partir d'une date : `'2026-12-15 08:00'` |
+| `readOnly`           | Plus aucune réponse n'est acceptée, éventuellement à partir d'une date                |
+| `video`              | Une vidéo YouTube affichée à côté de l'exercice                                       |
+
+Pour régler tous les exercices d'un cours,
+utilisez la balise `ExerciseOptions` dans son [`_layout.tsx`](/doc/structure).
+
+## Ranger les exercices d'une page
+
+Un exercice sur une ligne a sa place dans la page `.mdx`.
+Dès qu'une séquence devient longue,
+rangez-la dans un fichier voisin dont le nom se termine par `.exercises.tsx`,
+où l'éditeur détecte mieux les erreurs :
+
+```tsx
+// limits.exercises.tsx
+import { Sequence } from '@learning/core'
+import { Factor } from '@learning/exercises/math/algebra/Factor'
+
+export const Factorisation = () => (
+  <Sequence id="factorisation">
+    <Factor expr="x^2 - 5x + 6" />
+    <Factor expr="x^2 - 9" />
+  </Sequence>
+)
+```
+
+La page l'importe alors en une ligne :
+
+```mdx
+import * as Exercice from './limits.exercises'
+
+<Exercice.Factorisation />
+```
