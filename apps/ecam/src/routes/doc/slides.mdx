@@ -13,7 +13,7 @@ avec l'apparence du thème Beamer _Metropolis_.
 
 Cliquez sur la présentation pour la piloter au clavier :
 
-- les flèches passent d'un slide à l'autre ;
+- `Espace` passe au slide suivant, les flèches se déplacent dans les deux directions ;
 - `F` affiche la présentation en plein écran, `Échap` montre une vue d'ensemble ;
 - `S` ouvre la vue présentateur, avec les notes, si le plugin de notes est chargé.
 
@@ -54,16 +54,20 @@ La dérivée de **f** en $a$ est la limite
 <Deck.Standout>Des questions ?</Deck.Standout>
 ```
 
-| Syntaxe                       | Effet                                            |
-| ----------------------------- | ------------------------------------------------ |
-| `# Titre`                     | Le début d'une partie (`Deck.Section`)           |
-| `## Titre`                    | Un slide avec ce titre                           |
-| `---`                         | Un slide sans titre                              |
-| `<Deck.Standout>`, `<Deck.…>` | Un slide à part entière, écrit en JSX            |
-| `. . .`                       | La suite du slide apparaît à l'étape suivante    |
-| `:::incremental`              | Les éléments de la liste apparaissent un par un  |
-| `:::notes`                    | Les notes du présentateur ou de la présentatrice |
-| `::::columns` et `:::column`  | Des colonnes côte à côte                         |
+| Syntaxe                       | Effet                                             |
+| ----------------------------- | ------------------------------------------------- |
+| `# Titre`                     | Une partie, dont les slides s'empilent en colonne |
+| `## Titre`                    | Un slide avec ce titre                            |
+| `---`                         | Un slide sans titre                               |
+| `<Deck.Standout>`, `<Deck.…>` | Un slide écrit en JSX                             |
+| `. . .`                       | La suite du slide apparaît à l'étape suivante     |
+| `:::incremental`              | Les éléments de la liste apparaissent un par un   |
+| `:::notes`                    | Les notes du présentateur ou de la présentatrice  |
+| `::::columns` et `:::column`  | Des colonnes côte à côte                          |
+
+Chaque partie forme une pile verticale, ouverte par son slide de partie :
+la flèche droite passe à la partie suivante, la flèche bas au slide suivant de la partie.
+Les slides qui précèdent le premier `#` restent côte à côte.
 
 Le texte en **gras** prend la couleur d'accent, comme `\alert` dans Beamer.
 Pour le LaTeX qui contient des accolades, utilisez `tex` de `@learning/core` :

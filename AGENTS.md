@@ -74,6 +74,7 @@ otherwise Markdown, and Prettier, take it as part of the last item.
 
 A page whose frontmatter is `deck: true` is a reveal.js presentation (`packages/mdx/deck.ts`):
 `#` opens a section, `##` a slide, `---` a slide without title, and a top-level `<Deck.…>` element is a slide of its own.
+Each section is a vertical stack of its slides, `<Deck.…>` ones included; slides before the first `#` stay horizontal.
 Only `deck` goes in the frontmatter: the title slide comes from `defineMeta`.
 See `apps/ecam/src/routes/doc/presentation.mdx`.
 

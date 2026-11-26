@@ -11,6 +11,7 @@ const Deck = Object.assign(named('Deck'), {
   Section: named('Deck.Section'),
   Slide: named('Deck.Slide'),
   Standout: named('Deck.Standout'),
+  Stack: named('Deck.Stack'),
   Fragment: named('Deck.Fragment'),
   Notes: named('Deck.Notes'),
   Columns: named('Deck.Columns'),
@@ -97,9 +98,58 @@ describe('the deck frontmatter', () => {
 describe('slides', () => {
   test('a level 1 heading opens a section, a level 2 heading a slide', () => {
     expect(slides('# Définition\n\n## Taux\n\nTexte')).toEqual([
-      { type: 'Deck.Section', title: fragment('Définition') },
-      { type: 'Deck.Slide', title: fragment('Taux'), children: { type: 'p', children: 'Texte' } },
+      {
+        type: 'Deck.Stack',
+        children: [
+          { type: 'Deck.Section', title: fragment('Définition') },
+          {
+            type: 'Deck.Slide',
+            title: fragment('Taux'),
+            children: { type: 'p', children: 'Texte' },
+          },
+        ],
+      },
     ])
+  })
+
+  test('each section is a stack of its slides', () => {
+    expect(slides('A\n\n# Un\n\n## B\n\n---\n\nC\n\n# Deux\n\n## D')).toMatchObject([
+      { type: 'Deck.Slide' },
+      {
+        type: 'Deck.Stack',
+        children: [
+          { type: 'Deck.Section', title: fragment('Un') },
+          { type: 'Deck.Slide', title: fragment('B') },
+          { type: 'Deck.Slide', children: { children: 'C' } },
+        ],
+      },
+      {
+        type: 'Deck.Stack',
+        children: [
+          { type: 'Deck.Section', title: fragment('Deux') },
+          { type: 'Deck.Slide', title: fragment('D') },
+        ],
+      },
+    ])
+  })
+
+  test('a Deck element in a section joins its stack', () => {
+    const source = '# Un\n\n## A\n\n<Deck.Standout>Pause</Deck.Standout>\n\n## B'
+    expect(slides(source)).toMatchObject([
+      {
+        type: 'Deck.Stack',
+        children: [
+          { type: 'Deck.Section' },
+          { type: 'Deck.Slide', title: fragment('A') },
+          { type: 'Deck.Standout', children: 'Pause' },
+          { type: 'Deck.Slide', title: fragment('B') },
+        ],
+      },
+    ])
+  })
+
+  test('refuses a stack inside a section', () => {
+    expect(() => deck('# Un\n\n<Deck.Stack></Deck.Stack>')).toThrow('A section is already a stack')
   })
 
   test('a thematic break opens a slide without title', () => {

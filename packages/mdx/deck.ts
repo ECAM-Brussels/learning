@@ -147,36 +147,51 @@ const outside = (node: Node) => node.type === 'mdxjsEsm' || node.type === 'yaml'
 /**
  * The slides of a document: `#` opens a section, `##` a slide with that title,
  * `---` a slide without one, and a `<Deck.…>` element is a slide of its own.
+ * Each section is a vertical stack, headed by its section slide; slides before the first section stay horizontal.
  * The title slide comes first, from the page's `defineMeta`.
  */
 export function toDeck(children: Node[]): Node[] {
   const slides: Node[] = [element('Deck.Title', {})]
+  let section: Node[] | undefined
   let current: { name: string; title?: Node[]; children: Node[] } | undefined
   const close = () => {
     if (!current) return
     const props: Props = current.title
       ? { title: { expression: `<>${phrasing(current.title)}</>` } }
       : {}
-    slides.push(element(current.name, props, pauses(current.children)))
+    ;(section ?? slides).push(element(current.name, props, pauses(current.children)))
     current = undefined
   }
+  const closeSection = () => {
+    close()
+    if (section) slides.push(element('Deck.Stack', {}, section))
+    section = undefined
+  }
   for (const node of children.filter((node) => !outside(node))) {
-    if (node.type === 'heading' && (node.depth === 1 || node.depth === 2)) {
+    if (node.type === 'heading' && node.depth === 1) {
+      closeSection()
+      section = []
+      current = { name: 'Deck.Section', title: node.children ?? [], children: [] }
+    } else if (node.type === 'heading' && node.depth === 2) {
       close()
-      const name = node.depth === 1 ? 'Deck.Section' : 'Deck.Slide'
-      current = { name, title: node.children ?? [], children: [] }
+      current = { name: 'Deck.Slide', title: node.children ?? [], children: [] }
     } else if (node.type === 'thematicBreak') {
       close()
       current = { name: 'Deck.Slide', children: [] }
     } else if (node.type === 'mdxJsxFlowElement' && node.name?.startsWith('Deck.')) {
+      if (node.name === 'Deck.Stack' && section) {
+        throw new Error(
+          'A section is already a stack: `<Deck.Stack>` can only come before the first `#`',
+        )
+      }
       close()
-      slides.push(node)
+      ;(section ?? slides).push(node)
     } else {
       current ??= { name: 'Deck.Slide', children: [] }
       current.children.push(...block(node))
     }
   }
-  close()
+  closeSection()
   return [...children.filter(outside), element('Deck', { page: true }, slides)]
 }
 
