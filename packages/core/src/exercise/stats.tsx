@@ -1,6 +1,5 @@
-import { Boundary, Table, type TableColumn } from '@learning/components'
-import type { JSX } from '@solidjs/web'
-import { createMemo, createSignal, For, Show } from 'solid-js'
+import { Modal, Table, type TableColumn } from '@learning/components'
+import { createMemo, For, Show } from 'solid-js'
 import type { ExerciseContext, ExerciseStats as Stats } from './context'
 
 type SequenceProgress = Awaited<ReturnType<NonNullable<ExerciseContext['getStats']>>>
@@ -21,65 +20,28 @@ function statusOf(student: Student): Status {
   return student.submitted ? 'started' : 'opened'
 }
 
-/**
- * A link opening a modal whose content is mounted only while it is open,
- * so that it fetches fresh data and a live connection closes with it.
- */
-function StatsDialog(props: { label: string; title: string; children: JSX.Element }) {
-  const [open, setOpen] = createSignal(false)
-  let dialog!: HTMLDialogElement
-  return (
-    <>
-      <button
-        class="cursor-pointer rounded-xl px-4 py-2 text-sm text-gray-500 hover:bg-gray-50"
-        onClick={() => {
-          setOpen(true)
-          dialog.showModal()
-        }}
-      >
-        {props.label}
-      </button>
-      <dialog
-        ref={dialog}
-        class="m-auto w-full max-w-4xl rounded-xl p-6 shadow-xl backdrop:bg-black/40"
-        onClose={() => setOpen(false)}
-        onClick={(e) => {
-          if (e.target === dialog) dialog.close()
-        }}
-      >
-        <div class="mb-4 flex items-center justify-between">
-          <h2 class="text-lg font-bold">{props.title}</h2>
-          <button
-            class="cursor-pointer rounded-lg px-3 py-1 text-sm text-gray-500 hover:bg-gray-100"
-            onClick={() => dialog.close()}
-          >
-            Fermer
-          </button>
-        </div>
-        <Show when={open()}>
-          <Boundary fallback="Chargement des statistiques...">{props.children}</Boundary>
-        </Show>
-      </dialog>
-    </>
-  )
-}
-
 export function ExerciseStats(props: { watch: () => AsyncIterable<Stats> }) {
   return (
-    <StatsDialog
-      label="Montrer les statistiques de cet exercice"
+    <Modal
+      trigger="Montrer les statistiques de cet exercice"
       title="Statistiques de l'exercice"
+      fallback="Chargement des statistiques..."
     >
       <StatsContent watch={props.watch} />
-    </StatsDialog>
+    </Modal>
   )
 }
 
 export function SequenceStats(props: { fetch: () => Promise<SequenceProgress> }) {
   return (
-    <StatsDialog label="Montrer la progression des étudiants" title="Progression des étudiants">
+    <Modal
+      trigger="Montrer la progression des étudiants"
+      title="Progression des étudiants"
+      fallback="Chargement des statistiques..."
+      width="max-w-4xl"
+    >
       <SequenceTable fetch={props.fetch} />
-    </StatsDialog>
+    </Modal>
   )
 }
 
