@@ -231,6 +231,7 @@ export const getStats = query(async (rawSequence: SequenceContext) => {
     .innerJoin(tables.user, eq(tables.user.email, exercise.userEmail))
     .where(and(eq(exercise.url, sequence.url), eq(exercise.sequenceId, sequence.sequenceId)))
     .groupBy(exercise.userEmail, tables.user.name)
+    .orderBy(tables.user.name)
 }, 'getStats')
 
 async function exerciseStats(ctx: ExerciseKey): Promise<ExerciseStats> {

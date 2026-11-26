@@ -1,6 +1,8 @@
-import { Boundary } from '@learning/components'
-import { createMemo, createSignal, For, Show } from 'solid-js'
-import type { ExerciseStats as Stats } from './context'
+import { Modal, Table, type TableColumn } from '@learning/components'
+import { createMemo, For, Show } from 'solid-js'
+import type { ExerciseContext, ExerciseStats as Stats } from './context'
+
+type SequenceProgress = Awaited<ReturnType<NonNullable<ExerciseContext['getStats']>>>
 
 type Student = Stats['students'][number]
 type Status = 'correct' | 'incorrect' | 'started' | 'opened'
@@ -19,46 +21,137 @@ function statusOf(student: Student): Status {
 }
 
 export function ExerciseStats(props: { watch: () => AsyncIterable<Stats> }) {
-  const [open, setOpen] = createSignal(false)
-  let dialog!: HTMLDialogElement
+  return (
+    <Modal
+      trigger="Montrer les statistiques de cet exercice"
+      title="Statistiques de l'exercice"
+      fallback="Chargement des statistiques..."
+    >
+      <StatsContent watch={props.watch} />
+    </Modal>
+  )
+}
+
+export function SequenceStats(props: { fetch: () => Promise<SequenceProgress> }) {
+  return (
+    <Modal
+      trigger="Montrer la progression des étudiants"
+      title="Progression des étudiants"
+      fallback="Chargement des statistiques..."
+      width="max-w-4xl"
+    >
+      <SequenceTable fetch={props.fetch} />
+    </Modal>
+  )
+}
+
+const results = [
+  { symbol: '✗', class: 'bg-red-100 text-red-800' },
+  { symbol: '…', class: 'bg-gray-100 text-gray-500' },
+  { symbol: '✓', class: 'bg-green-100 text-green-800' },
+] as const
+
+/** Ranks a result so that sorting goes from failed to succeeded, with unreached exercises last. */
+function rankResult(correct: boolean | null | undefined) {
+  if (correct === undefined) return undefined
+  if (correct === null) return 1
+  return correct ? 2 : 0
+}
+
+function SequenceTable(props: { fetch: () => Promise<SequenceProgress> }) {
+  const progress = createMemo(() => props.fetch(), { name: 'sequenceStats' })
+  const students = createMemo(() =>
+    progress().map((student) => ({
+      ...student,
+      results: new Map(student.progress.map(({ i, correct }) => [i, rankResult(correct)])),
+      correct: student.progress.filter(({ correct }) => correct === true).length,
+      answered: student.progress.filter(({ correct }) => correct !== null).length,
+    })),
+  )
+  type Row = ReturnType<typeof students>[number]
+  const columns = createMemo((): TableColumn<Row>[] => {
+    const last = Math.max(-1, ...progress().flatMap((s) => s.progress.map(({ i }) => i)))
+    const exercises = Array.from({ length: last + 1 }, (_, i): TableColumn<Row> => ({
+      id: `exercise-${i}`,
+      header: String(i + 1),
+      label: `exercice ${i + 1}`,
+      value: (row) => row.results.get(i),
+      format: (rank) => (typeof rank === 'number' ? results[rank]!.symbol : ''),
+      cell: (row) => {
+        const rank = row.results.get(i)
+        if (rank === undefined) return null
+        return (
+          <span class={['block rounded px-1 py-0.5 font-bold', results[rank]!.class]}>
+            {results[rank]!.symbol}
+          </span>
+        )
+      },
+      filter: 'select',
+      align: 'center',
+      class: 'w-12',
+    }))
+    return [
+      {
+        id: 'name',
+        header: 'Nom',
+        value: (row) => row.name,
+        filter: 'text',
+        class: 'whitespace-nowrap',
+      },
+      ...exercises,
+      {
+        id: 'correct',
+        header: 'Réussis',
+        value: (row) => row.correct,
+        cell: (row) => `${row.correct} / ${row.answered}`,
+        align: 'right',
+        class: 'whitespace-nowrap',
+      },
+    ]
+  })
+
   return (
     <>
-      <button
-        class="cursor-pointer rounded-xl px-4 py-2 text-sm text-gray-500 hover:bg-gray-50"
-        onClick={() => {
-          setOpen(true)
-          dialog.showModal()
-        }}
-      >
-        Montrer les statistiques de cet exercice
-      </button>
-      <dialog
-        ref={dialog}
-        class="m-auto w-full max-w-2xl rounded-xl p-6 shadow-xl backdrop:bg-black/40"
-        onClose={() => setOpen(false)}
-        onClick={(e) => {
-          if (e.target === dialog) dialog.close()
-        }}
-      >
-        <div class="mb-4 flex items-center justify-between">
-          <h2 class="text-lg font-bold">Statistiques de l'exercice</h2>
-          <button
-            class="cursor-pointer rounded-lg px-3 py-1 text-sm text-gray-500 hover:bg-gray-100"
-            onClick={() => dialog.close()}
-          >
-            Fermer
-          </button>
-        </div>
-        {/* Mounted only while open, so that the live connection closes with the dialog */}
-        <Show when={open()}>
-          <Boundary fallback="Chargement des statistiques...">
-            <StatsContent watch={props.watch} />
-          </Boundary>
-        </Show>
-      </dialog>
+      <Table
+        rows={students()}
+        columns={columns()}
+        key={(row) => row.email}
+        empty={<p class="text-gray-500">Aucun étudiant n'a encore commencé cette série.</p>}
+      />
+      <Show when={students().length > 0}>
+        <p class="mt-2 text-xs text-gray-500">
+          ✓ réussi, ✗ échoué, … commencé sans réponse complète. La dernière colonne compte les
+          exercices réussis parmi ceux auxquels l'étudiant a répondu.
+        </p>
+      </Show>
     </>
   )
 }
+
+const statusOrder = Object.keys(statuses) as Status[]
+
+const studentColumns: TableColumn<Student & { status: Status }>[] = [
+  { id: 'name', header: 'Nom', value: (row) => row.name, filter: 'text' },
+  {
+    id: 'email',
+    header: 'Adresse e-mail',
+    value: (row) => row.email,
+    filter: 'text',
+    class: 'text-gray-500',
+  },
+  {
+    id: 'status',
+    header: 'Statut',
+    value: (row) => statusOrder.indexOf(row.status),
+    format: (rank) => (typeof rank === 'number' ? statuses[statusOrder[rank]!].label : ''),
+    cell: (row) => (
+      <span class={['rounded-full px-2 py-0.5 text-xs', statuses[row.status].badge]}>
+        {statuses[row.status].label}
+      </span>
+    ),
+    filter: 'select',
+  },
+]
 
 function StatsContent(props: { watch: () => AsyncIterable<Stats> }) {
   const stats = createMemo(() => props.watch(), { name: 'exerciseStats' })
@@ -123,32 +216,7 @@ function StatsContent(props: { watch: () => AsyncIterable<Stats> }) {
       </ul>
       <details class="mt-4">
         <summary class="cursor-pointer text-sm text-gray-500">Afficher les détails</summary>
-        <table class="mt-2 w-full text-left text-sm">
-          <thead class="text-gray-500">
-            <tr>
-              <th class="py-1">Nom</th>
-              <th class="py-1">Adresse e-mail</th>
-              <th class="py-1">Statut</th>
-            </tr>
-          </thead>
-          <tbody>
-            <For each={students()} keyed={(student) => student.email}>
-              {(student) => (
-                <tr class="border-t border-gray-100">
-                  <td class="py-1">{student().name}</td>
-                  <td class="py-1 text-gray-500">{student().email}</td>
-                  <td class="py-1">
-                    <span
-                      class={['rounded-full px-2 py-0.5 text-xs', statuses[student().status].badge]}
-                    >
-                      {statuses[student().status].label}
-                    </span>
-                  </td>
-                </tr>
-              )}
-            </For>
-          </tbody>
-        </table>
+        <Table rows={students()} columns={studentColumns} key={(row) => row.email} class="mt-2" />
       </details>
     </Show>
   )

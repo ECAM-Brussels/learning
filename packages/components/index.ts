@@ -22,10 +22,12 @@ export * from './src/Latex'
 export * from './src/LearningSequence'
 export * from './src/Markdown'
 export * from './src/Meta'
+export * from './src/Modal'
 export * from './src/Page'
 export * from './src/Pagination'
 export * from './src/Scope'
 export * from './src/SymbolicRepresentation'
+export * from './src/Table'
 export * from './src/Youtube'
 
 export const MathField = clientOnly(() => import('./src/MathField'), { lazy: true })
