@@ -457,9 +457,9 @@ function View3D(props: {
       depthOrder={{ enabled: true }}
       az={{ slider: { start: props.camera?.az ?? 1 } }}
       el={{ slider: { start: props.camera?.el ?? 0.3 } }}
-      xAxis={{ name: 'x' }}
-      yAxis={{ name: 'y' }}
-      zAxis={{ name: 'z' }}
+      xAxis={{ name: '1' }}
+      yAxis={{ name: '2' }}
+      zAxis={{ name: '3' }}
       xPlaneRear={{ fillOpacity: 0.1 }}
       yPlaneRear={{ fillOpacity: 0.1 }}
       zPlaneRear={{ fillOpacity: 0.1 }}
