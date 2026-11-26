@@ -6,6 +6,7 @@ mock.module('./context.remote', () => ({
   default: {},
   fetchSequence: async () => null,
   getProgress: async () => null,
+  getStats: async () => [],
 }))
 mock.module('../permissions', () => ({ hasPermissions }))
 mock.module('@learning/components', async () => {

@@ -3,7 +3,7 @@ import type { JSX } from '@solidjs/web'
 import { describe, expect, mock, test } from 'bun:test'
 import { createMemo, useContext } from 'solid-js'
 
-await import('./test.mocks')
+const { hasPermissions } = await import('./test.mocks')
 
 globalThis.IntersectionObserver ??= class {
   observe() {}
@@ -464,5 +464,33 @@ describe('Sequence with generated pages: saved data', () => {
       </Sequence>
     ))
     await waitFor(() => expect(sums()[0]).toHaveTextContent('100 + 1 = ?'))
+  })
+})
+
+describe('Sequence progress of students', () => {
+  const link = { name: 'Montrer la progression des étudiants' }
+
+  test('is offered to those who can read exercises', async () => {
+    hasPermissions.mockImplementation(async () => true)
+    render(() => (
+      <Sequence id="stats">
+        <p>Exercice</p>
+      </Sequence>
+    ))
+    expect(await screen.findByRole('button', link)).toBeInTheDocument()
+    expect(hasPermissions).toHaveBeenCalledWith(['exercise:read'])
+  })
+
+  test('is hidden from the others', async () => {
+    hasPermissions.mockImplementation(async (permissions) => !permissions.includes('exercise:read'))
+    render(() => (
+      <Sequence id="no-stats">
+        <p>Exercice</p>
+      </Sequence>
+    ))
+    await screen.findByText('Exercice')
+    await waitFor(() => expect(hasPermissions).toHaveBeenCalledWith(['exercise:read']))
+    expect(screen.queryByRole('button', link)).toBeNull()
+    hasPermissions.mockImplementation(async () => true)
   })
 })
