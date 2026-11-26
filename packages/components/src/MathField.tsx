@@ -35,7 +35,7 @@ export function MathField(
         ref={mathfield}
         {...props}
         value={(props.value as string) ?? ''}
-        placeholder={`\\text{${props.placeholder ?? ''}`}
+        placeholder={`\\text{${props.placeholder ?? ''}}`}
         onKeyDown={(event) => {
           if (event.key.startsWith('Arrow')) {
             event.stopPropagation()

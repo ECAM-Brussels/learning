@@ -2,25 +2,8 @@ import { render, waitFor } from '@solidjs/testing-library'
 import type { JSX } from '@solidjs/web'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { createEffect, createMemo, createSignal, flush, Show } from 'solid-js'
+import { drag } from './jsxgraphStubs'
 
-// happy-dom lacks the SVG rendering methods JSXGraph calls.
-Object.assign(SVGElement.prototype, {
-  suspendRedraw: () => 0,
-  unsuspendRedraw: () => {},
-  unsuspendRedrawAll: () => {},
-  forceRedraw: () => {},
-  getBBox: () => ({ x: 0, y: 0, width: 0, height: 0 }),
-})
-// happy-dom does no layout, so boards would have no size, which breaks anything measured in pixels.
-// The board's container is the element with the rounded-xl class from Board.tsx.
-for (const key of ['clientWidth', 'clientHeight', 'offsetWidth', 'offsetHeight']) {
-  Object.defineProperty(HTMLElement.prototype, key, {
-    configurable: true,
-    get(this: HTMLElement) {
-      return this.classList.contains('rounded-xl') ? 500 : 0
-    },
-  })
-}
 const { Board, BoardDefaults } = await import('./Board')
 const { Boundary } = await import('./Boundary')
 
@@ -32,16 +15,6 @@ const xyz = (p: XYZ) => [p.X() + 0, p.Y() + 0, p.Z() + 0]
 // Not in JSXGraph's types for every element that has it.
 const value = (el: unknown) => (el as { Value(): number }).Value()
 const slope = (line: unknown) => (line as { getSlope(): number }).getSlope()
-
-/** Simulates what the board does on a pointer drag, which happy-dom cannot dispatch. */
-function drag(point: JXG.Point, to: [number, number]) {
-  point.setPosition(JXG.COORDS_BY_USER, to)
-  // The board updates the dragged element before firing `drag`, e.g. so that a glider knows its position.
-  point.update()
-  ;(
-    point as unknown as { triggerEventHandlers(e: string[], a: unknown[]): void }
-  ).triggerEventHandlers(['drag'], [{}])
-}
 
 async function renderBoard<T>(children: (ref: (el: T) => null) => JSX.Element) {
   let element: T | undefined
@@ -1135,5 +1108,33 @@ describe('Custom', () => {
     } finally {
       console.warn = warn
     }
+  })
+})
+
+describe('elements built on a point', () => {
+  const named = (name: string) =>
+    (
+      Object.values(JXG.boards as Record<string, JXG.Board>).at(-1)!
+        .objectsList as JXG.GeometryElement[]
+    ).find((el) => el.name === name) as JXG.Point
+
+  test.each<[string, (P: JXG.Point) => JSX.Element]>([
+    ['Arrow', (P) => <Board.Arrow from={[0, 0]} to={P} />],
+    ['Circle', (P) => <Board.Circle center={P} radius={1} />],
+    ['Line', (P) => <Board.Line points={[[0, 0], P]} />],
+    ['Polygon', (P) => <Board.Polygon points={[[0, 0], [1, 0], P]} />],
+    ['Segment', (P) => <Board.Segment from={[0, 0]} to={P} />],
+  ])('%s leaves the point where it is, and follows it', async (_, element) => {
+    render(() => (
+      <Board boundingBox={[-10, 10, 10, -10]}>
+        <Board.Point name="Z" position={[2, 1]}>
+          {element}
+        </Board.Point>
+      </Board>
+    ))
+    await waitFor(() => expect(named('Z')).toBeDefined())
+    expect(xy(named('Z'))).toEqual([2, 1])
+    drag(named('Z'), [3, -2])
+    expect(xy(named('Z'))).toEqual([3, -2])
   })
 })
