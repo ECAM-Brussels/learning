@@ -13,6 +13,7 @@ export function Latex(props: {
     return katex.renderToString(props.value, {
       displayMode: props.displayMode,
       strict: false,
+      throwOnError: false,
       output: 'html',
       macros: {
         '\\placeholder': '',

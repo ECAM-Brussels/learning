@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { takeSymapiRequests } from '../symapi.replay'
 import { decrypt } from './crypto'
-import { expr } from './expr'
+import { expr, quantity, vector } from './expr'
 
 type Test<T = any> = {
   desc: string
@@ -13,6 +13,8 @@ type Test<T = any> = {
 function define<T extends Test>(test: T) {
   return test
 }
+
+const components = (u: ReturnType<typeof vector>) => u.components.map((c) => c.N())
 
 describe('expression', () => {
   test.each<Test>([
@@ -1006,75 +1008,63 @@ describe('quantity', () => {
       result: 10,
     }),
     define({
-      desc: 'convert: incompatible units throw',
-      promise: () => {
-        try {
-          expr(1, 'kg').convert('m')
-          return false
-        } catch {
-          return true
-        }
-      },
-      result: true,
-    }),
-    define({
       desc: 'isEqual with error: 0.995kg equals 1kg ± 0.01kg',
-      promise: () => expr(0.995, 'kg').isEqual([1, 'kg'], 0.01),
+      promise: () => expr(0.995, 'kg').isEqual([1, 'kg'], { tolerance: 0.01 }),
       result: true,
     }),
     define({
       desc: 'isEqual with error: 1.005kg equals 1kg ± 0.01kg',
-      promise: () => expr(1.005, 'kg').isEqual([1, 'kg'], 0.01),
+      promise: () => expr(1.005, 'kg').isEqual([1, 'kg'], { tolerance: 0.01 }),
       result: true,
     }),
     define({
       desc: 'isEqual with error: 1.02kg does not equal 1kg ± 0.01kg',
-      promise: () => expr(1.02, 'kg').isEqual([1, 'kg'], 0.01),
+      promise: () => expr(1.02, 'kg').isEqual([1, 'kg'], { tolerance: 0.01 }),
       result: false,
     }),
     define({
       desc: 'isEqual with error: 101400 Pa equals 101325 Pa ± 100 Pa',
-      promise: () => expr(101400, 'Pa').isEqual([101325, 'Pa'], 100),
+      promise: () => expr(101400, 'Pa').isEqual([101325, 'Pa'], { tolerance: 100 }),
       result: true,
     }),
     define({
       desc: 'isEqual with error: 101600 Pa does not equal 101325 Pa ± 100 Pa',
-      promise: () => expr(101600, 'Pa').isEqual([101325, 'Pa'], 100),
+      promise: () => expr(101600, 'Pa').isEqual([101325, 'Pa'], { tolerance: 100 }),
       result: false,
     }),
     define({
       desc: 'isEqual with error: 1050g equals 1kg ± 100g',
-      promise: () => expr(1050, 'g').isEqual([1, 'kg'], 0.1),
+      promise: () => expr(1050, 'g').isEqual([1, 'kg'], { tolerance: 0.1 }),
       result: true,
     }),
     define({
       desc: 'isEqual with error: 1200g does not equal 1kg ± 100g',
-      promise: () => expr(1200, 'g').isEqual([1, 'kg'], 0.1),
+      promise: () => expr(1200, 'g').isEqual([1, 'kg'], { tolerance: 0.1 }),
       result: false,
     }),
     define({
       desc: 'isEqual with error: 9.6 m/s² does not equal 9.8 m/s² ± 0.1 m/s²',
-      promise: () => expr(9.6, 'm/s^2').isEqual([9.8, 'm/s^2'], 0.1),
+      promise: () => expr(9.6, 'm/s^2').isEqual([9.8, 'm/s^2'], { tolerance: 0.1 }),
       result: false,
     }),
     define({
       desc: 'isEqual with error: 9.75 m/s² equals 9.8 m/s² ± 0.1 m/s²',
-      promise: () => expr(9.75, 'm/s^2').isEqual([9.8, 'm/s^2'], 0.1),
+      promise: () => expr(9.75, 'm/s^2').isEqual([9.8, 'm/s^2'], { tolerance: 0.1 }),
       result: true,
     }),
     define({
       desc: 'isEqual with error: 9.85 m/s² equals 9.8 m/s² ± 0.1 m/s²',
-      promise: () => expr(9.85, 'm/s^2').isEqual([9.8, 'm/s^2'], 0.1),
+      promise: () => expr(9.85, 'm/s^2').isEqual([9.8, 'm/s^2'], { tolerance: 0.1 }),
       result: true,
     }),
     define({
       desc: 'isEqual: incompatible units are not equal',
-      promise: () => expr(1, 'kg').isEqual([1, 'm'], 0.1),
+      promise: () => expr(1, 'kg').isEqual([1, 'm'], { tolerance: 0.1 }),
       result: false,
     }),
     define({
       desc: 'isEqual: without error, 1000 g equals 1 kg',
-      promise: () => expr(1000, 'g').isEqual(1, 'kg'),
+      promise: () => expr(1000, 'g').isEqual([1, 'kg']),
       result: true,
     }),
     define({
@@ -1107,12 +1097,12 @@ describe('quantity', () => {
     }),
     define({
       desc: 'subtract: 1 kg - 200 g = 0.8 kg',
-      promise: () => expr(1, 'kg').subtract(200, 'g').convert('kg').magnitude.N(),
+      promise: () => expr(1, 'kg').subtract([200, 'g']).convert('kg').magnitude.N(),
       result: 0.8,
     }),
     define({
       desc: 'subtract: negative result',
-      promise: () => expr(1, 'kg').subtract(3, 'kg').magnitude.N(),
+      promise: () => expr(1, 'kg').subtract([3, 'kg']).magnitude.N(),
       result: -2,
     }),
     define({
@@ -1125,12 +1115,207 @@ describe('quantity', () => {
       promise: () => expr(9.8, 'm/s^2').unit,
       result: ['Divide', 'm', ['Power', 's', 2]],
     }),
+    define({
+      desc: 'unit: newtons are a unit on their own',
+      promise: () => expr(1, 'N').convert('kg*m/s^2').magnitude.N(),
+      result: 1,
+    }),
+    define({
+      desc: 'input: a Quantity head with magnitude and unit',
+      promise: () => quantity('Quantity', 3, 'm').json,
+      result: ['Quantity', '3', 'm'],
+    }),
+    define({
+      desc: 'input: an object with magnitude and unit',
+      promise: () => quantity({ magnitude: '\\frac{1}{2}', unit: 'm' }).json,
+      result: ['Quantity', ['Divide', 1, 2], 'm'],
+    }),
+    define({
+      desc: 'input: an expression as magnitude',
+      promise: () => quantity({ magnitude: expr('x^2'), unit: 'm' }).json,
+      result: ['Quantity', ['Power', 'x', 2], 'm'],
+    }),
+    define({
+      desc: 'input: a LaTeX magnitude',
+      promise: () => expr('\\frac{1}{2}', 'km/h').latex(),
+      result: '\\frac{1}{2}\\,\\mathrm{km/h}',
+    }),
+    define({
+      desc: 'input: a MathJSON magnitude is kept as is',
+      promise: () => expr(['Rational', 1, 2], 'm').json,
+      result: ['Quantity', ['Rational', 1, 2], 'm'],
+    }),
+    define({
+      desc: 'input: expression.unit accepts LaTeX units',
+      promise: () => expr(3).unit('\\mathrm{km}').json,
+      result: ['Quantity', '3', 'km'],
+    }),
+    define({
+      desc: 'convert: accepts a LaTeX unit',
+      promise: () => expr(1, 'km').convert('\\mathrm{m}').magnitude.N(),
+      result: 1000,
+    }),
+    define({
+      desc: 'convert: returns a quantity in the target unit',
+      promise: () => expr(1, 'km').convert('m').json,
+      result: ['Quantity', '1000', 'm'],
+    }),
+    define({
+      desc: 'convert: 1 L = 1000 mL',
+      promise: () => expr(1, 'L').convert('mL').magnitude.N(6),
+      result: 1000,
+    }),
+    define({
+      desc: 'convert: 0 °C = 273.15 K (affine units)',
+      promise: () => expr(0, 'degC').convert('K').magnitude.N(),
+      result: 273.15,
+    }),
+    define({
+      desc: 'isEqual: without error, 36 km/h equals 10 m/s',
+      promise: () => expr(36, 'km/h').isEqual([10, 'm/s']),
+      result: true,
+    }),
+    define({
+      desc: 'isEqual: without error, 1/3 h equals 20 min',
+      promise: () => expr('\\frac{1}{3}', 'h').isEqual([20, 'min']),
+      result: true,
+    }),
+    define({
+      desc: 'isEqual: without error, 0.1 + 0.2 m equals 0.3 m',
+      promise: () => expr('0.1 + 0.2', 'm').isEqual([0.3, 'm']),
+      result: true,
+    }),
+    define({
+      desc: 'isEqual: without error, 1 kg does not equal 1 g',
+      promise: () => expr(1, 'kg').isEqual([1, 'g']),
+      result: false,
+    }),
+    define({
+      desc: 'isEqual: with error, 1/3 m equals 0.333 m ± 0.001 m',
+      promise: () => expr('\\frac{1}{3}', 'm').isEqual([0.333, 'm'], { tolerance: 0.001 }),
+      result: true,
+    }),
+    define({
+      desc: 'isEqual: accepts a Quantity head',
+      promise: () => expr(1000, 'g').isEqual(['Quantity', 1, 'kg']),
+      result: true,
+    }),
+    define({
+      desc: 'isEqual: accepts an object with magnitude and unit',
+      promise: () => expr(1000, 'g').isEqual({ magnitude: 1, unit: 'kg' }),
+      result: true,
+    }),
+    define({
+      desc: 'isEqual: undecided for symbolic magnitudes',
+      promise: () => expr('x', 'kg').isEqual(['y', 'kg']),
+      result: undefined,
+    }),
+    define({
+      desc: 'isEqual: accepts another quantity',
+      promise: () => expr(1000, 'g').isEqual(expr(1, 'kg')),
+      result: true,
+    }),
+    define({
+      desc: 'isEqual: a tolerance with a unit, 1050 g equals 1 kg ± 100 g',
+      promise: () => expr(1050, 'g').isEqual([1, 'kg'], { tolerance: [100, 'g'] }),
+      result: true,
+    }),
+    define({
+      desc: 'isEqual: a tolerance with a unit, 1200 g does not equal 1 kg ± 100 g',
+      promise: () => expr(1200, 'g').isEqual([1, 'kg'], { tolerance: [100, 'g'] }),
+      result: false,
+    }),
+    define({
+      desc: 'subtract: accepts another quantity',
+      promise: () => expr(1, 'kg').subtract(expr(200, 'g')).json,
+      result: ['Quantity', '0.8', 'kg'],
+    }),
+    define({
+      desc: 'latex: negative magnitude',
+      promise: () => expr(-3, 'm').latex(),
+      result: '-3\\,\\mathrm{m}',
+    }),
+    define({
+      desc: 'magnitude: is an expression',
+      promise: () => expr('\\frac{1}{2}', 'm').magnitude.latex(),
+      result: '\\frac{1}{2}',
+    }),
+    define({
+      desc: 'N: keeps the unit',
+      promise: () => {
+        const q = expr('\\pi', 'm').N(2)
+        return [q.json, q.latex()]
+      },
+      result: [['Quantity', '3.14', 'm'], '3.14\\,\\mathrm{m}'],
+    }),
+    define({
+      desc: 'rawInput: from expression.unit',
+      promise: () => expr(3).unit('m').rawInput,
+      result: [{ json: 3 }, 'm'],
+    }),
+    define({
+      desc: 'subtract: accepts a Quantity head',
+      promise: () => expr(1, 'kg').subtract(['Quantity', 200, 'g']).json,
+      result: ['Quantity', '0.8', 'kg'],
+    }),
+    define({
+      desc: 'subtract: equal quantities give 0',
+      promise: () => expr(1, 'kg').subtract([1000, 'g']).json,
+      result: ['Quantity', '0', 'kg'],
+    }),
   ])('$desc', async ({ promise, result }) => {
     expect(await promise()).toEqual(result)
   })
 
-  test('throws on invalid input', () => {
-    expect(() => expr({} as any, 'm')).toThrow()
+  test('isEqual: a tolerance in an incompatible unit is an error', async () => {
+    await expect(expr(1, 'kg').isEqual([1, 'kg'], { tolerance: [1, 'm'] })).rejects.toThrow(
+      'is not in a unit compatible with',
+    )
+  })
+
+  test.each<{ desc: string; f: () => unknown; error: string | RegExp }>([
+    {
+      desc: 'invalid input is reported with the input',
+      f: () => expr({} as any, 'm'),
+      error: `La quantité [{},"m"] n'a pas pu être parsée`,
+    },
+    {
+      desc: 'compound units with newtons are rejected rather than garbled',
+      f: () => expr(1, 'N*m'),
+      error: `n'a pas pu être parsée`,
+    },
+    {
+      desc: 'unknown units are rejected',
+      f: () => expr(1, 'foo'),
+      error: `n'a pas pu être parsée`,
+    },
+    {
+      desc: 'a misspelt type is an unknown unit, not a quantity',
+      f: () => expr([1, 2] as any, 'vecotr'),
+      error: `n'a pas pu être parsée`,
+    },
+    {
+      desc: 'convert: an unknown target unit is rejected',
+      f: () => expr(1, 'm').convert('foo'),
+      error: 'Unknown unit: "foo"',
+    },
+    {
+      desc: 'convert: a garbled target unit is rejected',
+      f: () => expr(1, 'J').convert('N*m'),
+      error: 'Invalid unit',
+    },
+    {
+      desc: 'convert: incompatible units name the operation',
+      f: () => expr(1, 'kg').convert('m'),
+      error: /^Expected a Quantity as result of applying UnitConvert/,
+    },
+    {
+      desc: 'subtract: incompatible units name the operation',
+      f: () => expr(1, 'kg').subtract([1, 'm']),
+      error: /^Expected a Quantity as result of applying Subtract/,
+    },
+  ])('throws: $desc', ({ f, error }) => {
+    expect(f).toThrow(error)
   })
 })
 
@@ -1174,6 +1359,80 @@ describe('vector', () => {
       result: true,
     }),
     define({
+      desc: 'cross: numeric results are folded',
+      promise: () => expr([1, 0, 0], 'vector').cross([0, 1, 0]).latex(),
+      result: '\\begin{bmatrix}0\\\\0\\\\1\\end{bmatrix}',
+    }),
+    define({
+      desc: 'cross: accepts another vector',
+      promise: () => components(expr([1, 0, 0], 'vector').cross(expr([0, 1, 0], 'vector'))),
+      result: [0, 0, 1],
+    }),
+    define({
+      desc: 'components: are expressions',
+      promise: () => expr(['\\frac{1}{2}', 'x'], 'vector').components.map((c) => c.json),
+      result: [['Divide', 1, 2], 'x'],
+    }),
+    define({
+      desc: 'json: a list of the components',
+      promise: () => expr([1, 'x'], 'vector').json,
+      result: ['List', 1, 'x'],
+    }),
+    define({
+      desc: 'toJSON / rawInput: keep the original input',
+      promise: () => {
+        const u = expr([1, 'x^2'], 'vector')
+        return [JSON.parse(JSON.stringify(u)), u.rawInput]
+      },
+      result: [
+        [1, 'x^2'],
+        [1, 'x^2'],
+      ],
+    }),
+    define({
+      desc: 'add: (1, 2) + (3, 4) = (4, 6)',
+      promise: () => components(expr([1, 2], 'vector').add([3, 4])),
+      result: [4, 6],
+    }),
+    define({
+      desc: 'add: accepts another vector',
+      promise: () => components(expr([1, 2], 'vector').add(expr([3, 4], 'vector'))),
+      result: [4, 6],
+    }),
+    define({
+      desc: 'subtract: (1, 2) - (3, 5) = (-2, -3)',
+      promise: () => components(expr([1, 2], 'vector').subtract([3, 5])),
+      result: [-2, -3],
+    }),
+    define({
+      desc: 'subtract: symbolic components are left as written',
+      promise: () => expr(['2x', 'y'], 'vector').subtract(['x', 'y']).latex(),
+      result: '\\begin{bmatrix}2x-x\\\\y-y\\end{bmatrix}',
+    }),
+    define({
+      desc: 'scale: 3 (1, -2) = (3, -6)',
+      promise: () => components(expr([1, -2], 'vector').scale(3)),
+      result: [3, -6],
+    }),
+    define({
+      desc: 'scale: by a LaTeX factor',
+      promise: () => components(expr([2, 4], 'vector').scale('\\frac{1}{2}')),
+      result: [1, 2],
+    }),
+    define({
+      desc: 'dot: accepts another vector',
+      promise: () =>
+        expr([1, 2], 'vector')
+          .dot(expr([3, 4], 'vector'))
+          .N(),
+      result: 11,
+    }),
+    define({
+      desc: 'isEqual: accepts another vector',
+      promise: () => expr([1, 2], 'vector').isEqual(expr([1, 3], 'vector')),
+      result: false,
+    }),
+    define({
       desc: 'dot: (1, 2, 3) . (4, 5, 6) = 32',
       promise: () => expr([1, 2, 3], 'vector').dot([4, 5, 6]).N(),
       result: 32,
@@ -1208,16 +1467,106 @@ describe('vector', () => {
       promise: () => expr(['x + x', '2 - 1'], 'vector').simplify().isEqual(['2x', 1]),
       result: true,
     }),
+    define({
+      desc: 'cross: (1, 2, 3) × (4, 5, 6) = (-3, 6, -3)',
+      promise: () => components(expr([1, 2, 3], 'vector').cross([4, 5, 6])),
+      result: [-3, 6, -3],
+    }),
+    define({
+      desc: 'cross: is anticommutative',
+      promise: () => components(expr([4, 5, 6], 'vector').cross([1, 2, 3])),
+      result: [3, -6, 3],
+    }),
+    define({
+      desc: 'cross: u × u = 0',
+      promise: () => components(expr([1, 2, 3], 'vector').cross([1, 2, 3])),
+      result: [0, 0, 0],
+    }),
+    define({
+      desc: 'cross: is orthogonal to both factors',
+      promise: () => {
+        const n = expr([1, 2, 3], 'vector').cross([4, 5, 6])
+        return [n.dot([1, 2, 3]).N(), n.dot([4, 5, 6]).N()]
+      },
+      result: [0, 0],
+    }),
+    define({
+      desc: 'cross: with symbolic components',
+      promise: () => expr(['a', 'b', 'c'], 'vector').cross(['p', 'q', 'r']).latex(),
+      result: '\\begin{bmatrix}br-cq\\\\cp-ar\\\\aq-bp\\end{bmatrix}',
+    }),
+    define({
+      desc: 'dot: with symbolic components',
+      promise: () => expr(['x', 'y'], 'vector').dot(['y', 'x']).latex(),
+      result: 'xy+xy',
+    }),
+    define({
+      desc: 'dot: with LaTeX components',
+      promise: () => expr(['\\frac{1}{2}', '\\sqrt{2}'], 'vector').dot([2, '\\sqrt{2}']).N(),
+      result: 3,
+    }),
+    define({
+      desc: 'isEqual: compares components symbolically',
+      promise: () => expr(['2x', 'x^2'], 'vector').isEqual(['x + x', 'x \\cdot x']),
+      result: true,
+    }),
+    define({
+      desc: 'latex: LaTeX and MathJSON components',
+      promise: () => expr(['\\frac{1}{2}', ['Power', 'x', 2]], 'vector').latex(),
+      result: '\\begin{bmatrix}\\frac{1}{2}\\\\x^2\\end{bmatrix}',
+    }),
+    define({
+      desc: 'latex: carries out instructions in components',
+      promise: () => expr(['x + x', 1], 'vector').simplify().latex(),
+      result: '\\begin{bmatrix}2 x\\\\1\\end{bmatrix}',
+    }),
+    define({
+      desc: 'norm: with symbolic components',
+      promise: () => expr(['x', 'y'], 'vector').norm().latex(),
+      result: '\\sqrt{x^2+y^2}',
+    }),
+    define({
+      desc: 'norm: |(1, 2, 2)| = 3',
+      promise: () => expr([1, 2, 2], 'vector').norm().N(),
+      result: 3,
+    }),
   ])('$desc', async ({ promise, result }) => {
     expect(await promise()).toEqual(result)
   })
 
-  test('cross: throws on non-3D vectors', () => {
-    expect(() => expr([1, 2], 'vector').cross([3, 4])).toThrow()
-  })
-
-  test('dot: throws on different dimensions', () => {
-    expect(() => expr([1, 2], 'vector').dot([1, 2, 3])).toThrow()
+  test.each<{ desc: string; f: () => unknown; error: string | RegExp }>([
+    {
+      desc: 'cross: non-3D vectors',
+      f: () => expr([1, 2], 'vector').cross([3, 4]),
+      error: 'only defined for 3-dimensional vectors',
+    },
+    {
+      desc: 'cross: a 3D vector with a 2D one',
+      f: () => expr([1, 2, 3], 'vector').cross([3, 4]),
+      error: 'only defined for 3-dimensional vectors',
+    },
+    {
+      desc: 'dot: different dimensions',
+      f: () => expr([1, 2], 'vector').dot([1, 2, 3]),
+      error: 'dot product of vectors of different dimensions',
+    },
+    {
+      desc: 'add: different dimensions',
+      f: () => expr([1, 2], 'vector').add([1, 2, 3]),
+      error: 'sum of vectors of different dimensions',
+    },
+    {
+      desc: 'subtract: different dimensions',
+      f: () => expr([1, 2], 'vector').subtract([1]),
+      error: 'difference of vectors of different dimensions',
+    },
+    {
+      desc: 'unparsable LaTeX component',
+      f: () => expr(['\\frac{1}'], 'vector'),
+      error: /Invalid LaTeX/,
+    },
+  ])('throws: $desc', ({ f, error }) => {
+    expect(f).toThrow(error)
   })
 })
 
@@ -1377,7 +1726,7 @@ describe('requests to SymAPI', () => {
     },
     {
       desc: 'quantity isEqual is decided by Compute Engine',
-      promise: () => expr(1000, 'g').isEqual(1, 'kg'),
+      promise: () => expr(1000, 'g').isEqual([1, 'kg']),
       requests: [],
     },
     {

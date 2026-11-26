@@ -4,6 +4,7 @@ import {
   createContext,
   createEffect,
   createSignal,
+  Loading,
   Repeat,
   Show,
   useContext,
@@ -83,37 +84,34 @@ export function Steps(props: { children: JSX.Element[] }) {
   )
 }
 
-export function CheckPoint(
-  props:
-    | {
-        passed?: boolean | (() => boolean | Promise<boolean>)
-      }
-    | {
-        children?: ((advance: () => void) => JSX.Element) | JSX.Element
-      },
-) {
+export function CheckPoint(props: {
+  /** Moves on by itself once true; without it, a button lets the reader move on. */
+  passed?: boolean | (() => boolean | Promise<boolean>)
+  /** Shown once passed; a function renders its own way to move on instead. */
+  children?: ((advance: () => void) => JSX.Element) | JSX.Element
+}) {
   const ctx = useContext(ProgressContext)
   const [passed, setPassed] = createSignal(async () => {
-    if (!('passed' in props)) return false
     if (typeof props.passed === 'function') return props.passed()
     return props.passed ?? false
   })
   createEffect(passed, (passed, prev) => {
     if (passed && !prev) document.startViewTransition(() => ctx?.setStep(ctx.step() + 1))
   })
-  return 'children' in props && props.children ? (
-    typeof props.children === 'function' ? (
-      props.children?.(() => setPassed(true))
-    ) : (
-      <Show when={passed()}>{props.children}</Show>
-    )
-  ) : (
-    <button
-      class="mx-auto mt-4 block rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
-      onClick={() => setPassed(true)}
-      disabled={passed()}
-    >
-      Continuer à lire ↓
-    </button>
+  if (typeof props.children === 'function') return props.children(() => setPassed(true))
+  // Its own boundary: while the condition is pending, the parts before it stay on screen.
+  return (
+    <Loading>
+      <Show when={props.passed === undefined}>
+        <button
+          class="mx-auto mt-4 block rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+          onClick={() => setPassed(true)}
+          disabled={passed()}
+        >
+          Continuer à lire ↓
+        </button>
+      </Show>
+      <Show when={passed()}>{props.children as JSX.Element}</Show>
+    </Loading>
   )
 }

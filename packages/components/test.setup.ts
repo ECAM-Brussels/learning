@@ -24,6 +24,13 @@ for (const prototype of [Node.prototype, Element.prototype]) {
   })
 }
 
+// happy-dom has no view transitions: run the update straight away, as browsers without them do.
+document.startViewTransition ??= ((update?: () => void) => {
+  update?.()
+  const done = Promise.resolve()
+  return { finished: done, ready: done, updateCallbackDone: done, skipTransition() {} }
+}) as unknown as Document['startViewTransition']
+
 /**
  * Compile Solid JSX with Solid's own compiler (Bun's built-in JSX transform is React-style).
  * Run tests with `--conditions=browser` so `solid-js`/`@solidjs/web` resolve to their client builds.

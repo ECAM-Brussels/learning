@@ -98,6 +98,14 @@ type Domain2D = [[number, number], [number, number]]
 /** Tracks the items of an array prop; other values (absent props, JSXGraph elements) are tracked as a whole. */
 const deepArray = <T,>(value: T): T => (Array.isArray(value) ? deep(value) : value)
 
+/**
+ * A parent given as a point is the element's own defining point, already where it should be:
+ * moving it to itself would set its coordinates to NaN. Only coordinates are moved to.
+ */
+function moveTo(point: JXG.CoordsElement, where: unknown) {
+  if (Array.isArray(where)) point.moveTo(where)
+}
+
 /** Redraws after a change that JSXGraph picks up through the functions it was given. */
 const refresh = (el: { board: JXG.Board }) => {
   el.board.update()
@@ -256,9 +264,9 @@ export const Board = Object.assign(
             createEffect(
               () => deepArray(props.points),
               ([p1, p2, p3]) => {
-                angle.radiuspoint.moveTo(p1)
-                angle.center.moveTo(p2)
-                angle.anglepoint.moveTo(p3)
+                moveTo(angle.radiuspoint, p1)
+                moveTo(angle.center, p2)
+                moveTo(angle.anglepoint, p3)
               },
             )
             return props.children?.(angle)
@@ -284,9 +292,9 @@ export const Board = Object.assign(
             createEffect(
               () => deepArray(props.points),
               ([center, radius, angle]) => {
-                arc.center.moveTo(center)
-                arc.radiuspoint.moveTo(radius)
-                arc.anglepoint.moveTo(angle)
+                moveTo(arc.center, center)
+                moveTo(arc.radiuspoint, radius)
+                moveTo(arc.anglepoint, angle)
               },
             )
             return props.children?.(arc)
@@ -308,8 +316,8 @@ export const Board = Object.assign(
             createEffect(
               () => [props.from, props.to] as const,
               ([from, to]) => {
-                arrow.point1.moveTo(from)
-                arrow.point2.moveTo(to)
+                moveTo(arrow.point1, from)
+                moveTo(arrow.point2, to)
               },
             )
             return props.children?.(arrow)
@@ -331,8 +339,8 @@ export const Board = Object.assign(
             createEffect(
               () => [props.from, props.to] as const,
               ([from, to]) => {
-                axis.point1.moveTo(from)
-                axis.point2.moveTo(to)
+                moveTo(axis.point1, from)
+                moveTo(axis.point2, to)
               },
             )
             return props.children?.(axis)
@@ -363,7 +371,7 @@ export const Board = Object.assign(
             createEffect(
               () => [props.center, props.radius, props.through] as const,
               ([center, radius]) => {
-                circle.center.moveTo(center)
+                moveTo(circle.center, center)
                 if (radius) {
                   circle.setRadius(radius)
                 }
@@ -453,8 +461,8 @@ export const Board = Object.assign(
             createEffect(
               () => props.points,
               ([p1, p2]) => {
-                line.point1.moveTo(p1)
-                line.point2.moveTo(p2)
+                moveTo(line.point1, p1)
+                moveTo(line.point2, p2)
               },
             )
             return props.children?.(line)
@@ -539,7 +547,7 @@ export const Board = Object.assign(
               () => props.points,
               (points) => {
                 for (let i = 0; i < Math.min(points.length, polygon.vertices.length); i++) {
-                  polygon.vertices[i]!.moveTo(points[i]!)
+                  moveTo(polygon.vertices[i]!, points[i]!)
                 }
               },
             )
@@ -602,9 +610,9 @@ export const Board = Object.assign(
             createEffect(
               () => deepArray(props.points),
               ([center, radius, angle]) => {
-                sector.center.moveTo(center)
-                sector.radiuspoint.moveTo(radius)
-                sector.anglepoint.moveTo(angle)
+                moveTo(sector.center, center)
+                moveTo(sector.radiuspoint, radius)
+                moveTo(sector.anglepoint, angle)
               },
             )
             return props.children?.(sector)
@@ -626,8 +634,8 @@ export const Board = Object.assign(
             createEffect(
               () => [props.from, props.to] as const,
               ([from, to]) => {
-                segment.point1.moveTo(from)
-                segment.point2.moveTo(to)
+                moveTo(segment.point1, from)
+                moveTo(segment.point2, to)
               },
             )
             return props.children?.(segment)
@@ -664,8 +672,8 @@ export const Board = Object.assign(
                   props.value,
                 ] as const,
               ([from, to, min, max, value]) => {
-                slider.point1.moveTo(from)
-                slider.point2.moveTo(to)
+                moveTo(slider.point1, from)
+                moveTo(slider.point2, to)
                 slider.setMin(min).setMax(max)
                 // Setting the value it already has would undo the snapping of a drag.
                 if (slider.Value() !== value) slider.setValue(value)
