@@ -15,6 +15,10 @@ export const StepContext = createContext<Accessor<StepContext & { claim?: () => 
   null,
 )
 
+export type ExerciseStats = {
+  students: { email: string; name: string; correct: boolean | null; submitted: boolean }[]
+}
+
 export type ExerciseContext = {
   fetchSequence: CachedFunction<
     (
@@ -33,4 +37,5 @@ export type ExerciseContext = {
   ) => Promise<
     { email: string; name: string; progress: { i: number; correct: boolean | null }[] }[]
   >
+  watchStats?: (ctx: Omit<StepContext, 'position'>) => AsyncIterable<ExerciseStats>
 }
