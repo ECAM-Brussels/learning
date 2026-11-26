@@ -192,7 +192,6 @@
         "@solidjs/web": "catalog:",
         "satteri": "^0.9.5",
         "solid-js": "catalog:",
-        "yaml": "^2.9.1",
       },
       "devDependencies": {
         "@types/bun": "latest",

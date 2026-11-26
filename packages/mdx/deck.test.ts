@@ -17,7 +17,11 @@ const Deck = Object.assign(named('Deck'), {
   Columns: named('Deck.Columns'),
   Alert: named('Deck.Alert'),
 })
-const components = { Deck, Latex: named('Latex'), Highlight: named('Highlight') }
+const components = {
+  Deck,
+  Latex: named('Latex'),
+  Highlight: named('Highlight'),
+}
 
 /** The tree MDX renders, with components by name and props such as `title` rendered too. */
 function render(node: unknown): unknown {
@@ -45,11 +49,11 @@ function compile(source: string) {
   return { exports, tree: render(exports.default({})) as Tree }
 }
 
-const deck = (body: string) => compile(`---\ndeck: true\n---\n\n${body}`).tree
+const deck = (body: string) => compile(`:::::deck\n\n${body}\n\n:::::`).tree
 const slides = (body: string) => {
   const tree = deck(body)
   expect(tree.type).toBe('Deck')
-  return ([] as Tree[]).concat(tree.children as Tree[]).slice(1)
+  return ([] as Tree[]).concat(tree.children as Tree[])
 }
 const children = (node: Tree) => ([] as Tree[]).concat((node.children as Tree[] | undefined) ?? [])
 const fragment = (...children: unknown[]) => ({
@@ -57,45 +61,55 @@ const fragment = (...children: unknown[]) => ({
   children: children.length === 1 ? children[0] : children,
 })
 
-describe('the deck frontmatter', () => {
-  test('leaves a page without frontmatter as it is', () => {
-    const { tree } = compile('# Titre\n\nTexte')
-    expect(JSON.stringify(tree)).not.toContain('Deck')
-    expect(children(tree)).toContainEqual({ type: 'h1', children: 'Titre' })
+describe('the deck directive', () => {
+  test('sits in the page like any block, without a title slide', () => {
+    const { tree } = compile('Avant\n\n:::::deck\n\n## Un\n\n:::::\n\nAprès')
+    expect(children(tree) as unknown[]).toEqual([
+      { type: 'p', children: 'Avant' },
+      '\n',
+      { type: 'Deck', children: { type: 'Deck.Slide', title: fragment('Un') } },
+      '\n',
+      { type: 'p', children: 'Après' },
+    ])
   })
 
-  test('leaves a page as it is when deck is false', () => {
-    expect(compile('---\ndeck: false\n---\n\n# Titre').tree).toMatchObject({ type: 'h1' })
+  test('opens on a title slide when its brackets give one', () => {
+    const tree = compile(
+      ':::::deck[title="Les dérivées" subtitle="Analyse 1"]\n\n## Un\n\n:::::',
+    ).tree
+    expect(children(tree)).toEqual([
+      { type: 'Deck.Title', title: 'Les dérivées', subtitle: 'Analyse 1' },
+      { type: 'Deck.Slide', title: fragment('Un') },
+    ])
   })
 
-  test('makes a page a whole-page deck that opens on its title slide', () => {
-    const tree = deck('Texte')
-    expect(tree).toMatchObject({ type: 'Deck', page: true })
-    expect(children(tree)[0]).toEqual({ type: 'Deck.Title' })
-  })
-
-  test('refuses anything else in the frontmatter', () => {
-    expect(() => compile('---\ndeck: true\ntitle: Dérivées\n---\n\nTexte')).toThrow(
-      /Unexpected frontmatter `title`.*defineMeta/,
+  test("refuses what is not one of the title slide's fields", () => {
+    expect(() => compile(':::::deck[title="Rappels" autor="Moi"]\n\n:::::')).toThrow(
+      'Unexpected `autor="Moi"` in the deck\'s brackets',
     )
+    expect(() => compile(':::::deck[Rappels]\n\n:::::')).toThrow('Unexpected `Rappels`')
   })
 
-  test('refuses a deck that is not true or false', () => {
-    expect(() => compile('---\ndeck: yes please\n---\n\nTexte')).toThrow(
-      '`deck` should be `true` or `false`',
-    )
+  test('refuses attributes in braces', () => {
+    expect(() => compile(':::::deck{title="Rappels"}\n\n## Un\n\n:::::')).toThrow('in brackets')
   })
 
-  test('keeps exports outside the deck, for the slides to use', () => {
+  test("can use the page's exports", () => {
     const { exports, tree } = compile(
-      '---\ndeck: true\n---\n\nexport const answer = 42\n\n## Réponse\n\n{answer}',
+      'export const answer = 42\n\n:::::deck\n\n## Réponse\n\n{answer}\n\n:::::',
     )
     expect(exports.answer).toBe(42)
-    expect(children(tree)[1]).toMatchObject({ type: 'Deck.Slide', children: 42 })
+    expect(tree).toMatchObject({ type: 'Deck', children: { type: 'Deck.Slide', children: 42 } })
   })
 })
 
 describe('slides', () => {
+  test('deeper headings stay in their slide', () => {
+    expect(slides('## Un\n\n### Détail')[0]).toMatchObject({
+      children: { type: 'h3', children: 'Détail' },
+    })
+  })
+
   test('a level 1 heading opens a section, a level 2 heading a slide', () => {
     expect(slides('# Définition\n\n## Taux\n\nTexte')).toEqual([
       {
@@ -182,12 +196,6 @@ describe('slides', () => {
         children: { type: 'p', children: ['La ', { type: 'Deck.Alert', children: 'clé' }] },
       },
     ])
-  })
-
-  test('deeper headings stay in their slide', () => {
-    expect(slides('## Un\n\n### Détail')[0]).toMatchObject({
-      children: { type: 'h3', children: 'Détail' },
-    })
   })
 
   test('titles keep their formatting, maths and code', () => {

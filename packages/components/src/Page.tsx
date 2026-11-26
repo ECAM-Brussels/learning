@@ -54,15 +54,8 @@ export const Page: ParentComponent<{ title?: JSX.Element }> = (props) => {
   }
 
   return (
-    // A whole-page deck (`<Deck page>`) takes the page's width, without the table of contents.
-    // In CSS, so that the page is right from the server's first render.
-    <div class="group/page relative container mx-auto w-screen pb-1 xl:flex">
-      <main
-        class={[
-          'prose prose-code:before:content-none prose-code:after:content-none max-w-270 grow overflow-auto scroll-smooth rounded-b-xl bg-white p-8 pb-200 shadow-sm',
-          'has-data-deck-page:max-w-none has-data-deck-page:bg-transparent has-data-deck-page:pb-8 has-data-deck-page:shadow-none',
-        ]}
-      >
+    <div class="relative container mx-auto w-screen pb-1 xl:flex">
+      <main class="prose prose-code:before:content-none prose-code:after:content-none max-w-270 grow overflow-auto scroll-smooth rounded-b-xl bg-white p-8 pb-200 shadow-sm">
         <MDXProvider
           components={{
             h1: (attrs) => <Heading level={1}>{attrs.children}</Heading>,
@@ -76,7 +69,7 @@ export const Page: ParentComponent<{ title?: JSX.Element }> = (props) => {
           </TOCContext>
         </MDXProvider>
       </main>
-      <aside class="sticky top-0 max-h-screen max-w-96 overflow-y-auto p-4 text-slate-600 group-has-data-deck-page/page:hidden print:hidden">
+      <aside class="sticky top-0 max-h-screen max-w-96 overflow-y-auto p-4 text-slate-600 print:hidden">
         <h1 class="my-4 text-2xl font-bold">Table des matières</h1>
         <For each={toc()}>
           {(entry, i) => (

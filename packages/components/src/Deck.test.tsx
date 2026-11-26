@@ -10,6 +10,8 @@ mock.module('@solidjs/router', () => ({
 }))
 
 const { Deck, useDeck } = await import('./Deck')
+const { Heading } = await import('./Heading')
+const { TOCContext } = await import('./Page')
 const { defineMeta } = await import('./Meta')
 
 type DeckProps = ComponentProps<typeof Deck>
@@ -101,16 +103,50 @@ describe('Deck', () => {
     expect(deck.hasPlugin('probe')).toBe(true)
   })
 
-  test('marks itself as the whole page, for the page to make room', async () => {
-    const { container } = await renderDeck(() => <Deck.Slide />, { page: true })
-    const frame = container.querySelector('.reveal')!.parentElement!
-    expect(frame).toHaveAttribute('data-deck-page')
-    expect(frame).toHaveClass('aspect-video', 'w-full', 'max-w-[calc((100dvh-10rem)*16/9)]')
+  test('goes full screen from its button, and back', async () => {
+    const { container, getByRole } = await renderDeck(() => <Deck.Slide />)
+    const reveal = container.querySelector<HTMLElement>('.reveal')!
+    const request = mock(() => {
+      Object.defineProperty(document, 'fullscreenElement', { value: reveal, configurable: true })
+      document.dispatchEvent(new Event('fullscreenchange'))
+      return Promise.resolve()
+    })
+    const exit = mock(() => {
+      Object.defineProperty(document, 'fullscreenElement', { value: null, configurable: true })
+      document.dispatchEvent(new Event('fullscreenchange'))
+      return Promise.resolve()
+    })
+    reveal.requestFullscreen = request
+    document.exitFullscreen = exit
+
+    fireEvent.click(getByRole('button', { name: 'Plein écran' }))
+    await settle()
+    expect(request).toHaveBeenCalledOnce()
+    fireEvent.click(getByRole('button', { name: 'Quitter le plein écran' }))
+    await settle()
+    expect(exit).toHaveBeenCalledOnce()
+    expect(getByRole('button', { name: 'Plein écran' })).toBeInTheDocument()
+    Reflect.deleteProperty(document, 'fullscreenElement')
   })
 
-  test('is part of the page by default', async () => {
-    const { container } = await renderDeck(() => <Deck.Slide />)
-    expect(container.querySelector('[data-deck-page]')).toBeNull()
+  test("keeps its headings out of the page's table of contents", async () => {
+    const register = mock<(entry: { level: number }) => () => void>(() => () => {})
+    const toc = { entries: () => [], register }
+    render(() => (
+      <TOCContext value={toc}>
+        <Heading level={2}>Page</Heading>
+        <Deck>
+          <Deck.Slide>
+            <Heading level={3}>Slide</Heading>
+          </Deck.Slide>
+        </Deck>
+      </TOCContext>
+    ))
+    await waitFor(() => expect(document.querySelector('.reveal.ready')).not.toBeNull(), {
+      timeout: 5000,
+    })
+    expect(register).toHaveBeenCalledTimes(1)
+    expect(register.mock.calls[0]![0]).toMatchObject({ level: 2 })
   })
 
   test('takes the size of its class instead of the default', async () => {

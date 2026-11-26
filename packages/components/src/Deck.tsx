@@ -1,3 +1,4 @@
+import { faCompress, faExpand } from '@fortawesome/free-solid-svg-icons'
 import { dynamic, type JSX } from '@solidjs/web'
 import RevealJS, { type FragmentAnimation, type RevealApi, type RevealConfig } from 'reveal.js'
 import {
@@ -12,7 +13,9 @@ import {
   useContext,
 } from 'solid-js'
 import './Deck.css'
-import { useMeta } from './Meta'
+import { Fa } from './Fa'
+import { useLang, useMeta } from './Meta'
+import { TOCContext } from './Page'
 
 type RevealPlugin = NonNullable<RevealConfig['plugins']>[number]
 type RevealEvent = Event & Record<string, unknown>
@@ -65,16 +68,16 @@ type DeckProps = {
   plugins?: RevealPlugin[]
   /** Sizes the deck; 16:9 and as wide as its container by default. */
   class?: string
-  /**
-   * The deck is the whole page, as a page whose frontmatter has `deck: true`:
-   * the page leaves out its table of contents, and the deck fits in the window.
-   */
-  page?: boolean
   children?: JSX.Element
   onReady?: (deck: RevealApi) => void
   onSlideChange?: (event: RevealEvent) => void
   onFragmentShown?: (event: RevealEvent) => void
   onFragmentHidden?: (event: RevealEvent) => void
+}
+
+const labels = {
+  fr: { enter: 'Plein écran', exit: 'Quitter le plein écran' },
+  en: { enter: 'Full screen', exit: 'Exit full screen' },
 }
 
 const events = {
@@ -86,7 +89,7 @@ const events = {
 /**
  * A reveal.js presentation, styled after the Metropolis Beamer theme.
  * Its children are slides: `Deck.Slide`, `Deck.Title`, `Deck.Section`, `Deck.Standout` or a `Deck.Stack` of them.
- * Click a deck to drive it with the keyboard; press F for full screen.
+ * Click a deck to drive it with the keyboard; press F, or its button, for full screen.
  *
  * @example
  * <Deck>
@@ -140,6 +143,16 @@ function DeckRoot(props: DeckProps) {
     },
   )
 
+  const [fullscreen, setFullscreen] = createSignal(false)
+  onSettled(() => {
+    const update = () => setFullscreen(document.fullscreenElement === el())
+    document.addEventListener('fullscreenchange', update)
+    return () => document.removeEventListener('fullscreenchange', update)
+  })
+  const toggleFullscreen = () =>
+    fullscreen() ? document.exitFullscreen() : el()!.requestFullscreen()
+  const lang = useLang()
+
   createEffect(deck, (deck) => {
     if (!deck) return
     const listeners = Object.entries(events).map(([event, prop]) => {
@@ -153,14 +166,7 @@ function DeckRoot(props: DeckProps) {
   return (
     <DeckContext value={{ deck, synced, changed }}>
       <div
-        data-deck-page={props.page || undefined}
-        class={[
-          'not-prose mx-auto my-4 shadow',
-          props.class ??
-            (props.page
-              ? 'aspect-video w-full max-w-[calc((100dvh-10rem)*16/9)]'
-              : 'aspect-video w-full'),
-        ]}
+        class={['not-prose mx-auto my-4 shadow', props.class ?? 'aspect-video w-full']}
         style={{
           '--m-dark': '#23373b',
           '--m-accent': '#eb811b',
@@ -178,9 +184,23 @@ function DeckRoot(props: DeckProps) {
             '[&_.controls]:text-current',
             // Set by reveal.js while a standout slide is shown.
             '[&.standout_.controls]:text-(--m-light) [&.standout_.slide-number]:text-(--m-light)',
+            '[&.standout_[data-fullscreen-toggle]]:text-(--m-light)',
           ]}
         >
-          <div class="slides">{props.children}</div>
+          <div class="slides">
+            {/* Headings in slides are not the page's: MDX gives them the page's heading components. */}
+            <TOCContext value={null}>{props.children}</TOCContext>
+          </div>
+          <button
+            type="button"
+            data-fullscreen-toggle
+            aria-label={labels[lang()][fullscreen() ? 'exit' : 'enter']}
+            title={labels[lang()][fullscreen() ? 'exit' : 'enter']}
+            class="absolute bottom-3 left-3 z-30 cursor-pointer text-xl opacity-50 hover:opacity-100"
+            onClick={() => void toggleFullscreen()}
+          >
+            <Fa icon={fullscreen() ? faCompress : faExpand} />
+          </button>
         </div>
       </div>
     </DeckContext>

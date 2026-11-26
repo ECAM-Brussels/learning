@@ -72,10 +72,12 @@ the MDX language server reads the braces as expressions.
 Leave a blank line before the `:::` that closes a directive after a list,
 otherwise Markdown, and Prettier, take it as part of the last item.
 
-A page whose frontmatter is `deck: true` is a reveal.js presentation (`packages/mdx/deck.ts`):
+A `:::::deck` block is a reveal.js presentation (`packages/mdx/deck.ts`):
 `#` opens a section, `##` a slide, `---` a slide without title, and a top-level `<Deck.…>` element is a slide of its own.
 Each section is a vertical stack of its slides, `<Deck.…>` ones included; slides before the first `#` stay horizontal.
-Only `deck` goes in the frontmatter: the title slide comes from `defineMeta`.
+Its fence needs more colons than any directive inside it.
+It opens on a title slide only when its brackets give one, as `:::::deck[title="…" subtitle="…"]` (also `author`, `institute`, `date`):
+brackets rather than `{…}` attributes, which trip the MDX language server; what it is not given comes from the page's `defineMeta`.
 See `apps/ecam/src/routes/doc/presentation.mdx`.
 
 # Generated exercises

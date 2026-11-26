@@ -1,5 +1,4 @@
 import { defineMdastPlugin } from 'satteri'
-import { parse as parseYaml } from 'yaml'
 
 type Node = {
   type: string
@@ -142,16 +141,13 @@ function pauses(nodes: Node[]): Node[] {
   ]
 }
 
-const outside = (node: Node) => node.type === 'mdxjsEsm' || node.type === 'yaml'
-
 /**
- * The slides of a document: `#` opens a section, `##` a slide with that title,
+ * The slides of a deck: `#` opens a section, `##` a slide with that title,
  * `---` a slide without one, and a `<Deck.…>` element is a slide of its own.
  * Each section is a vertical stack, headed by its section slide; slides before the first section stay horizontal.
- * The title slide comes first, from the page's `defineMeta`.
  */
-export function toDeck(children: Node[]): Node[] {
-  const slides: Node[] = [element('Deck.Title', {})]
+export function toSlides(children: Node[]): Node[] {
+  const slides: Node[] = []
   let section: Node[] | undefined
   let current: { name: string; title?: Node[]; children: Node[] } | undefined
   const close = () => {
@@ -167,7 +163,7 @@ export function toDeck(children: Node[]): Node[] {
     if (section) slides.push(element('Deck.Stack', {}, section))
     section = undefined
   }
-  for (const node of children.filter((node) => !outside(node))) {
+  for (const node of children) {
     if (node.type === 'heading' && node.depth === 1) {
       closeSection()
       section = []
@@ -192,32 +188,53 @@ export function toDeck(children: Node[]): Node[] {
     }
   }
   closeSection()
-  return [...children.filter(outside), element('Deck', { page: true }, slides)]
+  return slides
+}
+
+const titleFields = ['title', 'subtitle', 'author', 'institute', 'date']
+
+/** The text in a deck's brackets, which the directives plugin, run before, keeps as `data-label`. */
+function label(node: Node & { data?: { hProperties?: Record<string, unknown> } }) {
+  const label = node.data?.hProperties?.['data-label']
+  return typeof label === 'string' ? label : undefined
+}
+
+/** The title slide's fields, written `key="value"` in the deck's brackets. */
+function titleSlide(source: string): Props {
+  const pair = /\s*([a-z]+)="([^"]*)"\s*/y
+  const fields: Props = {}
+  while (pair.lastIndex < source.length) {
+    const start = pair.lastIndex
+    const match = pair.exec(source)
+    const [, field, value] = match ?? []
+    if (!field || !titleFields.includes(field)) {
+      throw new Error(
+        `Unexpected \`${source.slice(start).trim()}\` in the deck's brackets: ` +
+          `write its title slide as ${titleFields.map((name) => `${name}="…"`).join(', ')}`,
+      )
+    }
+    fields[field] = value!
+  }
+  return fields
 }
 
 /**
- * Makes a presentation of a document whose frontmatter has `deck: true`.
- * Nothing else goes in the frontmatter: a page's title and authors go in `defineMeta`, as on every page.
+ * A `:::::deck` block is a presentation.
+ * It opens on a title slide when its brackets give one, as `:::::deck[title="…" author="…"]`,
+ * rather than in braces, which trip the MDX language server:
+ * what the title slide is not given comes from the page's `defineMeta`.
  * Runs after the other plugins, so that it moves what they have already turned into components.
  */
 export const deck = defineMdastPlugin({
   name: 'deck',
-  yaml(node, ctx) {
-    const frontmatter: unknown = parseYaml(node.value) ?? {}
-    if (typeof frontmatter !== 'object' || frontmatter === null) {
-      throw new Error('The frontmatter should be `deck: true`')
+  containerDirective(node) {
+    if (node.name !== 'deck') return
+    const deck = node as unknown as Node
+    if (Object.keys(node.attributes ?? {}).length > 0) {
+      throw new Error('Write a deck\'s title slide in brackets, as `:::::deck[title="…"]`')
     }
-    const others = Object.keys(frontmatter).filter((key) => key !== 'deck')
-    if (others.length > 0) {
-      throw new Error(
-        `Unexpected frontmatter ${others.map((key) => `\`${key}\``).join(', ')}: ` +
-          'the frontmatter only says `deck: true`, the rest goes in defineMeta',
-      )
-    }
-    const { deck } = frontmatter as { deck?: unknown }
-    if (deck === undefined || deck === false) return
-    if (deck !== true) throw new Error('`deck` should be `true` or `false`')
-    const root = ctx.parent(node) as unknown as Node
-    ctx.setProperty(root as never, 'children', toDeck(root.children ?? []) as never)
+    const source = label(deck)
+    const title = source === undefined ? [] : [element('Deck.Title', titleSlide(source))]
+    return element('Deck', {}, [...title, ...toSlides(withoutLabel(deck))]) as never
   },
 })

@@ -14,25 +14,23 @@ avec l'apparence du thème Beamer _Metropolis_.
 Cliquez sur la présentation pour la piloter au clavier :
 
 - `Espace` passe au slide suivant, les flèches se déplacent dans les deux directions ;
-- `F` affiche la présentation en plein écran, `Échap` montre une vue d'ensemble ;
+- `F`, ou le bouton en bas à gauche, affiche la présentation en plein écran, `Échap` montre une vue d'ensemble ;
 - `S` ouvre la vue présentateur, avec les notes, si le plugin de notes est chargé.
 
-## Une page présentation
+## Une présentation en Markdown
 
-Une page MDX dont le frontmatter dit `deck: true` devient une présentation :
-la page lui laisse toute sa largeur, sans table des matières.
-Seul `deck` va dans le frontmatter : le titre et le reste vont dans `defineMeta`, comme pour toute page,
-et la présentation s'ouvre sur un slide de titre construit à partir de ceux-ci.
+Un bloc `:::::deck` écrit une présentation en Markdown, au milieu d'une page comme les autres blocs.
+Elle s'ouvre sur un slide de titre si ses crochets en décrivent un :
+`title`, `subtitle`, `author`, `institute` et `date`, comme `:::::deck[title="Les dérivées" date="Lundi"]`.
+Ce que le slide de titre ne précise pas vient du `defineMeta` de la page.
 
 ```mdx
----
-deck: true
----
-
 import { defineMeta } from '@learning/components'
 import { tex } from '@learning/core'
 
 export default defineMeta({ title: 'Les dérivées', author: 'Prénom Nom', date: 'Novembre 2026' })
+
+:::::deck[title="Les dérivées" subtitle="Analyse 1"]
 
 # Définition
 
@@ -68,6 +66,8 @@ La dérivée de **f** en $a$ est la limite
 Chaque partie forme une pile verticale, ouverte par son slide de partie :
 la flèche droite passe à la partie suivante, la flèche bas au slide suivant de la partie.
 Les slides qui précèdent le premier `#` restent côte à côte.
+
+Les deux-points du bloc sont plus nombreux que ceux des blocs qu'il contient, comme `::::columns`.
 
 Le texte en **gras** prend la couleur d'accent, comme `\alert` dans Beamer.
 Pour le LaTeX qui contient des accolades, utilisez `tex` de `@learning/core` :
