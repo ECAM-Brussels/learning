@@ -13,7 +13,8 @@ Do not port React patterns.
   — repair guide mapping every dev-mode diagnostic code (e.g. `REACTIVE_WRITE_IN_OWNED_SCOPE`, `STRICT_READ_UNTRACKED`) to its fix.
   Read it whenever a diagnostic code appears.
 - `node_modules/@solidjs/diagnostics/skills/agent-loops/SKILL.md`
-  — how to capture which scopes re-ran and why, from a page open on the dev server (`diagnostics: true` in `vite.config.ts`).
+  — how to capture which scopes re-ran and why,
+  from a page open on the dev server (`diagnostics: true` in `vite.config.ts`).
 
 Tests load Solid's production build, which reports no diagnostics:
 to see them, add `--conditions=development`, e.g. `bun test --conditions=development --conditions=browser`.
@@ -22,8 +23,10 @@ Name your signals/memos/effects (the `{ name: "..." }` option): diagnostics repo
 
 ## Running
 
-- `bun run dev`, in the dev container where SymAPI runs, serves the site on port 3000 and runs every test suite in watch mode.
-- `bun run test` runs every suite once; in a package, `bun run test` runs its own (`bun test --conditions=browser`).
+- `bun run dev`, in the dev container where SymAPI runs,
+  serves the site on port 3000 and runs every test suite in watch mode.
+- `bun run test` runs every suite once;
+  in a package, `bun run test` runs its own (`bun test --conditions=browser`).
 - `bun run typecheck` type-checks the whole repository; `bun run lint` fixes and formats.
 
 ## Visualizations with JSXGraph
@@ -36,14 +39,20 @@ By all means improve them, but ensure they are compatible with Solid's reactivit
 For a one-off construction the components don't cover, use `Board.Custom` with plain JSXGraph code
 rather than adding a component or managing the board by hand.
 For defaults shared by many boards, such as a teacher's preferences for a course,
-wrap them in `BoardDefaults` (e.g. in the folder's `_layout.tsx`) rather than repeating props on every element.
-Keep JSXGraph's attribute names and shapes; where these components depart from its defaults, do it in `builtInDefaults` in `Board.tsx`.
+wrap them in `BoardDefaults` (e.g. in the folder's `_layout.tsx`)
+rather than repeating props on every element.
+Keep JSXGraph's attribute names and shapes;
+where these components depart from its defaults, do it in `builtInDefaults` in `Board.tsx`.
 
-JSXGraph places labels away from other elements with `label: { autoPosition: true }`: never reimplement label placement.
+JSXGraph places labels away from other elements with `label: { autoPosition: true }`:
+never reimplement label placement.
 It is on by default on 2D boards; set `label: { autoPosition: false }` to keep a label where `offset` puts it.
-In a 3D view it is off by default, because each label is checked against the view's hundreds of elements at every update:
-turn it on for the labels that need it, e.g. `<Board.Point3D label={{ autoPosition: true }} …/>`, rather than for the whole view.
-Coordinates are positions, not points: points JSXGraph creates for coordinates or bounds (polygon vertices, an angle's points, an integral's bounds) are hidden.
+In a 3D view it is off by default,
+because each label is checked against the view's hundreds of elements at every update:
+turn it on for the labels that need it, e.g. `<Board.Point3D label={{ autoPosition: true }} …/>`,
+rather than for the whole view.
+Coordinates are positions, not points:
+points JSXGraph creates for coordinates or bounds (polygon vertices, an angle's points, an integral's bounds) are hidden.
 For a visible point, pass a `<Board.Point>`.
 
 A function prop such as `fn` redraws when the function is replaced, not when a signal read inside it changes:
@@ -57,9 +66,15 @@ const f = createMemo(() => {
 <Board.Plot fn={f()} />
 ```
 
-## MDX pages
+## Markdown and MDX pages
 
-Keep MDX files mostly prose: TypeScript tooling (type errors, autocompletion, refactoring) works poorly inside MDX.
+In every Markdown and MDX file, start a new line at the end of each clause, not only of each sentence,
+so that a diff shows the clause that changed; Markdown still joins the lines into one paragraph.
+Never start the new line with what would open a block (`- `, `1. `, `#`, `>`, `<`, `{`).
+Text inside a JSX element is the exception: Prettier fills it up to 100 characters.
+
+Keep MDX files mostly prose:
+TypeScript tooling (type errors, autocompletion, refactoring) works poorly inside MDX.
 Put exercises, sequences and any non-trivial JSX in a sibling `*.exercises.tsx` file
 and use them as one-line components, e.g. `import * as Exercise from './exam.exercises'` then `<Exercise.Practice id="..." />`.
 Files with an extra dot in their name, such as `*.exercises.tsx` or `*.content.mdx`, are not turned into routes.
@@ -72,17 +87,21 @@ Leave a blank line before the `:::` that closes a directive after a list,
 otherwise Markdown, and Prettier, take it as part of the last item.
 
 A `:::::deck` block is a reveal.js presentation (`packages/mdx/deck.ts`):
-`#` opens a section, `##` a slide, `---` a slide without title, and a top-level `<Deck.…>` element is a slide of its own.
-Each section is a vertical stack of its slides, `<Deck.…>` ones included; slides before the first `#` stay horizontal.
+`#` opens a section, `##` a slide, `---` a slide without title,
+and a top-level `<Deck.…>` element is a slide of its own.
+Each section is a vertical stack of its slides, `<Deck.…>` ones included;
+slides before the first `#` stay horizontal.
 Its fence needs more colons than any directive inside it.
 It opens on a title slide only when its brackets give one, as `:::::deck[title="…" subtitle="…"]` (also `author`, `institute`, `date`):
-brackets rather than `{…}` attributes, which trip the MDX language server; what it is not given comes from the page's `defineMeta`.
+brackets rather than `{…}` attributes, which trip the MDX language server;
+what it is not given comes from the page's `defineMeta`.
 See `apps/ecam/src/routes/doc/presentation.mdx`.
 
 ## Exercise steps
 
 Every exercise component is a step made with `createStep` or `createDerivedStep` from `@learning/core`,
-so that it exposes the `options`, `feedback` and `children` props, and its data as props too, like any other step,
+so that it exposes the `options`, `feedback` and `children` props,
+and its data as props too, like any other step,
 and can be the `step` of a skill.
 Never write a function component that returns a step as JSX to preset some of its props:
 
@@ -111,7 +130,8 @@ the rule is about components that define a kind of exercise.
 
 Students' answers are saved with each step's data (its props, except those wrapped in `omitFromJSON`), `name` and inputs.
 The database is purged at the start of each academic year, when the `next` branch is merged into `main`.
-Until then, on `main` and branches merged into it, never change what an existing step saves, even to follow these rules:
+Until then, on `main` and branches merged into it, never change what an existing step saves,
+even to follow these rules:
 turning a function component into a derived step, or replacing `Matplotlib` with `PythonCode`, changes it.
 Make such changes on `next`; new steps follow these rules everywhere.
 
@@ -120,7 +140,8 @@ and write their tests with `expect`: `tests={(expect) => ({ 'description': expec
 The array of `{ desc, test, check }` tests and the steps built on it (`Matplotlib`, `PythonFunction`) are deprecated.
 If `expect` lacks a check that several exercises need, add it to `expect` in `packages/repl/index.ts`.
 
-Put a step in `packages/exercises` (`@learning/exercises`) whenever it could help teach more than the page it was written for:
+Put a step in `packages/exercises` (`@learning/exercises`)
+whenever it could help teach more than the page it was written for:
 a skill or concept also taught elsewhere, such as factorising, a derivative at a point, a numerical method or a Python construct.
 Keep in the route folder only steps tied to that page's content or story.
 Package steps take everything as props and never refer to a course;
@@ -129,11 +150,15 @@ When unsure whether a step belongs in the package, ask.
 
 ## Generated exercises
 
-For randomised questions, define skills with `defineSkill` and pass them to `createQuestionBank`, both from `@learning/core` (see `apps/ecam/src/routes/MN1M/exam.exercises.tsx`).
-A skill's id is saved with students' answers: never change it, and namespace new ones (e.g. `'calculus/chain'`).
-Each skill names the `step` that answers its questions, and may list `prerequisites: () => [...]`, other skills from any module.
+For randomised questions, define skills with `defineSkill` and pass them to `createQuestionBank`,
+both from `@learning/core` (see `apps/ecam/src/routes/MN1M/exam.exercises.tsx`).
+A skill's id is saved with students' answers:
+never change it, and namespace new ones (e.g. `'calculus/chain'`).
+Each skill names the `step` that answers its questions,
+and may list `prerequisites: () => [...]`, other skills from any module.
 Only the parameters returned by `generate` are saved, so `render` must be pure,
-and `generate` must draw from the `random` it receives (not `Math.random`) so questions can be reproduced from a seed in tests.
+and `generate` must draw from the `random` it receives (not `Math.random`)
+so questions can be reproduced from a seed in tests.
 With `MultipleChoice`, declare `answer` rather than `grade`: tests can then check every generated question.
 
 ## SymAPI
@@ -142,7 +167,8 @@ With `MultipleChoice`, declare `answer` rather than `grade`: tests can then chec
 Tests don't need SymAPI running: they answer its requests from `apps/symapi/tests/contract.json`,
 and SymAPI's own tests check that it still gives every response recorded there.
 After changing what `expr` asks, or adding a test that asks something new,
-record the contract again with `bun run test:record` in `packages/core`, where SymAPI is running (the dev container).
+record the contract again with `bun run test:record` in `packages/core`,
+where SymAPI is running (the dev container).
 Record with the whole suite, never a single file: the contract is replaced by the requests of that run.
 
 ## French typography
@@ -154,7 +180,8 @@ In French prose, put a no-break space before two-part punctuation, never a norma
 - no-break space (U+00A0) before `:`: `Le programme suivant :`
 
 Type the actual characters, both in Markdown and in JSX text.
-This applies to prose only: never inside code, `tex` templates, `$…$` math or JavaScript (e.g. object keys like `A:`).
+This applies to prose only:
+never inside code, `tex` templates, `$…$` math or JavaScript (e.g. object keys like `A:`).
 
 ## Comments
 

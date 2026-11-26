@@ -142,7 +142,8 @@ Un flux typique d'utilisation est le suivant:
    et de réduire le nombre d'appels au serveur.
    À ce stade, aucun appel au serveur n'est effectué.
 
-3. Lorsqu'une _méthode terminale_ est appelée, l'arbre est envoyé au CAS le plus approprié pour effectuer l'opération.
+3. Lorsqu'une _méthode terminale_ est appelée,
+   l'arbre est envoyé au CAS le plus approprié pour effectuer l'opération.
    Ce dernier recrée l'expression à partir de l'arbre, **effectue réellement** l'opération, et renvoie le résultat.
 
    Par _méthode terminale_, on entend une opération
@@ -195,7 +196,8 @@ expr('x^2 - 4x + 3').diff('x').checkRoot(2)
 
 ## Affichage
 
-La méthode `tex` peut être employée pour étiqueter une chaîne $\LaTeX$ et la transformer en une formule mathématique.
+La méthode `tex` peut être employée pour étiqueter une chaîne $\LaTeX$
+et la transformer en une formule mathématique.
 Elle emploie la librairie [KaTeX](https://katex.org/) pour le rendu,
 qui comme son nom l'indique, est développée par l'équipe de [Khan Academy](https://www.khanacademy.org/).
 
