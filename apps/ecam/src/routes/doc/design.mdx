@@ -1,0 +1,547 @@
+import { defineMeta } from '@learning/components'
+import { expr, tex } from '@learning/core'
+import { Factor } from '@learning/exercises/math/algebra/Factor'
+
+export default defineMeta({ title: 'La conception de la plateforme' })
+
+# La conception de la plateforme
+
+Cette page explique comment la plateforme est construite, et pourquoi.
+Elle s'adresse aux enseignant·es qui veulent comprendre ce qui se passe derrière un exercice,
+et aux collègues qui souhaitent étudier la plateforme ou écrire à son sujet.
+Elle ne demande pas de savoir programmer :
+les extraits de code servent à montrer combien il en faut peu,
+et chacun est expliqué en français.
+
+Deux idées portent l'essentiel de la conception :
+
+1. **un exercice est une conversation**, construite avec `createStep` :
+   chaque réponse décide de la question suivante ;
+2. **le calcul formel s'écrit comme des mathématiques**, avec `expr` :
+   la plateforme comprend une réponse comme le ferait un·e enseignant·e,
+   et calcule elle-même les corrections.
+
+Ensemble, elles permettent des interactions riches avec très peu de code.
+Un troisième choix les sous-tend :
+tout s'écrit en **code typé, dans des fichiers texte**,
+pour que les erreurs soient détectées avant les étudiant·es,
+que chaque modification soit enregistrée,
+et qu'un assistant de programmation puisse aider.
+
+## Vue d'ensemble
+
+| Couche                  | Rôle                                                                              | Où dans le code                            |
+| ----------------------- | --------------------------------------------------------------------------------- | ------------------------------------------ |
+| Pages                   | Du texte en Markdown, avec des composants : exercices, figures, présentations     | `apps/ecam/src/routes`                     |
+| Étapes                  | Une question, sa correction et ce qui suit ; elles s'emboîtent en conversation    | `packages/core/src/exercise/base.tsx`      |
+| Banques de questions    | Des questions générées à partir de compétences, reproductibles                    | `packages/core/src/exercise/bank.tsx`      |
+| Expressions             | Le calcul formel, dans le navigateur ou sur le serveur                            | `packages/core/src/expr.ts`, `apps/symapi` |
+| Exercices réutilisables | Factoriser, dériver, programmer en Python…, utilisables dans n'importe quel cours | `packages/exercises`                       |
+| Enregistrement          | Les réponses, dans le navigateur ou dans la base de données                       | `packages/core/src/exercise/context.*.ts`  |
+
+Une page de cours est un fichier `.mdx` :
+du texte, des formules, et des balises comme `<Factor expr="x^2 - 5x + 6" />`.
+Les enseignant·es écrivent surtout du texte ;
+la programmation n'intervient que pour inventer un nouveau type d'exercice.
+
+## Première idée : un exercice est une conversation
+
+### Une étape
+
+Sur la plupart des plateformes, un exercice est une question, une réponse et une correction.
+Ici, l'unité de base est l'**étape**,
+créée avec `createStep`,
+qui se compose de quatre parties :
+
+| Partie     | Question à laquelle elle répond                                       |
+| ---------- | --------------------------------------------------------------------- |
+| `schema`   | Quelles données changent d'une question à l'autre, et que répond-on ? |
+| `prompt`   | Que voit l'étudiant·e ?                                               |
+| `grade`    | La réponse est-elle juste ?                                           |
+| `feedback` | Que se passe-t-il ensuite, selon la réponse ?                         |
+
+La correction tient souvent en une ligne.
+Voici celle de l'exercice `Factor`, qui demande de factoriser un polynôme :
+
+```tsx
+grade: (ctx) => [ctx.inputs.attempt.isEqual(ctx.data.expr), ctx.inputs.attempt.isFactored()]
+```
+
+`ctx.data.expr` est le polynôme de la question,
+et `ctx.inputs.attempt` la réponse de l'étudiant·e.
+La ligne se lit :
+la réponse est juste si elle est égale au polynôme **et** si elle est factorisée.
+Il n'y a ni liste de réponses acceptées, ni comparaison de textes.
+
+### Les étapes s'emboîtent
+
+La partie `feedback` peut contenir n'importe quoi,
+et en particulier d'autres étapes.
+Ce qui est placé entre les balises d'une étape n'apparaît qu'après une bonne réponse.
+Enfin, `<ctx.Self />` pose à nouveau la même question.
+Avec ces trois pièces, un exercice devient un **graphe** :
+les étapes en sont les nœuds,
+et chaque réponse, juste ou fausse, choisit l'arête à suivre.
+
+L'exercice `Factor` en est un exemple.
+Essayez-le en répondant faux :
+
+<Factor id="conception-factor" expr="x^2 - 5x + 6" />
+
+Après une mauvaise réponse, la conversation suit ce chemin :
+
+1. Factoriser le polynôme : réponse fausse.
+   1. Trouver une racine du polynôme.
+   2. Trouver le facteur associé à cette racine.
+      Si la réponse est fausse, une explication suit, puis la même question.
+   3. Factoriser à nouveau le polynôme.
+
+Voici l'essentiel de son code, la partie `feedback` :
+
+```tsx
+feedback: (ctx) => (
+  <Show when={!ctx.correct}>
+    <Root expr={ctx.data.expr}>
+      {(rootCtx) => (
+        <FactorFromRoot root={rootCtx.inputs.root}>
+          <ctx.Self />
+        </FactorFromRoot>
+      )}
+    </Root>
+  </Show>
+)
+```
+
+Il se lit presque comme la liste ci-dessus :
+si la réponse est fausse, demander une racine ;
+une fois la racine trouvée, demander le facteur qui lui correspond ;
+une fois le facteur trouvé, reposer la question de départ.
+Une ligne mérite l'attention :
+`root={rootCtx.inputs.root}` donne à l'étape suivante **la racine que l'étudiant·e a trouvée**.
+La conversation porte ainsi les réponses de l'étudiant·e d'une question à l'autre.
+
+### Une remédiation récursive, gratuite pour qui réutilise
+
+Chaque étape apporte sa propre remédiation.
+Un exercice qui utilise `Factor` dans sa correction hérite donc de tout le graphe de `Factor`,
+sans rien écrire de plus.
+L'exercice de limite de la page [Guider l'étudiant·e pas à pas](/doc/remediation)
+demande de factoriser le numérateur après une erreur :
+une trentaine de lignes, qui donnent une conversation sur trois niveaux.
+
+La remédiation est donc **récursive** :
+chaque question posée pour aider peut à son tour en poser d'autres,
+jusqu'aux prérequis qui ne sont pas maîtrisés.
+Le retour l'est aussi :
+une fois une difficulté levée, `<ctx.Self />` ramène à la question qui l'avait révélée,
+puis à celle d'avant, jusqu'à la question de départ.
+
+### Les mêmes problèmes que le web
+
+Écrire des exercices pose les questions qu'un développeur ou une développeuse web se pose en construisant une page,
+et elles ont les mêmes réponses :
+
+| En pédagogie                                                    | Sur le web    | Dans la plateforme                                                  |
+| --------------------------------------------------------------- | ------------- | ------------------------------------------------------------------- |
+| Une compétence travaillée dans plusieurs cours                  | Réutilisation | Un exercice écrit une fois, placé dans n'importe quelle page        |
+| Utiliser un exercice sans connaître le détail de sa remédiation | Encapsulation | `<Factor expr="…" />` cache tout son graphe derrière une balise     |
+| Construire une aide à partir d'exercices plus simples           | Composition   | Des étapes placées dans `feedback` ou entre les balises d'une autre |
+| Adapter un exercice à un autre contexte                         | Paramètres    | Les données d'un exercice, données comme attributs de sa balise     |
+
+Un bouton, sur une page web, s'utilise sans savoir comment il est dessiné,
+et une page se construit en assemblant de tels composants.
+Un exercice de la plateforme est un composant au même sens :
+la personne qui place `Factor` dans un cours de limites n'a pas à savoir comment `Factor` guide l'étudiant·e,
+et la personne qui améliore la remédiation de `Factor` l'améliore pour tous les cours qui l'utilisent.
+Ce rapprochement est la raison pour laquelle les outils du web conviennent si bien à l'écriture d'exercices.
+
+### La remédiation est un arbre, et JSX écrit des arbres
+
+Une remédiation est naturellement un **arbre** :
+la question de départ en est la racine,
+chaque erreur ouvre une branche de questions plus simples,
+et chacune peut en ouvrir d'autres.
+(`<ctx.Self />` ramène à une question déjà posée ;
+au sens strict, l'arbre devient alors un graphe.)
+
+JSX, la façon d'écrire des pages dans la plateforme, décrit lui aussi des arbres :
+des balises placées dans d'autres balises.
+Le code d'une remédiation a donc la forme de la remédiation elle-même.
+Comparez le chemin de `Factor` et son code :
+
+```
+Factoriser
+└─ si c'est faux : trouver une racine
+   └─ une fois trouvée : trouver le facteur associé
+      └─ une fois trouvé : factoriser à nouveau
+```
+
+```tsx
+<Show when={!ctx.correct}>
+  <Root expr={ctx.data.expr}>
+    {(rootCtx) => (
+      <FactorFromRoot root={rootCtx.inputs.root}>
+        <ctx.Self />
+      </FactorFromRoot>
+    )}
+  </Root>
+</Show>
+```
+
+Chaque niveau d'indentation du code est un niveau de la conversation.
+Ajouter une branche, c'est ajouter une balise à l'endroit voulu ;
+la lire, c'est suivre l'indentation.
+Les outils qui décrivent une conversation par une liste de règles
+(« si la réponse est fausse, aller à la question 7 »)
+obligent au contraire à reconstruire l'arbre de tête.
+
+### Le graphe est dans le code, le chemin dans les données
+
+Le graphe n'est pas enregistré :
+il est décrit par le code de l'exercice.
+Ce qui est enregistré, c'est le **chemin** suivi par chaque étudiant·e :
+chaque étape visitée, à sa position dans la conversation,
+avec ses données, la réponse donnée, et si elle était juste.
+
+Ce choix a plusieurs conséquences :
+
+- une conversation se rejoue à l'identique quand l'étudiant·e revient sur la page ;
+- les chemins de tous les étudiant·es se comparent :
+  on voit où ils et elles se trompent, et quelle remédiation les a aidé·es ;
+- un exercice peut être corrigé ou enrichi sans toucher aux réponses déjà données,
+  tant que ses données ne changent pas.
+
+Les enseignant·es voient en direct, pendant un cours, où en est chaque étudiant·e.
+
+### Pourquoi si peu de code
+
+Un enseignant ou une enseignante ne décrit jamais _comment_ la conversation avance :
+pas d'état à tenir à jour, pas de liste de cas, pas de bouton « suivant » à programmer.
+Il ou elle décrit seulement _ce qui suit_ chaque réponse,
+et la plateforme se charge du reste :
+afficher l'étape suivante au bon moment, enregistrer le chemin, le rejouer.
+C'est ce qu'on appelle une description **déclarative**,
+rendue possible par la [réactivité](/doc/reactivity) de SolidJS, sur lequel la plateforme est construite.
+
+Trois autres choix vont dans le même sens :
+
+- **adapter plutôt qu'écrire** :
+  `createDerivedStep` crée un nouvel exercice à partir d'un exercice existant,
+  en disant seulement comment construire l'énoncé et la correction à partir de nouvelles données
+  ([Créer un nouveau type d'exercice](/doc/new-exercise)) ;
+- **générer plutôt que recopier** :
+  une banque de questions tire ses questions de **compétences**,
+  chacune décrite par une fonction qui choisit des paramètres au hasard
+  et une autre qui en fait une question ([Générer des questions aléatoires](/doc/random-questions)).
+  Seuls les paramètres sont enregistrés, et le hasard part d'une graine,
+  si bien que chaque question se reproduit à l'identique, y compris dans les tests ;
+- **relier les compétences** :
+  une compétence peut nommer ses prérequis, d'autres compétences, d'un même cours ou non.
+  Elles forment un second graphe, entre compétences cette fois,
+  que la plateforme vérifie (pas de cycle, pas de nom en double).
+
+## Deuxième idée : le calcul formel en chaîne
+
+### Deux mondes à relier
+
+Une plateforme web s'écrit en JavaScript, le langage des navigateurs.
+Le calcul formel, lui, vit dans un autre langage :
+[SymPy](https://www.sympy.org/), la référence libre, est écrit en Python.
+Il faut donc un lien entre les deux,
+et ce lien doit être aussi expressif qu'un langage de programmation :
+un exercice doit pouvoir dériver, substituer, simplifier, comparer,
+et combiner ces opérations librement,
+sans être limité à une liste de cas prévus d'avance.
+
+`expr` est ce lien.
+Sa forme vient d'une observation sur la correction :
+corriger une réponse, c'est presque toujours **transformer une expression, puis la comparer à une autre**.
+La réponse à « dérivez {tex`f`} » est juste si elle est égale à la dérivée de {tex`f`} :
+
+```tsx
+grade: (ctx) => ctx.inputs.attempt.isEqual(ctx.data.f.diff())
+```
+
+Écrites en **chaîne**, l'une après l'autre, les opérations tiennent en une ligne,
+qui se lit dans l'ordre où on dirait la phrase.
+Le même exercice, avec un lien qui enverrait du texte à Python,
+demanderait d'écrire le code Python dans une chaîne de caractères,
+de l'envoyer, puis de relire la réponse :
+plus long, et sans aucune aide de l'éditeur en cas d'erreur.
+
+### Écrire des mathématiques, pas des calculs
+
+`expr` transforme une formule écrite en LaTeX,
+celle que l'étudiant·e tape dans l'éditeur de formules,
+en **expression** que le calcul formel sait manipuler.
+Les opérations s'enchaînent dans l'ordre où on les dirait :
+
+```ts
+expr('x^3').diff().subs({ x: 2 })
+```
+
+se lit « la dérivée de {tex`x^3`}, en {tex`x = 2`} », et vaut {tex`${expr('x^3').diff().subs({ x: 2 })}`}.
+La page [Manipuler des expressions mathématiques](/doc/symbolic) donne la liste des opérations.
+Elles sont de deux sortes :
+
+- les **transformations** renvoient une nouvelle expression, qu'on peut transformer à son tour :
+  développer, factoriser, dériver, intégrer, substituer… ;
+- les **questions** renvoient vrai ou faux :
+  deux expressions sont-elles égales ?
+  Celle-ci est-elle factorisée, développée ?
+  Ce nombre est-il une racine ?
+
+### Comparer des valeurs, pas des écritures
+
+`isEqual` dit si deux expressions sont mathématiquement égales,
+quelle que soit la façon dont elles sont écrites :
+{tex`(x - 2)(x - 3)`}, {tex`(3 - x)(2 - x)`} et {tex`x^2 - 5x + 6`} sont égales.
+Pour exiger aussi une forme, on combine deux questions,
+comme le fait `Factor` avec `isFactored`.
+Corriger une réponse revient ainsi à énoncer ce qu'on attend, en termes mathématiques.
+
+### Des corrections calculées
+
+Avec `tex`, une expression s'affiche dans une formule.
+Le résultat n'est alors écrit nulle part : il est calculé.
+
+```mdx
+{tex`(x - 2)(x - 3) = ${expr('(x - 2)(x - 3)').expand()}`}
+```
+
+affiche
+
+{tex.display`(x - 2)(x - 3) = ${expr('(x - 2)(x - 3)').expand()}`}
+
+Les solutions ne peuvent donc pas contenir de faute de frappe,
+et un même exercice sert pour toutes les données :
+c'est ce qui rend possibles les questions générées.
+
+### Deux moteurs, un seul langage
+
+Les expressions sont décrites, puis calculées seulement quand on les affiche ou qu'on leur pose une question.
+La plateforme choisit alors où faire le calcul :
+dans le navigateur de l'étudiant·e, avec [Compute Engine](https://mathlive.io/compute-engine/), quand c'est possible,
+et sur le serveur, avec [SymPy](https://www.sympy.org/), pour les questions plus difficiles,
+comme l'égalité de deux expressions ou leur forme.
+L'enseignant·e écrit la même chose dans les deux cas.
+
+Les tests de la plateforme n'ont pas besoin du serveur :
+chaque question posée à SymPy y est enregistrée avec sa réponse,
+et le serveur vérifie de son côté qu'il donne toujours ces réponses.
+
+## Les deux idées ensemble
+
+La seconde étape de `Factor`, `FactorFromRoot`, demande le facteur associé à une racine.
+Si l'étudiant·e se trompe, sa correction **calcule à partir de sa réponse** :
+elle remplace {tex`x`} par la racine dans le facteur proposé,
+et montre que le résultat n'est pas nul.
+Simplifiée un peu, elle s'écrit :
+
+```tsx
+feedback: (ctx) => {
+  const factor = ctx.inputs.factor
+  return (
+    <Show when={!ctx.correct}>
+      <p>Le facteur doit aussi avoir comme racine {tex`${ctx.data.root}`}. Or :</p>
+      {tex`${factor} = ${factor.subs({ x: ctx.data.root }).simplify()}`}
+      <ctx.Self />
+    </Show>
+  )
+}
+```
+
+Une étape répond donc à _cette_ erreur, et non à une erreur prévue d'avance.
+Le graphe dit quelle question poser ensuite,
+et le calcul formel adapte chaque explication à la réponse donnée.
+
+Le code complet de `Factor` et de ses deux étapes de remédiation tient en moins de 80 lignes
+(`packages/exercises/math/algebra/Factor.tsx`).
+
+## Un choix central : du code typé, en fichiers texte
+
+La plateforme aurait pu être écrite en Python, le langage du calcul formel,
+ou se configurer avec des formulaires dans le navigateur.
+Elle est écrite en TypeScript et en JSX, le JavaScript enrichi de balises,
+pour deux raisons qui ont guidé toute sa conception.
+
+### Des types pour détecter les erreurs avant les étudiant·es
+
+En TypeScript, chaque valeur a un **type**, que l'éditeur connaît pendant qu'on écrit.
+`createStep` et `expr` sont construits pour que ces types disent le plus de choses possible :
+
+- les données déclarées dans `schema` donnent leur type à `ctx.data` et `ctx.inputs` :
+  en écrivant `ctx.data.`, l'éditeur propose `expr` ;
+  après `ctx.data.expr.`, il propose `isEqual`, `diff`, `factor`… ;
+- une faute de frappe, une opération qui n'existe pas
+  ou une correction qui ne renvoie pas vrai ou faux sont soulignées en rouge,
+  avant que la page ne soit ouverte ;
+- une page de cours qui oublie une donnée d'un exercice,
+  ou lui en donne une de trop, est signalée par `bun run typecheck`,
+  qui vérifie aussi les fichiers `.mdx` ;
+- `createDerivedStep` vérifie que les données qu'il construit conviennent à l'exercice de départ.
+
+Ce qui ne peut être vérifié qu'à l'exécution l'est au chargement de la page :
+une formule LaTeX invalide dans les données d'un exercice est signalée,
+plutôt que d'aboutir à une correction fausse.
+Python n'offre pas ces garanties au même degré, et ne s'exécute pas nativement dans le navigateur :
+c'est pourquoi la plateforme est en JSX, et Python sert là où il excelle, sur le serveur, pour le calcul formel.
+
+### Du texte, pour l'historique et pour l'assistant
+
+Tout ce qui fait un cours est du texte :
+les pages en Markdown, les exercices en TypeScript.
+Rien n'est caché dans une base de données ou derrière une interface.
+Deux conséquences en découlent :
+
+- **l'historique** :
+  chaque modification est enregistrée avec [Git](https://git-scm.com/),
+  on peut voir qui a changé quoi, revenir en arrière, relire les changements d'un·e collègue avant de les publier,
+  ou préparer l'année suivante sur une branche à part ([Proposer ses modifications](/doc/contributing)) ;
+- **l'assistant de programmation** :
+  une IA lit et écrit du texte.
+  Elle peut écrire un exercice à partir d'une description,
+  et les types vérifient ensuite son travail comme celui de n'importe qui :
+  une erreur de l'assistant est soulignée avant d'atteindre les étudiant·es.
+
+## Faire écrire du code aux enseignant·es
+
+C'est sans doute le choix le plus discutable de la plateforme :
+pour créer un nouveau type d'exercice, un·e enseignant·e écrit du code.
+La plupart des plateformes font l'inverse,
+et proposent des formulaires où l'on choisit un type de question avant d'en remplir les champs.
+Cette section explique ce choix, ce qu'il coûte, et ce qui le rend supportable.
+
+### Pourquoi pas des formulaires ?
+
+Un formulaire est facile à prendre en main, mais il a un **plafond** :
+ce que ses auteurs n'ont pas prévu est impossible.
+Or ce qui fait l'intérêt de la plateforme se trouve justement au-dessus de ce plafond :
+
+- une remédiation qui dépend de la réponse donnée, et qui pose elle-même d'autres questions ;
+- une explication calculée à partir de l'erreur de l'étudiant·e ;
+- un exercice réutilisé à l'intérieur d'un autre, avec toute sa remédiation ;
+- des questions générées, reproductibles, reliées par des prérequis.
+
+Un formulaire décrit une question ; il décrit mal un arbre de questions.
+Le code n'a pas de plafond :
+il reste simple pour les cas simples, et permet les cas difficiles quand on en a besoin.
+Il apporte en plus ce que la section précédente décrit :
+les erreurs détectées par les types, l'historique de chaque modification,
+et l'aide d'un assistant de programmation, qui écrit du texte bien mieux qu'il ne remplit des formulaires.
+
+### Combien de code, et pour faire quoi
+
+Écrire du code n'est nécessaire qu'à la dernière marche.
+Chaque marche ne demande que ce qu'il faut pour la franchir :
+
+| Ce que l'on veut faire              | Ce que l'on écrit                               |
+| ----------------------------------- | ----------------------------------------------- |
+| Rédiger un chapitre                 | Du texte et des formules, en Markdown           |
+| Y placer un exercice existant       | Une balise : `<Factor id="…" expr="x^2 - 1" />` |
+| Le régler                           | Des attributs : ses données, `options`          |
+| Changer sa correction pour une page | Un attribut `feedback`, dans la page            |
+| Adapter un exercice existant        | Quelques lignes, avec `createDerivedStep`       |
+| Inventer un nouveau type d'exercice | Une étape, avec `createStep`                    |
+
+Les quatre premières pages de cette documentation suffisent pour rédiger un chapitre et y placer des exercices :
+on y écrit des balises et leurs attributs, mais on n'y programme aucun exercice.
+Chaque exercice ajouté au paquet commun, comme `Factor`,
+devient une balise de plus pour tous les autres cours,
+si bien que la dernière marche est de moins en moins souvent nécessaire.
+
+### Ce qui rend le code abordable
+
+- **Il est déclaratif.**
+  On décrit la conversation, on ne la programme pas :
+  pas de variable à tenir à jour, pas de boucle, pas d'ordre d'exécution à suivre.
+  Le code se lit comme le plan de l'exercice, branche par branche.
+- **Il est court.**
+  `Factor` et sa remédiation tiennent en moins de 80 lignes, l'exercice de limite en une trentaine.
+- **L'éditeur aide.**
+  Les types proposent, comme un menu, les données et les opérations disponibles,
+  et soulignent les erreurs avant qu'un·e étudiant·e ne les voie.
+- **L'assistant écrit, l'enseignant·e vérifie.**
+  On peut décrire un exercice comme à un·e collègue
+  et laisser l'assistant de programmation l'écrire.
+  Relire du code est plus facile que l'écrire,
+  et la vérification décisive se fait dans le navigateur, en répondant juste, puis faux à chaque étape.
+- **La documentation montre plutôt qu'elle n'explique.**
+  Chaque page contient des exemples qui fonctionnent, à copier et à modifier.
+
+### Ce que cela coûte
+
+Ce choix a un prix, qu'il serait malhonnête de cacher :
+
+- installer un environnement de développement demande un effort, une fois ([Installer la plateforme](/doc/setup)) ;
+- la syntaxe de JSX et de TypeScript, même réduite au nécessaire, s'apprend ;
+- les messages d'erreur sont techniques, et souvent en anglais :
+  l'assistant peut les expliquer, mais il faut savoir les lui donner ;
+- inventer un type d'exercice reste plus long qu'en remplir un formulaire,
+  et dépend parfois de l'aide d'un·e collègue ou de l'assistant.
+
+Le pari de la plateforme est que ce coût, payé une fois, vaut la liberté qu'il donne,
+et qu'il baisse à mesure que le paquet commun d'exercices grandit et que les assistants progressent.
+La façon dont les enseignant·es vivent ce choix est une question ouverte, qui mérite d'être étudiée.
+
+## Autres choix de conception
+
+- **Des pages en Markdown.**
+  Le texte d'un cours reste lisible et modifiable sans outil particulier ;
+  les exercices s'y placent comme des balises.
+- **Des exercices réutilisables.**
+  Les exercices qui servent dans plusieurs cours vivent dans un paquet commun,
+  rangé par matière, et prennent toutes leurs données en paramètres.
+- **Python dans le navigateur.**
+  Le code des étudiant·es s'exécute dans leur navigateur ([Pyodide](https://pyodide.org/)),
+  sans serveur, et se corrige par des tests écrits avec `expect`.
+- **Des figures déclaratives.**
+  Les figures interactives ([JSXGraph](https://jsxgraph.org/)) se décrivent élément par élément, comme une page ;
+  quand une valeur change, la figure suit.
+- **Des présentations dans la page.**
+  Une présentation s'écrit en Markdown dans la page du cours,
+  et l'enseignant·e peut y écrire au stylet, en direct pour toute la classe.
+- **Des données reproductibles.**
+  Ce qui est enregistré suffit à reconstruire chaque question :
+  les données d'une étape, ou les paramètres d'une question générée.
+  Les réponses des invité·es restent dans leur navigateur ;
+  celles des étudiant·es connecté·es vont dans la base de données,
+  vidée au début de chaque année académique.
+- **Un assistant qui connaît les règles.**
+  En plus des types, le fichier `AGENTS.md` et les compétences de l'assistant (`.claude/skills`)
+  décrivent les conventions de la plateforme.
+  Un·e enseignant·e peut décrire un exercice comme à un·e collègue,
+  laisser l'assistant l'écrire, puis le vérifier dans le navigateur.
+
+## Pour un article : ce qu'il faut retenir
+
+- Un exercice est un **graphe d'étapes** décrit dans le code ;
+  la remédiation est récursive, et chaque étape réutilisée apporte la sienne.
+- Les réponses de l'étudiant·e circulent d'une étape à l'autre,
+  et le calcul formel adapte chaque explication à la réponse donnée.
+- Ce qui est enregistré est le **chemin** de chaque étudiant·e dans ce graphe,
+  avec assez de données pour rejouer chaque question :
+  une source de données sur les parcours d'apprentissage.
+- La correction s'énonce en termes mathématiques (`isEqual`, `isFactored`…),
+  pas en comparant des textes :
+  transformer une expression, puis la comparer à une autre, en une ligne.
+- `expr` relie le web (JavaScript) et le calcul formel (Python)
+  avec l'expressivité d'un langage de programmation.
+- Les types de `createStep` et d'`expr` détectent les erreurs,
+  humaines ou de l'assistant, avant qu'elles n'atteignent les étudiant·es ;
+  c'est la raison du choix de TypeScript et de JSX plutôt que de Python.
+- Tout est du texte : versionné avec Git, lisible et modifiable par une IA.
+- Les problèmes de la pédagogie (réutiliser, encapsuler, composer) sont ceux du développement web,
+  et la remédiation est un arbre :
+  JSX, qui décrit des arbres, donne au code la forme de la conversation.
+- Faire écrire du code aux enseignant·es est un choix assumé :
+  il lève le plafond des formulaires, au prix d'un apprentissage,
+  que la plateforme réduit par des marches progressives, les types et l'assistant.
+- La description est déclarative :
+  l'enseignant·e dit ce qui suit chaque réponse, jamais comment faire avancer la conversation.
+
+Les fichiers à lire en premier :
+`packages/core/src/exercise/base.tsx` (`createStep` et `createDerivedStep`),
+`packages/core/src/expr.ts` (`expr`),
+`packages/core/src/exercise/bank.tsx` (les banques de questions)
+et `packages/exercises/math/algebra/Factor.tsx` (un exemple complet).
