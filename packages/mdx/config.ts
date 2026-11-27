@@ -1,5 +1,5 @@
 import { defineMdastPlugin } from 'satteri'
-import { deck } from './deck'
+import { deck } from './deck.ts'
 
 function component(
   name: string,
