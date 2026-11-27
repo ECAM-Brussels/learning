@@ -116,6 +116,7 @@ function SequenceTable(props: { fetch: () => Promise<SequenceProgress> }) {
         rows={students()}
         columns={columns()}
         key={(row) => row.email}
+        exportName="progression"
         empty={<p class="text-gray-500">Aucun étudiant n'a encore commencé cette série.</p>}
       />
       <Show when={students().length > 0}>
@@ -216,7 +217,13 @@ function StatsContent(props: { watch: () => AsyncIterable<Stats> }) {
       </ul>
       <details class="mt-4">
         <summary class="cursor-pointer text-sm text-gray-500">Afficher les détails</summary>
-        <Table rows={students()} columns={studentColumns} key={(row) => row.email} class="mt-2" />
+        <Table
+          rows={students()}
+          columns={studentColumns}
+          key={(row) => row.email}
+          exportName="resultats"
+          class="mt-2"
+        />
       </details>
     </Show>
   )

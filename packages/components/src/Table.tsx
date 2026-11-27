@@ -1,5 +1,7 @@
+import { faFileExcel } from '@fortawesome/free-solid-svg-icons'
 import type { JSX } from '@solidjs/web'
 import { createMemo, createSignal, For, Show } from 'solid-js'
+import { Fa } from './Fa'
 
 export type TableValue = string | number | boolean | null | undefined
 
@@ -49,12 +51,42 @@ const defaultFormat = (value: TableValue) => (isEmpty(value) ? '' : String(value
 
 const alignment = { left: 'text-left', center: 'text-center', right: 'text-right' } as const
 
+const columnLabel = <T,>(column: TableColumn<T>) =>
+  column.label ?? (typeof column.header === 'string' ? column.header : column.id)
+
+/**
+ * The rows as an Excel sheet, under a bold header.
+ * A cell holds the label the table shows, except that a number shown as is stays a number, to compute with.
+ */
+export function tableToSheet<T>(columns: readonly TableColumn<T>[], rows: readonly T[]) {
+  const cells = rows.map((row) =>
+    columns.map((column) => {
+      const value = column.value(row)
+      if (!column.format && typeof value === 'number') return value
+      return (column.format ?? defaultFormat)(value) || null
+    }),
+  )
+  const headers = columns.map(columnLabel)
+  const widths = columns.map((_, i) =>
+    Math.min(
+      50,
+      Math.max(8, headers[i]!.length, ...cells.map((row) => String(row[i] ?? '').length)) + 2,
+    ),
+  )
+  return {
+    data: [headers.map((value) => ({ value, fontWeight: 'bold' as const })), ...cells],
+    columns: widths.map((width) => ({ width })),
+  }
+}
+
 export function Table<T>(props: {
   rows: readonly T[]
   columns: readonly TableColumn<T>[]
   key: (row: T) => unknown
   /** Shown when there are no rows at all, as opposed to none left by the filters. */
   empty?: JSX.Element
+  /** Offers to download the rows left by the filters, in their order, as `exportName.xlsx`. */
+  exportName?: string
   class?: string
 }) {
   const [sort, setSort] = createSignal<Sort | null>(null, { name: 'table-sort' })
@@ -106,8 +138,15 @@ export function Table<T>(props: {
     return [...values.values()].toSorted((a, b) => compare(a, b))
   }
 
-  const label = (column: TableColumn<T>) =>
-    column.label ?? (typeof column.header === 'string' ? column.header : column.id)
+  const label = columnLabel<T>
+
+  const download = async () => {
+    const { default: writeExcelFile } = await import('write-excel-file/browser')
+    const sheet = tableToSheet(props.columns, visible())
+    await writeExcelFile(sheet.data, { columns: sheet.columns, stickyRowsCount: 1 }).toFile(
+      `${props.exportName}.xlsx`,
+    )
+  }
 
   const hasFilters = () => props.columns.some((column) => column.filter)
 
@@ -209,11 +248,23 @@ export function Table<T>(props: {
           </tbody>
         </table>
       </div>
-      <Show when={visible().length !== props.rows.length}>
-        <p class="mt-1 text-xs text-gray-500">
-          {visible().length} ligne{visible().length > 1 ? 's' : ''} sur {props.rows.length}
-        </p>
-      </Show>
+      <div class="mt-1 flex items-center justify-between gap-4 text-xs text-gray-500">
+        <Show when={visible().length !== props.rows.length}>
+          <p>
+            {visible().length} ligne{visible().length > 1 ? 's' : ''} sur {props.rows.length}
+          </p>
+        </Show>
+        <Show when={props.exportName}>
+          <button
+            type="button"
+            class="ml-auto flex cursor-pointer items-center gap-1 rounded px-2 py-1 hover:bg-gray-100 hover:text-gray-800"
+            onClick={() => void download()}
+          >
+            <Fa icon={faFileExcel} />
+            Exporter vers Excel
+          </button>
+        </Show>
+      </div>
     </Show>
   )
 }

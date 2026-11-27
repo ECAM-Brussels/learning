@@ -42,6 +42,7 @@
     "perfect-freehand": "^1.2.3",
     "reveal.js": "6.0.2",
     "solid-js": "catalog:",
-    "valibot": "catalog:"
+    "valibot": "catalog:",
+    "write-excel-file": "^4.1.1"
   }
 }
