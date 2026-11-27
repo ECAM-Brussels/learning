@@ -1,11 +1,11 @@
 import { Board } from '@learning/components'
-import { Exercise, Sequence, tex } from '@learning/core'
+import { createDerivedStep, createStep, Sequence, tex } from '@learning/core'
 import { Simple } from '@learning/exercises/math/Simple'
 import { MultipleChoice } from '@learning/exercises/MultipleChoice'
 import { Show } from 'solid-js'
 import * as v from 'valibot'
 
-type Vector = readonly number[]
+type Vector = number[]
 type Pair = { x: Vector; y: Vector }
 type Name = keyof Pair
 
@@ -44,149 +44,167 @@ export function Dependence(props: { id: string; pairs: Pair[] }) {
   )
 }
 
-function DependentOrIndependent(props: Pair) {
-  const lambda = () => ratio(props.x, props.y)
-  return (
-    <MultipleChoice
-      prompt={
-        <>
-          <p>Are the vectors</p>
-          <div class="flex justify-center">
-            {tex`\mathbf{x}=${column(props.x)},\qquad\mathbf{y}=${column(props.y)}`}
-          </div>
-          <p>linearly dependent or linearly independent?</p>
-        </>
-      }
-      choices={{ dependent: 'Linearly dependent', independent: 'Linearly independent' }}
-      answer={lambda() === undefined ? 'independent' : 'dependent'}
-      feedback={(ctx) => (
-        <Show
-          when={lambda() !== undefined}
-          fallback={
-            <Show when={!ctx.correct}>
-              <p>
-                The ratios of the components are not all equal, so {tex`\mathbf{y}`} is not a
-                multiple of {tex`\mathbf{x}`}: the vectors are linearly independent.
-              </p>
-            </Show>
-          }
-        >
-          <Show when={ctx.correct} fallback={<Parallel x={props.x} y={props.y} />}>
-            <Multiple x={props.x} y={props.y} lambda={lambda()!} />
+const pair = { x: v.array(v.number()), y: v.array(v.number()) }
+
+export const DependentOrIndependent = createDerivedStep(
+  MultipleChoice,
+  pair,
+  (data) => ({
+    prompt: (
+      <>
+        <p>Are the vectors</p>
+        <div class="flex justify-center">
+          {tex`\mathbf{x}=${column(data.x)},\qquad\mathbf{y}=${column(data.y)}`}
+        </div>
+        <p>linearly dependent or linearly independent?</p>
+      </>
+    ),
+    choices: { dependent: 'Linearly dependent', independent: 'Linearly independent' },
+    answer: ratio(data.x, data.y) === undefined ? 'independent' : 'dependent',
+  }),
+  {
+    name: 'IA1M/vectors/dependence',
+    feedback: (ctx) => (
+      <Show
+        when={ratio(ctx.data.x, ctx.data.y) !== undefined}
+        fallback={
+          <Show when={!ctx.correct}>
+            <p>
+              The ratios of the components are not all equal, so {tex`\mathbf{y}`} is not a multiple
+              of {tex`\mathbf{x}`}: the vectors are linearly independent.
+            </p>
           </Show>
+        }
+      >
+        <Show when={ctx.correct} fallback={<Parallel x={ctx.data.x} y={ctx.data.y} />}>
+          <Multiple x={ctx.data.x} y={ctx.data.y} />
         </Show>
-      )}
-    />
-  )
-}
+      </Show>
+    ),
+  },
+)
 
 /**
  * For dependent vectors. The first time the student answers "not parallel", they draw the vectors
  * and are asked again; answering it a second time shows why they are parallel, so the
  * exercise always ends.
  */
-function Parallel(props: Pair & { afterDrawing?: boolean }) {
-  return (
-    <MultipleChoice
-      prompt={
-        <p>
-          {props.afterDrawing ? 'Look at your drawing: are ' : 'Are '}
-          {tex`\mathbf{x}`} and {tex`\mathbf{y}`} parallel?
-        </p>
-      }
-      choices={{ parallel: 'Parallel', notParallel: 'Not parallel' }}
-      answer="parallel"
-      // Drawing allows resubmissions, which this question would otherwise inherit.
-      options={{ allowResubmissions: false }}
-      feedback={(ctx) => (
-        <Show when={ctx.correct || props.afterDrawing} fallback={<Draw x={props.x} y={props.y} />}>
-          <Show when={!ctx.correct}>
-            <p>
-              Both arrows lie on the same line through the origin, so {tex`\mathbf{x}`} and{' '}
-              {tex`\mathbf{y}`} are parallel.
-            </p>
-          </Show>
-          <p>
-            Remember that two parallel vectors are always linearly dependent: one of them is a
-            multiple of the other.
-          </p>
-          <Multiple x={props.x} y={props.y} lambda={ratio(props.x, props.y)!} />
-        </Show>
-      )}
-    />
-  )
-}
-
-function Multiple(props: Pair & { lambda: number }) {
-  return (
-    <Simple
-      prompt={
-        <p>
-          Write one vector as a multiple of the other: find {tex`\alpha`} such that{' '}
-          {tex`\mathbf{y}=\alpha\mathbf{x}`}.
-        </p>
-      }
-      label="\alpha ="
-      options={{ allowResubmissions: false }}
-      grade={(attempt) => attempt.isEqual(props.lambda)}
-      feedback={(ctx) => (
+export const Parallel = createDerivedStep(
+  MultipleChoice,
+  { ...pair, afterDrawing: v.optional(v.boolean(), false) },
+  (data) => ({
+    prompt: (
+      <p>
+        {data.afterDrawing ? 'Look at your drawing: are ' : 'Are '}
+        {tex`\mathbf{x}`} and {tex`\mathbf{y}`} parallel?
+      </p>
+    ),
+    choices: { parallel: 'Parallel', notParallel: 'Not parallel' },
+    answer: 'parallel',
+  }),
+  {
+    name: 'IA1M/vectors/parallel',
+    // Drawing allows resubmissions, which this question would otherwise inherit.
+    options: { allowResubmissions: false },
+    feedback: (ctx) => (
+      <Show
+        when={ctx.correct || ctx.data.afterDrawing}
+        fallback={<Draw x={ctx.data.x} y={ctx.data.y} />}
+      >
         <Show when={!ctx.correct}>
           <p>
-            Comparing the components gives {tex`\alpha=${number(props.lambda)}`}, and indeed{' '}
-            {tex`${column(props.y)}=${number(props.lambda)}${column(props.x)}`}.
+            Both arrows lie on the same line through the origin, so {tex`\mathbf{x}`} and{' '}
+            {tex`\mathbf{y}`} are parallel.
           </p>
         </Show>
-      )}
-    />
-  )
-}
+        <p>
+          Remember that two parallel vectors are always linearly dependent: one of them is a
+          multiple of the other.
+        </p>
+        <Multiple x={ctx.data.x} y={ctx.data.y} />
+      </Show>
+    ),
+  },
+)
+
+/** For dependent vectors: the α such that y = αx. */
+export const Multiple = createDerivedStep(
+  Simple,
+  pair,
+  (data) => ({
+    prompt: (
+      <p>
+        Write one vector as a multiple of the other: find {tex`\alpha`} such that{' '}
+        {tex`\mathbf{y}=\alpha\mathbf{x}`}.
+      </p>
+    ),
+    label: '\\alpha =',
+    grade: (attempt) => attempt.isEqual(ratio(data.x, data.y)!),
+  }),
+  {
+    name: 'IA1M/vectors/multiple',
+    options: { allowResubmissions: false },
+    feedback: (ctx) => {
+      const lambda = () => number(ratio(ctx.data.x, ctx.data.y)!)
+      return (
+        <Show when={!ctx.correct}>
+          <p>
+            Comparing the components gives {tex`\alpha=${lambda()}`}, and indeed{' '}
+            {tex`${column(ctx.data.y)}=${lambda()}${column(ctx.data.x)}`}.
+          </p>
+        </Show>
+      )
+    },
+  },
+)
+
+const unit = (dimension: number, i: number) =>
+  Array.from({ length: dimension }, (_, j) => (i === j ? 1 : 0))
 
 /** The student places x and y, and may retry until both are right. */
-function Draw(props: Pair) {
-  const unit = (i: number) => props.x.map((_, j) => (i === j ? 1 : 0))
-  return (
-    <Exercise
-      schema={{ data: {}, inputs: { x: v.array(v.number()), y: v.array(v.number()) } }}
-      data={{}}
-      options={{ allowResubmissions: true }}
-      initialState={() => ({ x: unit(0), y: unit(1) })}
-      prompt={(ctx) => {
-        const placing = {
-          target: { x: props.x, y: props.y },
-          get drawn(): Pair {
-            return { x: ctx.state.current.x ?? unit(0), y: ctx.state.current.y ?? unit(1) }
-          },
-          get locked() {
-            return ctx.state.correct === true
-          },
-          onChange: (name: Name, value: number[]) => ctx.state.set(name, value),
-        }
-        return (
-          <>
-            <p>
-              Draw {tex`\mathbf{x}`} and {tex`\mathbf{y}`}:{' '}
-              {props.x.length === 2
-                ? 'drag the heads of the arrows to the right points.'
-                : 'move the sliders until the arrows are at the right places.'}
-            </p>
-            <Show when={props.x.length === 2} fallback={<Draw3D {...placing} />}>
-              <Draw2D {...placing} />
-            </Show>
-          </>
-        )
-      }}
-      grade={(ctx) => equal(ctx.inputs.x, props.x) && equal(ctx.inputs.y, props.y)}
-      feedback={(ctx) => (
-        <Show
-          when={ctx.correct}
-          fallback={<p>Not quite: compare the coordinates of your arrows with the vectors.</p>}
-        >
-          <Parallel x={props.x} y={props.y} afterDrawing />
+export const Draw = createStep({
+  name: 'IA1M/vectors/draw',
+  schema: { data: pair, inputs: pair },
+  options: { allowResubmissions: true },
+  initialState: (data) => ({ x: unit(data.x.length, 0), y: unit(data.x.length, 1) }),
+  prompt: (ctx) => {
+    const placing = {
+      get target(): Pair {
+        return { x: ctx.data.x, y: ctx.data.y }
+      },
+      get drawn(): Pair {
+        const n = ctx.data.x.length
+        return { x: ctx.state.current.x ?? unit(n, 0), y: ctx.state.current.y ?? unit(n, 1) }
+      },
+      get locked() {
+        return ctx.state.correct === true
+      },
+      onChange: (name: Name, value: number[]) => ctx.state.set(name, value),
+    }
+    return (
+      <>
+        <p>
+          Draw {tex`\mathbf{x}`} and {tex`\mathbf{y}`}:{' '}
+          {ctx.data.x.length === 2
+            ? 'drag the heads of the arrows to the right points.'
+            : 'move the sliders until the arrows are at the right places.'}
+        </p>
+        <Show when={ctx.data.x.length === 2} fallback={<Draw3D {...placing} />}>
+          <Draw2D {...placing} />
         </Show>
-      )}
-    />
-  )
-}
+      </>
+    )
+  },
+  grade: (ctx) => equal(ctx.inputs.x, ctx.data.x) && equal(ctx.inputs.y, ctx.data.y),
+  feedback: (ctx) => (
+    <Show
+      when={ctx.correct}
+      fallback={<p>Not quite: compare the coordinates of your arrows with the vectors.</p>}
+    >
+      <Parallel x={ctx.data.x} y={ctx.data.y} afterDrawing />
+    </Show>
+  ),
+})
 
 type Placing = {
   target: Pair
