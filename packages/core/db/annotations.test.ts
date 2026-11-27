@@ -17,8 +17,8 @@ mock.module('@solidjs/web', () => ({
 mock.module('@solidjs/web/server-functions', () => ({ live: <T>(fn: T) => fn }))
 mock.module('virtual:solid-env/server', () => ({ env: { ADMINS: ['admin@example.com'] } }))
 
-const remote = await import('./annotations.remote')
-const { registerPageSources } = await import('./pageSources')
+const remote = await import('../src/annotations.remote')
+const { registerPageSources } = await import('../src/pageSources')
 
 const presenter = { email: 'prof@ecam.be', name: 'Prof' }
 const assistant = { email: 'assistant@ecam.be', name: 'Assistant' }

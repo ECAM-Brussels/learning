@@ -31,14 +31,14 @@ Name your signals/memos/effects (the `{ name: "..." }` option): diagnostics repo
 
 ## Database tests
 
-Tests of what reaches the database, saved answers above all, are named `*.db.test.ts(x)`.
+Tests of what reaches the database, saved answers above all, live in `packages/core/db`.
 They run against an in-memory Postgres with the real schema, `createTestDatabase` from `@learning/db/testing`,
 so they need no database server and can't reach a real one.
 They replace `@learning/db` and the request's user with `mock.module`,
 and Bun shares module mocks between the files of a run,
 whereas the other tests replace `context.remote.ts` itself:
-so `bun run test` in `packages/core` runs them apart, as `bun run test:db`, and the other runs leave them out.
-`src/exercise/saving.db.test.tsx` shows the setup, from answering an exercise to the rows it saves.
+so `bun run test` in `packages/core` runs `./src`, then `./db` apart, as `bun run test:db`.
+`db/saving.test.tsx` shows the setup, from answering an exercise to the rows it saves.
 
 ## Teacher documentation
 

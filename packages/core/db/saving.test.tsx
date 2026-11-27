@@ -4,7 +4,7 @@ import { fireEvent, render, screen, waitFor } from '@solidjs/testing-library'
 import * as web from '@solidjs/web'
 import { afterAll, beforeEach, describe, expect, mock, setDefaultTimeout, test } from 'bun:test'
 import { Show } from 'solid-js'
-import './test.components'
+import '../src/exercise/test.components'
 
 const database = await createTestDatabase()
 // A step saves at most once a second, and some tests answer several in a row.
@@ -20,7 +20,7 @@ mock.module('@solidjs/web', () => ({
 }))
 mock.module('@solidjs/web/server-functions', () => ({ live: <T,>(fn: T) => fn }))
 mock.module('virtual:solid-env/server', () => ({ env: { ADMINS: [] } }))
-mock.module('../auth', () => ({ getUser: async () => user }))
+mock.module('../src/auth', () => ({ getUser: async () => user }))
 
 /** Whether steps are on screen: a visible step saves itself unanswered, as it does on a page. */
 let visible = false
@@ -36,8 +36,8 @@ globalThis.IntersectionObserver = class {
   }
 } as any
 
-const { createStep } = await import('./base')
-const { Sequence } = await import('./sequence')
+const { createStep } = await import('../src/exercise/base')
+const { Sequence } = await import('../src/exercise/sequence')
 
 const Hint = createStep({
   name: 'test/hint',

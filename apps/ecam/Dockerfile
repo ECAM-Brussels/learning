@@ -1,4 +1,4 @@
-FROM oven/bun:1.3.5 AS deps
+FROM oven/bun:1.4.5 AS deps
 WORKDIR /app
 COPY package.json bun.lock ./
 COPY --parents apps/*/package.json packages/*/package.json ./

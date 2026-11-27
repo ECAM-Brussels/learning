@@ -3,7 +3,7 @@ import { createTestDatabase } from '@learning/db/testing'
 import * as web from '@solidjs/web'
 import { afterAll, beforeEach, describe, expect, mock, test } from 'bun:test'
 import { eq } from 'drizzle-orm'
-import type { Options } from './options'
+import type { Options } from '../src/exercise/options'
 
 const database = await createTestDatabase()
 
@@ -19,7 +19,7 @@ mock.module('@solidjs/web', () => ({
 mock.module('@solidjs/web/server-functions', () => ({ live: <T>(fn: T) => fn }))
 mock.module('virtual:solid-env/server', () => ({ env: { ADMINS: ['admin@example.com'] } }))
 
-const remote = await import('./context.remote')
+const remote = await import('../src/exercise/context.remote')
 
 const student = { email: 'alice@student.ecam.be', name: 'Alice' }
 const other = { email: 'bob@student.ecam.be', name: 'Bob' }
