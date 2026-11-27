@@ -149,6 +149,12 @@ declare module "virtual:file-routes" {
       $$route?: undefined;
     },
     {
+      path: "/doc/presentation";
+      page: true;
+      $component: FileRouteLazyRef;
+      $$route?: undefined;
+    },
+    {
       path: "/doc/python";
       page: true;
       $component: FileRouteLazyRef;
@@ -335,6 +341,14 @@ declare module "virtual:file-routes" {
         {
           path: "/new-exercise";
           id: "/new-exercise";
+          page: true;
+          $component: FileRouteLazyRef;
+          $$route?: undefined;
+          children?: undefined;
+        },
+        {
+          path: "/presentation";
+          id: "/presentation";
           page: true;
           $component: FileRouteLazyRef;
           $$route?: undefined;

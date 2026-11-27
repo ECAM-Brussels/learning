@@ -1,0 +1,362 @@
+import { defineMeta } from '@learning/components'
+import { expr, tex } from '@learning/core'
+import * as Demo from './presentation.demo'
+
+export default defineMeta({
+  title: 'Présenter la plateforme',
+  author: 'Khoi Nguyen',
+  institute: 'ECAM Brussels',
+  date: 'Novembre 2026',
+})
+
+# Présenter la plateforme
+
+Cette présentation montre la plateforme à des collègues,
+avec des exercices et des figures qui fonctionnent pendant qu'on la présente.
+Cliquez dessus pour la piloter au clavier,
+et appuyez sur `F` pour la mettre en plein écran.
+Sur la page, la flèche à côté de la table des matières la masque, pour agrandir la présentation.
+
+:::::deck[title="Learning" subtitle="Des exercices qui dialoguent avec les étudiant·es" annotators="ngy@ecam.be"]
+
+# Une plateforme qui dialogue
+
+## Le schéma habituel
+
+:::incremental
+
+- Une question.
+- Une réponse.
+- Une correction, que l'étudiant·e lit… ou pas.
+
+:::
+
+. . .
+
+Quand la réponse est fausse, **où** se trouve la difficulté ?
+
+## Une conversation plutôt qu'une correction
+
+:::incremental
+
+- Après une erreur, l'exercice pose **d'autres questions**, choisies selon la réponse.
+- Chacune peut en poser d'autres : la remédiation est **récursive**, jusqu'aux prérequis.
+- Une fois la difficulté levée, on **revient** à la question de départ.
+- Les réponses sont corrigées par **calcul formel** : seule leur valeur compte, pas leur écriture.
+
+:::
+
+<Deck.Standout>Essayons !</Deck.Standout>
+
+# Le calcul formel
+
+## Factorisez
+
+Répondez faux, puis juste sous une autre forme, comme $(3 - x)(2 - x)$.
+
+<Demo.FactorLive />
+
+## Comparer des valeurs, pas des écritures
+
+Pour la plateforme, ces trois réponses sont égales :
+
+{tex.display`(x - 2)(x - 3) \qquad (3 - x)(2 - x) \qquad x^2 - 5x + 6`}
+
+. . .
+
+La correction de l'exercice `Factor` tient en une ligne :
+
+```tsx
+grade: (ctx) => [ctx.inputs.attempt.isEqual(ctx.data.expr), ctx.inputs.attempt.isFactored()]
+```
+
+La réponse est juste si elle est **égale** au polynôme et **factorisée**.
+
+## Le calcul formel en direct
+
+Modifiez $f$ ou $g$ : chaque résultat est calculé pendant que vous tapez.
+
+<Demo.Playground />
+
+## Des corrections calculées
+
+Les solutions ne sont écrites nulle part : elles sont calculées.
+
+```mdx
+{tex`(x - 2)(x - 3) = ${expr('(x - 2)(x - 3)').expand()}`}
+```
+
+affiche
+
+{tex.display`(x - 2)(x - 3) = ${expr('(x - 2)(x - 3)').expand()}`}
+
+. . .
+
+Pas de faute de frappe dans les solutions,
+et un même exercice sert pour toutes les données.
+
+# La remédiation récursive
+
+## Calculez la limite
+
+Répondez faux, puis laissez-vous guider.
+
+<Demo.LimitLive />
+
+## Le chemin de la conversation
+
+<Demo.LimitPath />
+
+## Le code a la forme de la conversation
+
+::::columns
+
+:::column
+
+```tsx
+feedback: (ctx) => (
+  <Show when={!ctx.correct}>
+    <p>Factorisez le numérateur.</p>
+    <Factor expr={ctx.data.numerator}>
+      <p>Recalculez la limite.</p>
+      <ctx.Self />
+    </Factor>
+  </Show>
+)
+```
+
+:::
+
+:::column
+
+- `Show` : seulement après une erreur.
+- `Factor` : un exercice existant, avec **toute sa remédiation**.
+- Son contenu n'apparaît qu'une fois la factorisation réussie.
+- `ctx.Self` : la question de départ, à nouveau.
+
+:::
+
+::::
+
+## Trois niveaux, sans une ligne de plus
+
+Une intégrale fausse mène à la primitive, puis une primitive fausse à la dérivée de votre réponse.
+
+<Demo.IntegrateLive />
+
+# Des exercices pour tous les cours
+
+## Prêts à l'emploi
+
+Un exercice s'écrit une fois, et se place dans n'importe quelle page avec une balise :
+
+```mdx
+<Factor id="factorisation" expr="x^2 - 9" />
+```
+
+:::incremental
+
+- Factoriser, développer, compléter le carré, trouver une racine, dériver, intégrer…
+- Des choix multiples, des exercices Python, des questions générées.
+- Améliorer la remédiation d'un exercice l'améliore **pour tous les cours** qui l'utilisent.
+
+:::
+
+## Choix multiple
+
+<Demo.ChoiceLive />
+
+## Des questions générées
+
+Chaque question est tirée au hasard, mais **reproductible** : seuls ses paramètres sont enregistrés.
+
+<Demo.BankLive />
+
+## Python dans le navigateur
+
+Le code s'exécute dans le navigateur, et des tests le corrigent.
+
+<Demo.PythonLive />
+
+## Et ses graphiques
+
+Ce code trace le cosinus, et ses axes n'ont pas de nom : corrigez-le.
+
+<Demo.PythonPlotLive />
+
+# Des figures interactives
+
+## Sommes de Riemann
+
+<Demo.Riemann />
+
+## De la tangente à la dérivée
+
+::::columns
+
+:::column
+
+<Demo.TangentTrace />
+
+:::
+
+:::column
+
+- Déplacez le point $A$ sur la courbe de $f$.
+- La **tangente** le suit.
+- Sa pente trace la courbe de $f'$, en rouge.
+
+:::
+
+::::
+
+## Polynômes de Taylor
+
+<Demo.Taylor />
+
+## Séries de Fourier
+
+<Demo.Fourier />
+
+## Équations différentielles
+
+<Demo.SlopeField />
+
+## En trois dimensions
+
+::::columns
+
+:::column
+
+<Demo.Wave />
+
+:::
+
+:::column
+
+La surface ondule au fil du temps.
+
+Faites-la tourner en la faisant glisser à la souris.
+
+:::
+
+::::
+
+## Une figure s'écrit comme une page
+
+```tsx
+<Board axis boundingBox={[-0.5, 3, 6.5, -0.5]}>
+  <Board.RiemannSum f={f} n={n()} domain={[0, 6]} />
+  <Board.Plot fn={f} />
+</Board>
+```
+
+:::incremental
+
+- Chaque balise est un élément de la figure.
+- Quand `n` change, la figure suit : rien à redessiner à la main.
+- L'assistant de programmation construit une figure à partir de sa description.
+
+:::
+
+# Des présentations dans la page
+
+## Cette présentation est une page
+
+Elle s'écrit en Markdown, dans la page du cours :
+
+```md
+:::::deck[title="Les dérivées"]
+
+# Définition
+
+## Taux d'accroissement
+
+La dérivée de **f** en $a$ est la limite…
+
+:::::
+```
+
+Les exercices et les figures y fonctionnent comme sur la page.
+
+## Écrire en direct
+
+:::incremental
+
+- Les personnes listées dans `annotators` écrivent sur les slides, au stylet, à la souris ou au doigt.
+- Les étudiant·es voient les traits en direct, et suivent les changements de slide.
+- Les traits sont rangés par séance, et restent ensuite sur la page.
+
+:::
+
+. . .
+
+Une fois connecté·e, choisissez le stylo en haut à droite.
+
+# Suivre les étudiant·es
+
+## Ce qui est enregistré
+
+:::incremental
+
+- Le **chemin** de chaque étudiant·e : chaque étape, sa réponse, et si elle était juste.
+- Une conversation se rejoue à l'identique quand on revient sur la page.
+- Les enseignant·es voient en direct les statistiques d'un exercice et la progression d'une séquence.
+- Les réponses des invité·es restent dans leur navigateur ; la base de données est vidée à chaque année académique.
+
+:::
+
+# Écrire un cours
+
+## Des marches progressives
+
+:::incremental
+
+- Rédiger un chapitre : du texte et des formules, en Markdown.
+- Y placer un exercice : une balise.
+- Le régler : ses attributs.
+- Changer sa correction pour une page : un attribut `feedback`.
+- Adapter un exercice existant : quelques lignes, avec `createDerivedStep`.
+- Inventer un type d'exercice : une étape, avec `createStep`.
+
+:::
+
+## Du code typé, en fichiers texte
+
+:::incremental
+
+- L'éditeur propose les données et les opérations disponibles, et souligne les erreurs avant les étudiant·es.
+- Chaque modification est enregistrée avec Git : on relit, on revient en arrière, on prépare l'année suivante.
+- Un assistant de programmation connaît les conventions de la plateforme : on décrit l'exercice, il l'écrit, on vérifie.
+
+:::
+
+## Demander à l'assistant
+
+> Crée un exercice qui demande la limite de p(x) / q(x) en x = a,
+> lorsque le numérateur et le dénominateur s'annulent en a.
+> Si la réponse est fausse, demande de factoriser le numérateur avec `Factor`,
+> puis repose la limite.
+
+. . .
+
+Essayez ensuite chaque chemin dans le navigateur, en répondant juste, puis faux à chaque étape.
+
+# Pour commencer
+
+## La documentation
+
+Tout est expliqué dans la [documentation](/doc), en français, avec des exemples qui fonctionnent :
+
+:::incremental
+
+- [rédiger une page](/doc/writing) et [y placer des exercices](/doc/exercises) ;
+- [guider l'étudiant·e pas à pas](/doc/remediation) ;
+- [ajouter des figures interactives](/doc/figures) ;
+- [créer une présentation](/doc/slides).
+
+:::
+
+<Deck.Standout>Des questions ?</Deck.Standout>
+
+:::::
