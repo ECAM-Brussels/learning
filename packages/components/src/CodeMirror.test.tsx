@@ -1,8 +1,20 @@
 import { EditorView } from '@codemirror/view'
 import { render, waitFor } from '@solidjs/testing-library'
-import { describe, expect, mock, test } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, mock, test } from 'bun:test'
 import { createSignal, flush } from 'solid-js'
 import { Code } from './Code'
+
+// CodeMirror adds its styles to the document's head, and keeps them: in happy-dom, every later style
+// computation of the run goes through them, which made a failed assertion take seconds in other files.
+let styles: Set<Element>
+beforeAll(() => {
+  styles = new Set(Array.from(document.head.querySelectorAll('style')))
+})
+afterAll(() => {
+  for (const style of Array.from(document.head.querySelectorAll('style'))) {
+    if (!styles.has(style)) style.remove()
+  }
+})
 
 const editor = async () => {
   await waitFor(() => expect(document.querySelector('.cm-editor')).not.toBeNull())
