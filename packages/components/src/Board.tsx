@@ -263,6 +263,11 @@ export const Board = Object.assign(
     props: Partial<JXG.BoardAttributes> & {
       children?: JSX.Element
       class?: string
+      /**
+       * Called at every frame with the seconds since the last one, e.g. to move a signal forward.
+       * Frames are skipped while the board is hidden, as on a slide not shown; pass `undefined` to stop.
+       */
+      onFrame?: (dt: number, board: JXG.Board) => void
     },
   ) => {
     const defaults = useContext(BoardDefaultsContext)
@@ -272,13 +277,40 @@ export const Board = Object.assign(
       {
         showCopyright: false,
       } satisfies Partial<JXG.BoardAttributes>,
-      omit(props, 'children', 'class'),
+      omit(props, 'children', 'class', 'onFrame'),
     )
     onSettled(() => {
       const board = initBoard(el()!, { ...snapshot(attrs) }, snapshot(defaults()))
+      // A redraw calls the functions elements were given, which read props and signals when JSXGraph needs their values.
+      // Redraws run inside effects, which would take those reads for dependencies: effects that need them track them.
+      for (const method of ['update', 'fullUpdate'] as const) {
+        const redraw = board[method].bind(board)
+        board[method] = (...args: Parameters<typeof redraw>) => untrack(() => redraw(...args))
+      }
       setBoard(board)
       return () => JXG.JSXGraph.freeBoard(board)
     })
+
+    createEffect(
+      () => [props.onFrame, board(), el()] as const,
+      ([onFrame, board, container]) => {
+        if (!onFrame || !board || !container) return
+        let id = 0
+        let last: number | undefined
+        const frame = (now: number) => {
+          const shown = container.checkVisibility({
+            opacityProperty: true,
+            visibilityProperty: true,
+          })
+          // At most a tenth of a second, so that a figure doesn't jump after a slow frame.
+          if (shown && last !== undefined) onFrame(Math.min((now - last) / 1000, 0.1), board)
+          last = now
+          id = requestAnimationFrame(frame)
+        }
+        id = requestAnimationFrame(frame)
+        return () => cancelAnimationFrame(id)
+      },
+    )
 
     return (
       <Boundary>

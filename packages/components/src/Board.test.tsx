@@ -80,6 +80,37 @@ describe('Board', () => {
     )
   })
 
+  test('calls onFrame at every frame while given one, and only while shown', async () => {
+    const frames: [number, unknown][] = []
+    const [animated, setAnimated] = createSignal(true)
+    const [hidden, setHidden] = createSignal(false)
+    const { container } = render(() => (
+      <div style={{ visibility: hidden() ? 'hidden' : 'visible' }}>
+        <Board onFrame={animated() ? (dt, board) => frames.push([dt, board]) : undefined} />
+      </div>
+    ))
+    await waitFor(() => expect(frames.length).toBeGreaterThan(2))
+    for (const [dt, board] of frames) {
+      expect(dt).toBeGreaterThanOrEqual(0)
+      expect(dt).toBeLessThanOrEqual(0.1)
+      expect(board).toHaveProperty('containerObj', container.querySelector('div.rounded-xl'))
+    }
+
+    setHidden(true)
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    const whileHidden = frames.length
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    expect(frames.length).toBe(whileHidden)
+
+    setHidden(false)
+    await waitFor(() => expect(frames.length).toBeGreaterThan(whileHidden))
+    setAnimated(false)
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    const stopped = frames.length
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    expect(frames.length).toBe(stopped)
+  })
+
   test('a 3D element outside a view shows an error', async () => {
     const { container } = render(() => (
       <Board>

@@ -91,6 +91,43 @@ La fonction tracée doit être recréée quand `a` change :
 c'est le rôle de `createMemo`, qui lit `a()` **avant** de construire la fonction.
 Écrire directement `fn={(x) => a() * x * x}` ne redessinerait pas la courbe.
 
+## Une figure animée
+
+`onFrame` est appelée à chaque image, une soixantaine de fois par seconde,
+avec le temps écoulé depuis l'image précédente, en secondes :
+
+```tsx
+export function Breathing() {
+  const [t, setT] = createSignal(0)
+  const [playing, setPlaying] = createSignal(true)
+  const f = createMemo(() => {
+    const a = Math.sin(t())
+    return (x: number) => a * x * x
+  })
+  return (
+    <>
+      <Board
+        axis
+        boundingBox={[-5, 5, 5, -5]}
+        onFrame={playing() ? (dt) => setT(t() + dt) : undefined}
+      >
+        <Board.Plot fn={f()} />
+      </Board>
+      <button onClick={() => setPlaying(!playing())}>{playing() ? 'Pause' : 'Animer'}</button>
+    </>
+  )
+}
+```
+
+<Demo.Breathing />
+
+Ici, `onFrame` fait avancer le temps `t`,
+et la courbe suit, comme si l'on déplaçait un curseur.
+Donner `undefined` à `onFrame` arrête l'animation :
+c'est ce que fait le bouton.
+Une figure cachée ne s'anime pas,
+comme celle d'un slide qui n'est pas affiché dans une présentation.
+
 Les figures sont une partie de la plateforme qui évolue :
 demandez à l'assistant de programmation de construire une figure à partir de votre description,
 il connaît les balises disponibles.

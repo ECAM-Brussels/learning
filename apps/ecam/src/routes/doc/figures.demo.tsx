@@ -29,3 +29,30 @@ export function Parabola() {
     </Board>
   )
 }
+
+export function Breathing() {
+  const [t, setT] = createSignal(0)
+  const [playing, setPlaying] = createSignal(true)
+  const f = createMemo(() => {
+    const a = Math.sin(t())
+    return (x: number) => a * x * x
+  })
+  return (
+    <>
+      <Board
+        axis
+        boundingBox={[-5, 5, 5, -5]}
+        class="h-125 w-125"
+        onFrame={playing() ? (dt) => setT(t() + dt) : undefined}
+      >
+        <Board.Plot fn={f()} />
+      </Board>
+      <button
+        class="rounded bg-blue-600 px-3 py-1 text-white hover:bg-blue-700"
+        onClick={() => setPlaying(!playing())}
+      >
+        {playing() ? 'Pause' : 'Animer'}
+      </button>
+    </>
+  )
+}

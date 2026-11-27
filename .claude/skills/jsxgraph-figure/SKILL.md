@@ -63,6 +63,14 @@ const f = createMemo(() => {
 
 `fn={(x) => k() * x}` would never redraw.
 
+## Animations
+
+Animate a figure with `onFrame` on `<Board>`: it is called at each frame with the seconds since the last one,
+and is skipped while the board is hidden, e.g. on a slide not shown.
+Move signals forward in it, and pass `undefined` to pause: `onFrame={playing() ? step : undefined}`.
+In a `Board.Custom` construction, keep what JSXGraph reads at each redraw in plain variables,
+and call `board.update()` from `onFrame`, whose second argument is the board.
+
 ## Check it
 
 - Name signals and memos (`{ name: '…' }`), and run tests with `--conditions=development` once,
