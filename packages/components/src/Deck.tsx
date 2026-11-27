@@ -12,6 +12,7 @@ import {
   snapshot,
   useContext,
 } from 'solid-js'
+import { Annotations } from './Annotations'
 import './Deck.css'
 import { Fa } from './Fa'
 import { useLang, useMeta } from './Meta'
@@ -68,6 +69,13 @@ type DeckProps = {
   plugins?: RevealPlugin[]
   /** Sizes the deck; 16:9 and as wide as its container by default. */
   class?: string
+  /**
+   * Who may draw on the deck, live for everyone watching: emails separated by commas or spaces.
+   * The server reads them from the page's source, so write them as a plain string.
+   */
+  annotators?: string
+  /** Tells apart the decks of a page that can be drawn on, whose strokes are saved by id. */
+  id?: string
   children?: JSX.Element
   onReady?: (deck: RevealApi) => void
   onSlideChange?: (event: RevealEvent) => void
@@ -191,6 +199,9 @@ function DeckRoot(props: DeckProps) {
             {/* Headings in slides are not the page's: MDX gives them the page's heading components. */}
             <TOCContext value={null}>{props.children}</TOCContext>
           </div>
+          <Show when={props.annotators !== undefined}>
+            <Annotations deckId={props.id ?? ''} deck={deck} root={el} />
+          </Show>
           <button
             type="button"
             data-fullscreen-toggle

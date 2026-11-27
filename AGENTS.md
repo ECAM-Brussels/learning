@@ -66,6 +66,9 @@ A `:::::deck` block is a reveal.js presentation, made into slides by `packages/m
 its syntax is documented in `apps/ecam/src/routes/doc/slides.mdx`.
 Its title slide is given in brackets, `:::::deck[title="…"]`, never in `{…}` attributes, which trip the MDX language server,
 and its fence needs more colons than any directive inside it.
+`annotators="…"` in the brackets lets those people draw on the deck (`packages/components/src/Annotations.tsx`):
+the server reads the list from the page's source (`packages/mdx/brackets.ts`), so it must stay a literal string,
+and each drawable deck on a page needs its own `id="…"`.
 
 ## Exercise steps
 

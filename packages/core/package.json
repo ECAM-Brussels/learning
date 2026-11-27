@@ -27,6 +27,7 @@
     "@learning/auth": "workspace:*",
     "@learning/components": "workspace:",
     "@learning/db": "workspace:*",
+    "@learning/mdx": "workspace:*",
     "@solidjs/router": "catalog:",
     "better-auth": "catalog:",
     "dedent": "^1.7.2",

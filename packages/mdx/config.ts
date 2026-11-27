@@ -46,6 +46,10 @@ function component(name: string, attributes: Record<string, unknown>, children: 
   }
 }
 
+type TextNode = { value?: string; children?: TextNode[] }
+/** A node's text, including that of links: GFM turns an email, such as an annotator's, into one. */
+const textOf = (node: TextNode): string => node.value ?? node.children?.map(textOf).join('') ?? ''
+
 const directives = defineMdastPlugin({
   name: 'directives',
   containerDirective(node, ctx) {
@@ -53,11 +57,7 @@ const directives = defineMdastPlugin({
     const isLabel = Boolean(
       (labelNode as { data?: { directiveLabel?: boolean } } | undefined)?.data?.directiveLabel,
     )
-    const label = isLabel
-      ? (labelNode as unknown as { children: Array<{ value?: string }> }).children
-          .map(({ value }) => value ?? '')
-          .join('')
-      : undefined
+    const label = isLabel ? textOf(labelNode as unknown as TextNode) : undefined
 
     ctx.setProperty(node, 'children', isLabel ? children : node.children)
     ctx.setProperty(node, 'data', {
