@@ -71,14 +71,49 @@ describe('Deck', () => {
     const { deck } = await renderDeck(() => <Deck.Slide />)
     expect(deck.getConfig()).toMatchObject({
       embedded: true,
-      width: 1280,
-      height: 720,
+      width: 1920,
+      height: 1080,
       center: false,
       hash: false,
-      keyboardCondition: 'focused',
       progress: true,
       slideNumber: 'c/t',
     })
+  })
+
+  test('takes keys once focused, but not those typed into a field on a slide', async () => {
+    const { container, deck } = await renderDeck(() => (
+      <>
+        <Deck.Slide>
+          <input aria-label="answer" />
+          <math-field />
+        </Deck.Slide>
+        <Deck.Slide />
+      </>
+    ))
+    const reveal = container.querySelector<HTMLElement>('.reveal')!
+    // reveal.js reads keyCode.
+    const codes: Record<string, number> = { ' ': 32, ArrowRight: 39 }
+    const press = (target: Element, key: string) =>
+      target.dispatchEvent(
+        new KeyboardEvent('keydown', { key, keyCode: codes[key], bubbles: true, composed: true }),
+      )
+
+    press(document.body, 'ArrowRight')
+    expect(deck.getIndices().h).toBe(0)
+
+    // reveal.js takes the keys from a click on the deck, such as one in a field.
+    reveal.dispatchEvent(new Event('pointerdown', { bubbles: true }))
+    for (const field of [
+      container.querySelector('input')!,
+      container.querySelector('math-field')!,
+    ]) {
+      press(field, ' ')
+      press(field, 'ArrowRight')
+      expect(deck.getIndices().h).toBe(0)
+    }
+
+    press(reveal, 'ArrowRight')
+    expect(deck.getIndices().h).toBe(1)
   })
 
   test('applies its config over the defaults, and again when it changes', async () => {

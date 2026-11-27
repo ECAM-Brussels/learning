@@ -47,13 +47,11 @@ function useSlideLifecycle() {
 
 const defaults: RevealConfig = {
   embedded: true,
-  width: 1280,
-  height: 720,
+  width: 1920,
+  height: 1080,
   margin: 0,
   center: false,
   hash: false,
-  // Arrow keys would otherwise move every deck on the page, and stop the page from scrolling.
-  keyboardCondition: 'focused',
   progress: true,
   slideNumber: 'c/t',
   // Bottom right, the arrows would cover the slide number.
@@ -81,6 +79,23 @@ type DeckProps = {
   onSlideChange?: (event: RevealEvent) => void
   onFragmentShown?: (event: RevealEvent) => void
   onFragmentHidden?: (event: RevealEvent) => void
+}
+
+/**
+ * Keys typed into a field or an editor on a slide, such as an exercise's answer, are not commands:
+ * reveal.js only leaves out inputs and textareas, not a formula field.
+ * Space and Enter on a button press the button.
+ */
+function isTyping(event: KeyboardEvent) {
+  return event
+    .composedPath()
+    .some(
+      (target) =>
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          /^(INPUT|TEXTAREA|SELECT|MATH-FIELD)$/.test(target.tagName) ||
+          (target.tagName === 'BUTTON' && (event.key === ' ' || event.key === 'Enter'))),
+    )
 }
 
 const labels = {
@@ -126,9 +141,14 @@ function DeckRoot(props: DeckProps) {
     })
   }
 
+  // Arrow keys would otherwise move every deck on the page, and stop the page from scrolling.
+  const keyboardCondition = (event: KeyboardEvent) =>
+    (deck()?.isFocused() ?? false) && !isTyping(event)
+
   onSettled(() => {
     const instance = new RevealJS(el()!, {
       ...defaults,
+      keyboardCondition,
       ...snapshot(props.config),
       plugins: props.plugins ?? [],
     })
@@ -147,7 +167,7 @@ function DeckRoot(props: DeckProps) {
   createEffect(
     () => [deck(), props.config] as const,
     ([deck, config]) => {
-      if (deck && config) deck.configure({ ...defaults, ...snapshot(config) })
+      if (deck && config) deck.configure({ ...defaults, keyboardCondition, ...snapshot(config) })
     },
   )
 
@@ -281,10 +301,12 @@ function Section(props: Omit<SlideProps, 'title'>) {
     <section ref={setEl} class="h-full" {...data()}>
       <div
         class={[
-          'flex h-full flex-col text-left text-[32px] leading-snug',
+          'flex h-full flex-col text-left text-[48px] leading-snug',
           // Like Beamer's \alert; in MDX, bold text and headings are the page's, which a deck can't swap.
           '[&_strong]:font-normal [&_strong]:text-(--m-accent)',
-          '[&_:is(h3,h4,h5,h6)]:text-(--m-accent) [&_h3]:text-[36px]',
+          '[&_a]:text-(--m-accent) [&_a]:underline [&_pre]:text-[32px]',
+          '[&_blockquote]:border-l-4 [&_blockquote]:border-(--m-accent) [&_blockquote]:pl-6 [&_blockquote]:italic',
+          '[&_:is(h3,h4,h5,h6)]:text-(--m-accent) [&_h3]:text-[54px]',
           props.class,
         ]}
       >
@@ -303,14 +325,14 @@ function Slide(props: SlideProps) {
   return (
     <Section {...section}>
       <Show when={props.title}>
-        <h2 class="bg-(--m-dark) px-10 py-5 text-[40px] leading-tight text-(--m-light)">
+        <h2 class="bg-(--m-dark) px-15 py-7.5 text-[60px] leading-tight text-(--m-light)">
           {props.title}
         </h2>
       </Show>
-      <div class="flex flex-1 flex-col justify-center px-16 py-10">
+      <div class="flex flex-1 flex-col justify-center px-24 py-15">
         <div
           class={[
-            'space-y-6 [&_li]:my-3 [&_ol]:list-decimal [&_ol]:pl-10 [&_ul]:list-disc [&_ul]:pl-10',
+            'space-y-9 [&_li]:my-4.5 [&_ol]:list-decimal [&_ol]:pl-15 [&_ul]:list-disc [&_ul]:pl-15',
             props.class,
           ]}
         >
@@ -342,20 +364,20 @@ function Title(
   const date = () => props.date ?? meta?.date
   return (
     <Section {...section}>
-      <div class="flex flex-1 flex-col justify-center gap-3 px-24">
-        <h1 class="text-[56px] leading-tight">{props.title ?? meta?.title}</h1>
+      <div class="flex flex-1 flex-col justify-center gap-4.5 px-36">
+        <h1 class="text-[84px] leading-tight">{props.title ?? meta?.title}</h1>
         <Show when={subtitle()}>
-          <p class="text-[36px] opacity-80">{subtitle()}</p>
+          <p class="text-[54px] opacity-80">{subtitle()}</p>
         </Show>
-        <hr class="my-6 border-t-2 border-(--m-accent)" />
+        <hr class="my-9 border-t-3 border-(--m-accent)" />
         <Show when={author()}>
           <p>{author()}</p>
         </Show>
         <Show when={institute()}>
-          <p class="text-[26px] opacity-80">{institute()}</p>
+          <p class="text-[39px] opacity-80">{institute()}</p>
         </Show>
         <Show when={date()}>
-          <p class="text-[26px] opacity-80">{date()}</p>
+          <p class="text-[39px] opacity-80">{date()}</p>
         </Show>
         {props.children}
       </div>
@@ -378,9 +400,9 @@ function SectionSlide(props: Omit<SlideProps, 'title'> & { title: JSX.Element })
   const section = omit(props, 'title', 'children')
   return (
     <Section {...section}>
-      <div ref={setEl} class="mx-auto flex w-3/5 flex-1 flex-col justify-center gap-4">
-        <h2 class="text-[48px] leading-tight">{props.title}</h2>
-        <div class="h-1 bg-(--m-dark)/15">
+      <div ref={setEl} class="mx-auto flex w-3/5 flex-1 flex-col justify-center gap-6">
+        <h2 class="text-[72px] leading-tight">{props.title}</h2>
+        <div class="h-1.5 bg-(--m-dark)/15">
           <div
             role="progressbar"
             aria-valuenow={Math.round(progress() * 100)}
@@ -401,7 +423,7 @@ function Standout(props: Omit<SlideProps, 'title'>) {
   const section = omit(props, 'children')
   return (
     <Section backgroundColor="var(--m-dark)" data-state="standout" {...section}>
-      <div class="flex flex-1 items-center justify-center px-24 text-center text-[56px] text-(--m-light)">
+      <div class="flex flex-1 items-center justify-center px-36 text-center text-[84px] text-(--m-light)">
         {props.children}
       </div>
     </Section>
@@ -435,7 +457,7 @@ function Fragment(props: {
 
 /** Its children side by side, in columns of equal width. */
 function Columns(props: { class?: string; children?: JSX.Element }) {
-  return <div class={['grid auto-cols-fr grid-flow-col gap-8', props.class]}>{props.children}</div>
+  return <div class={['grid auto-cols-fr grid-flow-col gap-12', props.class]}>{props.children}</div>
 }
 
 /** Speaker notes, shown in the speaker view (press S) when the deck has the notes plugin. */

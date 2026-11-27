@@ -138,7 +138,7 @@ function pauses(nodes: Node[]): Node[] {
   const rest = pauses(nodes.slice(index + 1))
   return [
     ...nodes.slice(0, index),
-    element('Deck.Fragment', { as: 'div', class: 'space-y-6' }, rest),
+    element('Deck.Fragment', { as: 'div', class: 'space-y-9' }, rest),
   ]
 }
 

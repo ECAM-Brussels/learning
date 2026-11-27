@@ -97,6 +97,8 @@ export default function Code(props: EditorProps) {
         alwaysConsumeMouseWheel: false,
       },
       readOnly: props.readOnly ?? false,
+      // A deck's slide is 1920 pixels wide: Monaco's default size would be unreadable once projected.
+      ...(container.closest('.reveal') ? { fontSize: 24 } : {}),
     })
     editor.onDidChangeModelContent(() => setValue(editor!.getValue()))
     editor.updateOptions({ scrollBeyondLastLine: false })

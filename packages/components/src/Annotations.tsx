@@ -34,7 +34,7 @@ import { useLang } from './Meta'
 
 export type Point = [x: number, y: number, pressure: number]
 
-/** A line drawn on a slide, in the slide's coordinates (1280 by 720). */
+/** A line drawn on a slide, in a 1280 by 720 frame over the slide, whatever the deck's size. */
 export type Stroke = {
   id: string
   /** The slide's reveal.js indices, `h.v`. */
@@ -87,6 +87,7 @@ export type AnnotationBackend = {
 
 export const AnnotationsContext = createContext<AnnotationBackend | null>(null)
 
+// Saved strokes are in this frame: keep it when the deck's size changes.
 const WIDTH = 1280
 const HEIGHT = 720
 

@@ -252,7 +252,7 @@ describe('steps', () => {
       {
         type: 'Deck.Fragment',
         as: 'div',
-        class: 'space-y-6',
+        class: 'space-y-9',
         children: [
           { type: 'p', children: 'B' },
           { type: 'p', children: 'C' },
