@@ -1483,6 +1483,11 @@ describe('vector', () => {
       result: undefined,
     }),
     define({
+      desc: 'N: the components as numbers',
+      promise: () => expr(['\\frac{1}{2}', 3], 'vector').N(),
+      result: [0.5, 3],
+    }),
+    define({
       desc: 'norm: |(3, 4)| = 5',
       promise: () => expr([3, 4], 'vector').norm().N(),
       result: 5,

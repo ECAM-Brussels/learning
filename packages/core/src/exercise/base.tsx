@@ -24,7 +24,7 @@ import {
 } from 'solid-js'
 import * as v from 'valibot'
 import { getUser } from '../auth'
-import { expr, Expression } from '../expr'
+import { expr, Expression, Vector } from '../expr'
 import { hasPermissions } from '../permissions'
 import { omitFromJSON } from '../validation'
 import { createIsVisible } from '../visibility'
@@ -56,6 +56,7 @@ const CustomSchemas = {
   jsx: v.union([v.string(), omitFromJSON(v.custom<JSX.Element>(() => true))]),
   string: v.string(),
   number: v.number(),
+  vector: Vector,
 } as const
 type CustomSchemas = typeof CustomSchemas
 

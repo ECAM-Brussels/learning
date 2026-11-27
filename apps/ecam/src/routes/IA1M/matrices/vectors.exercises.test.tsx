@@ -26,6 +26,7 @@ describe('DependentOrIndependent', () => {
     submit()
     await waitFor(() => expect(stored('independent')).toMatchObject({ correct: true }))
     expect(stored('independent').state).toEqual({ selection: ['independent'] })
+    expect(stored('independent').data).toEqual({ x: [2, -1], y: [4, 1] })
   })
 
   test('asks whether dependent vectors are parallel after a wrong answer', async () => {

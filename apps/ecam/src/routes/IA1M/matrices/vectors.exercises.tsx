@@ -1,5 +1,5 @@
 import { Board } from '@learning/components'
-import { createDerivedStep, createStep, expr, Sequence, tex } from '@learning/core'
+import { createDerivedStep, createStep, Sequence, tex, type Vector } from '@learning/core'
 import { Simple } from '@learning/exercises/math/Simple'
 import { MultipleChoice } from '@learning/exercises/MultipleChoice'
 import { dynamic } from '@solidjs/web'
@@ -12,7 +12,8 @@ type Name = keyof Pair
 const COLORS = { x: '#0369a1', y: '#b45309' }
 
 // The same on every axis, so that parallel vectors also look parallel.
-const extent = ({ x, y }: Pair) => Math.max(3, ...[...x, ...y].map(Math.abs)) + 1
+const extent = ({ x, y }: { x: Vector; y: Vector }) =>
+  Math.max(3, ...[...x.N(), ...y.N()].map(Math.abs)) + 1
 
 /** Asks, for each pair of vectors, whether they are linearly dependent. */
 export function Dependence(props: { id: string; pairs: Pair[] }) {
@@ -25,7 +26,7 @@ export function Dependence(props: { id: string; pairs: Pair[] }) {
   )
 }
 
-const pair = { x: v.array(v.number()), y: v.array(v.number()) }
+const pair = { x: 'vector', y: 'vector' } as const
 
 export const DependentOrIndependent = createDerivedStep(
   MultipleChoice,
@@ -35,19 +36,19 @@ export const DependentOrIndependent = createDerivedStep(
       <>
         <p>Are the vectors</p>
         <div class="flex justify-center">
-          {tex`\mathbf{x}=${expr(data.x, 'vector')},\qquad\mathbf{y}=${expr(data.y, 'vector')}`}
+          {tex`\mathbf{x}=${data.x},\qquad\mathbf{y}=${data.y}`}
         </div>
         <p>linearly dependent or linearly independent?</p>
       </>
     ),
     choices: { dependent: 'Linearly dependent', independent: 'Linearly independent' },
-    answer: expr(data.x, 'vector').ratio(data.y) ? 'dependent' : 'independent',
+    answer: data.x.ratio(data.y) ? 'dependent' : 'independent',
   }),
   {
     name: 'IA1M/vectors/dependence',
     feedback: (ctx) => (
       <Show
-        when={expr(ctx.data.x, 'vector').ratio(ctx.data.y)}
+        when={ctx.data.x.ratio(ctx.data.y)}
         fallback={
           <Show when={!ctx.correct}>
             <p>
@@ -120,22 +121,19 @@ export const Multiple = createDerivedStep(
       </p>
     ),
     label: '\\alpha =',
-    grade: (attempt) => attempt.isEqual(expr(data.x, 'vector').ratio(data.y)!),
+    grade: (attempt) => attempt.isEqual(data.x.ratio(data.y)!),
   }),
   {
     name: 'IA1M/vectors/multiple',
     options: { allowResubmissions: false },
-    feedback: (ctx) => {
-      const x = () => expr(ctx.data.x, 'vector')
-      return (
-        <Show when={!ctx.correct}>
-          <p>
-            Comparing the components gives {tex`\alpha=${x().ratio(ctx.data.y)}`}, and indeed{' '}
-            {tex`${expr(ctx.data.y, 'vector')}=${x().ratio(ctx.data.y)}${x()}`}.
-          </p>
-        </Show>
-      )
-    },
+    feedback: (ctx) => (
+      <Show when={!ctx.correct}>
+        <p>
+          Comparing the components gives {tex`\alpha=${ctx.data.x.ratio(ctx.data.y)}`}, and indeed{' '}
+          {tex`${ctx.data.y}=${ctx.data.x.ratio(ctx.data.y)}${ctx.data.x}`}.
+        </p>
+      </Show>
+    ),
   },
 )
 
@@ -145,24 +143,27 @@ const unit = (dimension: number, i: number) =>
 /** The student places x and y, and may retry until both are right. */
 export const Draw = createStep({
   name: 'IA1M/vectors/draw',
-  schema: { data: pair, inputs: pair },
+  schema: { data: pair, inputs: { x: v.array(v.number()), y: v.array(v.number()) } },
   options: { allowResubmissions: true },
-  initialState: (data) => ({ x: unit(data.x.length, 0), y: unit(data.x.length, 1) }),
+  initialState: (data) => {
+    const n = data.x.components.length
+    return { x: unit(n, 0), y: unit(n, 1) }
+  },
   prompt: (ctx) => {
-    const Drawing = dynamic(() => (ctx.data.x.length === 2 ? Draw2D : Draw3D))
+    const Drawing = dynamic(() => (ctx.data.x.components.length === 2 ? Draw2D : Draw3D))
     return (
       <>
         <p>
           Draw {tex`\mathbf{x}`} and {tex`\mathbf{y}`}:{' '}
-          {ctx.data.x.length === 2
+          {ctx.data.x.components.length === 2
             ? 'drag the heads of the arrows to the right points.'
             : 'move the sliders until the arrows are at the right places.'}
         </p>
         <Drawing
           target={ctx.data}
           drawn={{
-            x: ctx.state.current.x ?? unit(ctx.data.x.length, 0),
-            y: ctx.state.current.y ?? unit(ctx.data.x.length, 1),
+            x: ctx.state.current.x ?? unit(ctx.data.x.components.length, 0),
+            y: ctx.state.current.y ?? unit(ctx.data.x.components.length, 1),
           }}
           locked={ctx.state.correct === true}
           onChange={(name, value) => ctx.state.set(name, value)}
@@ -170,10 +171,7 @@ export const Draw = createStep({
       </>
     )
   },
-  grade: (ctx) => [
-    expr(ctx.inputs.x, 'vector').isEqual(ctx.data.x),
-    expr(ctx.inputs.y, 'vector').isEqual(ctx.data.y),
-  ],
+  grade: (ctx) => [ctx.data.x.isEqual(ctx.inputs.x), ctx.data.y.isEqual(ctx.inputs.y)],
   feedback: (ctx) => (
     <Show
       when={ctx.correct}
@@ -185,7 +183,7 @@ export const Draw = createStep({
 })
 
 type Placing = {
-  target: Pair
+  target: { x: Vector; y: Vector }
   drawn: Pair
   locked: boolean
   onChange: (name: Name, value: number[]) => void

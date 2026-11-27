@@ -622,6 +622,7 @@ export function vector(rawInput: VectorLike) {
       )
       return multiple ? expression({ json: lambda }) : undefined
     },
+    N: () => components.map((c) => expression(c).N()),
     norm: () =>
       expression({
         json: canonical(['Sqrt', ['Add', ...components.map((c) => ['Power', c.json, 2] as const)]]),
@@ -629,6 +630,20 @@ export function vector(rawInput: VectorLike) {
     simplify: () => vector(components.map((c) => ({ json: ['Simplify', c.json] }))),
   }
 }
+
+const isVectorObject = (value: unknown): value is ReturnType<typeof vector> =>
+  isVector(value) && 'ratio' in value
+
+/** A vector field of a step: given as the list of its components, used as a vector. */
+export const Vector = v.union([
+  v.custom<ReturnType<typeof vector>>(isVectorObject),
+  v.pipe(
+    // Not v.array(Math), whose output would replace the components as written in what is saved.
+    v.array(v.custom<v.InferInput<typeof Math>>((component) => v.is(Math, component))),
+    v.transform((components) => vector(components)),
+  ),
+])
+export type Vector = ReturnType<typeof vector>
 
 export type Quantity = ReturnType<typeof quantity>
 
