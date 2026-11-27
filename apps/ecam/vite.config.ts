@@ -40,6 +40,8 @@ export default defineConfig({
   ],
   server: {
     port: 3000,
+    // VS Code forwards ports over IPv4, but "localhost" alone binds only [::1] here.
+    host: true,
   },
   build: {
     target: 'esnext',

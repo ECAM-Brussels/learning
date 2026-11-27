@@ -562,8 +562,24 @@ export function vector(rawInput: VectorLike) {
     return fromJson(components.map((c, i) => [operation, c.json, other[i]!.json]))
   }
 
+  /**
+   * The λ such that other = λ · this, or undefined if other is not a multiple of this.
+   * Decided on canonical forms, without SymAPI: exact for numbers, not for every symbolic vector.
+   */
+  const ratio = (rawOther: VectorLike) => {
+    const other = sameDimension(rawOther, 'ratio')
+    const pivot = components.findIndex((c) => canonical(c.json) !== 0)
+    if (pivot === -1) return undefined
+    const lambda = canonical(['Divide', other[pivot]!.json, components[pivot]!.json])
+    const multiple = components.every((c, i) =>
+      isEqual(canonical(['Multiply', lambda, c.json]), canonical(other[i]!.json)),
+    )
+    return multiple ? expression({ json: lambda }) : undefined
+  }
+
   return {
     components: components.map((c) => expression(c)),
+    dimension: components.length,
     json: ['List', ...components.map((c) => c.json)] as MathJsonExpression,
     rawInput,
     toJSON: () => rawInput,
@@ -608,6 +624,18 @@ export function vector(rawInput: VectorLike) {
       )
       return `\\begin{bmatrix}${c.join('\\\\')}\\end{bmatrix}`
     },
+    ratio,
+    /**
+     * Whether this and other are linearly dependent, i.e. one is a multiple of the other.
+     * Symmetric, and the zero vector is parallel to every vector.
+     * Decided on canonical forms, like ratio.
+     */
+    isParallel: (rawOther: VectorLike) => {
+      const other = sameDimension(rawOther, 'parallelism')
+      const isZero = (vector: typeof components) => vector.every((c) => canonical(c.json) === 0)
+      return isZero(components) || isZero(other) || ratio(other) !== undefined
+    },
+    N: () => components.map((c) => expression(c).N()),
     norm: () =>
       expression({
         json: canonical(['Sqrt', ['Add', ...components.map((c) => ['Power', c.json, 2] as const)]]),
@@ -615,6 +643,20 @@ export function vector(rawInput: VectorLike) {
     simplify: () => vector(components.map((c) => ({ json: ['Simplify', c.json] }))),
   }
 }
+
+const isVectorObject = (value: unknown): value is ReturnType<typeof vector> =>
+  isVector(value) && 'ratio' in value
+
+/** A vector field of a step: given as the list of its components, used as a vector. */
+export const Vector = v.union([
+  v.custom<ReturnType<typeof vector>>(isVectorObject),
+  v.pipe(
+    // Not v.array(Math), whose output would replace the components as written in what is saved.
+    v.array(v.custom<v.InferInput<typeof Math>>((component) => v.is(Math, component))),
+    v.transform((components) => vector(components)),
+  ),
+])
+export type Vector = ReturnType<typeof vector>
 
 export type Quantity = ReturnType<typeof quantity>
 

@@ -35,6 +35,66 @@ declare module "virtual:file-routes" {
   /** The flat route manifest, in scan order. */
   const routes: readonly [
     {
+      path: "/IA1M";
+      page: true;
+      $component: FileRouteLazyRef<Pick<typeof import("./src/routes/IA1M/_layout"), Extract<"default", keyof typeof import("./src/routes/IA1M/_layout")>>>;
+      $$route: FileRouteEagerRef<Pick<typeof import("./src/routes/IA1M/_layout"), Extract<"route", keyof typeof import("./src/routes/IA1M/_layout")>>>;
+    },
+    {
+      path: "/IA1M/";
+      page: true;
+      $component: FileRouteLazyRef;
+      $$route?: undefined;
+    },
+    {
+      path: "/IA1M/matrices";
+      page: true;
+      $component: FileRouteLazyRef<Pick<typeof import("./src/routes/IA1M/matrices/_layout"), Extract<"default", keyof typeof import("./src/routes/IA1M/matrices/_layout")>>>;
+      $$route?: undefined;
+    },
+    {
+      path: "/IA1M/matrices/";
+      page: true;
+      $component: FileRouteLazyRef;
+      $$route?: undefined;
+    },
+    {
+      path: "/IA1M/matrices/linear-classification";
+      page: true;
+      $component: FileRouteLazyRef;
+      $$route?: undefined;
+    },
+    {
+      path: "/IA1M/matrices/linear-models";
+      page: true;
+      $component: FileRouteLazyRef;
+      $$route?: undefined;
+    },
+    {
+      path: "/IA1M/matrices/linear-regression";
+      page: true;
+      $component: FileRouteLazyRef;
+      $$route?: undefined;
+    },
+    {
+      path: "/IA1M/matrices/linear-systems";
+      page: true;
+      $component: FileRouteLazyRef;
+      $$route?: undefined;
+    },
+    {
+      path: "/IA1M/matrices/linear-transformations";
+      page: true;
+      $component: FileRouteLazyRef;
+      $$route?: undefined;
+    },
+    {
+      path: "/IA1M/matrices/vectors";
+      page: true;
+      $component: FileRouteLazyRef;
+      $$route?: undefined;
+    },
+    {
       path: "/MA1M";
       page: true;
       $component: FileRouteLazyRef<Pick<typeof import("./src/routes/MA1M/_layout"), Extract<"default", keyof typeof import("./src/routes/MA1M/_layout")>>>;
@@ -361,6 +421,88 @@ declare module "virtual:file-routes" {
           $component: FileRouteLazyRef;
           $$route?: undefined;
           children?: undefined;
+        }
+      ];
+    },
+    {
+      path: "/IA1M";
+      id: "/IA1M";
+      page: true;
+      $component: FileRouteLazyRef<Pick<typeof import("./src/routes/IA1M/_layout"), Extract<"default", keyof typeof import("./src/routes/IA1M/_layout")>>>;
+      $$route: FileRouteEagerRef<Pick<typeof import("./src/routes/IA1M/_layout"), Extract<"route", keyof typeof import("./src/routes/IA1M/_layout")>>>;
+      children: readonly [
+        {
+          path: "/";
+          id: "/";
+          page: true;
+          $component: FileRouteLazyRef;
+          $$route?: undefined;
+          children?: undefined;
+        },
+        {
+          path: "/matrices";
+          id: "/matrices";
+          page: true;
+          $component: FileRouteLazyRef<Pick<typeof import("./src/routes/IA1M/matrices/_layout"), Extract<"default", keyof typeof import("./src/routes/IA1M/matrices/_layout")>>>;
+          $$route?: undefined;
+          children: readonly [
+            {
+              path: "/";
+              id: "/";
+              page: true;
+              $component: FileRouteLazyRef;
+              $$route?: undefined;
+              children?: undefined;
+            },
+            {
+              path: "/vectors";
+              id: "/vectors";
+              page: true;
+              $component: FileRouteLazyRef;
+              $$route?: undefined;
+              children?: undefined;
+            },
+            {
+              path: "/linear-models";
+              id: "/linear-models";
+              page: true;
+              $component: FileRouteLazyRef;
+              $$route?: undefined;
+              children?: undefined;
+            },
+            {
+              path: "/linear-systems";
+              id: "/linear-systems";
+              page: true;
+              $component: FileRouteLazyRef;
+              $$route?: undefined;
+              children?: undefined;
+            },
+            {
+              path: "/linear-regression";
+              id: "/linear-regression";
+              page: true;
+              $component: FileRouteLazyRef;
+              $$route?: undefined;
+              children?: undefined;
+            },
+            {
+              path: "/linear-classification";
+              id: "/linear-classification";
+              page: true;
+              $component: FileRouteLazyRef;
+              $$route?: undefined;
+              children?: undefined;
+            },
+            {
+              path: "/linear-transformations";
+              id: "/linear-transformations";
+              page: true;
+              $component: FileRouteLazyRef;
+              $$route?: undefined;
+              children?: undefined;
+            }
+          ];
         }
       ];
     },

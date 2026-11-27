@@ -68,6 +68,14 @@ Say so and ask before making such a change elsewhere.
 - Prompts and feedback are French prose: no-break spaces before `:` (U+00A0) and `? ! ;` (U+202F),
   typed as the characters themselves; not inside `tex` or code.
 - Formulas with braces go through `` tex`…` ``.
+- Keep the calculations in `grade`, `feedback` and the data function as short as possible:
+  compute with `expr` from `@learning/core` (`expr(x)`, `expr(u, 'vector')`, `expr(s, 'set')`, quantities)
+  and interpolate the results in `` tex`…` ``, which prints expressions, fractions and column vectors itself,
+  rather than building LaTeX such as `\frac` or `bmatrix` by hand.
+- Most of this logic is reused across the platform:
+  a calculation `expr` lacks goes into `packages/core/src/expr.ts`, with a test in `expr.test.ts`,
+  never into a helper in the exercise file.
+  Example: `vector(…).ratio(…)`, used by `apps/ecam/src/routes/IA1M/matrices/vectors.exercises.tsx`.
 - In `feedback`, `<ctx.Self />` asks the same question again;
   other steps inside it build the remediation (`apps/ecam/src/routes/doc/remediation.mdx`).
 - Read `ctx.data`, `ctx.inputs` and `ctx.correct` where they are used, in the JSX:

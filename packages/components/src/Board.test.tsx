@@ -910,6 +910,77 @@ describe('multivariable elements', () => {
     expect(xyz(plane().point)).toEqual([1, 1, 1])
   })
 
+  test('Line3D and Plane3D leave the directions they are given untouched', async () => {
+    const direction: [number, number, number] = [3, 0, 4]
+    const directions: [[number, number, number], [number, number, number]] = [
+      [2, 0, 0],
+      [0, 0, 5],
+    ]
+    const { el } = await renderView<JXG.Plane3D>((ref) => (
+      <>
+        <Board.Line3D point={[0, 0, 0]} direction={direction} />
+        <Board.Plane3D point={[0, 0, 0]} directions={directions}>
+          {ref}
+        </Board.Plane3D>
+      </>
+    ))
+    el().board.update()
+    expect(direction).toEqual([3, 0, 4])
+    expect(directions).toEqual([
+      [2, 0, 0],
+      [0, 0, 5],
+    ])
+  })
+
+  test('Plane3D is clipped to the view without a range, and made of faces with one', async () => {
+    const [range, setRange] = createSignal<[[number, number], [number, number]]>()
+    const { el } = await renderView<JXG.Plane3D>((ref) => (
+      <Board.Plane3D
+        point={[0, 0, 0]}
+        directions={[
+          [1, 0, 0],
+          [0, 1, 0],
+        ]}
+        range={range()}
+      >
+        {ref}
+      </Board.Plane3D>
+    ))
+    const faces = (plane: JXG.Plane3D) =>
+      (Object.values(plane.board.objects) as JXG.GeometryElement[]).filter(
+        (o) => o.elType === 'face3d' && o.parents.includes(plane.id),
+      ).length
+    const infinite = el()
+    expect(points((infinite as any).element2D).length).toBeGreaterThan(0)
+    expect(faces(infinite)).toBe(0)
+    setRange([
+      [-1, 1],
+      [-1, 1],
+    ])
+    await waitFor(() => expect(el() === infinite).toBe(false))
+    expect(faces(el())).toBeGreaterThan(0)
+  })
+
+  test('Polygon3D follows its points', async () => {
+    const [top, setTop] = createSignal<[number, number, number]>([0, 0, 1])
+    let corner: JXG.Point3D | undefined
+    const { el } = await renderView<JXG.Polygon3D>((ref) => (
+      <Board.Point3D position={[1, 0, 0]}>
+        {(p) => {
+          corner = p
+          return (
+            <Board.Polygon3D points={[[0, 0, 0], p, top()]} fillColor="red">
+              {ref}
+            </Board.Polygon3D>
+          )
+        }}
+      </Board.Point3D>
+    ))
+    expect(el().vertices[1]).toBe(corner!)
+    setTop([0, 2, 3])
+    await waitFor(() => expect(xyz(el().vertices[2] as XYZ)).toEqual([0, 2, 3]))
+  })
+
   test('Point3D slides on the element it is on', async () => {
     let surface: JXG.Surface3D | undefined
     const { el } = await renderView<JXG.Point3D>((ref) => (

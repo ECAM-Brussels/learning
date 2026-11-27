@@ -1,0 +1,96 @@
+import { defineMeta } from '@learning/components'
+import { tex } from '@learning/core'
+
+export default defineMeta({
+  title: 'Linear Models',
+})
+
+# Linear Models
+
+## Linear form
+
+The following linear form:
+
+{tex`
+y(\mathbf{x})=\mathbf{w}^T\mathbf{x}+w_0`}
+
+is one of the fundamental building blocks of modern machine learning.
+The vector {tex`\mathbf{w}`} is called the _weight vector_,
+the data point {tex`\mathbf{x}`} is the _input vector_,
+the value {tex`w_0`} is called the _bias_,
+and {tex`y`} is the output.
+
+Notation trick: if we denote
+{tex`\mathbf{\tilde{x}}=\begin{bmatrix} \mathbf{x} \\ 1 \end{bmatrix}`} and
+{tex`\mathbf{\tilde{w}}=\begin{bmatrix} \mathbf{w} \\ w_0 \end{bmatrix}`},
+then this linear form is simply written as:
+
+{tex`
+y(\mathbf{x})=\mathbf{\tilde{w}}^T\mathbf{\tilde{x}}`}
+
+## Linear equations
+
+We can use this linear form to write a linear equation:
+{tex`y(\mathbf{x})=\mathbf{\tilde{w}}^T\mathbf{\tilde{x}}=0`}.
+
+You already know this equation!
+In 2D, it is the equation of a line:
+
+{tex`
+\mathbf{\tilde{w}}^T\mathbf{\tilde{x}}=w_1x_1+w_2x_2+w_0=0`}
+
+In mathematics, the vector {tex`(w_1,w_2)`} is called the _normal vector_,
+perpendicular to the line,
+and {tex`w_0`} shifts the line (by translation).
+In machine learning, {tex`w_0, w_1`} and {tex`w_2`} are called the weights,
+and they are the parameters of our future models.
+
+In 3D, this linear equation is the equation of a plane:
+
+{tex`
+\mathbf{\tilde{w}}^T\mathbf{\tilde{x}}=w_1x_1+w_2x_2+w_3x_3+w_0=0`}
+
+where the weight vector {tex`(w_1,w_2,w_3)`} is again normal to the plane,
+and {tex`w_0`} shifts the plane along its normal direction.
+
+## Design matrix
+
+If we have {tex`m`} data points with {tex`n`} features,
+we typically store them in a _matrix_:
+
+{tex`
+X=\begin{bmatrix}
+x_{11} & x_{12} & \cdots & x_{1n} \\
+x_{21} & x_{22} & \cdots & x_{2n} \\
+\vdots & \vdots & \ddots & \vdots \\
+x_{m1} & x_{m2} & \cdots & x_{mn}
+\end{bmatrix}`}
+
+This matrix has {tex`m`} rows and {tex`n`} columns,
+we say it is an {tex`m \times n`} matrix.
+This matrix is called the _design matrix_ or the _input matrix_.
+Notice every row represents a data point,
+and every column contains the values of a certain feature
+throughout the entire database.
+So, for instance,
+the element {tex`x_{12}`} represents the second component
+of the 1st data point,
+whereas {tex`x_{21}`} represents the first component
+of the 2nd data point.
+In general, the element {tex`x_{ij}`} represents
+the {tex`j`}th component of the {tex`i`}th data point.
+
+If we want to use the notation trick,
+we add a column of 1's to {tex`X`} and write {tex`\tilde{X}`}.
+
+Important remark:
+this introduction obviously is the machine learning way
+of introducing the concept of a matrix.
+Matrices can be useful for many other applications
+in all sorts of scientific domains.
+For example, in the next chapters,
+we will see how matrices can be used
+to represent linear transformations of vectors
+and to solve systems of linear equations.
+Those concepts will be useful
+to go on with machine learning stuff after that.

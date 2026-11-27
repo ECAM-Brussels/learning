@@ -1,0 +1,32 @@
+import { BreadCrumbs, Meta, Page } from '@learning/components'
+import { getUser } from '@learning/core'
+import { type RouteDefinition } from '@solidjs/router'
+import type { JSX } from '@solidjs/web/jsx-runtime'
+import { createMemo, Show } from 'solid-js'
+import { paths } from '../../router'
+
+export const route = {
+  preload() {
+    getUser()
+  },
+} satisfies RouteDefinition
+
+export default function Layout(props: { children: JSX.Element }) {
+  const user = createMemo(() => getUser())
+  return (
+    <Page>
+      <BreadCrumbs />
+      <Show when={user() === null}>
+        <p class="mb-4 rounded-lg border border-red-100 bg-red-50 p-4">
+          Si vous êtes étudiant·e à l'ECAM, nous vous invitons à vous connecter pour pouvoir
+          sauvegarder votre progression. En tant qu'invité·e, vous ne sauvegarderez vos réponses que
+          sur cet appareil.
+        </p>
+      </Show>
+      <Meta href={paths.IA1M} title="Fondations mathématiques de l'IA" lang="en">
+        {/* Italic correction: keep italic text from crowding the following punctuation. */}
+        <div class="[&_em]:pr-[0.20em]">{props.children}</div>
+      </Meta>
+    </Page>
+  )
+}

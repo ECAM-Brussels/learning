@@ -71,6 +71,25 @@ declare global {
       stepsV?: number
     }
 
+    // Not in JSXGraph's types, although view3d accepts them.
+    interface View3DAttributes {
+      az?: { slider?: SliderAttributes & { start?: number } }
+      el?: { slider?: SliderAttributes & { start?: number } }
+      depthOrder?: { enabled?: boolean }
+    }
+
+    // Not in JSXGraph's types, although point3d accepts the attributes of a point.
+    interface Point3DAttributes {
+      size?: number
+      label?: LabelOptions
+    }
+
+    // Not in JSXGraph's types, although polygon3d accepts them.
+    interface Polygon3DAttributes {
+      vertices?: Point3DAttributes
+      borders?: Line3DAttributes
+    }
+
     interface View3D {
       objects: Record<string, GeometryElement>
       removeObject(object: unknown): this
@@ -1025,13 +1044,11 @@ export const Board = Object.assign(
       } & WithLabel<JXG.Point3DAttributes>,
     ) => {
       const attrs = omit(props, 'position', 'on', 'children', 'onDrag')
+      // Outside JSX, where the compiler would wrap the condition in a memo,
+      // which Element can't create since it reads its parents in an effect callback.
+      const parent = () => (props.on ? [props.position, props.on] : props.position)
       return (
-        <Element
-          type="point3d"
-          view
-          parent={props.on ? [props.position, props.on] : props.position}
-          attrs={attrs}
-        >
+        <Element type="point3d" view parent={parent()} attrs={attrs}>
           {(point: JXG.Point3D) => {
             createEffect(
               () => props.onDrag,
@@ -1186,7 +1203,8 @@ export const Board = Object.assign(
           view
           parent={[
             point3D(() => props.point),
-            () => props.direction,
+            // JSXGraph turns the direction it is given into its own homogeneous, normalized one, in place.
+            () => [...props.direction],
             // Without a range, JSXGraph would take the direction for a second point.
             [() => props.range?.[0] ?? -Infinity, () => props.range?.[1] ?? Infinity],
           ]}
@@ -1212,18 +1230,19 @@ export const Board = Object.assign(
       } & WithLabel<JXG.Plane3DAttributes>,
     ) => {
       const attrs = omit(props, 'point', 'directions', 'range', 'children')
-      const bound = (i: 0 | 1, end: 0 | 1) => () =>
-        props.range?.[i][end] ?? (end === 0 ? -Infinity : Infinity)
-      return (
+      // JSXGraph checks the ends of the ranges as numbers, so they can't be functions.
+      const range = (i: 0 | 1) => liveRange(() => props.range?.[i] ?? [-Infinity, Infinity])
+      const plane = () => (
         <Element
           type="plane3d"
           view
           parent={[
             point3D(() => props.point),
-            () => props.directions[0],
-            () => props.directions[1],
-            [bound(0, 0), bound(0, 1)],
-            [bound(1, 0), bound(1, 1)],
+            // JSXGraph turns the directions it is given into its own homogeneous, normalized ones, in place.
+            () => [...props.directions[0]],
+            () => [...props.directions[1]],
+            range(0),
+            range(1),
           ]}
           attrs={attrs}
         >
@@ -1233,6 +1252,40 @@ export const Board = Object.assign(
               () => refresh(plane as unknown as { board: JXG.Board }),
             )
             return props.children?.(plane)
+          }}
+        </Element>
+      )
+      // JSXGraph decides when it creates a plane whether it is infinite, clipped to the view,
+      // or a finite surface made of faces, so adding or removing the range recreates it.
+      return (
+        <Show when={props.range !== undefined} fallback={plane()}>
+          {plane()}
+        </Show>
+      )
+    },
+    Polygon3D: (
+      props: {
+        points: Array<Coords3D | JXG.Point3D>
+        children?: (polygon: JXG.Polygon3D) => JSX.Element
+      } & JXG.Polygon3DAttributes,
+    ) => {
+      const attrs = omit(props, 'points', 'children')
+      return (
+        <Element type="polygon3d" view parent={props.points} attrs={attrs}>
+          {(polygon: JXG.Polygon3D) => {
+            createEffect(
+              () => deepArray(props.points),
+              (points) => {
+                // Points given as elements move on their own; only coordinates are ours to update.
+                const vertices = polygon.vertices as unknown as JXG.Point3D[]
+                for (let i = 0; i < Math.min(points.length, vertices.length); i++) {
+                  const point = points[i]!
+                  if (Array.isArray(point)) vertices[i]!.setPosition(point)
+                }
+                polygon.board.update()
+              },
+            )
+            return props.children?.(polygon)
           }}
         </Element>
       )
