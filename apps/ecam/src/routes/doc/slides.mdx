@@ -44,7 +44,7 @@ si cette limite existe.
 :::::
 ```
 
-:::::deck[title="Les dérivées" subtitle="Analyse 1"]
+:::::deck[title="Les dérivées" subtitle="Analyse 1" annotators="ngy@ecam.be"]
 
 # Définition
 
@@ -98,3 +98,41 @@ Le texte en **gras** prend la couleur d'accent de la présentation.
 
 Le bloc de la présentation doit avoir plus de deux-points que les blocs qu'il contient :
 cinq deux-points autour de la présentation, quatre pour `columns`, trois pour les autres.
+
+## Écrire sur une présentation
+
+Les personnes listées dans `annotators` peuvent écrire sur les slides,
+au stylet, à la souris ou au doigt :
+les étudiant·es voient leurs traits en direct,
+et les retrouvent ensuite sur la page.
+
+```md
+:::::deck[title="Les dérivées" annotators="prenom.nom@ecam.be, assistant@ecam.be"]
+```
+
+Une présentation qui n'a pas de slide de titre peut ne contenir que `annotators` :
+`:::::deck[annotators="prenom.nom@ecam.be"]`.
+Si une page contient plusieurs présentations sur lesquelles on écrit,
+donnez à chacune un nom avec `id="…"`,
+car leurs traits sont enregistrés séparément.
+
+Les traits sont rangés par **séance**,
+pour qu'une même présentation serve à plusieurs groupes :
+
+1. Connectez-vous, puis choisissez un outil dans la barre en haut à droite de la présentation.
+   Une séance commence en direct, au nom du jour ;
+   on peut aussi en créer une avec un autre nom dans le menu des séances.
+2. Écrivez avec le stylo ou le surligneur.
+   La gomme efface les traits qu'elle touche,
+   et la corbeille efface tout le slide ;
+   les flèches annulent et rétablissent.
+3. Pendant le direct, les étudiant·es suivent vos changements de slide.
+   Ils et elles peuvent arrêter de vous suivre dans le menu des séances,
+   ou y choisir une séance passée.
+4. Dans le menu des séances, « Arrêter le direct » termine la séance :
+   ses traits restent visibles quand on la choisit.
+
+Seul le serveur décide qui peut écrire :
+il lit la liste `annotators` dans le fichier de la page.
+Elle doit donc être écrite telle quelle entre guillemets,
+et non calculée.

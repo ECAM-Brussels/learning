@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { evaluate } from 'satteri'
+import { deckAnnotators } from './brackets.ts'
 import config from './config'
 
 type Tree = { type: string; [prop: string]: unknown }
@@ -88,6 +89,18 @@ describe('the deck directive', () => {
       'Unexpected `autor="Moi"` in the deck\'s brackets',
     )
     expect(() => compile(':::::deck[Rappels]\n\n:::::')).toThrow('Unexpected `Rappels`')
+  })
+
+  test('passes who may draw on it to the deck, without a title slide unless given one', () => {
+    const tree = compile(
+      ':::::deck[annotators="a@ecam.be, b@ecam.be" id="td"]\n\n## Un\n\n:::::',
+    ).tree
+    expect(tree).toMatchObject({ type: 'Deck', annotators: 'a@ecam.be, b@ecam.be', id: 'td' })
+    expect(children(tree)).toEqual([{ type: 'Deck.Slide', title: fragment('Un') }])
+    const titled = compile(
+      ':::::deck[title="Rappels" annotators="a@ecam.be"]\n\n## Un\n\n:::::',
+    ).tree
+    expect(children(titled)[0]).toEqual({ type: 'Deck.Title', title: 'Rappels' })
   })
 
   test('refuses attributes in braces', () => {
@@ -305,5 +318,33 @@ describe('directives', () => {
 
   test('slide directives mean nothing outside a deck', () => {
     expect(compile(':::notes\nA\n:::').tree).toMatchObject({ type: 'div', 'data-type': 'notes' })
+  })
+})
+
+describe('deckAnnotators', () => {
+  test("reads each deck's annotators from MDX and TSX, by id", () => {
+    const source = [
+      ':::::deck[title="Cours" annotators="Prof@ecam.be, assistant@ecam.be"]',
+      '',
+      ':::::',
+      '',
+      '::::::deck[id="td" annotators="td@ecam.be"]',
+      '',
+      '::::::',
+      '',
+      ':::::deck[title="Sans dessin"]',
+      '',
+      '<Deck id="tsx" class={["a", "b"]} annotators="x@ecam.be y@ecam.be">',
+    ].join('\n')
+    expect(Object.fromEntries(deckAnnotators(source))).toEqual({
+      '': ['prof@ecam.be', 'assistant@ecam.be'],
+      td: ['td@ecam.be'],
+      tsx: ['x@ecam.be', 'y@ecam.be'],
+    })
+  })
+
+  test('refuses two drawable decks with the same id', () => {
+    const source = ':::::deck[annotators="a@ecam.be"]\n:::::\n:::::deck[annotators="b@ecam.be"]'
+    expect(() => deckAnnotators(source)).toThrow('give each its own id')
   })
 })

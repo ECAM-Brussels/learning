@@ -39,6 +39,7 @@
     "micromark": "^4.0.2",
     "micromark-extension-math": "^3.1.0",
     "monaco-editor": "^0.55.1",
+    "perfect-freehand": "^1.2.3",
     "reveal.js": "6.0.2",
     "solid-js": "catalog:",
     "valibot": "catalog:"

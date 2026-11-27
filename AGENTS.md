@@ -102,7 +102,11 @@ Its fence needs more colons than any directive inside it.
 It opens on a title slide only when its brackets give one, as `:::::deck[title="…" subtitle="…"]` (also `author`, `institute`, `date`):
 brackets rather than `{…}` attributes, which trip the MDX language server;
 what it is not given comes from the page's `defineMeta`.
-See `apps/ecam/src/routes/doc/presentation.mdx`.
+`annotators="a@ecam.be, b@ecam.be"` in the brackets lets those people draw on the deck, live for everyone watching
+(`packages/components/src/Annotations.tsx`, saved by `packages/core/src/annotations.remote.ts`);
+the server reads the list from the page's source (`packages/mdx/brackets.ts`), so it must stay a literal string,
+and several drawable decks on a page need an `id="…"` each.
+See `apps/ecam/src/routes/doc/slides.mdx`.
 
 ## Exercise steps
 

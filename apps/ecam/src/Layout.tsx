@@ -1,6 +1,7 @@
 import { faGithub } from '@fortawesome/free-brands-svg-icons'
 import { faBook } from '@fortawesome/free-solid-svg-icons'
 import {
+  AnnotationsContext,
   Boundary,
   Code,
   Deck,
@@ -16,7 +17,7 @@ import {
   Remark,
   Steps,
 } from '@learning/components'
-import { getUser, login, logout } from '@learning/core'
+import { annotations, getUser, login, logout } from '@learning/core'
 import { MDXProvider } from '@learning/mdx'
 import { useIsRouting, type PathEnd } from '@solidjs/router'
 import { Portal } from '@solidjs/web'
@@ -151,9 +152,11 @@ export const Layout: ParentComponent = (props) => {
       </Show>
       <div class="container mx-auto">
         <Boundary>
-          <Meta href="/" title="Accueil" prefix="Learning - ">
-            <div>{props.children}</div>
-          </Meta>
+          <AnnotationsContext value={annotations}>
+            <Meta href="/" title="Accueil" prefix="Learning - ">
+              <div>{props.children}</div>
+            </Meta>
+          </AnnotationsContext>
         </Boundary>
       </div>
     </MDXProvider>

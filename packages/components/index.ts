@@ -1,5 +1,6 @@
 import { clientOnly } from '@solidjs/web'
 
+export * from './src/Annotations'
 export * from './src/Attempt'
 export * from './src/Board'
 export * from './src/Boundary'
