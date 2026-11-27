@@ -1,3 +1,4 @@
+import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import { MDXProvider } from '@learning/mdx'
 import type { JSX } from '@solidjs/web'
 import {
@@ -6,10 +7,12 @@ import {
   createSignal,
   For,
   onSettled,
+  Show,
   type Accessor,
   type ParentComponent,
 } from 'solid-js'
 import { Boundary } from './Boundary'
+import { Fa } from './Fa'
 import { Heading } from './Heading'
 
 export type TOCEntry = {
@@ -45,6 +48,8 @@ export const Page: ParentComponent<{ title?: JSX.Element }> = (props) => {
     return () => document.removeEventListener('scroll', onScroll, { capture: true })
   })
 
+  const [hidden, setHidden] = createSignal(false, { name: 'toc-hidden' })
+
   const context = {
     entries: toc,
     register: (entry: TOCEntry) => {
@@ -55,7 +60,12 @@ export const Page: ParentComponent<{ title?: JSX.Element }> = (props) => {
 
   return (
     <div class="relative container mx-auto w-screen pb-1 xl:flex">
-      <main class="prose prose-code:before:content-none prose-code:after:content-none max-w-270 grow overflow-auto scroll-smooth rounded-b-xl bg-white p-8 pb-200 shadow-sm">
+      <main
+        class={[
+          'prose prose-code:before:content-none prose-code:after:content-none grow overflow-auto scroll-smooth rounded-b-xl bg-white p-8 pb-200 shadow-sm',
+          hidden() ? 'max-w-none' : 'max-w-270',
+        ]}
+      >
         <MDXProvider
           components={{
             h1: (attrs) => <Heading level={1}>{attrs.children}</Heading>,
@@ -69,28 +79,43 @@ export const Page: ParentComponent<{ title?: JSX.Element }> = (props) => {
           </TOCContext>
         </MDXProvider>
       </main>
-      <aside class="sticky top-0 max-h-screen max-w-96 overflow-y-auto p-4 text-slate-600 print:hidden">
-        <h1 class="my-4 text-2xl font-bold">Table des matières</h1>
-        <For each={toc()}>
-          {(entry, i) => (
-            <a
-              replace
-              href={`#${i()}`}
-              class={[
-                'font-lg block border-l-4 py-2',
-                {
-                  'pl-2': entry.level === 1,
-                  'pl-4': entry.level === 2,
-                  'pl-6': entry.level === 3,
-                  'border-sky-600 bg-blue-50': active() === i(),
-                  'border-transparent hover:border-slate-300 hover:bg-slate-50': active() !== i(),
-                },
-              ]}
-            >
-              {entry.title()}
-            </a>
-          )}
-        </For>
+      <aside class="sticky top-0 flex max-w-96 gap-2 p-4 text-slate-600 xl:h-screen print:hidden">
+        <button
+          type="button"
+          aria-label={`${hidden() ? 'Afficher' : 'Masquer'} la table des matières`}
+          title={`${hidden() ? 'Afficher' : 'Masquer'} la table des matières`}
+          aria-expanded={hidden() ? 'false' : 'true'}
+          class="cursor-pointer self-center rounded p-2 hover:bg-slate-100"
+          onClick={() => setHidden((hidden) => !hidden)}
+        >
+          <Fa icon={hidden() ? faChevronLeft : faChevronRight} />
+        </button>
+        <Show when={!hidden()}>
+          <nav class="max-h-full overflow-y-auto">
+            <h1 class="my-4 text-2xl font-bold">Table des matières</h1>
+            <For each={toc()}>
+              {(entry, i) => (
+                <a
+                  replace
+                  href={`#${i()}`}
+                  class={[
+                    'font-lg block border-l-4 py-2',
+                    {
+                      'pl-2': entry.level === 1,
+                      'pl-4': entry.level === 2,
+                      'pl-6': entry.level === 3,
+                      'border-sky-600 bg-blue-50': active() === i(),
+                      'border-transparent hover:border-slate-300 hover:bg-slate-50':
+                        active() !== i(),
+                    },
+                  ]}
+                >
+                  {entry.title()}
+                </a>
+              )}
+            </For>
+          </nav>
+        </Show>
       </aside>
     </div>
   )

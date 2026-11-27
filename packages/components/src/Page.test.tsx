@@ -147,4 +147,13 @@ describe('Page current section', () => {
     fireEvent.scroll(document.querySelector('main')!)
     await waitFor(() => expect(activeLink()).toBe('B'))
   })
+
+  test('collapses and expands with the arrow beside it', async () => {
+    render(sections)
+    await waitFor(() => expect(tocLinks()).toHaveLength(3))
+    fireEvent.click(screen.getByLabelText('Masquer la table des matières'))
+    await waitFor(() => expect(tocLinks()).toHaveLength(0))
+    fireEvent.click(screen.getByLabelText('Afficher la table des matières'))
+    await waitFor(() => expect(tocLinks()).toHaveLength(3))
+  })
 })
