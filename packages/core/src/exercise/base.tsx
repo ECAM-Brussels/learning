@@ -373,7 +373,8 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
     () => [visible(), step.submitted, fetched()] as const,
     ([isVisible, submitted, fetched]) => {
       if (isVisible && fetched === null && !submitted) {
-        submit({})
+        // The submission reads the step and its options as they are now, once.
+        untrack(() => submit({}))
       }
     },
   )

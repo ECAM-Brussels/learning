@@ -17,13 +17,14 @@ replaySymapi()
  * mirroring how the real router refreshes cached queries after an action.
  */
 mock.module('@solidjs/router', async () => {
-  const { createSignal } = await import('solid-js')
+  const { createSignal, getObserver } = await import('solid-js')
   const [version, setVersion] = createSignal(0, { name: 'router-version' })
   return {
     query: (fn: (...args: any[]) => any, name: string) =>
       Object.assign(
         (...args: any[]) => {
-          version()
+          // Server functions call queries too, outside any tracking scope: only tracked calls need the version.
+          if (getObserver()) version()
           return fn(...args)
         },
         {

@@ -80,7 +80,8 @@ export default function Code(props: EditorProps) {
     )
   }
   createEffect(
-    () => deep(props.highlight),
+    // deep() fails on undefined, which most editors have.
+    () => (props.highlight ? deep(props.highlight) : undefined),
     (lines) => {
       highlight(lines)
     },

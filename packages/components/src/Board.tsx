@@ -280,7 +280,7 @@ export const Board = Object.assign(
       omit(props, 'children', 'class', 'onFrame'),
     )
     onSettled(() => {
-      const board = initBoard(el()!, { ...snapshot(attrs) }, snapshot(defaults()))
+      const board = initBoard(untrack(el)!, { ...snapshot(attrs) }, snapshot(defaults()))
       // A redraw calls the functions elements were given, which read props and signals when JSXGraph needs their values.
       // Redraws run inside effects, which would take those reads for dependencies: effects that need them track them.
       for (const method of ['update', 'fullUpdate'] as const) {
@@ -1249,9 +1249,11 @@ export const Board = Object.assign(
       return (
         <Show when={board()}>
           {(board) => {
-            const objects = () => board().objects as Record<string, JXG.GeometryElement>
+            // The construction runs once, with the board and view as they are when it starts.
+            const instance = untrack(board)
+            const objects = () => instance.objects as Record<string, JXG.GeometryElement>
             const before = new Set(Object.keys(objects()))
-            const result = props.children(board(), view())
+            const result = props.children(instance, untrack(view))
             const created = Object.values(objects()).filter((el) => !before.has(el.id))
             onCleanup(() => {
               for (const el of created.reverse()) {
@@ -1260,7 +1262,7 @@ export const Board = Object.assign(
                 const elView = Reflect.get(el, 'is3D')
                   ? (Reflect.get(el, 'view') as JXG.View3D)
                   : null
-                ;(elView ?? board()).removeObject(el)
+                ;(elView ?? instance).removeObject(el)
               }
             })
             return result ?? null
@@ -1390,10 +1392,13 @@ function Element<T extends Pick<JXG.GeometryElement, 'setAttribute' | 'update'>>
     },
   )
 
-  createEffect(attrs, (attrs) => {
-    el()?.setAttribute(attrs)
-    el()?.update()
-  })
+  createEffect(
+    () => [el(), attrs()] as const,
+    ([el, attrs]) => {
+      el?.setAttribute(attrs)
+      el?.update()
+    },
+  )
 
   return <Show when={el()}>{props.children?.(el()!)}</Show>
 }
