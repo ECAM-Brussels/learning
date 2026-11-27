@@ -1458,6 +1458,31 @@ describe('vector', () => {
       result: '\\begin{bmatrix}1\\\\x\\end{bmatrix}',
     }),
     define({
+      desc: 'ratio: (3, 6) = 3 (1, 2)',
+      promise: () => expr([1, 2], 'vector').ratio([3, 6])?.json,
+      result: 3,
+    }),
+    define({
+      desc: 'ratio: (-2, 1) = -1/2 (4, -2)',
+      promise: () => expr([4, -2], 'vector').ratio([-2, 1])?.json,
+      result: ['Rational', -1, 2],
+    }),
+    define({
+      desc: 'ratio: a zero first component is skipped',
+      promise: () => expr([0, 2, -1], 'vector').ratio([0, -4, 2])?.json,
+      result: -2,
+    }),
+    define({
+      desc: 'ratio: undefined when not a multiple',
+      promise: () => expr([1, 2, -1], 'vector').ratio([2, 4, 1]),
+      result: undefined,
+    }),
+    define({
+      desc: 'ratio: undefined for the zero vector',
+      promise: () => expr([0, 0], 'vector').ratio([1, 2]),
+      result: undefined,
+    }),
+    define({
       desc: 'norm: |(3, 4)| = 5',
       promise: () => expr([3, 4], 'vector').norm().N(),
       result: 5,

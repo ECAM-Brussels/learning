@@ -608,6 +608,20 @@ export function vector(rawInput: VectorLike) {
       )
       return `\\begin{bmatrix}${c.join('\\\\')}\\end{bmatrix}`
     },
+    /**
+     * The λ such that other = λ · this, or undefined if other is not a multiple of this.
+     * Decided on canonical forms, without SymAPI: exact for numbers, not for every symbolic vector.
+     */
+    ratio: (rawOther: VectorLike) => {
+      const other = sameDimension(rawOther, 'ratio')
+      const pivot = components.findIndex((c) => canonical(c.json) !== 0)
+      if (pivot === -1) return undefined
+      const lambda = canonical(['Divide', other[pivot]!.json, components[pivot]!.json])
+      const multiple = components.every((c, i) =>
+        isEqual(canonical(['Multiply', lambda, c.json]), canonical(other[i]!.json)),
+      )
+      return multiple ? expression({ json: lambda }) : undefined
+    },
     norm: () =>
       expression({
         json: canonical(['Sqrt', ['Add', ...components.map((c) => ['Power', c.json, 2] as const)]]),

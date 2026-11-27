@@ -25,10 +25,11 @@ function Tex(props: {
       if (!value) return ''
       if (typeof value === 'object' && 'rawInput' in value && typeof value.rawInput === 'string')
         return value.rawInput
-      if (typeof value === 'object' && 'json' in value && typeof value.json === 'object')
-        return expr({ json: value.json }).latex()
+      // Before json: a vector's own LaTeX is a column, its json only a list.
       if (typeof value === 'object' && 'latex' in value && typeof value.latex === 'function')
         return value.latex()
+      if (typeof value === 'object' && 'json' in value && typeof value.json === 'object')
+        return expr({ json: value.json }).latex()
       return String(value).replace(/e\+?(\d+)/, '\\cdot 10^{ $1 }')
     })
   })
