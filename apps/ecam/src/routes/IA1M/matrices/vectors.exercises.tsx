@@ -109,31 +109,49 @@ export const Parallel = createDerivedStep(
   },
 )
 
-/** For dependent vectors: the α such that y = αx. */
+// y = αx, unless x is zero: then no α may exist, and x = αy is asked instead.
+const sides = (x: Vector) => (x.isZero() ? (['x', 'y'] as const) : (['y', 'x'] as const))
+
+/** For dependent vectors: the α such that y = αx, or x = αy when x is zero. */
 export const Multiple = createDerivedStep(
   Simple,
   pair,
-  (data) => ({
-    prompt: (
-      <p>
-        Write one vector as a multiple of the other: find {tex`\alpha`} such that{' '}
-        {tex`\mathbf{y}=\alpha\mathbf{x}`}.
-      </p>
-    ),
-    label: '\\alpha =',
-    grade: (attempt) => attempt.isEqual(data.x.ratio(data.y)!),
-  }),
+  (data) => {
+    const [left, right] = sides(data.x)
+    const alpha = data[right].ratio(data[left])
+    return {
+      prompt: (
+        <>
+          <p>For the vectors</p>
+          <div class="flex justify-center">
+            {tex`\mathbf{x}=${data.x},\qquad\mathbf{y}=${data.y}`}
+          </div>
+          <p>
+            write one vector as a multiple of the other: find {tex`\alpha`} such that{' '}
+            {tex`\mathbf{${left}}=\alpha\mathbf{${right}}`}.
+          </p>
+        </>
+      ),
+      label: '\\alpha =',
+      // When both vectors are zero, every α is right.
+      grade: (attempt) => alpha === undefined || attempt.isEqual(alpha),
+    }
+  },
   {
     name: 'IA1M/vectors/multiple',
     options: { allowResubmissions: false },
-    feedback: (ctx) => (
-      <Show when={!ctx.correct}>
-        <p>
-          Comparing the components gives {tex`\alpha=${ctx.data.x.ratio(ctx.data.y)}`}, and indeed{' '}
-          {tex`${ctx.data.y}=${ctx.data.x.ratio(ctx.data.y)}${ctx.data.x}`}.
-        </p>
-      </Show>
-    ),
+    feedback: (ctx) => {
+      const left = () => ctx.data[sides(ctx.data.x)[0]]
+      const right = () => ctx.data[sides(ctx.data.x)[1]]
+      return (
+        <Show when={!ctx.correct}>
+          <p>
+            Comparing the components gives {tex`\alpha=${right().ratio(left())}`}, and indeed{' '}
+            {tex`${left()}=${right().ratio(left())}${right()}`}.
+          </p>
+        </Show>
+      )
+    },
   },
 )
 

@@ -562,6 +562,8 @@ export function vector(rawInput: VectorLike) {
     return fromJson(components.map((c, i) => [operation, c.json, other[i]!.json]))
   }
 
+  const isZero = (list: typeof components) => list.every((c) => canonical(c.json) === 0)
+
   /**
    * The λ such that other = λ · this, or undefined if other is not a multiple of this.
    * Decided on canonical forms, without SymAPI: exact for numbers, not for every symbolic vector.
@@ -632,9 +634,9 @@ export function vector(rawInput: VectorLike) {
      */
     isParallel: (rawOther: VectorLike) => {
       const other = sameDimension(rawOther, 'parallelism')
-      const isZero = (vector: typeof components) => vector.every((c) => canonical(c.json) === 0)
       return isZero(components) || isZero(other) || ratio(other) !== undefined
     },
+    isZero: () => isZero(components),
     N: () => components.map((c) => expression(c).N()),
     norm: () =>
       expression({

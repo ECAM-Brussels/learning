@@ -12,7 +12,7 @@ globalThis.IntersectionObserver ??= class {
   }
 } as any
 
-const { DependentOrIndependent, Parallel } = await import('./vectors.exercises')
+const { DependentOrIndependent, Multiple, Parallel } = await import('./vectors.exercises')
 
 const stored = (id: string) => JSON.parse(localStorage.getItem(`/:${id}:0`) ?? 'null')?.[0]
 const choose = (label: string) => fireEvent.click(screen.getAllByLabelText(label).at(-1)!)
@@ -56,5 +56,18 @@ describe('Parallel', () => {
     submit()
     await waitFor(() => screen.getByText(/same line through the origin/))
     expect(screen.queryByText(/drag the heads/)).toBeNull()
+  })
+})
+
+describe('Multiple', () => {
+  test('asks for y = αx', async () => {
+    render(() => <Multiple id="multiple" x={[1, 2]} y={[3, 6]} />)
+    await waitFor(() => screen.getByText('\\mathbf{y}=\\alpha\\mathbf{x}'))
+    await waitFor(() => screen.getByText(/mathbf\{x\}=.*bmatrix\}1\\\\2/))
+  })
+
+  test('asks for x = αy when x is zero, since no α gives y = αx', async () => {
+    render(() => <Multiple id="zero" x={[0, 0]} y={[1, 2]} />)
+    await waitFor(() => screen.getByText('\\mathbf{x}=\\alpha\\mathbf{y}'))
   })
 })

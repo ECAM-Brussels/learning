@@ -1463,6 +1463,16 @@ describe('vector', () => {
       result: 3,
     }),
     define({
+      desc: 'isZero: (0, 0, 0) is zero',
+      promise: () => expr([0, 0, 0], 'vector').isZero(),
+      result: true,
+    }),
+    define({
+      desc: 'isZero: (0, 1) is not zero',
+      promise: () => expr([0, 1], 'vector').isZero(),
+      result: false,
+    }),
+    define({
       desc: 'isParallel: (1, 2) ∥ (3, 6)',
       promise: () => expr([1, 2], 'vector').isParallel([3, 6]),
       result: true,

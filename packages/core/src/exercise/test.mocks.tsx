@@ -31,7 +31,7 @@ mock.module('@learning/components', async () => {
     MathField: (props: any) => <input data-testid="math-field" {...props} />,
     Youtube: (props: { src: string }) => <div data-testid="video" data-src={props.src} />,
     Highlight: (props: { code: string }) => <pre>{props.code}</pre>,
-    Latex: (props: { tex: string }) => <span>{props.tex}</span>,
+    Latex: (props: { value: string }) => <span>{props.value}</span>,
     Python: () => null,
     // JSXGraph doesn't render in happy-dom; every Board.* element renders nothing.
     Board: new Proxy(() => null, { get: () => () => null }),
