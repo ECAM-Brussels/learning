@@ -33,5 +33,7 @@ mock.module('@learning/components', async () => {
     Highlight: (props: { code: string }) => <pre>{props.code}</pre>,
     Latex: (props: { tex: string }) => <span>{props.tex}</span>,
     Python: () => null,
+    // JSXGraph doesn't render in happy-dom; every Board.* element renders nothing.
+    Board: new Proxy(() => null, { get: () => () => null }),
   }
 })
