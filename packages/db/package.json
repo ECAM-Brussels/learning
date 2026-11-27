@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "devDependencies": {
+    "@electric-sql/pglite": "^0.6.0",
     "@types/bun": "latest",
     "@types/pg": "^8.20.0",
     "drizzle-kit": "^1.0.0-rc.4"
