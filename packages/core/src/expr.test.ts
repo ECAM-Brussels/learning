@@ -1458,6 +1458,56 @@ describe('vector', () => {
       result: '\\begin{bmatrix}1\\\\x\\end{bmatrix}',
     }),
     define({
+      desc: 'dimension: (1, 2, 3) has dimension 3',
+      promise: () => expr([1, 2, 3], 'vector').dimension,
+      result: 3,
+    }),
+    define({
+      desc: 'isParallel: (1, 2) ∥ (3, 6)',
+      promise: () => expr([1, 2], 'vector').isParallel([3, 6]),
+      result: true,
+    }),
+    define({
+      desc: 'isParallel: symmetric, (3, 6) ∥ (1, 2)',
+      promise: () => expr([3, 6], 'vector').isParallel([1, 2]),
+      result: true,
+    }),
+    define({
+      desc: 'isParallel: opposite directions, (4, -2) ∥ (-2, 1)',
+      promise: () => expr([4, -2], 'vector').isParallel([-2, 1]),
+      result: true,
+    }),
+    define({
+      desc: 'isParallel: (1, 2, -1) ∦ (2, 4, 1)',
+      promise: () => expr([1, 2, -1], 'vector').isParallel([2, 4, 1]),
+      result: false,
+    }),
+    define({
+      desc: 'isParallel: a zero first component, (0, 2, -1) ∥ (0, -4, 2)',
+      promise: () => expr([0, 2, -1], 'vector').isParallel([0, -4, 2]),
+      result: true,
+    }),
+    define({
+      desc: 'isParallel: the zero vector is parallel to any vector',
+      promise: () => expr([0, 0], 'vector').isParallel([1, 2]),
+      result: true,
+    }),
+    define({
+      desc: 'isParallel: and any vector to the zero vector',
+      promise: () => expr([1, 2], 'vector').isParallel([0, 0]),
+      result: true,
+    }),
+    define({
+      desc: 'isParallel: the zero vector is parallel to itself',
+      promise: () => expr([0, 0], 'vector').isParallel([0, 0]),
+      result: true,
+    }),
+    define({
+      desc: 'isParallel: accepts another vector',
+      promise: () => expr([1, 2], 'vector').isParallel(expr([2, 4], 'vector')),
+      result: true,
+    }),
+    define({
       desc: 'ratio: (3, 6) = 3 (1, 2)',
       promise: () => expr([1, 2], 'vector').ratio([3, 6])?.json,
       result: 3,

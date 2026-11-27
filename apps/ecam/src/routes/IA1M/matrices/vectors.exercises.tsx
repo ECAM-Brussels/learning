@@ -42,13 +42,13 @@ export const DependentOrIndependent = createDerivedStep(
       </>
     ),
     choices: { dependent: 'Linearly dependent', independent: 'Linearly independent' },
-    answer: data.x.ratio(data.y) ? 'dependent' : 'independent',
+    answer: data.x.isParallel(data.y) ? 'dependent' : 'independent',
   }),
   {
     name: 'IA1M/vectors/dependence',
     feedback: (ctx) => (
       <Show
-        when={ctx.data.x.ratio(ctx.data.y)}
+        when={ctx.data.x.isParallel(ctx.data.y)}
         fallback={
           <Show when={!ctx.correct}>
             <p>
@@ -146,24 +146,24 @@ export const Draw = createStep({
   schema: { data: pair, inputs: { x: v.array(v.number()), y: v.array(v.number()) } },
   options: { allowResubmissions: true },
   initialState: (data) => {
-    const n = data.x.components.length
+    const n = data.x.dimension
     return { x: unit(n, 0), y: unit(n, 1) }
   },
   prompt: (ctx) => {
-    const Drawing = dynamic(() => (ctx.data.x.components.length === 2 ? Draw2D : Draw3D))
+    const Drawing = dynamic(() => (ctx.data.x.dimension === 2 ? Draw2D : Draw3D))
     return (
       <>
         <p>
           Draw {tex`\mathbf{x}`} and {tex`\mathbf{y}`}:{' '}
-          {ctx.data.x.components.length === 2
+          {ctx.data.x.dimension === 2
             ? 'drag the heads of the arrows to the right points.'
             : 'move the sliders until the arrows are at the right places.'}
         </p>
         <Drawing
           target={ctx.data}
           drawn={{
-            x: ctx.state.current.x ?? unit(ctx.data.x.components.length, 0),
-            y: ctx.state.current.y ?? unit(ctx.data.x.components.length, 1),
+            x: ctx.state.current.x ?? unit(ctx.data.x.dimension, 0),
+            y: ctx.state.current.y ?? unit(ctx.data.x.dimension, 1),
           }}
           locked={ctx.state.correct === true}
           onChange={(name, value) => ctx.state.set(name, value)}
