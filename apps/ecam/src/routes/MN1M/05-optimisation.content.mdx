@@ -121,7 +121,8 @@ nos nombres peuvent maintenant prendre la forme
 {tex.display`\underbrace{(a + b \delta)}_{\text{partie ${'``'}réelle'' p/r à }\epsilon} + \underbrace{(c + d \delta)}_{\text{partie ${'``'}duale'' p/r à }\epsilon} \epsilon`}
 
 En d'autres termes, nos nombres duaux en $\delta$ sont **imbriqués** dans des nombres duaux en $\epsilon$.
-L'instruction `.dual.dual` sur le nombre ci-dessus prend alors son sens et donne $d$, le coefficient de $\epsilon\delta$.
+L'instruction `.dual.dual` sur le nombre ci-dessus prend alors son sens
+et donne $d$, le coefficient de $\epsilon\delta$.
 On peut le vérifier en Python avec l'exemple suivant:
 
 ```python run math
@@ -370,7 +371,8 @@ Deux cas se présentent:
     />
   </Board>
 
-  Donc si $f'(x_n)$ est **positif**, on veut {tex`x_{n + 1} < x_n`}, c'est-à-dire un déplacement vers la **gauche**.
+  Donc si $f'(x_n)$ est **positif**, on veut {tex`x_{n + 1} < x_n`},
+  c'est-à-dire un déplacement vers la **gauche**.
   Notez que c'est le cas avec
   {tex.display`x_{n + 1} = x_n - \underbrace{\eta f'(x_n)}_{> 0}, \qquad \qquad \eta > 0`}
 
@@ -393,7 +395,8 @@ Deux cas se présentent:
     />
   </Board>
 
-  Donc si $f'(x_n)$ est **négatif**, on veut {tex`x_{n + 1} > x_n`}, c'est-à-dire un déplacement vers la **droite**.
+  Donc si $f'(x_n)$ est **négatif**, on veut {tex`x_{n + 1} > x_n`},
+  c'est-à-dire un déplacement vers la **droite**.
   Notez que c'est le cas avec
   {tex.display`x_{n + 1} = x_n - \underbrace{\eta f'(x_n)}_{< 0}, \qquad \qquad \eta > 0`}
 
@@ -482,7 +485,8 @@ Celle-ci illustre un concept que vous verrez à la fin du cours de _Math de base
 Jusqu'à présent, nous employions $\epsilon$ pour la dérivée première et $\delta$ pour la dérivée seconde.
 Pour une dérivée d'ordre supérieur, on peut continuer à ajouter des nombres duaux,
 ce qui est fastidieux.
-Pour vous aider, nous avons défini la fonction `eps(n)` qui donne pour chaque valeur de $n$ un nombre dual différent.
+Pour vous aider, nous avons défini la fonction `eps(n)`
+qui donne pour chaque valeur de $n$ un nombre dual différent.
 
 On peut donc utiliser `eps(1)` pour la dérivée première, `eps(2)` pour la dérivée seconde, et ainsi de suite:
 

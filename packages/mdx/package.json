@@ -20,6 +20,7 @@
   },
   "exports": {
     ".": "./index.tsx",
-    "./config": "./config.ts"
+    "./config": "./config.ts",
+    "./brackets": "./brackets.ts"
   }
 }

@@ -173,7 +173,25 @@ declare module "virtual:file-routes" {
       $$route?: undefined;
     },
     {
-      path: "/doc/exercise";
+      path: "/doc/contributing";
+      page: true;
+      $component: FileRouteLazyRef;
+      $$route?: undefined;
+    },
+    {
+      path: "/doc/design";
+      page: true;
+      $component: FileRouteLazyRef;
+      $$route?: undefined;
+    },
+    {
+      path: "/doc/exercises";
+      page: true;
+      $component: FileRouteLazyRef;
+      $$route?: undefined;
+    },
+    {
+      path: "/doc/figures";
       page: true;
       $component: FileRouteLazyRef;
       $$route?: undefined;
@@ -185,13 +203,31 @@ declare module "virtual:file-routes" {
       $$route?: undefined;
     },
     {
-      path: "/doc/presentation";
+      path: "/doc/new-exercise";
       page: true;
       $component: FileRouteLazyRef;
       $$route?: undefined;
     },
     {
-      path: "/doc/quickstart";
+      path: "/doc/python";
+      page: true;
+      $component: FileRouteLazyRef;
+      $$route?: undefined;
+    },
+    {
+      path: "/doc/random-questions";
+      page: true;
+      $component: FileRouteLazyRef;
+      $$route?: undefined;
+    },
+    {
+      path: "/doc/reactivity";
+      page: true;
+      $component: FileRouteLazyRef;
+      $$route?: undefined;
+    },
+    {
+      path: "/doc/remediation";
       page: true;
       $component: FileRouteLazyRef;
       $$route?: undefined;
@@ -209,7 +245,19 @@ declare module "virtual:file-routes" {
       $$route?: undefined;
     },
     {
+      path: "/doc/structure";
+      page: true;
+      $component: FileRouteLazyRef;
+      $$route?: undefined;
+    },
+    {
       path: "/doc/symbolic";
+      page: true;
+      $component: FileRouteLazyRef;
+      $$route?: undefined;
+    },
+    {
+      path: "/doc/writing";
       page: true;
       $component: FileRouteLazyRef;
       $$route?: undefined;
@@ -257,6 +305,22 @@ declare module "virtual:file-routes" {
           children?: undefined;
         },
         {
+          path: "/design";
+          id: "/design";
+          page: true;
+          $component: FileRouteLazyRef;
+          $$route?: undefined;
+          children?: undefined;
+        },
+        {
+          path: "/python";
+          id: "/python";
+          page: true;
+          $component: FileRouteLazyRef;
+          $$route?: undefined;
+          children?: undefined;
+        },
+        {
           path: "/slides";
           id: "/slides";
           page: true;
@@ -265,8 +329,16 @@ declare module "virtual:file-routes" {
           children?: undefined;
         },
         {
-          path: "/exercise";
-          id: "/exercise";
+          path: "/figures";
+          id: "/figures";
+          page: true;
+          $component: FileRouteLazyRef;
+          $$route?: undefined;
+          children?: undefined;
+        },
+        {
+          path: "/writing";
+          id: "/writing";
           page: true;
           $component: FileRouteLazyRef;
           $$route?: undefined;
@@ -281,16 +353,56 @@ declare module "virtual:file-routes" {
           children?: undefined;
         },
         {
-          path: "/quickstart";
-          id: "/quickstart";
+          path: "/exercises";
+          id: "/exercises";
           page: true;
           $component: FileRouteLazyRef;
           $$route?: undefined;
           children?: undefined;
         },
         {
-          path: "/presentation";
-          id: "/presentation";
+          path: "/structure";
+          id: "/structure";
+          page: true;
+          $component: FileRouteLazyRef;
+          $$route?: undefined;
+          children?: undefined;
+        },
+        {
+          path: "/reactivity";
+          id: "/reactivity";
+          page: true;
+          $component: FileRouteLazyRef;
+          $$route?: undefined;
+          children?: undefined;
+        },
+        {
+          path: "/remediation";
+          id: "/remediation";
+          page: true;
+          $component: FileRouteLazyRef;
+          $$route?: undefined;
+          children?: undefined;
+        },
+        {
+          path: "/contributing";
+          id: "/contributing";
+          page: true;
+          $component: FileRouteLazyRef;
+          $$route?: undefined;
+          children?: undefined;
+        },
+        {
+          path: "/new-exercise";
+          id: "/new-exercise";
+          page: true;
+          $component: FileRouteLazyRef;
+          $$route?: undefined;
+          children?: undefined;
+        },
+        {
+          path: "/random-questions";
+          id: "/random-questions";
           page: true;
           $component: FileRouteLazyRef;
           $$route?: undefined;

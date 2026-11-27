@@ -8,7 +8,8 @@ mock.module('./context.remote', () => ({
   getProgress: async () => null,
   getStats: async () => [],
 }))
-mock.module('../permissions', () => ({ hasPermissions }))
+mock.module('../permissions', () => ({ hasPermissions, getRole: async () => 'guest' }))
+mock.module('../annotations.remote', () => ({ annotations: {} }))
 mock.module('@learning/components', async () => {
   const { Boundary } = await import('../../../components/src/Boundary')
   const { Form } = await import('../../../components/src/Form')

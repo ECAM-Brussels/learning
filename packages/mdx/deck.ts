@@ -1,4 +1,5 @@
 import { defineMdastPlugin } from 'satteri'
+import { deckBrackets } from './brackets.ts'
 
 type Node = {
   type: string
@@ -191,31 +192,10 @@ export function toSlides(children: Node[]): Node[] {
   return slides
 }
 
-const titleFields = ['title', 'subtitle', 'author', 'institute', 'date']
-
 /** The text in a deck's brackets, which the directives plugin, run before, keeps as `data-label`. */
 function label(node: Node & { data?: { hProperties?: Record<string, unknown> } }) {
   const label = node.data?.hProperties?.['data-label']
   return typeof label === 'string' ? label : undefined
-}
-
-/** The title slide's fields, written `key="value"` in the deck's brackets. */
-function titleSlide(source: string): Props {
-  const pair = /\s*([a-z]+)="([^"]*)"\s*/y
-  const fields: Props = {}
-  while (pair.lastIndex < source.length) {
-    const start = pair.lastIndex
-    const match = pair.exec(source)
-    const [, field, value] = match ?? []
-    if (!field || !titleFields.includes(field)) {
-      throw new Error(
-        `Unexpected \`${source.slice(start).trim()}\` in the deck's brackets: ` +
-          `write its title slide as ${titleFields.map((name) => `${name}="…"`).join(', ')}`,
-      )
-    }
-    fields[field] = value!
-  }
-  return fields
 }
 
 /**
@@ -223,6 +203,7 @@ function titleSlide(source: string): Props {
  * It opens on a title slide when its brackets give one, as `:::::deck[title="…" author="…"]`,
  * rather than in braces, which trip the MDX language server:
  * what the title slide is not given comes from the page's `defineMeta`.
+ * `annotators="…"` lists who may draw on the deck, and `id="…"` tells apart the decks of a page that do.
  * Runs after the other plugins, so that it moves what they have already turned into components.
  */
 export const deck = defineMdastPlugin({
@@ -234,7 +215,12 @@ export const deck = defineMdastPlugin({
       throw new Error('Write a deck\'s title slide in brackets, as `:::::deck[title="…"]`')
     }
     const source = label(deck)
-    const title = source === undefined ? [] : [element('Deck.Title', titleSlide(source))]
-    return element('Deck', {}, [...title, ...toSlides(withoutLabel(deck))]) as never
+    const fields = source === undefined ? undefined : deckBrackets(source)
+    // Empty brackets still open on a title slide, made from the page's `defineMeta`.
+    const hasTitle =
+      fields !== undefined &&
+      (Object.keys(fields.title).length > 0 || Object.keys(fields.deck).length === 0)
+    const title = hasTitle ? [element('Deck.Title', fields.title)] : []
+    return element('Deck', fields?.deck ?? {}, [...title, ...toSlides(withoutLabel(deck))]) as never
   },
 })

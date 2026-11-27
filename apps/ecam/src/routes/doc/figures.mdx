@@ -1,0 +1,109 @@
+import { defineMeta } from '@learning/components'
+import * as Demo from './figures.demo'
+
+export default defineMeta({ title: 'Ajouter des figures interactives' })
+
+# Ajouter des figures interactives
+
+Une figure interactive se construit avec des balises,
+une pour chaque élément : courbe, point, segment, curseur…
+Elle repose sur la bibliothèque [JSXGraph](https://jsxgraph.org).
+Pour une animation déjà prête, [GeoGebra](/doc/writing) est plus simple.
+
+## Une première figure
+
+```tsx
+// functions.exercises.tsx
+import { Board } from '@learning/components'
+
+export const Sine = () => (
+  <Board axis boundingBox={[-7, 2, 7, -2]}>
+    <Board.Plot fn={Math.sin} />
+    <Board.Point position={[Math.PI / 2, 1]} name="A" />
+  </Board>
+)
+```
+
+<Demo.Sine />
+
+`Board` est la figure.
+`axis` affiche les axes,
+et `boundingBox` donne la partie du plan visible : $x$ minimal, $y$ maximal, $x$ maximal et $y$ minimal.
+Le point peut être déplacé à la souris.
+
+| Balise           | Élément                            | Attributs principaux                |
+| ---------------- | ---------------------------------- | ----------------------------------- |
+| `Board.Plot`     | Le graphe d'une fonction           | `fn`, `domain`                      |
+| `Board.Point`    | Un point                           | `position`, `name`                  |
+| `Board.Segment`  | Un segment                         | `from`, `to`                        |
+| `Board.Line`     | Une droite par deux points         | `points`                            |
+| `Board.Circle`   | Un cercle                          | `center`, `radius`                  |
+| `Board.Polygon`  | Un polygone                        | `points`                            |
+| `Board.Glider`   | Un point qui glisse sur une courbe | `on`, `position`                    |
+| `Board.Slider`   | Un curseur                         | `from`, `to`, `min`, `max`, `value` |
+| `Board.Integral` | L'aire sous une courbe             | `curve`, `domain`                   |
+| `Board.Text`     | Un texte                           | `position`, `content`               |
+
+Les noms des points s'écrivent en LaTeX, comme `name="x_0"`,
+et se placent d'eux-mêmes pour ne pas chevaucher les autres éléments.
+Les couleurs et épaisseurs se règlent avec `color` et `strokeWidth`.
+
+## Une figure qui réagit
+
+Pour qu'un élément en modifie un autre, on garde la valeur qui change dans un **signal** :
+une variable dont la figure suit les changements,
+présentée dans [Comprendre la réactivité](/doc/reactivity).
+
+```tsx
+import { Board } from '@learning/components'
+import { createMemo, createSignal } from 'solid-js'
+
+export function Parabola() {
+  const [a, setA] = createSignal(1)
+  const f = createMemo(() => {
+    const k = a()
+    return (x: number) => k * x * x
+  })
+  return (
+    <Board axis boundingBox={[-5, 5, 5, -5]}>
+      <Board.Slider
+        from={[-4, 4]}
+        to={[0, 4]}
+        min={-2}
+        max={2}
+        value={a()}
+        onChange={setA}
+        name="a"
+      />
+      <Board.Plot fn={f()} />
+    </Board>
+  )
+}
+```
+
+<Demo.Parabola />
+
+`createSignal(1)` crée le signal, qui vaut $1$ au départ :
+`a()` lit sa valeur, et `setA` la change.
+Le curseur appelle `setA` chaque fois qu'on le déplace.
+
+La fonction tracée doit être recréée quand `a` change :
+c'est le rôle de `createMemo`, qui lit `a()` **avant** de construire la fonction.
+Écrire directement `fn={(x) => a() * x * x}` ne redessinerait pas la courbe.
+
+Les figures sont une partie de la plateforme qui évolue :
+demandez à l'assistant de programmation de construire une figure à partir de votre description,
+il connaît les balises disponibles.
+
+## Demander à l'assistant
+
+:::info[Un exemple de demande]
+Décrivez ce que la figure montre,
+ce que l'étudiant·e peut déplacer,
+et ce qui doit suivre ce mouvement.
+
+> Crée une figure qui trace sin(x) sur [-2π, 2π],
+> avec un point que l'on peut déplacer sur la courbe,
+> et la tangente à la courbe en ce point, qui suit le point.
+> Affiche la pente de la tangente à côté du point.
+> :::

@@ -1,35 +1,88 @@
 import { Factor } from '@learning/exercises/math/algebra/Factor'
-import { paths } from '../../router'
 
-# Documentation
+# Documentation pour les enseignant·es
 
-## Aperçu
+_Learning_ est une plateforme libre pour créer des cours interactifs de mathématiques et de sciences.
+Ses exercices sont corrigés par **calcul formel** :
+la plateforme comprend qu'une réponse est mathématiquement juste,
+même si elle n'est pas écrite comme la solution attendue.
+Elle peut aussi générer des exercices,
+et guider l'étudiant·e pas à pas lorsqu'il ou elle se trompe.
 
-_Learning_ est un projet libre visant à faciliter la création de ressources pédagogiques interactives,
-en particulier pour les _mathématiques_ et les _sciences_.
-Son intérêt est de mettre à disposition un _moteur d'exercices_ basé sur le _calcul formel_
-pour _générer_ des exercices, les _corriger_,
-et de fournir un retour riche et immédiat aux étudiant.es.
+:::example[Un exercice de la plateforme]
 
-:::example
-
-<Factor id="example" expr="x^2 - 5x + 6" />
+<Factor id="accueil" expr="x^2 - 5x + 6" />
 :::
 
-L'objectif est de donner un **contrôle total** aux enseignant.es
-pour que leurs ressources soient exactement telles que ils ou elles le souhaitent,
-et répondent exactement à leurs besoins pédagogiques.
-La syntaxe est expressive,
-et les possibilités pour le feedback sont puissantes.
-Il est par exemple possible de guider un.e étudiant.e à travers autant d'étapes que nécessaire pour arriver à la solution,
-même si les prérequis ne sont pas encore maîtrisés.
+Essayez de répondre faux,
+puis de répondre juste sous une autre forme, par exemple en inversant les facteurs.
 
----
+## Une conversation plutôt qu'une correction
 
-## Se former
+La plupart des plateformes d'exercices suivent le même schéma :
+une question, une réponse, une correction.
+_Learning_ permet des interactions plus riches :
+après une réponse, l'exercice peut poser d'autres questions,
+choisies selon ce que l'étudiant·e a répondu.
+Après une mauvaise factorisation, par exemple,
+l'exercice ci-dessus demande une racine du polynôme,
+puis le facteur qui lui correspond,
+puis la factorisation à nouveau.
 
-1. <a href={paths.doc.setup}>Installer _learning_ sur sa machine</a>
-2. <a href={paths.doc.symbolic}>Manipuler des expressions mathématiques</a>
-3. <a href={paths.doc.exercise}>Créer un exercice</a>
-4. <a href={paths.doc.slides}>Créer une présentation</a>
-5. Feedback à l'étudiant.e
+La remédiation est **récursive** :
+chaque question posée pour aider peut à son tour en poser d'autres,
+aussi loin que nécessaire, jusqu'aux prérequis qui ne sont pas maîtrisés.
+Le retour en arrière l'est aussi :
+une fois une difficulté levée, on revient à la question qui l'avait révélée,
+puis à celle d'avant, jusqu'à la question de départ.
+C'est le cœur de la plateforme,
+présenté dans [Guider l'étudiant·e pas à pas](/doc/remediation).
+
+## À qui s'adresse cette documentation ?
+
+À toute enseignante et tout enseignant qui souhaite ajouter du contenu ou des exercices à la plateforme,
+sans être programmeur ou programmeuse.
+L'essentiel du travail consiste à écrire du texte, des formules et des exercices dans des fichiers `.mdx`,
+un format proche d'un simple document texte.
+La programmation n'intervient que pour inventer un nouveau type d'exercice,
+et les pages concernées l'expliquent pas à pas.
+
+## Parcours
+
+Les pages se lisent dans l'ordre,
+mais les quatre premières suffisent pour rédiger un chapitre et y placer des exercices existants.
+
+1. [Installer la plateforme](/doc/setup) sur votre ordinateur.
+2. [Comprendre l'organisation des cours](/doc/structure) : où se trouvent les fichiers, et comment créer une page.
+3. [Rédiger une page](/doc/writing) : texte, formules, encadrés, images, vidéos.
+4. [Ajouter des exercices](/doc/exercises) : exercices prêts à l'emploi, choix multiples et séquences.
+5. [Manipuler des expressions mathématiques](/doc/symbolic) avec le calcul formel.
+6. [Comprendre la réactivité](/doc/reactivity), la base de tout exercice et de toute figure.
+7. [Créer un nouveau type d'exercice](/doc/new-exercise).
+8. [Guider l'étudiant·e pas à pas](/doc/remediation), le cœur de la plateforme.
+9. [Créer des exercices Python](/doc/python).
+10. [Générer des questions aléatoires](/doc/random-questions).
+11. [Ajouter des figures interactives](/doc/figures).
+12. [Créer une présentation](/doc/slides).
+13. [Proposer ses modifications](/doc/contributing) pour qu'elles soient publiées.
+14. [Comprendre la conception de la plateforme](/doc/design), pour qui veut savoir comment elle fonctionne ou l'étudier.
+
+## Se faire aider
+
+L'environnement de développement contient un assistant de programmation, Claude Code,
+qui connaît les conventions de la plateforme grâce au fichier `AGENTS.md` à la racine du projet.
+Vous pouvez lui demander d'écrire un exercice, de corriger une erreur ou d'expliquer un message,
+puis relire ce qu'il propose.
+Quelques conseils pour vos demandes :
+
+- indiquez le fichier où écrire, et la page où utiliser le résultat ;
+- décrivez l'exercice comme à un·e collègue :
+  les données qui changent, ce qui compte comme une bonne réponse,
+  les erreurs fréquentes, et ce qu'il faut demander après chacune ;
+- donnez un exemple de question avec sa réponse ;
+- demandez une chose à la fois, et vérifiez chaque résultat dans le navigateur ;
+- si un message d'erreur s'affiche, copiez-le tel quel.
+
+Les pages qui demandent du code contiennent chacune un exemple de demande.
+
+Pour toute autre question, ouvrez une discussion sur [GitHub](https://github.com/ECAM-Brussels/learning/issues).

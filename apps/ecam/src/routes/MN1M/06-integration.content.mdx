@@ -68,7 +68,8 @@ print("Pas:            ", dx)
 
 :::remark[Vectorisation]
 Remarquez que `x` est un vecteur, et `dx` est un scalaire.
-La somme `x + dx` est le vecteur dont les composantes sont les sommes de chaque composante de `x` avec le scalaire `dx`.
+La somme `x + dx` est le vecteur
+dont les composantes sont les sommes de chaque composante de `x` avec le scalaire `dx`.
 :::
 
 Pour les questions suivantes, veuillez ne pas utiliser `print` pour afficher les résultats.
@@ -298,7 +299,8 @@ x, dx = np.linspace(a, b, n, endpoint=False, retstep=True)
 np.sum(f(x) * dx)
 ```
 
-Dans toutes nos applications, le résultat est une approximation qui s'améliore lorsque le nombre d'intervalles $n$ augmente.
+Dans toutes nos applications, le résultat est une approximation
+qui s'améliore lorsque le nombre d'intervalles $n$ augmente.
 Le résultat théorique, lorsque $n \to \infty$, est noté
 
 {tex.display`\int_a^b f(x) \, \mathrm dx`}
@@ -427,7 +429,8 @@ Rappelons que l'aire d'un trapèze est donnée par la formule
 
 {tex.display`\text{Aire} = \text{moyenne des bases} \times  \text{hauteur}`}
 
-Nos trapèzes ont pour hauteur {tex`\mathrm{d}x`} et pour bases les valeurs de la fonction $f$ aux bornes gauche et droite de chaque sous-intervalle.
+Nos trapèzes ont pour hauteur {tex`\mathrm{d}x`}
+et pour bases les valeurs de la fonction $f$ aux bornes gauche et droite de chaque sous-intervalle.
 Il suit que l'aire de chaque trapèze est donnée par
 
 {tex.display`\frac {f(x_i) + f(x_{i+1})} 2 \mathrm{d}x`}
@@ -691,7 +694,8 @@ Ensuite, tracez le graphe de $F'$ (calculé numériquement avec la différence c
    ```
 
    L'instruction `@np.vectorize` permet de calculer `F(x)` pour un vecteur `x`.
-   La raison pour laquelle l'instruction est essentielle est que `x` (potentiellement un vecteur) est utilisé dans la fonction `np.linspace`.
+   La raison pour laquelle l'instruction est essentielle
+   est que `x` (potentiellement un vecteur) est utilisé dans la fonction `np.linspace`.
 
 ::::
 :::
@@ -719,7 +723,8 @@ mais qui cette fois nous donne directement les poids
 et nous montre comment généraliser.
 
 Étant donné une fonction $f$,
-l'interpolation consiste à trouver un _polynôme_ $P(x)$ de plus petit degré possible qui passe par un certain nombre de points.
+l'interpolation consiste à trouver un _polynôme_ $P(x)$ de plus petit degré possible
+qui passe par un certain nombre de points.
 
 La figure ci-dessous montre un exemple d'un polynôme $P$ en bleu qui interpole la fonction $f$.
 Bougez les points pour voir le polynôme s'adapter à la fonction.

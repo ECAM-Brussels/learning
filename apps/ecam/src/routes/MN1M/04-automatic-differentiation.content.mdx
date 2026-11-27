@@ -84,7 +84,8 @@ de telle sorte que le calcul suivant soit vrai:
 {tex.display`\begin{align*} (f(x) + f'(x) \epsilon) (g(x) + g'(x) \epsilon) &= f(x) g(x) + f'(x) g(x) \epsilon + f(x) g'(x) \epsilon + f'(x) g'(x) \underbrace{\epsilon^2}_{0} \\ &= f(x) g(x) + {\color{darkgreen} (f(x) g'(x) + f'(x) g(x))} \epsilon \end{align*}`}
 
 On a obtenu la règle du produit des dérivées!
-En fait, vous verrez qu'avec les nombres duaux, toutes les règles de dérivation sont automatiquement appliquées.
+En fait, vous verrez
+qu'avec les nombres duaux, toutes les règles de dérivation sont automatiquement appliquées.
 
 ---
 
@@ -489,7 +490,8 @@ On s'est alors approché de la racine réelle de $f(x)$.
 <Exercise.NewtonRaphsonAnimation />
 
 :::example
-Déterminez une racine approchée de {tex`f(x) = e^{-x^2} - \frac{1}{2}`} en approximant $f(x)$ par sa tangente autour de $x_0 = 0.8$.
+Déterminez une racine approchée de {tex`f(x) = e^{-x^2} - \frac{1}{2}`}
+en approximant $f(x)$ par sa tangente autour de $x_0 = 0.8$.
 
 ::::steps
 
@@ -557,7 +559,8 @@ On prend ensuite la tangente en $x_1$ pour trouver une approximation encore meil
 
 :::example
 
-Déterminez une racine approchée de {tex`f(x) = e^{-x^2} - \frac{1}{2}`} en appliquant la méthode de Newton-Raphson **deux fois** à partir de $x_0 = 0.8$.
+Déterminez une racine approchée de {tex`f(x) = e^{-x^2} - \frac{1}{2}`}
+en appliquant la méthode de Newton-Raphson **deux fois** à partir de $x_0 = 0.8$.
 
 ::::steps
 
@@ -617,7 +620,8 @@ mais avec deux itérations cette fois-ci.
 <Exercise.NewtonRaphson id="newton-raphson-sqrt3-2" expr="x^2 - 3" x0={1.5} n={2} loop={false} />
 :::
 
-On peut bien entendu répéter l'itération autant de fois que l'on souhaite pour améliorer notre approximation de la racine.
+On peut bien entendu répéter l'itération autant de fois que l'on souhaite
+pour améliorer notre approximation de la racine.
 Prenez un instant pour regarder l'animation ci-dessous.
 
 import NewtonRaphson from './newton_raphson.gif'
