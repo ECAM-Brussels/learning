@@ -1,0 +1,221 @@
+import { defineMeta } from '@learning/components'
+import * as Demo from './reactivity.demo'
+
+export default defineMeta({ title: 'Comprendre la réactivité' })
+
+# Comprendre la réactivité
+
+Une page devient interactive quand une partie de son contenu suit une valeur qui change :
+la position d'un curseur, un nombre tapé par l'étudiant·e, une case cochée.
+La plateforme est construite avec [SolidJS](https://www.solidjs.com),
+qui gère ces changements avec des **signaux**.
+Cette page en présente les bases,
+nécessaires pour [créer un nouveau type d'exercice](/doc/new-exercise),
+écrire une [figure interactive](/doc/figures)
+ou relire un composant proposé par l'assistant de programmation :
+un exercice, comme une figure, est un composant.
+
+## Une valeur ou une recette
+
+En JavaScript, une variable garde un résultat, pas le calcul qui l'a produit :
+
+```ts
+let a = 1
+let b = 2
+let c = a + b // c vaut 3
+a = 10 // c vaut toujours 3
+```
+
+`a + b` est calculé une fois, au moment où l'on écrit `let c = a + b`,
+et `c` reçoit le nombre $3$.
+Plus rien ne relie ensuite `c` à `a` ni à `b`.
+
+Une fonction, au contraire, garde le calcul :
+elle le refait à chaque appel, avec les valeurs du moment.
+
+```ts
+let a = 1
+let b = 2
+const c = () => a + b
+c() // 3
+a = 10
+c() // 12
+```
+
+`c` est devenu une recette plutôt qu'un résultat.
+Il manque encore une chose :
+personne n'est prévenu quand `a` change,
+et rien ne rappelle `c()` pour mettre la page à jour.
+C'est ce qu'apportent les signaux.
+
+## Comme dans un tableur
+
+SolidJS fonctionne comme un tableur, Excel ou LibreOffice Calc :
+
+| Tableur                                         | SolidJS                                    |
+| ----------------------------------------------- | ------------------------------------------ |
+| Une cellule où l'on tape une valeur : `A1 = 1`  | Un signal : `createSignal(1)`              |
+| Taper une nouvelle valeur dans `A1`             | Appeler le setter : `setA(10)`             |
+| Une cellule qui contient une formule : `=A1+B1` | Un memo : `createMemo(() => a() + b())`    |
+| Ce qui est affiché à l'écran                    | Les balises renvoyées par le composant     |
+| Coller « valeurs seulement »                    | Une lecture faite une fois : `let c = a()` |
+
+Quand on change `A1`, le tableur recalcule les formules qui utilisent `A1`,
+et seulement celles-là.
+De même, quand un signal change,
+SolidJS recalcule les memos et les parties de la page qui lisent ce signal, et rien d'autre.
+Une valeur collée avec « valeurs seulement », elle, ne suit plus la cellule d'origine :
+c'est `let c = a + b`.
+
+## Les signaux
+
+Un signal est une cellule où l'on range une valeur :
+la page suit ses changements.
+
+```tsx
+import { createSignal } from 'solid-js'
+
+export function Counter() {
+  const [count, setCount] = createSignal(0)
+  return <button onClick={() => setCount(count() + 1)}>Cliqué {count()} fois</button>
+}
+```
+
+<Demo.Counter />
+
+`createSignal(0)` crée le signal, qui vaut $0$ au départ.
+Il renvoie deux fonctions :
+`count()` lit la valeur, avec des parenthèses,
+et `setCount` la remplace.
+Lire un signal est un appel de fonction, comme `c()` plus haut :
+c'est ce qui permet à SolidJS de savoir qui le lit,
+et donc qui prévenir quand il change.
+Le bouton appelle `setCount` à chaque clic,
+et son texte, qui contient `count()`, se met à jour.
+
+## La mise en place et les balises
+
+Le corps d'un composant comme `Counter` se compose de deux parties.
+Tout ce qui précède `return` est la **mise en place** :
+SolidJS l'exécute une seule fois, pour construire la page,
+comme on prépare une feuille de calcul en créant ses cellules et en écrivant ses formules.
+Les **balises** renvoyées, le JSX, décrivent ce qui est affiché :
+chaque expression entre accolades, comme `{count()}`, y est une formule,
+recalculée chaque fois qu'un signal qu'elle lit change.
+
+Le composant, lui, ne s'exécute jamais une seconde fois.
+Une lecture faite dans la mise en place est donc un « coller valeurs seulement » :
+
+```tsx
+export function Counter() {
+  const [count, setCount] = createSignal(0)
+  // Lu une seule fois, pendant la mise en place : le bouton affichera toujours 0
+  const label = `Cliqué ${count()} fois`
+  return <button onClick={() => setCount(count() + 1)}>{label}</button>
+}
+```
+
+Pour corriger, on fait de `label` une recette plutôt qu'un résultat,
+et on l'appelle dans les balises :
+``const label = () => `Cliqué ${count()} fois` ``, puis `{label()}`.
+
+Les gestionnaires d'événement, comme `onClick`, sont aussi écrits pendant la mise en place,
+mais ne s'exécutent qu'au moment du clic :
+ils lisent alors la valeur du moment.
+
+## Les memos, des formules
+
+Un memo est une cellule qui contient une formule :
+`createMemo(() => n() * n())` est l'équivalent de `=A1*A1`.
+Le calcul est refait chaque fois que les signaux qu'il lit changent,
+et seulement à ce moment :
+son résultat est gardé pour tous les endroits qui le lisent.
+
+`Show` affiche son contenu seulement quand la condition `when` est vraie,
+et `fallback` sinon.
+
+```tsx
+import { createMemo, createSignal, Show } from 'solid-js'
+
+export function Square() {
+  const [n, setN] = createSignal(3)
+  const square = createMemo(() => n() * n())
+  return (
+    <div>
+      <input type="number" value={n()} onInput={(e) => setN(Number(e.currentTarget.value))} />
+      <p>
+        {n()} a pour carré {square()}.
+      </p>
+      <Show when={n() % 2 === 0} fallback={<p>{n()} est impair.</p>}>
+        <p>{n()} est pair.</p>
+      </Show>
+    </div>
+  )
+}
+```
+
+<Demo.Square />
+
+Comme un signal, un memo se lit avec des parenthèses : `square()`.
+Une fonction toute simple, comme `const square = () => n() * n()`, convient aussi :
+elle refait le calcul à chaque lecture,
+comme si le tableur recalculait la formule chaque fois qu'on la regarde,
+ce qui ne pose problème que si le calcul est long.
+
+## Les props
+
+Les attributs passés à un composant, ses **props**, suivent la même règle.
+Lisez-les là où vous en avez besoin, comme `props.expr` dans les balises :
+écrire `const { expr } = props` lit leur valeur une fois pour toutes,
+et le composant ne suivra plus leurs changements.
+Il en va de même pour `ctx.data`, `ctx.inputs` et `ctx.correct` dans un [exercice](/doc/new-exercise) :
+lisez `ctx.correct` dans les balises,
+par exemple dans `<Show when={!ctx.correct}>`,
+plutôt que d'écrire `const { correct } = ctx`.
+
+## Les effets
+
+Un effet agit hors de la page quand un signal change,
+par exemple pour écrire dans la console du navigateur.
+Il se compose de deux fonctions :
+la première lit les signaux,
+la seconde reçoit ce que renvoie la première et agit.
+
+```tsx
+createEffect(
+  () => count(),
+  (value) => console.log('Nouvelle valeur', value),
+)
+```
+
+Les pages de cours en ont rarement besoin.
+N'utilisez pas d'effet pour recopier un signal dans un autre :
+une valeur qui se calcule à partir d'un signal est un memo.
+
+## Erreurs fréquentes
+
+- Lire un signal ou une prop dans le corps du composant plutôt que dans les balises ou un memo :
+  la valeur ne se met plus à jour.
+- Changer un signal pendant un calcul, dans un memo ou dans le corps du composant :
+  changez-le dans un gestionnaire d'événement, comme `onClick`.
+- Passer à une figure une fonction qui lit un signal, comme `fn={(x) => a() * x}` :
+  la courbe ne se redessine pas.
+  [Ajouter des figures interactives](/doc/figures) montre comment faire.
+
+Sur votre ordinateur, la console du navigateur signale la plupart de ces erreurs,
+avec un code comme `STRICT_READ_UNTRACKED`.
+Copiez le message tel quel à l'assistant de programmation :
+il sait à quelle correction chaque code correspond.
+
+## Demander à l'assistant
+
+:::info[Un exemple de demande]
+Décrivez ce que vous faites,
+ce que vous attendez,
+et ce qui se passe à la place.
+
+> Dans limits.exercises.tsx, le texte sous la figure devrait afficher la valeur du curseur,
+> mais il reste à 1 quand je déplace le curseur.
+> Corrige-le et explique-moi pourquoi il ne se mettait pas à jour.
+
+:::
