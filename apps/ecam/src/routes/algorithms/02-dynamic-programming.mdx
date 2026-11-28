@@ -1,7 +1,5 @@
 import { defineMeta } from '@learning/components'
 import { tex } from '@learning/core'
-import { MultipleChoice } from '@learning/exercises/MultipleChoice'
-import { PythonCode } from '@learning/exercises/python/Code'
 import * as Exercise from './02-dynamic-programming.exercises'
 
 export default defineMeta({ title: 'Session 2: Dynamic programming' })
@@ -29,7 +27,7 @@ def fib(n):
 ## Complexity?
 
 <Exercise.Panel>
-  <MultipleChoice id="dp-naive-complexity" {...Exercise.naiveComplexity()} />
+  <Exercise.NaiveComplexity />
 </Exercise.Panel>
 
 ## The same calls, again and again
@@ -39,7 +37,7 @@ def fib(n):
 ## How many calls?
 
 <Exercise.Panel>
-  <PythonCode id="dp-fib-calls" {...Exercise.fibCalls()} />
+  <Exercise.FibCalls />
 </Exercise.Panel>
 
 # Memoization
@@ -60,7 +58,7 @@ def fib(n):
 ## Your turn
 
 <Exercise.Panel>
-  <PythonCode id="dp-fib-memo" {...Exercise.fibMemo()} />
+  <Exercise.FibMemo />
 </Exercise.Panel>
 
 ## functools.cache
@@ -78,7 +76,7 @@ def fib(n):
 ## Complexity?
 
 <Exercise.Panel>
-  <MultipleChoice id="dp-memo-complexity" {...Exercise.memoComplexity()} />
+  <Exercise.MemoComplexity />
 </Exercise.Panel>
 
 # Dynamic programming
@@ -161,13 +159,13 @@ def cut_pieces(prices, n):
 ## Your turn
 
 <Exercise.Panel>
-  <PythonCode id="dp-lcs" {...Exercise.lcs()} />
+  <Exercise.LCS />
 </Exercise.Panel>
 
 ## Bonus: parent pointers
 
 <Exercise.Panel>
-  <PythonCode id="dp-lcs-bonus" {...Exercise.lcsBonus()} />
+  <Exercise.LCSBonus />
 </Exercise.Panel>
 
 # Knapsack
@@ -182,13 +180,13 @@ in a knapsack that carries at most $C$.
 ## Your turn
 
 <Exercise.Panel>
-  <PythonCode id="dp-knapsack" {...Exercise.knapsack()} />
+  <Exercise.Knapsack />
 </Exercise.Panel>
 
 ## Bonus: parent pointers
 
 <Exercise.Panel>
-  <PythonCode id="dp-knapsack-bonus" {...Exercise.knapsackBonus()} />
+  <Exercise.KnapsackBonus />
 </Exercise.Panel>
 
 # Making change
@@ -196,7 +194,7 @@ in a knapsack that carries at most $C$.
 ## Greedy?
 
 <Exercise.Panel>
-  <MultipleChoice id="dp-greedy-coins" {...Exercise.greedyCoins()} />
+  <Exercise.GreedyCoins />
 </Exercise.Panel>
 
 ## Making change
@@ -208,13 +206,13 @@ The fewest coins that add up to an amount.
 ## Your turn
 
 <Exercise.Panel>
-  <PythonCode id="dp-coins" {...Exercise.coins()} />
+  <Exercise.Coins />
 </Exercise.Panel>
 
 ## Bonus: parent pointers
 
 <Exercise.Panel>
-  <PythonCode id="dp-coins-bonus" {...Exercise.coinsBonus()} />
+  <Exercise.CoinsBonus />
 </Exercise.Panel>
 
 # Edit distance
@@ -228,13 +226,13 @@ The fewest coins that add up to an amount.
 ## Your turn
 
 <Exercise.Panel>
-  <PythonCode id="dp-edit-distance" {...Exercise.editDistance()} />
+  <Exercise.EditDistance />
 </Exercise.Panel>
 
 ## Bonus: parent pointers
 
 <Exercise.Panel>
-  <PythonCode id="dp-edit-distance-bonus" {...Exercise.editDistanceBonus()} />
+  <Exercise.EditDistanceBonus />
 </Exercise.Panel>
 
 # More practice
@@ -248,13 +246,13 @@ The fewest coins that add up to an amount.
 ## Your turn
 
 <Exercise.Panel>
-  <PythonCode id="dp-lis" {...Exercise.lis()} />
+  <Exercise.LIS />
 </Exercise.Panel>
 
 ## Bonus: parent pointers
 
 <Exercise.Panel>
-  <PythonCode id="dp-lis-bonus" {...Exercise.lisBonus()} />
+  <Exercise.LISBonus />
 </Exercise.Panel>
 
 ## Robbing houses
@@ -266,13 +264,13 @@ The most loot, never from two neighbouring houses.
 ## Your turn
 
 <Exercise.Panel>
-  <PythonCode id="dp-house-robber" {...Exercise.houseRobber()} />
+  <Exercise.HouseRobber />
 </Exercise.Panel>
 
 ## Bonus: parent pointers
 
 <Exercise.Panel>
-  <PythonCode id="dp-house-robber-bonus" {...Exercise.houseRobberBonus()} />
+  <Exercise.HouseRobberBonus />
 </Exercise.Panel>
 
 ## The cheapest path in a grid
@@ -284,13 +282,13 @@ From the top left to the bottom right, moving right or down.
 ## Your turn
 
 <Exercise.Panel>
-  <PythonCode id="dp-min-path" {...Exercise.minPath()} />
+  <Exercise.MinPath />
 </Exercise.Panel>
 
 ## Bonus: parent pointers
 
 <Exercise.Panel>
-  <PythonCode id="dp-min-path-bonus" {...Exercise.minPathBonus()} />
+  <Exercise.MinPathBonus />
 </Exercise.Panel>
 
 <Deck.Standout>Questions?</Deck.Standout>
@@ -301,54 +299,54 @@ From the top left to the bottom right, moving right or down.
 
 ### Fibonacci
 
-<MultipleChoice id="dp-naive-complexity" {...Exercise.naiveComplexity()} />
+<Exercise.NaiveComplexity />
 
-<PythonCode id="dp-fib-calls" {...Exercise.fibCalls()} />
+<Exercise.FibCalls />
 
-<PythonCode id="dp-fib-memo" {...Exercise.fibMemo()} />
+<Exercise.FibMemo />
 
-<MultipleChoice id="dp-memo-complexity" {...Exercise.memoComplexity()} />
+<Exercise.MemoComplexity />
 
 ### Longest common subsequence
 
-<PythonCode id="dp-lcs" {...Exercise.lcs()} />
+<Exercise.LCS />
 
-<PythonCode id="dp-lcs-bonus" {...Exercise.lcsBonus()} />
+<Exercise.LCSBonus />
 
 ### Knapsack
 
-<PythonCode id="dp-knapsack" {...Exercise.knapsack()} />
+<Exercise.Knapsack />
 
-<PythonCode id="dp-knapsack-bonus" {...Exercise.knapsackBonus()} />
+<Exercise.KnapsackBonus />
 
 ### Making change
 
-<MultipleChoice id="dp-greedy-coins" {...Exercise.greedyCoins()} />
+<Exercise.GreedyCoins />
 
-<PythonCode id="dp-coins" {...Exercise.coins()} />
+<Exercise.Coins />
 
-<PythonCode id="dp-coins-bonus" {...Exercise.coinsBonus()} />
+<Exercise.CoinsBonus />
 
 ### Edit distance
 
-<PythonCode id="dp-edit-distance" {...Exercise.editDistance()} />
+<Exercise.EditDistance />
 
-<PythonCode id="dp-edit-distance-bonus" {...Exercise.editDistanceBonus()} />
+<Exercise.EditDistanceBonus />
 
 ### Longest increasing subsequence
 
-<PythonCode id="dp-lis" {...Exercise.lis()} />
+<Exercise.LIS />
 
-<PythonCode id="dp-lis-bonus" {...Exercise.lisBonus()} />
+<Exercise.LISBonus />
 
 ### Robbing houses
 
-<PythonCode id="dp-house-robber" {...Exercise.houseRobber()} />
+<Exercise.HouseRobber />
 
-<PythonCode id="dp-house-robber-bonus" {...Exercise.houseRobberBonus()} />
+<Exercise.HouseRobberBonus />
 
 ### The cheapest path in a grid
 
-<PythonCode id="dp-min-path" {...Exercise.minPath()} />
+<Exercise.MinPath />
 
-<PythonCode id="dp-min-path-bonus" {...Exercise.minPathBonus()} />
+<Exercise.MinPathBonus />

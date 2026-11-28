@@ -3,13 +3,7 @@ import { MultipleChoice } from '@learning/exercises/MultipleChoice'
 import { PythonCode } from '@learning/exercises/python/Code'
 import type { JSX } from '@solidjs/web'
 import { dedent } from 'es-toolkit/string'
-import { For, type ComponentProps } from 'solid-js'
-
-// The page passes these props to the step, in the slides and below them: `<PythonCode id="…" {...lcs()} />`.
-// Each call makes new JSX: made once, it would be a single node, which only one of the two places could show.
-// The props as data, rather than in a single `data` prop.
-type CodeProps = Exclude<ComponentProps<typeof PythonCode>, { data: unknown }>
-type ChoiceProps = Exclude<ComponentProps<typeof MultipleChoice>, { data: unknown }>
+import { For } from 'solid-js'
 
 /** Exercises grow as students answer: they scroll inside the slide rather than overflow it. */
 export function Panel(props: { children: JSX.Element }) {
@@ -140,29 +134,34 @@ const GRID = [
 
 const fast = 'Fast enough on a large input (is it memoized?)'
 
-export const naiveComplexity = (): ChoiceProps => ({
-  prompt: (
-    <p>
-      How does the running time of the naive <code>fib(n)</code> grow with <code>n</code>?
-    </p>
-  ),
-  choices: {
-    A: tex`O(n)`,
-    B: tex`O(n^2)`,
-    C: tex`O(n \log n)`,
-    D: tex`\text{exponential in } n`,
-  },
-  answer: 'D',
-})
+export const NaiveComplexity = () => (
+  <MultipleChoice
+    id="dp-naive-complexity"
+    prompt={
+      <p>
+        How does the running time of the naive <code>fib(n)</code> grow with <code>n</code>?
+      </p>
+    }
+    choices={{
+      A: tex`O(n)`,
+      B: tex`O(n^2)`,
+      C: tex`O(n \log n)`,
+      D: tex`\text{exponential in } n`,
+    }}
+    answer={'D'}
+  />
+)
 
-export const fibCalls = (): CodeProps => ({
-  prompt: (
-    <p>
-      Add a global counter to the naive <code>fib</code>, incremented at each call. How many calls
-      does <code>fib(20)</code> make? Print the number.
-    </p>
-  ),
-  initialCode: dedent`
+export const FibCalls = () => (
+  <PythonCode
+    id="dp-fib-calls"
+    prompt={
+      <p>
+        Add a global counter to the naive <code>fib</code>, incremented at each call. How many calls
+        does <code>fib(20)</code> make? Print the number.
+      </p>
+    }
+    initialCode={dedent /* python */ `
     calls = 0
 
     def fib(n):
@@ -171,69 +170,83 @@ export const fibCalls = (): CodeProps => ({
         return fib(n - 1) + fib(n - 2)
 
     fib(20)
-  `,
-  tests: (expect) => ({ 'The number of calls of fib(20)': expect.toShow(21891) }),
-})
+  `}
+    tests={(expect) => ({ 'The number of calls of fib(20)': expect.toShow(21891) })}
+  />
+)
 
-export const fibMemo = (): CodeProps => ({
-  prompt: (
-    <p>
-      Write <code>fib(n)</code> so that it remembers its results in a dictionary <code>memo</code>,
-      without <code>functools</code>.
-    </p>
-  ),
-  initialCode: dedent`
+export const FibMemo = () => (
+  <PythonCode
+    id="dp-fib-memo"
+    prompt={
+      <p>
+        Write <code>fib(n)</code> so that it remembers its results in a dictionary <code>memo</code>
+        , without <code>functools</code>.
+      </p>
+    }
+    initialCode={dedent /* python */ `
     memo = {}
 
     def fib(n):
         pass
-  `,
-  tests: (expect) => ({
-    'fib is correct': expect
-      .function('fib')
-      .toBehaveLike(
-        'def fib(n):\n    a, b = 0, 1\n    for _ in range(n):\n        a, b = b, a + b\n    return a',
+  `}
+    tests={(expect) => ({
+      'fib is correct': expect.function('fib').toBehaveLike(
+        dedent /* python */ `
+        def fib(n):
+            a, b = 0, 1
+            for _ in range(n):
+                a, b = b, a + b
+            return a
+      `,
         [[0], [1], [2], [10], [30]],
       ),
-    // Compared in Python: the number is beyond what JavaScript represents exactly.
-    [fast]: expect.with('fib(90)').toEqual('2880067194370816120'),
-    'functools is not used': expect.code.not.toImport('functools'),
-  }),
-})
+      // Compared in Python: the number is beyond what JavaScript represents exactly.
+      [fast]: expect.with('fib(90)').toEqual('2880067194370816120'),
+      'functools is not used': expect.code.not.toImport('functools'),
+    })}
+  />
+)
 
-export const memoComplexity = (): ChoiceProps => ({
-  prompt: (
-    <p>
-      With memoization, how does the running time of <code>fib(n)</code> grow, counting additions as
-      constant time?
-    </p>
-  ),
-  choices: {
-    A: tex`O(1)`,
-    B: tex`O(n)`,
-    C: tex`O(n^2)`,
-    D: tex`\text{exponential in } n`,
-  },
-  answer: 'B',
-})
+export const MemoComplexity = () => (
+  <MultipleChoice
+    id="dp-memo-complexity"
+    prompt={
+      <p>
+        With memoization, how does the running time of <code>fib(n)</code> grow, counting additions
+        as constant time?
+      </p>
+    }
+    choices={{
+      A: tex`O(1)`,
+      B: tex`O(n)`,
+      C: tex`O(n^2)`,
+      D: tex`\text{exponential in } n`,
+    }}
+    answer={'B'}
+  />
+)
 
-export const greedyCoins = (): ChoiceProps => ({
-  prompt: (
-    <p>
-      With coins of 1, 3 and 4, a greedy cashier always gives the largest coin that fits. How many
-      coins does it give for 6, and is it the fewest?
-    </p>
-  ),
-  choices: {
-    A: '2 coins, the fewest',
-    B: '3 coins, the fewest',
-    C: '3 coins, but 2 are enough',
-    D: '4 coins, but 3 are enough',
-  },
-  answer: 'C',
-})
+export const GreedyCoins = () => (
+  <MultipleChoice
+    id="dp-greedy-coins"
+    prompt={
+      <p>
+        With coins of 1, 3 and 4, a greedy cashier always gives the largest coin that fits. How many
+        coins does it give for 6, and is it the fewest?
+      </p>
+    }
+    choices={{
+      A: '2 coins, the fewest',
+      B: '3 coins, the fewest',
+      C: '3 coins, but 2 are enough',
+      D: '4 coins, but 3 are enough',
+    }}
+    answer={'C'}
+  />
+)
 
-const LCS_MODEL = dedent`
+const LCS_MODEL = dedent /* python */ `
   from functools import cache
 
   def lcs(a, b):
@@ -247,27 +260,35 @@ const LCS_MODEL = dedent`
       return L(0, 0)
 `
 
-export const lcs = (): CodeProps => ({
-  prompt: (
-    <p>
-      Write <code>lcs(a, b)</code>, the length of the longest common subsequence of the strings{' '}
-      <code>a</code> and <code>b</code>: <code>lcs("ABCBDAB", "BDCABA")</code> is 4, for{' '}
-      <code>"BCBA"</code>.
-    </p>
-  ),
-  initialCode: 'from functools import cache\n\ndef lcs(a, b):\n    pass\n',
-  tests: (expect) => ({
-    'lcs is correct': expect.function('lcs').toBehaveLike(LCS_MODEL, [
-      ['ABCBDAB', 'BDCABA'],
-      ['', 'ABC'],
-      ['ABC', 'ABC'],
-      ['AGGTAB', 'GXTXAYB'],
-    ]),
-    [fast]: expect.function('lcs').toBehaveLike(LCS_MODEL, [DNA]),
-  }),
-})
+export const LCS = () => (
+  <PythonCode
+    id="dp-lcs"
+    prompt={
+      <p>
+        Write <code>lcs(a, b)</code>, the length of the longest common subsequence of the strings{' '}
+        <code>a</code> and <code>b</code>: <code>lcs("ABCBDAB", "BDCABA")</code> is 4, for{' '}
+        <code>"BCBA"</code>.
+      </p>
+    }
+    initialCode={dedent /* python */ `
+      from functools import cache
 
-const LCS_CHECK = dedent`
+      def lcs(a, b):
+          pass
+    `}
+    tests={(expect) => ({
+      'lcs is correct': expect.function('lcs').toBehaveLike(LCS_MODEL, [
+        ['ABCBDAB', 'BDCABA'],
+        ['', 'ABC'],
+        ['ABC', 'ABC'],
+        ['AGGTAB', 'GXTXAYB'],
+      ]),
+      [fast]: expect.function('lcs').toBehaveLike(LCS_MODEL, [DNA]),
+    })}
+  />
+)
+
+const LCS_CHECK = dedent /* python */ `
   def _check(a, b):
       from functools import cache
       @cache
@@ -290,27 +311,35 @@ const LCS_CHECK = dedent`
       return "ok"
 `
 
-export const lcsBonus = (): CodeProps => ({
-  prompt: (
-    <p>
-      <strong>Bonus.</strong> Write <code>lcs_string(a, b)</code>, which returns a longest common
-      subsequence itself. Follow the choices that give the best value, from <code>L(0, 0)</code>.
-    </p>
-  ),
-  initialCode: 'from functools import cache\n\ndef lcs_string(a, b):\n    pass\n',
-  tests: (expect) => ({
-    'lcs_string is defined': expect.function('lcs_string').toExist(),
-    'A longest common subsequence of ABCBDAB and BDCABA': expect
-      .with(`${LCS_CHECK}\n_check(${args('ABCBDAB', 'BDCABA')})`)
-      .toEqual("'ok'"),
-    'An empty string has none': expect
-      .with(`${LCS_CHECK}\n_check(${args('', 'ABC')})`)
-      .toEqual("'ok'"),
-    'On long strings': expect.with(`${LCS_CHECK}\n_check(${args(...DNA)})`).toEqual("'ok'"),
-  }),
-})
+export const LCSBonus = () => (
+  <PythonCode
+    id="dp-lcs-bonus"
+    prompt={
+      <p>
+        <strong>Bonus.</strong> Write <code>lcs_string(a, b)</code>, which returns a longest common
+        subsequence itself. Follow the choices that give the best value, from <code>L(0, 0)</code>.
+      </p>
+    }
+    initialCode={dedent /* python */ `
+      from functools import cache
 
-const KNAPSACK_MODEL = dedent`
+      def lcs_string(a, b):
+          pass
+    `}
+    tests={(expect) => ({
+      'lcs_string is defined': expect.function('lcs_string').toExist(),
+      'A longest common subsequence of ABCBDAB and BDCABA': expect
+        .with(`${LCS_CHECK}\n_check(${args('ABCBDAB', 'BDCABA')})`)
+        .toEqual("'ok'"),
+      'An empty string has none': expect
+        .with(`${LCS_CHECK}\n_check(${args('', 'ABC')})`)
+        .toEqual("'ok'"),
+      'On long strings': expect.with(`${LCS_CHECK}\n_check(${args(...DNA)})`).toEqual("'ok'"),
+    })}
+  />
+)
+
+const KNAPSACK_MODEL = dedent /* python */ `
   from functools import cache
 
   def knapsack(weights, values, capacity):
@@ -325,27 +354,34 @@ const KNAPSACK_MODEL = dedent`
       return K(0, capacity)
 `
 
-export const knapsack = (): CodeProps => ({
-  prompt: (
-    <p>
-      Write <code>knapsack(weights, values, capacity)</code>, the largest total value of items whose
-      total weight is at most <code>capacity</code>, each item taken at most once.
-    </p>
-  ),
-  initialCode:
-    'from functools import cache\n\ndef knapsack(weights, values, capacity):\n    pass\n',
-  tests: (expect) => ({
-    'knapsack is correct': expect.function('knapsack').toBehaveLike(KNAPSACK_MODEL, [
-      [[1, 3, 4, 5], [1, 4, 5, 7], 7],
-      [[10, 20, 30], [60, 100, 120], 50],
-      [[5], [10], 4],
-      [[], [], 10],
-    ]),
-    [fast]: expect.function('knapsack').toBehaveLike(KNAPSACK_MODEL, [[WEIGHTS, VALUES, 400]]),
-  }),
-})
+export const Knapsack = () => (
+  <PythonCode
+    id="dp-knapsack"
+    prompt={
+      <p>
+        Write <code>knapsack(weights, values, capacity)</code>, the largest total value of items
+        whose total weight is at most <code>capacity</code>, each item taken at most once.
+      </p>
+    }
+    initialCode={dedent /* python */ `
+      from functools import cache
 
-const KNAPSACK_CHECK = dedent`
+      def knapsack(weights, values, capacity):
+          pass
+    `}
+    tests={(expect) => ({
+      'knapsack is correct': expect.function('knapsack').toBehaveLike(KNAPSACK_MODEL, [
+        [[1, 3, 4, 5], [1, 4, 5, 7], 7],
+        [[10, 20, 30], [60, 100, 120], 50],
+        [[5], [10], 4],
+        [[], [], 10],
+      ]),
+      [fast]: expect.function('knapsack').toBehaveLike(KNAPSACK_MODEL, [[WEIGHTS, VALUES, 400]]),
+    })}
+  />
+)
+
+const KNAPSACK_CHECK = dedent /* python */ `
   def _check(weights, values, capacity):
       from functools import cache
       @cache
@@ -368,30 +404,37 @@ const KNAPSACK_CHECK = dedent`
       return "ok"
 `
 
-export const knapsackBonus = (): CodeProps => ({
-  prompt: (
-    <p>
-      <strong>Bonus.</strong> Write <code>knapsack_items(weights, values, capacity)</code>, which
-      returns the list of the indices of the items to take.
-    </p>
-  ),
-  initialCode:
-    'from functools import cache\n\ndef knapsack_items(weights, values, capacity):\n    pass\n',
-  tests: (expect) => ({
-    'knapsack_items is defined': expect.function('knapsack_items').toExist(),
-    'A small knapsack': expect
-      .with(`${KNAPSACK_CHECK}\n_check(${args([1, 3, 4, 5], [1, 4, 5, 7], 7)})`)
-      .toEqual("'ok'"),
-    'The best value is not the most valuable item first': expect
-      .with(`${KNAPSACK_CHECK}\n_check(${args([10, 20, 30], [60, 100, 120], 50)})`)
-      .toEqual("'ok'"),
-    'Thirty items': expect
-      .with(`${KNAPSACK_CHECK}\n_check(${args(WEIGHTS, VALUES, 400)})`)
-      .toEqual("'ok'"),
-  }),
-})
+export const KnapsackBonus = () => (
+  <PythonCode
+    id="dp-knapsack-bonus"
+    prompt={
+      <p>
+        <strong>Bonus.</strong> Write <code>knapsack_items(weights, values, capacity)</code>, which
+        returns the list of the indices of the items to take.
+      </p>
+    }
+    initialCode={dedent /* python */ `
+      from functools import cache
 
-const COINS_MODEL = dedent`
+      def knapsack_items(weights, values, capacity):
+          pass
+    `}
+    tests={(expect) => ({
+      'knapsack_items is defined': expect.function('knapsack_items').toExist(),
+      'A small knapsack': expect
+        .with(`${KNAPSACK_CHECK}\n_check(${args([1, 3, 4, 5], [1, 4, 5, 7], 7)})`)
+        .toEqual("'ok'"),
+      'The best value is not the most valuable item first': expect
+        .with(`${KNAPSACK_CHECK}\n_check(${args([10, 20, 30], [60, 100, 120], 50)})`)
+        .toEqual("'ok'"),
+      'Thirty items': expect
+        .with(`${KNAPSACK_CHECK}\n_check(${args(WEIGHTS, VALUES, 400)})`)
+        .toEqual("'ok'"),
+    })}
+  />
+)
+
+const COINS_MODEL = dedent /* python */ `
   from functools import cache
 
   def min_coins(coins, amount):
@@ -403,26 +446,34 @@ const COINS_MODEL = dedent`
       return M(amount)
 `
 
-export const coins = (): CodeProps => ({
-  prompt: (
-    <p>
-      Write <code>min_coins(coins, amount)</code>, the fewest coins that add up to{' '}
-      <code>amount</code>. There is always a coin of 1, and each coin can be used several times.
-    </p>
-  ),
-  initialCode: 'from functools import cache\n\ndef min_coins(coins, amount):\n    pass\n',
-  tests: (expect) => ({
-    'min_coins is correct': expect.function('min_coins').toBehaveLike(COINS_MODEL, [
-      [[1, 3, 4], 6],
-      [[1, 5, 10, 25], 63],
-      [[1, 7, 10], 14],
-      [[1, 2, 5], 0],
-    ]),
-    [fast]: expect.function('min_coins').toBehaveLike(COINS_MODEL, [[[1, 5, 6, 9], 150]]),
-  }),
-})
+export const Coins = () => (
+  <PythonCode
+    id="dp-coins"
+    prompt={
+      <p>
+        Write <code>min_coins(coins, amount)</code>, the fewest coins that add up to{' '}
+        <code>amount</code>. There is always a coin of 1, and each coin can be used several times.
+      </p>
+    }
+    initialCode={dedent /* python */ `
+      from functools import cache
 
-const COINS_CHECK = dedent`
+      def min_coins(coins, amount):
+          pass
+    `}
+    tests={(expect) => ({
+      'min_coins is correct': expect.function('min_coins').toBehaveLike(COINS_MODEL, [
+        [[1, 3, 4], 6],
+        [[1, 5, 10, 25], 63],
+        [[1, 7, 10], 14],
+        [[1, 2, 5], 0],
+      ]),
+      [fast]: expect.function('min_coins').toBehaveLike(COINS_MODEL, [[[1, 5, 6, 9], 150]]),
+    })}
+  />
+)
+
+const COINS_CHECK = dedent /* python */ `
   def _check(coins, amount):
       from functools import cache
       @cache
@@ -440,29 +491,37 @@ const COINS_CHECK = dedent`
       return "ok"
 `
 
-export const coinsBonus = (): CodeProps => ({
-  prompt: (
-    <p>
-      <strong>Bonus.</strong> Write <code>coins_used(coins, amount)</code>, which returns the list
-      of the coins to give.
-    </p>
-  ),
-  initialCode: 'from functools import cache\n\ndef coins_used(coins, amount):\n    pass\n',
-  tests: (expect) => ({
-    'coins_used is defined': expect.function('coins_used').toExist(),
-    'Where greedy fails: 6 with 1, 3 and 4': expect
-      .with(`${COINS_CHECK}\n_check(${args([1, 3, 4], 6)})`)
-      .toEqual("'ok'"),
-    'Where greedy fails: 14 with 1, 7 and 10': expect
-      .with(`${COINS_CHECK}\n_check(${args([1, 7, 10], 14)})`)
-      .toEqual("'ok'"),
-    'A larger amount': expect
-      .with(`${COINS_CHECK}\n_check(${args([1, 5, 6, 9], 150)})`)
-      .toEqual("'ok'"),
-  }),
-})
+export const CoinsBonus = () => (
+  <PythonCode
+    id="dp-coins-bonus"
+    prompt={
+      <p>
+        <strong>Bonus.</strong> Write <code>coins_used(coins, amount)</code>, which returns the list
+        of the coins to give.
+      </p>
+    }
+    initialCode={dedent /* python */ `
+      from functools import cache
 
-const EDIT_MODEL = dedent`
+      def coins_used(coins, amount):
+          pass
+    `}
+    tests={(expect) => ({
+      'coins_used is defined': expect.function('coins_used').toExist(),
+      'Where greedy fails: 6 with 1, 3 and 4': expect
+        .with(`${COINS_CHECK}\n_check(${args([1, 3, 4], 6)})`)
+        .toEqual("'ok'"),
+      'Where greedy fails: 14 with 1, 7 and 10': expect
+        .with(`${COINS_CHECK}\n_check(${args([1, 7, 10], 14)})`)
+        .toEqual("'ok'"),
+      'A larger amount': expect
+        .with(`${COINS_CHECK}\n_check(${args([1, 5, 6, 9], 150)})`)
+        .toEqual("'ok'"),
+    })}
+  />
+)
+
+const EDIT_MODEL = dedent /* python */ `
   from functools import cache
 
   def edit_distance(a, b):
@@ -476,28 +535,36 @@ const EDIT_MODEL = dedent`
       return D(0, 0)
 `
 
-export const editDistance = (): CodeProps => ({
-  prompt: (
-    <p>
-      Write <code>edit_distance(a, b)</code>, the fewest insertions, deletions and substitutions of
-      one character that turn <code>a</code> into <code>b</code>:{' '}
-      <code>edit_distance("kitten", "sitting")</code> is 3.
-    </p>
-  ),
-  initialCode: 'from functools import cache\n\ndef edit_distance(a, b):\n    pass\n',
-  tests: (expect) => ({
-    'edit_distance is correct': expect.function('edit_distance').toBehaveLike(EDIT_MODEL, [
-      ['kitten', 'sitting'],
-      ['', 'abc'],
-      ['abc', ''],
-      ['flaw', 'lawn'],
-      ['intention', 'execution'],
-    ]),
-    [fast]: expect.function('edit_distance').toBehaveLike(EDIT_MODEL, [WORDS]),
-  }),
-})
+export const EditDistance = () => (
+  <PythonCode
+    id="dp-edit-distance"
+    prompt={
+      <p>
+        Write <code>edit_distance(a, b)</code>, the fewest insertions, deletions and substitutions
+        of one character that turn <code>a</code> into <code>b</code>:{' '}
+        <code>edit_distance("kitten", "sitting")</code> is 3.
+      </p>
+    }
+    initialCode={dedent /* python */ `
+      from functools import cache
 
-const EDIT_CHECK = dedent`
+      def edit_distance(a, b):
+          pass
+    `}
+    tests={(expect) => ({
+      'edit_distance is correct': expect.function('edit_distance').toBehaveLike(EDIT_MODEL, [
+        ['kitten', 'sitting'],
+        ['', 'abc'],
+        ['abc', ''],
+        ['flaw', 'lawn'],
+        ['intention', 'execution'],
+      ]),
+      [fast]: expect.function('edit_distance').toBehaveLike(EDIT_MODEL, [WORDS]),
+    })}
+  />
+)
+
+const EDIT_CHECK = dedent /* python */ `
   def _check(a, b):
       from functools import cache
       @cache
@@ -525,29 +592,39 @@ const EDIT_CHECK = dedent`
       return "ok"
 `
 
-export const editDistanceBonus = (): CodeProps => ({
-  prompt: (
-    <p>
-      <strong>Bonus.</strong> Write <code>edit_path(a, b)</code>, which returns the list of the
-      strings from <code>a</code> to <code>b</code>, each one edit away from the previous:{' '}
-      <code>["kitten", "sitten", "sittin", "sitting"]</code>.
-    </p>
-  ),
-  initialCode: 'from functools import cache\n\ndef edit_path(a, b):\n    pass\n',
-  tests: (expect) => ({
-    'edit_path is defined': expect.function('edit_path').toExist(),
-    'From kitten to sitting': expect
-      .with(`${EDIT_CHECK}\n_check(${args('kitten', 'sitting')})`)
-      .toEqual("'ok'"),
-    'From an empty string': expect
-      .with(`${EDIT_CHECK}\n_check(${args('', 'abc')})`)
-      .toEqual("'ok'"),
-    'To an empty string': expect.with(`${EDIT_CHECK}\n_check(${args('abc', '')})`).toEqual("'ok'"),
-    'Long strings': expect.with(`${EDIT_CHECK}\n_check(${args(...WORDS)})`).toEqual("'ok'"),
-  }),
-})
+export const EditDistanceBonus = () => (
+  <PythonCode
+    id="dp-edit-distance-bonus"
+    prompt={
+      <p>
+        <strong>Bonus.</strong> Write <code>edit_path(a, b)</code>, which returns the list of the
+        strings from <code>a</code> to <code>b</code>, each one edit away from the previous:{' '}
+        <code>["kitten", "sitten", "sittin", "sitting"]</code>.
+      </p>
+    }
+    initialCode={dedent /* python */ `
+      from functools import cache
 
-const LIS_MODEL = dedent`
+      def edit_path(a, b):
+          pass
+    `}
+    tests={(expect) => ({
+      'edit_path is defined': expect.function('edit_path').toExist(),
+      'From kitten to sitting': expect
+        .with(`${EDIT_CHECK}\n_check(${args('kitten', 'sitting')})`)
+        .toEqual("'ok'"),
+      'From an empty string': expect
+        .with(`${EDIT_CHECK}\n_check(${args('', 'abc')})`)
+        .toEqual("'ok'"),
+      'To an empty string': expect
+        .with(`${EDIT_CHECK}\n_check(${args('abc', '')})`)
+        .toEqual("'ok'"),
+      'Long strings': expect.with(`${EDIT_CHECK}\n_check(${args(...WORDS)})`).toEqual("'ok'"),
+    })}
+  />
+)
+
+const LIS_MODEL = dedent /* python */ `
   from functools import cache
 
   def lis(a):
@@ -557,24 +634,37 @@ const LIS_MODEL = dedent`
       return max((L(i) for i in range(len(a))), default=0)
 `
 
-export const lis = (): CodeProps => ({
-  prompt: (
-    <p>
-      Write <code>lis(a)</code>, the length of the longest strictly increasing subsequence of the
-      list <code>a</code>: <code>lis([10, 9, 2, 5, 3, 7, 101, 18])</code> is 4, for{' '}
-      <code>[2, 3, 7, 18]</code>.
-    </p>
-  ),
-  initialCode: 'from functools import cache\n\ndef lis(a):\n    pass\n',
-  tests: (expect) => ({
-    'lis is correct': expect
-      .function('lis')
-      .toBehaveLike(LIS_MODEL, [[[10, 9, 2, 5, 3, 7, 101, 18]], [[]], [[5, 4, 3]], [[1, 2, 2, 3]]]),
-    [fast]: expect.function('lis').toBehaveLike(LIS_MODEL, [[ALMOST_SORTED]]),
-  }),
-})
+export const LIS = () => (
+  <PythonCode
+    id="dp-lis"
+    prompt={
+      <p>
+        Write <code>lis(a)</code>, the length of the longest strictly increasing subsequence of the
+        list <code>a</code>: <code>lis([10, 9, 2, 5, 3, 7, 101, 18])</code> is 4, for{' '}
+        <code>[2, 3, 7, 18]</code>.
+      </p>
+    }
+    initialCode={dedent /* python */ `
+      from functools import cache
 
-const LIS_CHECK = dedent`
+      def lis(a):
+          pass
+    `}
+    tests={(expect) => ({
+      'lis is correct': expect
+        .function('lis')
+        .toBehaveLike(LIS_MODEL, [
+          [[10, 9, 2, 5, 3, 7, 101, 18]],
+          [[]],
+          [[5, 4, 3]],
+          [[1, 2, 2, 3]],
+        ]),
+      [fast]: expect.function('lis').toBehaveLike(LIS_MODEL, [[ALMOST_SORTED]]),
+    })}
+  />
+)
+
+const LIS_CHECK = dedent /* python */ `
   def _check(a):
       from functools import cache
       @cache
@@ -592,25 +682,33 @@ const LIS_CHECK = dedent`
       return "ok"
 `
 
-export const lisBonus = (): CodeProps => ({
-  prompt: (
-    <p>
-      <strong>Bonus.</strong> Write <code>lis_sequence(a)</code>, which returns a longest increasing
-      subsequence itself, as a list.
-    </p>
-  ),
-  initialCode: 'from functools import cache\n\ndef lis_sequence(a):\n    pass\n',
-  tests: (expect) => ({
-    'lis_sequence is defined': expect.function('lis_sequence').toExist(),
-    'The example': expect
-      .with(`${LIS_CHECK}\n_check(${args([10, 9, 2, 5, 3, 7, 101, 18])})`)
-      .toEqual("'ok'"),
-    'An empty list': expect.with(`${LIS_CHECK}\n_check(${args([])})`).toEqual("'ok'"),
-    'A long list': expect.with(`${LIS_CHECK}\n_check(${args(ALMOST_SORTED)})`).toEqual("'ok'"),
-  }),
-})
+export const LISBonus = () => (
+  <PythonCode
+    id="dp-lis-bonus"
+    prompt={
+      <p>
+        <strong>Bonus.</strong> Write <code>lis_sequence(a)</code>, which returns a longest
+        increasing subsequence itself, as a list.
+      </p>
+    }
+    initialCode={dedent /* python */ `
+      from functools import cache
 
-const LOOT_MODEL = dedent`
+      def lis_sequence(a):
+          pass
+    `}
+    tests={(expect) => ({
+      'lis_sequence is defined': expect.function('lis_sequence').toExist(),
+      'The example': expect
+        .with(`${LIS_CHECK}\n_check(${args([10, 9, 2, 5, 3, 7, 101, 18])})`)
+        .toEqual("'ok'"),
+      'An empty list': expect.with(`${LIS_CHECK}\n_check(${args([])})`).toEqual("'ok'"),
+      'A long list': expect.with(`${LIS_CHECK}\n_check(${args(ALMOST_SORTED)})`).toEqual("'ok'"),
+    })}
+  />
+)
+
+const LOOT_MODEL = dedent /* python */ `
   from functools import cache
 
   def max_loot(houses):
@@ -622,24 +720,33 @@ const LOOT_MODEL = dedent`
       return R(0)
 `
 
-export const houseRobber = (): CodeProps => ({
-  prompt: (
-    <p>
-      A burglar visits a street of houses, <code>houses[i]</code> being the loot in house{' '}
-      <code>i</code>, but robbing two neighbouring houses sets off the alarm. Write{' '}
-      <code>max_loot(houses)</code>, the largest loot: <code>max_loot([2, 7, 9, 3, 1])</code> is 12.
-    </p>
-  ),
-  initialCode: 'from functools import cache\n\ndef max_loot(houses):\n    pass\n',
-  tests: (expect) => ({
-    'max_loot is correct': expect
-      .function('max_loot')
-      .toBehaveLike(LOOT_MODEL, [[[2, 7, 9, 3, 1]], [[]], [[5]], [[2, 1, 1, 2]]]),
-    [fast]: expect.function('max_loot').toBehaveLike(LOOT_MODEL, [[STREET]]),
-  }),
-})
+export const HouseRobber = () => (
+  <PythonCode
+    id="dp-house-robber"
+    prompt={
+      <p>
+        A burglar visits a street of houses, <code>houses[i]</code> being the loot in house{' '}
+        <code>i</code>, but robbing two neighbouring houses sets off the alarm. Write{' '}
+        <code>max_loot(houses)</code>, the largest loot: <code>max_loot([2, 7, 9, 3, 1])</code> is
+        12.
+      </p>
+    }
+    initialCode={dedent /* python */ `
+      from functools import cache
 
-const LOOT_CHECK = dedent`
+      def max_loot(houses):
+          pass
+    `}
+    tests={(expect) => ({
+      'max_loot is correct': expect
+        .function('max_loot')
+        .toBehaveLike(LOOT_MODEL, [[[2, 7, 9, 3, 1]], [[]], [[5]], [[2, 1, 1, 2]]]),
+      [fast]: expect.function('max_loot').toBehaveLike(LOOT_MODEL, [[STREET]]),
+    })}
+  />
+)
+
+const LOOT_CHECK = dedent /* python */ `
   def _check(houses):
       from functools import cache
       @cache
@@ -658,25 +765,33 @@ const LOOT_CHECK = dedent`
       return "ok"
 `
 
-export const houseRobberBonus = (): CodeProps => ({
-  prompt: (
-    <p>
-      <strong>Bonus.</strong> Write <code>loot_houses(houses)</code>, which returns the list of the
-      indices of the houses to rob.
-    </p>
-  ),
-  initialCode: 'from functools import cache\n\ndef loot_houses(houses):\n    pass\n',
-  tests: (expect) => ({
-    'loot_houses is defined': expect.function('loot_houses').toExist(),
-    'The example': expect.with(`${LOOT_CHECK}\n_check(${args([2, 7, 9, 3, 1])})`).toEqual("'ok'"),
-    'Every other house is not always best': expect
-      .with(`${LOOT_CHECK}\n_check(${args([2, 1, 1, 2])})`)
-      .toEqual("'ok'"),
-    'A long street': expect.with(`${LOOT_CHECK}\n_check(${args(STREET)})`).toEqual("'ok'"),
-  }),
-})
+export const HouseRobberBonus = () => (
+  <PythonCode
+    id="dp-house-robber-bonus"
+    prompt={
+      <p>
+        <strong>Bonus.</strong> Write <code>loot_houses(houses)</code>, which returns the list of
+        the indices of the houses to rob.
+      </p>
+    }
+    initialCode={dedent /* python */ `
+      from functools import cache
 
-const PATH_MODEL = dedent`
+      def loot_houses(houses):
+          pass
+    `}
+    tests={(expect) => ({
+      'loot_houses is defined': expect.function('loot_houses').toExist(),
+      'The example': expect.with(`${LOOT_CHECK}\n_check(${args([2, 7, 9, 3, 1])})`).toEqual("'ok'"),
+      'Every other house is not always best': expect
+        .with(`${LOOT_CHECK}\n_check(${args([2, 1, 1, 2])})`)
+        .toEqual("'ok'"),
+      'A long street': expect.with(`${LOOT_CHECK}\n_check(${args(STREET)})`).toEqual("'ok'"),
+    })}
+  />
+)
+
+const PATH_MODEL = dedent /* python */ `
   from functools import cache
 
   def min_path(grid):
@@ -694,38 +809,46 @@ const PATH_MODEL = dedent`
       return P(0, 0)
 `
 
-export const minPath = (): CodeProps => ({
-  prompt: (
-    <p>
-      A robot crosses a grid from the top left to the bottom right, moving only right or down, and
-      pays <code>grid[i][j]</code> for each cell it enters, the first and the last included. Write{' '}
-      <code>min_path(grid)</code>, the cheapest cost:{' '}
-      <code>min_path([[1, 3, 1], [1, 5, 1], [4, 2, 1]])</code> is 7.
-    </p>
-  ),
-  initialCode: 'from functools import cache\n\ndef min_path(grid):\n    pass\n',
-  tests: (expect) => ({
-    'min_path is correct': expect.function('min_path').toBehaveLike(PATH_MODEL, [
-      [
-        [
-          [1, 3, 1],
-          [1, 5, 1],
-          [4, 2, 1],
-        ],
-      ],
-      [[[5]]],
-      [
-        [
-          [1, 2, 3],
-          [4, 5, 6],
-        ],
-      ],
-    ]),
-    [fast]: expect.function('min_path').toBehaveLike(PATH_MODEL, [[GRID]]),
-  }),
-})
+export const MinPath = () => (
+  <PythonCode
+    id="dp-min-path"
+    prompt={
+      <p>
+        A robot crosses a grid from the top left to the bottom right, moving only right or down, and
+        pays <code>grid[i][j]</code> for each cell it enters, the first and the last included. Write{' '}
+        <code>min_path(grid)</code>, the cheapest cost:{' '}
+        <code>min_path([[1, 3, 1], [1, 5, 1], [4, 2, 1]])</code> is 7.
+      </p>
+    }
+    initialCode={dedent /* python */ `
+      from functools import cache
 
-const PATH_CHECK = dedent`
+      def min_path(grid):
+          pass
+    `}
+    tests={(expect) => ({
+      'min_path is correct': expect.function('min_path').toBehaveLike(PATH_MODEL, [
+        [
+          [
+            [1, 3, 1],
+            [1, 5, 1],
+            [4, 2, 1],
+          ],
+        ],
+        [[[5]]],
+        [
+          [
+            [1, 2, 3],
+            [4, 5, 6],
+          ],
+        ],
+      ]),
+      [fast]: expect.function('min_path').toBehaveLike(PATH_MODEL, [[GRID]]),
+    })}
+  />
+)
+
+const PATH_CHECK = dedent /* python */ `
   def _check(grid):
       from functools import cache
       m, n = len(grid), len(grid[0])
@@ -751,26 +874,34 @@ const PATH_CHECK = dedent`
       return "ok"
 `
 
-export const minPathBonus = (): CodeProps => ({
-  prompt: (
-    <p>
-      <strong>Bonus.</strong> Write <code>min_path_cells(grid)</code>, which returns the cheapest
-      path as the list of the cells <code>(i, j)</code> it visits, from <code>(0, 0)</code>.
-    </p>
-  ),
-  initialCode: 'from functools import cache\n\ndef min_path_cells(grid):\n    pass\n',
-  tests: (expect) => ({
-    'min_path_cells is defined': expect.function('min_path_cells').toExist(),
-    'The example': expect
-      .with(
-        `${PATH_CHECK}\n_check(${args([
-          [1, 3, 1],
-          [1, 5, 1],
-          [4, 2, 1],
-        ])})`,
-      )
-      .toEqual("'ok'"),
-    'A single cell': expect.with(`${PATH_CHECK}\n_check(${args([[5]])})`).toEqual("'ok'"),
-    'A 15 × 15 grid': expect.with(`${PATH_CHECK}\n_check(${args(GRID)})`).toEqual("'ok'"),
-  }),
-})
+export const MinPathBonus = () => (
+  <PythonCode
+    id="dp-min-path-bonus"
+    prompt={
+      <p>
+        <strong>Bonus.</strong> Write <code>min_path_cells(grid)</code>, which returns the cheapest
+        path as the list of the cells <code>(i, j)</code> it visits, from <code>(0, 0)</code>.
+      </p>
+    }
+    initialCode={dedent /* python */ `
+      from functools import cache
+
+      def min_path_cells(grid):
+          pass
+    `}
+    tests={(expect) => ({
+      'min_path_cells is defined': expect.function('min_path_cells').toExist(),
+      'The example': expect
+        .with(
+          `${PATH_CHECK}\n_check(${args([
+            [1, 3, 1],
+            [1, 5, 1],
+            [4, 2, 1],
+          ])})`,
+        )
+        .toEqual("'ok'"),
+      'A single cell': expect.with(`${PATH_CHECK}\n_check(${args([[5]])})`).toEqual("'ok'"),
+      'A 15 × 15 grid': expect.with(`${PATH_CHECK}\n_check(${args(GRID)})`).toEqual("'ok'"),
+    })}
+  />
+)

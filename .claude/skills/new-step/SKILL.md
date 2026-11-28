@@ -38,6 +38,8 @@ Ask the teacher for whatever the request leaves out.
    with `MultipleChoice`, return `answer` rather than `grade`.
 4. **Python**: a `PythonCode` step, or one derived from it,
    tested with `tests={(expect) => ({ 'description': expect.toShow(42) })}`.
+   Write Python, `initialCode` and models included, as ``dedent /* python */ `…` `` from `es-toolkit/string`,
+   so that VS Code highlights it, with `pass` in an empty body: the starting code runs at once.
    Prefer what students can't trip on: `toShow` and `output()` accept a printed answer,
    `function(name).toBehaveLike(model, calls)` tests a function on several inputs,
    `code.toCall`/`toUse`/`toImport` read the syntax rather than the text,
@@ -47,7 +49,10 @@ Ask the teacher for whatever the request leaves out.
    A check several exercises need goes into `packages/repl/python/expect.ts`,
    with its Python side in `checks.py`.
 
-Never a function component that returns a preset step (see `AGENTS.md`).
+Never a function component that takes props and passes them to a step (see `AGENTS.md`):
+`createDerivedStep` is for a model used with different data.
+An exercise that appears once is the step itself, with all its props, `id` included,
+in a component without props when the MDX should stay short.
 
 ## 3. Choose where it goes
 
