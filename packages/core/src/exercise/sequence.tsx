@@ -47,25 +47,29 @@ type Props<T extends object> = Prettify<
 >
 
 /**
- * Create a sequence of exercises
+ * A series of exercises, shown one page at a time, with a bar of each exercise's progress.
+ * `id` names the series on its page, to save its answers:
+ * its exercises need no `id` of their own.
+ * Teachers see the progress of every student in it.
  *
- * There are two ways to use this component:
+ * There are two ways to give its exercises:
  *
- * 1. By statically predefining the sequence via children
- * 2. By dynamically generating the next exercise via the `next` prop,
- *    which takes a component that receives the current position, progress and saved data of the sequence.
- *    Alternatively, `next` can generate only the props,
- *    and the exercise component can be specified via the `exercise` prop.
+ * 1. as children, written in advance;
+ * 2. with `next`, a component that makes each exercise in turn,
+ *    from the position, the progress and the saved data of the series;
+ *    or a function giving only the exercise's data, the exercise being `exercise`.
+ *
+ * `options` apply to every exercise of the series.
  *
  * @example
- * <ExerciseSequence id="predefined">
+ * <Sequence id="predefined">
  *   <Factor expr="x^2 - 5x + 6" />
  *   <Factor expr="x^2 - 3x + 2" />
  *   <Factor expr="x^2 - x - 6" />
- * </ExerciseSequence>
+ * </Sequence>
  *
  * @example
- * <ExerciseSequence
+ * <Sequence
  *   id="generated"
  *   next={() => {
  *     const exercise = createMemo(() => {

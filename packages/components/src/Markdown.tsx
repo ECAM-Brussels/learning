@@ -7,6 +7,12 @@ type MarkdownProps = {
   value?: string
 }
 
+/**
+ * Markdown given as text, with maths between `$`, such as text built in code.
+ *
+ * @example
+ * <Markdown value={`La dérivée de $x^${n}$ est $${n}x^${n - 1}$.`} />
+ */
 export function Markdown(props: MarkdownProps) {
   const html = () =>
     props.value &&

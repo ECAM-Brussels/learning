@@ -3,10 +3,29 @@ import { createStep, expr, tex } from '@learning/core'
 import { Show } from 'solid-js'
 import { Root } from './Root'
 
+/**
+ * Asks to factor a polynomial completely.
+ * The answer must equal the polynomial and be factored, however it is written:
+ * `(x - 2)(x - 3)` and `(3 - x)(2 - x)` are both right.
+ * After a wrong answer, the student is guided:
+ * find a root, then the factor of that root, then factor again.
+ * A video on factoring is shown beside it.
+ *
+ * @example
+ * <Factor id="factorisation" expr="x^2 - 5x + 6" />
+ * // In a series:
+ * <Sequence id="factorisations">
+ *   <Factor expr="x^2 - 9" />
+ *   <Factor expr="2x^2 + 4x + 2" />
+ * </Sequence>
+ */
 export const Factor = createStep({
   name: 'math/algebra/factor',
   schema: {
-    data: { expr: 'expr' },
+    data: {
+      /** The polynomial to factor, in LaTeX, such as `'x^2 - 5x + 6'`. */
+      expr: 'expr',
+    },
     inputs: { attempt: 'expr' },
   },
   options: {

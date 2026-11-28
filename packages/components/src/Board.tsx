@@ -258,6 +258,20 @@ textPrototype.updateRenderer = function (this: TextInternals) {
   return shown ? updateTextRenderer.call(this) : this.updateRendererGeneric('updateText')
 }
 
+/**
+ * A figure, made with JSXGraph, each element a tag inside it.
+ * `axis` shows axes, and `boundingBox` the visible part: `[xmin, ymax, xmax, ymin]`;
+ * `class` sets its size, `h-175 w-175` by default.
+ * An element's `children` can be a function given the element, to build on it, such as a glider on a curve.
+ * Elements follow their props: keep what changes in signals, and the figure follows.
+ * `onFrame` animates it, and `BoardDefaults` gives defaults to every board inside it.
+ *
+ * @example
+ * <Board axis boundingBox={[-7, 2, 7, -2]} class="h-100 w-150">
+ *   <Board.Plot fn={Math.sin} />
+ *   <Board.Point position={[Math.PI / 2, 1]} name="A" />
+ * </Board>
+ */
 export const Board = Object.assign(
   (
     props: Partial<JXG.BoardAttributes> & {
@@ -328,6 +342,13 @@ export const Board = Object.assign(
     )
   },
   {
+    /**
+     * An angle, marked between two sides:
+     * `points` are a point on the first side, the vertex, and a point on the second side.
+     *
+     * @example
+     * <Board.Angle points={[[1, 0], [0, 0], [0, 1]]} name="\\alpha" />
+     */
     Angle: (
       props: {
         /** A point on the first side, the vertex, and a point on the second side. */
@@ -361,6 +382,12 @@ export const Board = Object.assign(
         </Element>
       )
     },
+    /**
+     * An arc of a circle: its center, its start, and a point giving the direction of its end.
+     *
+     * @example
+     * <Board.Arc points={[[0, 0], [2, 0], [0, 2]]} strokeColor="red" />
+     */
     Arc: (
       props: {
         /** The center, the start of the arc, and a point giving the direction of its end. */
@@ -389,6 +416,12 @@ export const Board = Object.assign(
         </Element>
       )
     },
+    /**
+     * An arrow from `from` to `to`, such as a vector.
+     *
+     * @example
+     * <Board.Arrow from={[0, 0]} to={[2, 1]} name="\\vec{u}" />
+     */
     Arrow: (
       props: {
         from: [number, number] | JXG.Point
@@ -412,6 +445,15 @@ export const Board = Object.assign(
         </Element>
       )
     },
+    /**
+     * An axis through two points, with ticks, beyond the board's own:
+     * a glider can slide on it, through `children`.
+     *
+     * @example
+     * <Board.Axis from={[0, 0]} to={[1, 0]}>
+     *   {(axis) => <Board.Glider on={axis} position={[1, 0]} name="x_0" />}
+     * </Board.Axis>
+     */
     Axis: (
       props: {
         from: [number, number] | JXG.Point
@@ -435,6 +477,13 @@ export const Board = Object.assign(
         </Element>
       )
     },
+    /**
+     * A circle, by its center and its radius, or a point it passes through.
+     *
+     * @example
+     * <Board.Circle center={[0, 0]} radius={2} />
+     * <Board.Circle center={[0, 0]} through={[1, 1]} />
+     */
     Circle: (
       props: {
         center: [number, number] | JXG.Point
@@ -469,6 +518,15 @@ export const Board = Object.assign(
         </Element>
       )
     },
+    /**
+     * A point that slides on a curve, a line or a circle, given as `on`, from that element's `children`.
+     * `onDrag` reports where it goes, to update a signal.
+     *
+     * @example
+     * <Board.Plot fn={Math.sin}>
+     *   {(curve) => <Board.Glider on={curve} position={[1, Math.sin(1)]} name="A" onDrag={(P) => setX(P.X())} />}
+     * </Board.Plot>
+     */
     Glider: (
       props: {
         position: [number, number] | JXG.Point
@@ -509,6 +567,15 @@ export const Board = Object.assign(
         </Element>
       )
     },
+    /**
+     * The area under a curve between two bounds, shaded, with its value:
+     * `curve` is a `Plot`, from its `children`.
+     *
+     * @example
+     * <Board.Plot fn={(x) => x * x}>
+     *   {(curve) => <Board.Integral curve={curve} domain={[0, 1]} />}
+     * </Board.Plot>
+     */
     Integral: (
       props: {
         curve: JXG.Curve
@@ -535,6 +602,12 @@ export const Board = Object.assign(
         </Element>
       )
     },
+    /**
+     * A line through two points, infinite both ways.
+     *
+     * @example
+     * <Board.Line points={[[0, 1], [2, 3]]} />
+     */
     Line: (
       props: {
         points: [[number, number] | JXG.Point, [number, number] | JXG.Point]
@@ -557,6 +630,15 @@ export const Board = Object.assign(
         </Element>
       )
     },
+    /**
+     * A point, which the student can drag unless `fixed`:
+     * `onDrag` reports where it goes.
+     * Its name is LaTeX, and moves out of the way of other elements.
+     *
+     * @example
+     * <Board.Point position={[1, 2]} name="A" />
+     * <Board.Point position={[x(), y()]} onDrag={(P) => setPosition([P.X(), P.Y()])} />
+     */
     Point: (
       props: {
         position: [number, number]
@@ -589,6 +671,19 @@ export const Board = Object.assign(
         </Element>
       )
     },
+    /**
+     * The graph of a function of `x`, across the board, or over `domain`.
+     * The graph is redrawn when `fn` is replaced, not when a signal read inside it changes:
+     * build `fn` with `createMemo`, reading the signals outside the function it returns.
+     *
+     * @example
+     * <Board.Plot fn={Math.sin} strokeWidth={3} />
+     * const f = createMemo(() => {
+     *   const k = a()
+     *   return (x: number) => k * x * x
+     * })
+     * <Board.Plot fn={f()} domain={[-2, 2]} />
+     */
     Plot: (
       props: {
         fn: (x: number) => number
@@ -620,6 +715,12 @@ export const Board = Object.assign(
         </Element>
       )
     },
+    /**
+     * A filled polygon, by its vertices.
+     *
+     * @example
+     * <Board.Polygon points={[[0, 0], [2, 0], [1, 2]]} fillColor="orange" />
+     */
     Polygon: (
       props: {
         points: Array<[number, number] | JXG.Point>
@@ -643,6 +744,13 @@ export const Board = Object.assign(
         </Element>
       )
     },
+    /**
+     * The rectangles of a Riemann sum of `f` over `domain`, `n` of them:
+     * `type` is `'left'` by default, or `'right'`, `'middle'`, `'trapezoidal'`, `'simpson'`, `'lower'`, `'upper'` or `'random'`.
+     *
+     * @example
+     * <Board.RiemannSum f={(x) => x * x} n={n()} domain={[0, 2]} type="middle" />
+     */
     RiemannSum: (
       props: {
         f: (x: number) => number
@@ -679,6 +787,12 @@ export const Board = Object.assign(
         </Element>
       )
     },
+    /**
+     * A sector of a disc, filled: its center, the start of its arc, and a point giving the direction of its end.
+     *
+     * @example
+     * <Board.Sector points={[[0, 0], [2, 0], [0, 2]]} />
+     */
     Sector: (
       props: {
         /** The center, the start of the arc, and a point giving the direction of its end. */
@@ -707,6 +821,12 @@ export const Board = Object.assign(
         </Element>
       )
     },
+    /**
+     * A segment from `from` to `to`, its ends positions or points.
+     *
+     * @example
+     * <Board.Segment from={[0, 0]} to={[2, 1]} dash={2} />
+     */
     Segment: (
       props: {
         from: [number, number] | JXG.Point
@@ -730,6 +850,14 @@ export const Board = Object.assign(
         </Element>
       )
     },
+    /**
+     * A slider for a number from `min` to `max`, drawn on the board from `from` to `to`:
+     * `onChange` reports its value as it moves, to update a signal.
+     *
+     * @example
+     * const [a, setA] = createSignal(1)
+     * <Board.Slider from={[-4, 4]} to={[0, 4]} min={-2} max={2} value={a()} onChange={setA} name="a" />
+     */
     Slider: (
       props: {
         from: Coords
@@ -781,6 +909,18 @@ export const Board = Object.assign(
         </Element>
       )
     },
+    /**
+     * The tangent at a glider on a curve, following it.
+     *
+     * @example
+     * <Board.Plot fn={Math.sin}>
+     *   {(curve) => (
+     *     <Board.Glider on={curve} position={[1, Math.sin(1)]}>
+     *       {(A) => <Board.Tangent at={A} strokeColor="orange" />}
+     *     </Board.Glider>
+     *   )}
+     * </Board.Plot>
+     */
     Tangent: (
       props: {
         at: JXG.Glider
@@ -794,6 +934,12 @@ export const Board = Object.assign(
         </Element>
       )
     },
+    /**
+     * The normal at a glider on a curve, perpendicular to the tangent, following it.
+     *
+     * @example
+     * <Board.Glider on={curve} position={[1, 1]}>{(A) => <Board.Normal at={A} />}</Board.Glider>
+     */
     Normal: (
       props: {
         at: JXG.Glider
@@ -807,6 +953,12 @@ export const Board = Object.assign(
         </Element>
       )
     },
+    /**
+     * A parametric curve: `fn` gives `[x, y]` for each `t` of `domain`.
+     *
+     * @example
+     * <Board.Curve fn={(t) => [Math.cos(t), Math.sin(2 * t)]} domain={[0, 2 * Math.PI]} />
+     */
     Curve: (
       props: {
         fn: (t: number) => Coords
@@ -836,6 +988,12 @@ export const Board = Object.assign(
         </Element>
       )
     },
+    /**
+     * A curve in polar coordinates, `r` as a function of the angle, over `domain` (0 to 2π by default), around `center`.
+     *
+     * @example
+     * <Board.PolarCurve r={(theta) => 1 + Math.cos(theta)} />
+     */
     PolarCurve: (
       props: {
         r: (theta: number) => number
@@ -917,6 +1075,12 @@ export const Board = Object.assign(
         </Element>
       )
     },
+    /**
+     * The arrows of a vector field: `fn` gives the vector `[x, y]` at each point of `domain`, `steps` arrows per axis.
+     *
+     * @example
+     * <Board.VectorField fn={(x, y) => [-y, x]} domain={[[-3, 3], [-3, 3]]} steps={12} />
+     */
     VectorField: (
       props: {
         fn: (x: number, y: number) => Coords
@@ -984,6 +1148,18 @@ export const Board = Object.assign(
         </Element>
       )
     },
+    /**
+     * A view in three dimensions, within the board:
+     * its lower-left corner and its size on the board, and the bounds of `x`, `y` and `z`.
+     * 3D elements go inside it, and the student turns it by dragging.
+     *
+     * @example
+     * <Board boundingBox={[-8, 8, 8, -8]}>
+     *   <Board.View3D position={[-6, -6]} size={[12, 12]} bounds={[[-3, 3], [-3, 3], [-3, 3]]}>
+     *     <Board.Plot3D fn={(x, y) => x * x - y * y} domain={[[-2, 2], [-2, 2]]} />
+     *   </Board.View3D>
+     * </Board>
+     */
     View3D: (
       props: {
         /** Lower-left corner of the view on the board. */
@@ -1015,6 +1191,13 @@ export const Board = Object.assign(
         </Element>
       )
     },
+    /**
+     * A point in a 3D view, which the student can drag, or slide on a 3D element given as `on`:
+     * `onDrag` reports where it goes.
+     *
+     * @example
+     * <Board.Point3D position={[1, 1, 1]} name="P" />
+     */
     Point3D: (
       props: {
         position: Coords3D
@@ -1145,6 +1328,12 @@ export const Board = Object.assign(
         </Element>
       )
     },
+    /**
+     * A parametric curve in a 3D view: `fn` gives `[x, y, z]` for each `t` of `domain`.
+     *
+     * @example
+     * <Board.Curve3D fn={(t) => [Math.cos(t), Math.sin(t), t / 4]} domain={[0, 4 * Math.PI]} />
+     */
     Curve3D: (
       props: {
         fn: (t: number) => Coords3D
@@ -1270,6 +1459,12 @@ export const Board = Object.assign(
         </Show>
       )
     },
+    /**
+     * Text at a position on the board, updated when `content` changes.
+     *
+     * @example
+     * <Board.Text position={[1, 2]} content={`aire ≈ ${area().toFixed(2)}`} />
+     */
     Text: (
       props: {
         position: [number, number]

@@ -62,42 +62,62 @@ export const Tests = v.union([
 ])
 
 /**
- * Allow students to write Python code which will be tested against a set of tests
- *
- * Two props are required:
- *
- * - `prompt`: JSX element that will be displayed above the code editor,
- *    explaining what the student is expected to do.
- *
- * - `tests`: a function that returns a record of tests.
- *    Each key is a description of the test,
- *    while the test itself is a function that returns a boolean or a promise thereof.
- *    To help you write tests, an `expect` function is provided as a parameter,
- *    as shown in the example below.
- *
- * Currently, the `tests` props also allows a legacy format, but it is deprecated and will be removed in the future.
+ * A Python exercise: the student writes code in an editor, runs it in the page,
+ * and it is corrected by checks written with `expect`.
+ * Each check has a description, shown with a check mark or a cross,
+ * and the reason when it fails, such as `moyenne([5]) renvoie 5, au lieu de 5.0`.
+ * The answer is right when every check passes.
+ * Hover `expect`'s methods in `tests` for their description and an example.
  *
  * @example
  * <PythonCode
- *   prompt={<p>Write a function <code>square</code> that returns the square of a number.</p>}
+ *   id="moyenne"
+ *   prompt={<p>Définissez une fonction <code>moyenne(l)</code> qui renvoie la moyenne d'une liste.</p>}
+ *   initialCode={'def moyenne(l):\n    '}
  *   tests={(expect) => ({
- *     'square(0) -> 0': expect.with('square(0)').toReturn(0),
- *     'square(1) -> 1': expect.with('square(1)').toReturn(1),
- *     'square(2) -> 4': expect.with('square(2)').toReturn(4),
+ *     'moyenne est correcte': expect.function('moyenne').toBehaveLike(
+ *       'def moyenne(l):\n    return sum(l) / len(l)',
+ *       [[[2, 4, 6]], [[5]], [[-1, 1]]],
+ *     ),
+ *     "statistics n'est pas utilisé": expect.code.not.toImport('statistics'),
  *   })}
+ * />
+ * // With NumPy and a plot:
+ * <PythonCode
+ *   id="sinus"
+ *   math
+ *   prompt={<p>Tracez le graphe de la fonction sinus sur [-3, 3].</p>}
+ *   tests={(expect) => ({ 'La courbe est tracée': expect.matplotlib.plot('np.sin(x)', -3, 3) })}
  * />
  */
 export const PythonCode = createStep({
   name: 'python/code',
   schema: {
     data: {
+      /** The statement, shown above the editor. */
       prompt: 'jsx',
+      /**
+       * The checks: a function given `expect`, returning a description for each check.
+       *
+       * @example
+       * tests={(expect) => ({
+       *   'carre(3) vaut 9': expect.with('carre(3)').toReturn(9),
+       *   'La réponse est affichée': expect.toShow(42),
+       * })}
+       */
       tests: omitFromJSON(Tests),
+      /** @deprecated A further check of the code: write it with `expect.code.toSatisfy`. */
       check: omitFromJSON(
         v.optional(v.custom<(code: string) => boolean | Promise<boolean>>(() => true)),
       ),
+      /**
+       * `'automatic'` runs the code as the student types, by default;
+       * `'manual'` runs it only on ▶, for long computations.
+       */
       mode: v.optional(v.union([v.literal('automatic'), v.literal('manual')]), 'automatic'),
+      /** Adds NumPy and dual numbers, and shows Matplotlib figures and LaTeX results. */
       math: v.optional(v.boolean(), false),
+      /** The code in the editor at first, to complete: `\n` starts a new line. */
       initialCode: v.optional(v.string(), ''),
     },
     inputs: { code: v.string() },

@@ -6,18 +6,31 @@
  */
 export function createRandom(seed: string | number = Math.random()) {
   let state = hash(String(seed))
+  /** A number from 0 to 1, 1 excluded. */
   function float() {
     state = (state + 0x6d2b79f5) | 0
     let t = Math.imul(state ^ (state >>> 15), 1 | state)
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
     return ((t ^ (t >>> 14)) >>> 0) / 2 ** 32
   }
-  /** Like es-toolkit's `randomInt`, `max` is exclusive. */
+  /**
+   * A whole number from `min` to `max`, `max` excluded, like es-toolkit's `randomInt`.
+   *
+   * @example
+   * random.int(1, 7) // a die: 1 to 6
+   */
   const int = (min: number, max: number) => min + Math.floor(float() * (max - min))
+  /**
+   * One of the items, drawn at random.
+   *
+   * @example
+   * random.sample(['x', 't', 'u']) // the name of a variable
+   */
   const sample = <T>(items: readonly T[]): T => {
     if (items.length === 0) throw new Error('Cannot sample from an empty array')
     return items[int(0, items.length)]!
   }
+  /** The items in a random order, as a new array. */
   const shuffle = <T>(items: readonly T[]): T[] => {
     const result = [...items]
     for (let i = result.length - 1; i > 0; i--) {

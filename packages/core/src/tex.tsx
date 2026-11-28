@@ -52,27 +52,37 @@ function Tex(props: {
 }
 
 /**
- * A helper for rendering LaTeX in JSX using template literals
+ * Displays LaTeX, written as a template: `` {tex`\frac{a}{b}`} ``.
+ * Between `${` and `}`, a value is inserted:
+ * a number or text as it is,
+ * and an expression of `expr` as its LaTeX, computed if needed,
+ * so that a solution is written nowhere but computed.
+ * The formula is inline, or displayed on its own line when the template has several lines;
+ * `tex.display` and `tex.inline` choose explicitly.
+ * In MDX, write LaTeX that contains braces with `tex` rather than `$…$`,
+ * which the MDX language server reads as expressions.
  *
- * For display mode, make sure the string contains more than one line.
- *
- * @example {tex`x^2 + y^2 = z^2`} // renders inline
  * @example
- * {tex`
- *   \int_0^1 x^2 \, \mathrm{d} x = \frac 1 3
- * `} // renders in display mode
+ * {tex`x^2 + y^2 = z^2`}
+ * {tex`f'(x) = ${expr('x^3').diff()}`} // f'(x) = 3x^2
+ * {tex.display`\int_0^1 x^2 \, \mathrm{d}x = ${expr('x^2').integrate('x', 0, 1)}`}
+ * // In a prompt, with the step's data:
+ * <p>Calculez la dérivée de {tex`f(x) = ${ctx.data.f}`}.</p>
  */
 export const tex = Object.assign(
   (strings: TemplateStringsArray, ...values: Substitution[]) => {
     return <Tex strings={strings} values={values} />
   },
   {
+    /** The formula on its own line, centred: `` {tex.display`\sum_{k=1}^n k`} ``. */
     display: (strings: TemplateStringsArray, ...values: Substitution[]) => {
       return <Tex strings={strings} values={values} displayMode />
     },
+    /** The formula within the text, even written on several lines. */
     inline: (strings: TemplateStringsArray, ...values: Substitution[]) => {
       return <Tex strings={strings} values={values} displayMode={false} />
     },
+    /** The LaTeX as text, backslashes kept, to build it before displaying it. */
     raw: String.raw,
   },
 )

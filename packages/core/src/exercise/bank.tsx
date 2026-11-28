@@ -28,7 +28,15 @@ export type Skill<Id extends string, D, T extends string = string> = {
 type AnySkill = Skill<string, any, any>
 
 /**
- * Prerequisites are read lazily, so that modules may refer to each other's skills.
+ * Defines a skill: questions of one kind, generated from a few random parameters.
+ *
+ * - `id`: saved with the answers, namespaced by course like `'MA1M/power-rule'`: never change it;
+ * - `step`: the exercise that asks the question, such as `MultipleChoice` or `Simple`;
+ * - `generate`: draws the parameters, only from the `random` it receives, never from `Math.random`;
+ * - `render`: turns the parameters into the step's data, and must be pure,
+ *   since only the parameters are saved and the question is rebuilt from them;
+ * - `tags`: labels to group skills, as in `<bank.Practice tags={['s1']} />`;
+ * - `prerequisites`: the skills that come before, read lazily so that modules may refer to each other's skills.
  *
  * @example
  * export const addition = defineSkill('arithmetic/addition', {
@@ -63,12 +71,16 @@ export function defineSkill<
 }
 
 /**
- * Draws only from the given skills, not from their prerequisites.
+ * A bank of questions, drawn from the given skills, not from their prerequisites.
+ * Its `Practice` is an endless series of questions, each from a skill drawn at random,
+ * restricted to some skills or tags if given.
  *
  * @example
- * const bank = createQuestionBank(addition, ...multiplication)
+ * export const bank = createQuestionBank(addition, multiplication)
  *
- * <bank.Practice id="arithmetic" skills={['arithmetic/addition']} />
+ * // In a page:
+ * <bank.Practice id="entrainement" />
+ * <bank.Practice id="additions" skills={['arithmetic/addition']} />
  */
 export function createQuestionBank<const S extends readonly AnySkill[]>(...skills: S) {
   return bank<S[number]>(skills)
@@ -161,8 +173,11 @@ function bank<S extends AnySkill>(list: readonly S[]) {
   }
 
   /**
-   * An endless sequence of questions from the bank, optionally restricted to some skills or tags.
+   * An endless series of questions from the bank, restricted to some skills or tags if given.
    * Resubmissions are off by default, as a new question follows each answer.
+   *
+   * @example
+   * <bank.Practice id="entrainement" tags={['s1']} />
    */
   function Practice(props: Filter & { id: string; options?: Options<'input'> }) {
     return (

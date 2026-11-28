@@ -1,10 +1,20 @@
 import { Attempt } from '@learning/components'
 import { createStep, tex } from '@learning/core'
 
+/**
+ * Asks to complete the square of a quadratic polynomial, shown expanded.
+ * The answer must equal the polynomial and contain `x` only once, as in `2(x - 1)^2 + 3`.
+ *
+ * @example
+ * <CompleteSquare id="carre" expr="2(x - 1)^2 + 3" />
+ */
 export const CompleteSquare = createStep({
   name: 'math/algebra/complete-square',
   schema: {
-    data: { expr: 'expr' },
+    data: {
+      /** The polynomial, in LaTeX, in any form: it is shown expanded. */
+      expr: 'expr',
+    },
     inputs: { attempt: 'expr' },
   },
   prompt: (ctx) => (

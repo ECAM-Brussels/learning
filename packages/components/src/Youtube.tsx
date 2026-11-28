@@ -1,11 +1,21 @@
 type YoutubeProps = {
   class?: string
+  /** In pixels, 315 by default. */
   height?: number
+  /** The video's address, as copied from YouTube. */
   src: string
+  /** In pixels, 560 by default. */
   width?: number
+  /** Scales the video, `1` by default. */
   zoom?: number
 }
 
+/**
+ * A YouTube video, by its address.
+ *
+ * @example
+ * <Youtube src="https://www.youtube.com/watch?v=WUvTyaaNkzM" class="mx-auto" />
+ */
 export function Youtube(props: YoutubeProps) {
   return (
     <iframe

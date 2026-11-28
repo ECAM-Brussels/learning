@@ -3,6 +3,13 @@ import katex from 'katex'
 import 'katex/dist/katex.min.css'
 import { createMemo, Loading } from 'solid-js'
 
+/**
+ * LaTeX given as text, displayed with KaTeX.
+ * In pages and prompts, `tex` is simpler, and inserts expressions of `expr`.
+ *
+ * @example
+ * <Latex value="\\frac{a}{b}" displayMode />
+ */
 export function Latex(props: {
   class?: JSX.ClassValue | string
   value?: string

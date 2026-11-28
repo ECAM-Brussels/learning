@@ -12,8 +12,8 @@ const config = {
 } as const satisfies Record<string, { label: Record<Lang, string>; class: string }>
 
 /**
- * Create a generic box to display content
- * (e.g. examples, definitions, exercises, etc.)
+ * A box headed by its kind, such as « Exemple » or « Définition », and its title if given.
+ * In MDX, the directives write them: `:::example[Un titre]`, then the content, then `:::`.
  */
 export function Environment(props: {
   children?: JSX.Element
@@ -41,11 +41,19 @@ function makeEnvironment(type: keyof typeof config) {
 }
 
 /**
- * Component to display an example
+ * A definition, in a box. In MDX: `:::definition[Fonction continue]`, the definition, then `:::`.
+ *
+ * @example
+ * <Definition title="Fonction continue">Une fonction est continue si…</Definition>
  */
 export const Definition = makeEnvironment('definition')
+/** An example, in a box. In MDX: `:::example[Un titre]`, the example, then `:::`. */
 export const Example = makeEnvironment('example')
+/** An exercise, in a box. In MDX: `:::exercise[Un titre]`, the exercise, then `:::`. */
 export const Exercise = makeEnvironment('exercise')
+/** A remark, in a box. In MDX: `:::remark`, the remark, then `:::`. */
 export const Remark = makeEnvironment('remark')
+/** A question to the reader, in a box. In MDX: `:::question`, the question, then `:::`. */
 export const Question = makeEnvironment('question')
+/** Information, such as a tip, in a box. In MDX: `:::info[Un titre]`, the text, then `:::`. */
 export const Info = makeEnvironment('info')

@@ -37,7 +37,14 @@ import { ExerciseStats } from './stats'
 type MaybeAsync<T> = T | Promise<T>
 
 const CustomSchemas = {
+  /**
+   * `true` or `false`.
+   */
   boolean: v.boolean(),
+  /**
+   * A mathematical expression, given as LaTeX:
+   * in `grade` and `feedback`, it is an expression of `expr`, with `isEqual`, `diff`…
+   */
   expr: v.union([
     v.pipe(
       v.string(),
@@ -53,12 +60,31 @@ const CustomSchemas = {
     ),
     Expression,
   ]),
+  /**
+   * Text or JSX, such as a statement: JSX is not saved with the answers, text is.
+   */
   jsx: v.union([v.string(), omitFromJSON(v.custom<JSX.Element>(() => true))]),
+  /**
+   * Text, such as the code a student writes.
+   */
   string: v.string(),
+  /**
+   * A JavaScript number.
+   */
   number: v.number(),
 } as const
 type CustomSchemas = typeof CustomSchemas
 
+/**
+ * The schemas a step's `schema` can name with a word: `'expr'`, `'number'`, `'string'`, `'boolean'` and `'jsx'`.
+ * They can be combined with valibot's, as in `v.optional(schemas.jsx)`.
+ *
+ * @example
+ * schema: {
+ *   data: { expr: 'expr', prompt: v.optional(schemas.jsx) },
+ *   inputs: { attempt: 'expr' },
+ * }
+ */
 export const schemas = CustomSchemas
 
 type ResolveSchema<T> =
@@ -173,16 +199,52 @@ type Infer<T, U extends 'input' | 'output' = 'input'> =
     : T
 
 type StepBaseProps<D, I extends v.ObjectSchema<any, any>> = {
+  /**
+   * A name that identifies the step in saved answers, namespaced like `'math/algebra/factor'`.
+   * It is saved with every answer: never change it once students have answered.
+   */
   name?: string
+  /**
+   * Classes added to the exercise's frame.
+   */
   class?: string
+  /**
+   * The exercise's data, as the schema's `data` describes it.
+   * A function draws new data, possibly random:
+   * it is called once, and the data saved with the first answer is used afterwards.
+   */
   data: Infer<D, 'input'> | (() => MaybeAsync<Infer<D, 'input'>>)
+  /**
+   * Whether an answer is right, from the data and what the student entered.
+   * It returns a boolean, a promise of one, or a list of them, which must all be true.
+   *
+   * @example
+   * grade: (ctx) => ctx.inputs.attempt.isEqual(ctx.data.expr.diff())
+   * grade: (ctx) => [ctx.inputs.attempt.isEqual(ctx.data.expr), ctx.inputs.attempt.isFactored()]
+   */
   grade: (ctx: {
     data: Infer<NoInfer<D>, 'output'>
     inputs: v.InferOutput<NoInfer<I>>
   }) => MaybeAsync<boolean> | MaybeAsync<boolean>[]
+  /**
+   * What the student sees: the statement and the fields to answer in.
+   * `props.data` is the data, and `props.inputs` holds a field for each input, to place in the JSX.
+   * `props.state` reads and sets what has been entered, for custom fields.
+   *
+   * @example
+   * prompt: (ctx) => (
+   *   <>
+   *     <p>Calculez la dérivée de {tex`${ctx.data.f}`}.</p>
+   *     <Attempt>{tex`f'(x) =`} {ctx.inputs.attempt}</Attempt>
+   *   </>
+   * )
+   */
   prompt: (props: {
     data: Infer<NoInfer<D>, 'output'>
     inputs: { [K in keyof NoInfer<I>['entries']]: JSX.Element }
+    /**
+     * What the student entered: the saved answer, the current draft, and a function to change it.
+     */
     state: {
       saved?: v.InferInput<NoInfer<I>>
       current: Partial<v.InferInput<NoInfer<I>>>
@@ -195,21 +257,68 @@ type StepBaseProps<D, I extends v.ObjectSchema<any, any>> = {
       correct?: boolean
     }
   }) => JSX.Element
+  /**
+   * What the fields hold before the student types, from the data:
+   * for instance code to complete, as `PythonCode`'s `initialCode` does.
+   */
   initialState?: (data: Infer<NoInfer<D>, 'output'>) => Partial<v.InferInput<NoInfer<I>>>
+  /**
+   * What is shown after an answer:
+   * `props.correct` tells whether it was right.
+   * It can contain anything, other steps included, which makes the exercise a conversation:
+   * after a wrong answer, ask simpler questions, then the same one again with `props.Self`.
+   * By default, a check mark tells whether the answer was right.
+   *
+   * @example
+   * feedback: (ctx) => (
+   *   <Show when={!ctx.correct}>
+   *     <p>Commencez par factoriser le numérateur.</p>
+   *     <Factor expr={ctx.data.numerator}>
+   *       <ctx.Self />
+   *     </Factor>
+   *   </Show>
+   * )
+   */
   feedback?: (props: {
     data: Infer<NoInfer<D>, 'output'>
     inputs: v.InferOutput<NoInfer<I>>
     correct: boolean
+    /**
+     * The same question again, with the same data: place it at the end of a remediation.
+     */
     Self: Component<Partial<StepBaseProps<NoInfer<D>, I>>>
+    /**
+     * What follows the step once answered correctly, its `children`, to show it elsewhere, such as after a wrong answer.
+     */
     next: JSX.Element
   }) => JSX.Element
+  /**
+   * What follows the step, shown only once it is answered correctly:
+   * for instance the next step of a conversation.
+   * A function receives the data and the student's answer, to pass them on.
+   *
+   * @example
+   * <Root expr={ctx.data.expr}>
+   *   {(rootCtx) => <FactorFromRoot root={rootCtx.inputs.root} />}
+   * </Root>
+   */
   children?:
     | JSX.Element
     | ((props: {
         data: Infer<NoInfer<D>, 'output'>
         inputs: v.InferOutput<NoInfer<I>>
       }) => JSX.Element)
+  /**
+   * Called with the saved steps of the exercise whenever they change.
+   */
   onChange?: (exercise: Record<number, StoredStep | null | undefined>) => void
+  /**
+   * Options of the exercise, such as `allowResubmissions` or `readOnly`, or a function of the data giving them.
+   * Those of `ExerciseOptions` around it apply too.
+   *
+   * @example
+   * options={{ allowResubmissions: true, showFeedback: new Date('2026-12-15') }}
+   */
   options?: Options<'input'> | ((data: Infer<D, 'output'>) => MaybeAsync<Options<'input'>>)
 }
 
@@ -225,6 +334,11 @@ export function useExerciseContext() {
   }, {})
 }
 
+/**
+ * An exercise written in place, without a step made by `createStep`.
+ * Prefer `createStep`: a step is reusable, can be placed in other steps' feedback, and its data is typed.
+ * `id` names the exercise on its page, to save its answers.
+ */
 export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }) {
   /**
    * Retrieve data from the source of truth (localStorage or database),
@@ -580,12 +694,47 @@ export function Step<S extends StepSchema>(props: StepProps<S> & { id?: string }
   )
 }
 
+/**
+ * Creates a step: a question, its correction, and what follows each answer.
+ * Steps are the building blocks of exercises:
+ * placed in a page as a tag, its data given as attributes, and placed in other steps' `feedback` to guide a student.
+ * Answers are saved with the step's data, its `name` and what the student entered.
+ *
+ * - `schema.data` declares the data of the question, such as the polynomial to factor;
+ * - `schema.inputs` declares what the student enters, such as `{ attempt: 'expr' }`;
+ * - `prompt` shows the question, `grade` corrects it, and `feedback` says what follows each answer.
+ *
+ * The step becomes a component, whose attributes are its data, plus:
+ * `id` to save the answers (required for an exercise of its own, not inside a `Sequence`),
+ * `options`, `feedback` to replace the step's for one page, `children` for what follows a right answer, and `class`.
+ * Declare steps at module level, never inside a component.
+ *
+ * @example
+ * export const Derivative = createStep({
+ *   name: 'math/calculus/derivative',
+ *   schema: { data: { f: 'expr' }, inputs: { attempt: 'expr' } },
+ *   prompt: (ctx) => (
+ *     <>
+ *       <p>Calculez la dérivée de {tex`f(x) = ${ctx.data.f}`}.</p>
+ *       <Attempt>{tex`f'(x) =`} {ctx.inputs.attempt}</Attempt>
+ *     </>
+ *   ),
+ *   grade: (ctx) => ctx.inputs.attempt.isEqual(ctx.data.f.diff()),
+ * })
+ *
+ * // In a page:
+ * <Derivative id="derivee-1" f="x^3 - 2x" />
+ */
 export function createStep<S extends StepSchema>(step: Omit<StepProps<S>, 'data'>) {
   const StepComponent: Component<
-    { id?: string } & Pick<
-      StepProps<S>,
-      'class' | 'feedback' | 'children' | 'options' | 'onChange'
-    > &
+    {
+      /**
+       * Names the exercise on its page, to save its answers: required for an exercise of its own,
+       * not for one in a `Sequence` or in another step's feedback.
+       * Saved with the answers: never change it once students have answered.
+       */
+      id?: string
+    } & Pick<StepProps<S>, 'class' | 'feedback' | 'children' | 'options' | 'onChange'> &
       (InferShape<S['data'], 'input'> | { data: StepProps<S>['data'] })
   > = (props) => {
     const data = omit(
@@ -624,8 +773,34 @@ export function createStep<S extends StepSchema>(step: Omit<StepProps<S>, 'data'
   return Object.assign(StepComponent, { config: step })
 }
 
+/**
+ * A step made by `createStep`, to be used as a tag or in another step's feedback.
+ */
 export type StepComponent<S extends StepSchema> = ReturnType<typeof createStep<S>>
 
+/**
+ * Creates a step from an existing one, with data of its own:
+ * `transform` builds the existing step's data from the new data,
+ * and its prompt, correction and remediation are reused as they are.
+ * Use it to adapt an exercise to another context,
+ * such as asking for the value of a function at a point with the `Simple` step.
+ * `transform` must be pure: what is saved, the new data, must give the same question again.
+ *
+ * - `component`: the existing step;
+ * - `schema`: the new data;
+ * - `transform`: from the new data to the existing step's;
+ * - `patch`: props of the existing step to replace, such as `feedback`.
+ *
+ * @example
+ * export const Evaluation = createDerivedStep(Simple, { f: 'expr', a: 'expr' }, (data) => ({
+ *   prompt: <p>Calculez {tex`f(${data.a})`} pour {tex`f(x) = ${data.f}`}.</p>,
+ *   label: tex`f(${data.a}) =`,
+ *   grade: (attempt) => data.f.subs({ x: data.a }).isEqual(attempt),
+ * }))
+ *
+ * // In a page:
+ * <Evaluation id="valeur" f="x^2 + 1" a="3" />
+ */
 export function createDerivedStep<R extends Shape, S extends StepSchema>(
   component: StepComponent<S>,
   schema: R,

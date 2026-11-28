@@ -115,12 +115,23 @@ type MultipleChoiceProps<K extends string> = Omit<
   ComponentProps<typeof _MultipleChoice>,
   'prompt' | 'choices' | 'answer' | 'grade' | 'shuffle'
 > & {
+  /** The statement. */
   prompt: JSX.Element
+  /** The choices, each named by a key, and shown as text or JSX, such as `{ A: 'Oui', B: 'Non' }`. */
   choices: Options<K>
+  /** Whether to mix the choices, in the same order on every visit. */
   shuffle?: boolean
 } & (
-    | { answer: K | K[]; grade?: undefined }
-    | { answer?: undefined; grade: (sel: SpecialSet<K>) => boolean }
+    | {
+        /** The key of the right choice, or the keys of all right choices. */
+        answer: K | K[]
+        grade?: undefined
+      }
+    | {
+        answer?: undefined
+        /** Whether the selection, a set of keys with `equals`, is right, for a correction `answer` can't express. */
+        grade: (sel: SpecialSet<K>) => boolean
+      }
   )
 
 interface MultipleChoiceComponent extends Pick<typeof _MultipleChoice, 'config'> {
@@ -130,8 +141,21 @@ interface MultipleChoiceComponent extends Pick<typeof _MultipleChoice, 'config'>
 
 /**
  * A multiple choice question.
+ * `choices` names each choice with a key, and `answer` gives the right key:
+ * a single key shows radio buttons, a list shows checkboxes, all of which must be ticked.
+ * `shuffle` mixes the choices, in the same order on every visit.
+ * Prefer `answer` over `grade`: tests can check the answer without rendering.
  *
- * Prefer `answer` over `grade`: a single key renders radio buttons,
- * and tests can check the answer without rendering.
+ * @example
+ * <MultipleChoice
+ *   id="derivee"
+ *   prompt={<p>Quelle fonction est égale à sa dérivée ?</p>}
+ *   choices={{ A: tex`x^2`, B: tex`e^x`, C: tex`\ln x` }}
+ *   answer="B"
+ *   shuffle
+ * />
+ * // Several right choices, as checkboxes:
+ * <MultipleChoice id="paires" prompt={<p>Lesquelles sont paires ?</p>}
+ *   choices={{ a: tex`x^2`, b: tex`x^3`, c: tex`\cos x` }} answer={['a', 'c']} />
  */
 export const MultipleChoice = _MultipleChoice as unknown as MultipleChoiceComponent

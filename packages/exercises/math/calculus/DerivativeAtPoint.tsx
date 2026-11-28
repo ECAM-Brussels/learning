@@ -4,8 +4,24 @@ import { Show } from 'solid-js'
 import { Simple } from '../Simple'
 import { Derivative } from './Derivative'
 
+/**
+ * Asks for the value of a function's derivative at a point.
+ * After a wrong answer, the student is guided:
+ * compute the derivative, then its value at the point.
+ *
+ * @example
+ * <DerivativeAtPoint id="derivee-en-2" f="x^3" x="2" />
+ */
 export const DerivativeAtPoint = createStep({
-  schema: { data: { f: 'expr', x: 'expr' }, inputs: { attempt: 'expr' } },
+  schema: {
+    data: {
+      /** The function of `x`, in LaTeX. */
+      f: 'expr',
+      /** The point, in LaTeX, such as `'2'` or `'\\pi'`. */
+      x: 'expr',
+    },
+    inputs: { attempt: 'expr' },
+  },
   prompt: (ctx) => (
     <>
       <p>

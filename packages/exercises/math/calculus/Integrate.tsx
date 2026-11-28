@@ -4,10 +4,22 @@ import { allKeyed } from 'es-toolkit'
 import { createMemo, Match, Switch } from 'solid-js'
 import { Derivative } from './Derivative'
 
+/**
+ * Asks for the antiderivatives of a function of `x`.
+ * The answer must have the function as derivative and a constant, such as `+ C`:
+ * without it, the student is asked whether it is the only solution.
+ * After another wrong answer, the student is asked to differentiate their answer, then to try again.
+ *
+ * @example
+ * <Antiderivative id="primitive" expr="3x^2 + 2x" />
+ */
 export const Antiderivative = createStep({
   name: 'math/calculus/antiderivative',
   schema: {
-    data: { expr: 'expr' },
+    data: {
+      /** The function of `x` to integrate, in LaTeX. */
+      expr: 'expr',
+    },
     inputs: { attempt: 'expr' },
   },
   prompt: (ctx) => (
@@ -57,10 +69,25 @@ export const Antiderivative = createStep({
   },
 })
 
+/**
+ * Asks for a definite integral.
+ * After a wrong answer, the student is guided through `Antiderivative`, whose remediation follows, then asked again:
+ * three levels of help, without writing any.
+ *
+ * @example
+ * <Integrate id="integrale" expr="3x^2 + 2x" low="0" high="2" />
+ */
 export const Integrate = createStep({
   name: 'math/calculus/integrate',
   schema: {
-    data: { expr: 'expr', low: 'expr', high: 'expr' },
+    data: {
+      /** The function of `x` to integrate, in LaTeX. */
+      expr: 'expr',
+      /** The lower bound, in LaTeX. */
+      low: 'expr',
+      /** The upper bound, in LaTeX. */
+      high: 'expr',
+    },
     inputs: { attempt: 'expr' },
   },
   prompt: (ctx) => (

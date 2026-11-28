@@ -8,6 +8,7 @@ export type Lang = 'fr' | 'en'
 type Crumb = { href: PathEnd | string; title: string }
 
 type Meta = {
+  /** The page's title, shown in the browser tab and the breadcrumbs, and on a presentation's title slide. */
   title: string
   /** The current page if omitted. */
   href?: PathEnd | string
@@ -15,6 +16,7 @@ type Meta = {
   prefix?: string
   /** Inherited by the levels inside; French if no level sets it. */
   lang?: Lang
+  /** Whether the reader may see the page, such as a test before its date: everyone if omitted. */
   authorized?: () => boolean | Promise<boolean>
   /** Shown with the title on a presentation's title slide, like the next three. */
   subtitle?: string
@@ -79,6 +81,19 @@ export function Meta(props: Meta & { children: JSX.Element }) {
   )
 }
 
+/**
+ * The page's metadata, exported by default at the top of an MDX page:
+ * its title, and what a presentation's title slide shows, such as `author` and `date`.
+ *
+ * @example
+ * import { defineMeta } from '@learning/components'
+ *
+ * export default defineMeta({
+ *   title: 'Les dérivées',
+ *   author: 'Prénom Nom',
+ *   date: 'Novembre 2026',
+ * })
+ */
 export function defineMeta(meta: Meta) {
   return (props: { children: JSX.Element }) => {
     return <Meta {...meta} {...props} />

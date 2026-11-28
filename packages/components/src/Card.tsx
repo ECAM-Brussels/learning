@@ -1,6 +1,12 @@
 import { type PathEnd } from '@solidjs/router'
 import { type JSX } from '@solidjs/web'
 
+/**
+ * A card linking to a page, with an image, such as on a course's home page.
+ *
+ * @example
+ * <Card image="/images/derivees.png" href="/MA1M/derivees">Les dérivées</Card>
+ */
 export function Card(props: { image: string; href: string | PathEnd; children: JSX.Element }) {
   return (
     <a class="not-prose" href={props.href}>

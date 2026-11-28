@@ -12,12 +12,24 @@ const translations = {
   undefined: '',
 } as const
 
+/**
+ * Asks to compute a difference quotient with Python:
+ * forward, backward or central, for a function, a point and a step.
+ * Once right, the theoretical derivative is asked, with `DerivativeAtPoint`.
+ *
+ * @example
+ * <DifferentialQuotient id="quotient" f="\sin x" x="1" h="0.01" type="central" />
+ */
 export const DifferentialQuotient = createDerivedStep(
   PythonCode,
   {
+    /** The function of `x`, in LaTeX. */
     f: 'expr',
+    /** The point, in LaTeX. */
     x: 'expr',
+    /** The step, in LaTeX. */
     h: 'expr',
+    /** `'forward'` (the default), `'backward'` or `'central'`. */
     type: v.optional(v.union([v.literal('forward'), v.literal('backward'), v.literal('central')])),
   },
   (props) => ({
