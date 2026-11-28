@@ -245,7 +245,8 @@ export const Calculator = createDerivedStep(
   (props) => ({
     prompt: props.children ?? <p>Utilisez Python pour calculer {tex`${props.prompt}`}</p>,
     tests: (expect) => ({
-      'Résultat final': expect.result().toBe(props.answer),
+      // The very float Python computes: the exercise is about how floats are rounded.
+      'Résultat final': expect.result().toBe(props.answer, 0),
     }),
   }),
   {

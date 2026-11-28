@@ -148,15 +148,39 @@ describe('math', () => {
 describe('expect', () => {
   const square = 'def carre(x):\n    return x * x'
 
-  test('toReturn compares the value: True is true, 4.0 is 4, and 0.1 + 0.2 is 0.3', async () => {
+  test('toReturn compares the value: True is true, numbers up to a relative error of 1e-9', async () => {
     const check = python.expect(square)
     expect(await check.with('carre(3)').toReturn(9)()).toBe(true)
     expect(await check.with('carre(2.0)').toReturn(4)()).toBe(true)
     expect(await check.with('carre(3)').toReturn(10)()).toBe(false)
     expect(await check.with('carre(2) == 4').toReturn(true)()).toBe(true)
     expect(await python.expect('0.1 + 0.2').toReturn(0.3)()).toBe(true)
+    expect(await python.expect('1e-17').toReturn(0)()).toBe(false)
     expect(await python.expect('"bonjour"').toReturn("'bonjour'")()).toBe(false)
     expect(await python.expect('"bonjour"').toReturn('bonjour')()).toBe(true)
+  })
+
+  test('an error given is absolute: within it, a number is the expected one', async () => {
+    expect(await python.expect('3.14').toReturn(Math.PI, 0.01)()).toBe(true)
+    expect(await python.expect('3.1').toReturn(Math.PI, 0.01)()).toBe(false)
+  })
+
+  // As in the Calculator exercise of MN1M/01-python, which teaches how floats are rounded.
+  test('with an error of 0, a float is the one Python computes, not the number it should be', async () => {
+    const answer = (code: string, expected: number) =>
+      python.expect(code).result().toBe(expected, 0)()
+    expect(await answer('0.1 * 0.1', 0.1 * 0.1)).toBe(true)
+    expect(await answer('0.01', 0.1 * 0.1)).toBe(false)
+    expect(await answer('0.1 + 0.1 + 0.1 - 0.3', 0.1 + 0.1 + 0.1 - 0.3)).toBe(true)
+    expect(await answer('0', 0.1 + 0.1 + 0.1 - 0.3)).toBe(false)
+    expect(await answer('5 ** (1 / 3)', 5 ** (1 / 3))).toBe(true)
+    // By default, the rounding Python does is forgiven.
+    expect(
+      await python
+        .expect('0.01')
+        .result()
+        .toBe(0.1 * 0.1)(),
+    ).toBe(true)
   })
 
   test('stdout and toPrint check what was printed, not the result', async () => {
@@ -220,6 +244,9 @@ describe('expect', () => {
     expect(await python.expect(student).result().toEqualThatOf('2 ** 0.5')()).toBe(true)
     expect(await python.expect('1.4142').result().toEqualThatOf('2 ** 0.5', 1e-3)()).toBe(true)
     expect(await python.expect('1.4142').result().toEqualThatOf('2 ** 0.5', 1e-6)()).toBe(false)
+    expect(await python.expect('0.1 + 0.2').result().toEqualThatOf('0.3')()).toBe(true)
+    expect(await python.expect('0.1 + 0.2').result().toEqualThatOf('0.3', 0)()).toBe(false)
+    expect(await python.expect('[1, 2]').result().toEqualThatOf('[1, 2]')()).toBe(true)
   })
 
   test('matplotlib checks read the figure the code drew', async () => {

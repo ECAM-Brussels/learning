@@ -51,18 +51,19 @@ Le **résultat** est la valeur de la dernière ligne du code,
 comme dans une calculatrice ;
 ce qui est **affiché** est ce qu'écrit `print`.
 
-| Vérification                                                      | Vrai si…                                                      |
-| ----------------------------------------------------------------- | ------------------------------------------------------------- |
-| `expect.result().toBe(42)`                                        | Le résultat vaut `42`                                         |
-| `expect.result().toEqualThatOf('import numpy as np\nnp.sqrt(2)')` | Le résultat est celui du code donné                           |
-| `expect.result().toEqualThatOf(code, 1e-6)`                       | Le résultat est celui du code donné, à `1e-6` près            |
-| `expect.with('f(2)').toReturn(4)`                                 | Après le code de l'étudiant·e, `f(2)` vaut `4`                |
-| `expect.output().toEqualThatOf('2 * 21')`                         | Le résultat, ou ce qui est affiché, est celui du code donné   |
-| `expect.stdout().toBe('Bonjour')`                                 | Le code affiche `Bonjour`                                     |
-| `expect.stdout().toMatch(/bonjour/i)`                             | Ce qui est affiché contient « bonjour », en majuscules ou non |
-| `expect.code.toMatch(/for /)`                                     | Le code contient une boucle `for`                             |
-| `expect.code.not.toMatch(/linalg/)`                               | Le code n'utilise pas `linalg`                                |
-| `expect.not().toError()`                                          | Le code s'exécute sans erreur                                 |
+| Vérification                                                      | Vrai si…                                                                     |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `expect.result().toBe(42)`                                        | Le résultat vaut `42`                                                        |
+| `expect.result().toBe(0.1 * 0.1, 0)`                              | Le résultat est exactement le nombre que Python calcule pour $0.1 \cdot 0.1$ |
+| `expect.result().toEqualThatOf('import numpy as np\nnp.sqrt(2)')` | Le résultat est celui du code donné                                          |
+| `expect.result().toEqualThatOf(code, 1e-6)`                       | Le résultat est celui du code donné, à `1e-6` près                           |
+| `expect.with('f(2)').toReturn(4)`                                 | Après le code de l'étudiant·e, `f(2)` vaut `4`                               |
+| `expect.output().toEqualThatOf('2 * 21')`                         | Le résultat, ou ce qui est affiché, est celui du code donné                  |
+| `expect.stdout().toBe('Bonjour')`                                 | Le code affiche `Bonjour`                                                    |
+| `expect.stdout().toMatch(/bonjour/i)`                             | Ce qui est affiché contient « bonjour », en majuscules ou non                |
+| `expect.code.toMatch(/for /)`                                     | Le code contient une boucle `for`                                            |
+| `expect.code.not.toMatch(/linalg/)`                               | Le code n'utilise pas `linalg`                                               |
+| `expect.not().toError()`                                          | Le code s'exécute sans erreur                                                |
 
 `output()` accepte la réponse renvoyée comme la réponse affichée,
 même après d'autres lignes :
@@ -70,13 +71,17 @@ les étudiant·es affichent souvent leur réponse avec `print` au lieu de la don
 Préférez-le à `result()`,
 sauf si l'exercice porte justement sur la valeur renvoyée.
 
+Les nombres sont comparés à une erreur relative de `1e-9` près, comme le fait `math.isclose` en Python :
+`0.1 + 0.2` vaut donc `0.3`.
+Une erreur donnée en second argument est absolue,
+comme dans `toBe(3.14, 0.01)` ou `toEqualThatOf(code, 1e-6)` ;
+une erreur de `0` exige le nombre exact,
+par exemple pour montrer que `0.1 * 0.1` ne vaut pas `0.01` en Python.
+
 `toEqualThatOf` est le plus pratique :
 au lieu de calculer la réponse vous-même, écrivez le code qui la calcule.
 Le texte entre barres obliques, comme `/for /`, est un motif de recherche :
 `i` à la fin ignore les majuscules.
-Un nombre attendu, comme dans `toReturn(0.3)`, est comparé à l'arrondi près :
-`0.1 + 0.2` convient,
-même si Python l'écrit `0.30000000000000004`.
 
 ## Les graphiques
 

@@ -26,15 +26,23 @@ function candidates(out: FinalOutput, source: Source): string[] {
 }
 
 /**
- * Whether Python's text for a value is the expected value:
- * `True` is `true`, and `4.0` is `4`, up to rounding (`0.1 + 0.2` is `0.3`).
+ * Whether two numbers are equal within `error`, or by default up to a relative error of 1e-9,
+ * as Python's `math.isclose`: `0.1 + 0.2` is `0.3`, but `0` isn't `1e-17`.
+ * `error = 0` asks for the very float, as when an exercise teaches how floats are rounded.
  */
-function same(out: string, expected: string | number | boolean) {
+function close(a: number, b: number, error?: number) {
+  if (a === b) return true
+  const gap = Math.abs(a - b)
+  return error === undefined ? gap <= 1e-9 * Math.max(Math.abs(a), Math.abs(b)) : gap <= error
+}
+
+/** The number a text is, or NaN: `Number('')` would be 0. */
+const toNumber = (text: string) => (text.trim() === '' ? Number.NaN : Number(text))
+
+/** Whether Python's text for a value is the expected value: `True` is `true`, numbers are `close`. */
+function same(out: string, expected: string | number | boolean, error?: number) {
   if (typeof expected === 'boolean') return out.toLowerCase() === String(expected)
-  if (typeof expected === 'number') {
-    const value = Number(out)
-    return out !== '' && Math.abs(value - expected) <= 1e-9 * Math.max(1, Math.abs(expected))
-  }
+  if (typeof expected === 'number') return close(toNumber(out), expected, error)
   return out === expected.trim()
 }
 
@@ -73,16 +81,18 @@ export function createPython(transport: Transport<Options>) {
               model: run(modelAnswer),
             })
             const expected = (candidates(model, source)[0] ?? '').trim()
-            const equal = (value: string) =>
-              error === undefined
-                ? value.trim() === expected
-                : Math.abs(Number.parseFloat(value) - Number.parseFloat(expected)) <= error
+            const equal = (value: string) => {
+              const [x, y] = [toNumber(value), toNumber(expected)]
+              if (!Number.isNaN(x) && !Number.isNaN(y)) return close(x, y, error)
+              return value.trim() === expected
+            }
             return candidates(student, source).some(equal) === !negate
           }
         },
-        toBe: (expected: T) => async () => {
+        /** `error` is how far a number may be from `expected`; see `close`. */
+        toBe: (expected: T, error?: number) => async () => {
           const values = candidates(await run(code), source)
-          return values.some((value) => same(value.trim(), expected)) === !negate
+          return values.some((value) => same(value.trim(), expected, error)) === !negate
         },
         // No error is an empty one: `not().error().toMatch(…)` then holds.
         toMatch: (regex: RegExp) => async () => {
@@ -218,8 +228,8 @@ export function createPython(transport: Transport<Options>) {
         return (res.error !== undefined) !== negate
       },
       toPrint: (expected: string | boolean | number) => expect(code, state).stdout().toBe(expected),
-      toReturn: (expected: string | boolean | number) =>
-        expect(code, state).result().toBe(expected),
+      toReturn: (expected: string | boolean | number, error?: number) =>
+        expect(code, state).result().toBe(expected, error),
       toSatisfy: (check: (code: string) => boolean | Promise<boolean>) =>
         expect(code, state).result().toSatisfy(check),
       with: (t: string) => expect(`${code}\n${t}`, state),
