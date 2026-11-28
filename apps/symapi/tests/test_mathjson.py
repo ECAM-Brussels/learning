@@ -3,7 +3,7 @@ import pytest
 import sympy
 from sympy import E, I, Integer, Rational, S, pi
 
-from mathjson import Expression, Num, parse_expr
+from mathjson import Expression, Num, parse_expr, to_mathjson
 
 x, y = sympy.symbols("x y", real=True)
 
@@ -304,3 +304,48 @@ class TestExpressionModel:
     def test_rejects_values_that_are_not_mathjson(self):
         with pytest.raises(pydantic.ValidationError):
             Expression.model_validate({"a": 1})
+
+
+class TestToMathJSON:
+    @pytest.mark.parametrize(
+        "expr, json",
+        [
+            (Integer(3), 3),
+            (Rational(-1, 2), ["Rational", -1, 2]),
+            (Integer(2**60), Num(num=str(2**60))),
+            (pi, "Pi"),
+            (E, "ExponentialE"),
+            (I, "ImaginaryUnit"),
+            (-sympy.oo, "NegativeInfinity"),
+            (sympy.true, "True"),
+            (sympy.exp(x), ["Power", "ExponentialE", "x"]),
+            (sympy.log(x), ["Ln", "x"]),
+            (sympy.asin(x), ["Arcsin", "x"]),
+            (sympy.Eq(x, 2), ["Equal", "x", 2]),
+            (sympy.Lt(x, 2), ["Less", "x", 2]),
+            (sympy.Interval.Lopen(0, 1), ["Interval", ["Open", 0], 1]),
+            (sympy.FiniteSet(1, 2), ["Set", 1, 2]),
+        ],
+    )
+    def test_atoms_and_functions(self, expr, json):
+        assert to_mathjson(expr) == json
+
+    def test_one_is_not_true(self):
+        assert to_mathjson(Integer(1)) == 1
+
+    @pytest.mark.parametrize(
+        "expr",
+        [
+            x**2 - 5 * x + 6,
+            sympy.sqrt(2) * x / 3,
+            sympy.sin(x) ** 2 + sympy.cos(y) - pi / 4,
+            sympy.Abs(x - 1) + sympy.factorial(5) - sympy.Mod(x, 3),
+            (x + I) * sympy.exp(-I * pi / 3),
+        ],
+    )
+    def test_round_trips_through_parse_expr(self, expr):
+        assert equal(parse_expr(to_mathjson(expr)), expr)
+
+    def test_rejects_what_has_no_mathjson(self):
+        with pytest.raises(ValueError, match="No MathJSON for Integral"):
+            to_mathjson(sympy.Integral(x**x, x))
