@@ -143,7 +143,7 @@ const Optimisation = createDerivedStep(
           .leq(props.error)
           .then((ok) => ok === true),
       ),
-      'Le code emploie une boucle while': expect.code.toMatch(/while/),
+      'Le code emploie une boucle while': expect.code.toUse('while'),
       'Le code emploie la dérivée première': expect.code.toMatch(/epsilon/),
       'Le code emploie .dual pour dériver': expect.code.toMatch(/\.dual/),
       ...(props.method === 'newton'
@@ -348,8 +348,8 @@ const Maclaurin = createDerivedStep(
       "L'axe x est nommé": expect.matplotlib.xLabel().toMatch(/x/),
       "L'axe y est nommé": expect.matplotlib.yLabel().toMatch(/y/),
       'Le code emploie la fonction sum': expect.code.toMatch(/sum\(/),
-      'Le code emploie des nombres duaux': expect.code.toMatch(/eps\(/),
-      'Le code utilise la factorielle': expect.code.toMatch(/factorial\(/),
+      'Le code emploie des nombres duaux': expect.code.toCall('eps'),
+      'Le code utilise la factorielle': expect.code.toCall('math.factorial'),
       'Le graphe de f est tracé': expect.matplotlib.plot(props.f, props.I[0], props.I[1]),
       ...Object.fromEntries(
         props.N.map((m) => [

@@ -141,7 +141,7 @@ export const PartitionSequence = () => {
           </p>
         }
         tests={(expect) => ({
-          'Le vecteur donné est correct': expect.result().toEqualThatOf(dedent /* python */ `
+          'Le vecteur donné est correct': expect.output().toEqualThatOf(dedent /* python */ `
             import numpy as np
             x = np.linspace(-2, 2, 51)
             (x[:-1] + x[1:]) / 2
@@ -156,7 +156,7 @@ export const PartitionSequence = () => {
           </p>
         }
         tests={(expect) => ({
-          'Le vecteur donné est correct': expect.result().toEqualThatOf(dedent /* python */ `
+          'Le vecteur donné est correct': expect.output().toEqualThatOf(dedent /* python */ `
             import numpy as np
             x = np.linspace(-3, 1, 71)
             x[1:]
@@ -171,7 +171,7 @@ export const PartitionSequence = () => {
           </p>
         }
         tests={(expect) => ({
-          'Le vecteur donné est correct': expect.result().toEqualThatOf(dedent /* python */ `
+          'Le vecteur donné est correct': expect.output().toEqualThatOf(dedent /* python */ `
             import numpy as np
 
             (2 * np.pi) / 40
@@ -212,7 +212,7 @@ export const NumericalIntegral = createDerivedStep(
     tests: (expect) => ({
       'Contient "sum"': expect.code.toMatch(/sum/),
       'Contient "linspace"': expect.code.toMatch(/linspace/),
-      'Le résultat est correct': expect.result().toEqualThatOf(
+      'Le résultat est correct': expect.output().toEqualThatOf(
         dedent /* python */ `
         import numpy as np
 

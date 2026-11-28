@@ -1,52 +1,20 @@
-import dedent from 'dedent'
-import { allKeyed } from 'es-toolkit'
-import type { Expression } from '../../core'
 import { createWorkerTransport, stream } from '../transport'
 import type { FinalOutput, Transport } from '../types'
+import { createExpect } from './expect'
 
 export type Options = {
   /** Adds NumPy and dual numbers, and shows LaTeX results and Matplotlib figures. */
   math?: boolean
-  /** Run by a check: figures are left for the check to read. */
+  /** Run by a check: figures are left for the check to read, and the checks are loaded. */
   test?: boolean
-}
-
-type Source = 'result' | 'stdout' | 'error' | 'output'
-
-/**
- * The values a check reads.
- * For `output`, any of the result, everything printed, and the last line printed, whichever there is.
- */
-function candidates(out: FinalOutput, source: Source): string[] {
-  if (source !== 'output') return [out[source] ?? '']
-  const printed = out.stdout?.trim() ?? ''
-  return [out.result ?? '', printed, printed.split('\n').at(-1) ?? ''].filter(
-    (value) => value.trim() !== '',
-  )
-}
-
-/**
- * Whether two numbers are equal within `error`, or by default up to a relative error of 1e-9,
- * as Python's `math.isclose`: `0.1 + 0.2` is `0.3`, but `0` isn't `1e-17`.
- * `error = 0` asks for the very float, as when an exercise teaches how floats are rounded.
- */
-function close(a: number, b: number, error?: number) {
-  if (a === b) return true
-  const gap = Math.abs(a - b)
-  return error === undefined ? gap <= 1e-9 * Math.max(Math.abs(a), Math.abs(b)) : gap <= error
-}
-
-/** An error only goes with a number: `toBe(42, 0.01)` compiles, `toBe('bonjour', 0.01)` doesn't. */
-type ErrorFor<E> = E extends number ? [error?: number] : []
-
-/** The number a text is, or NaN: `Number('')` would be 0. */
-const toNumber = (text: string) => (text.trim() === '' ? Number.NaN : Number(text))
-
-/** Whether Python's text for a value is the expected value: `True` is `true`, numbers are `close`. */
-function same(out: string, expected: string | number | boolean, error?: number) {
-  if (typeof expected === 'boolean') return out.toLowerCase() === String(expected)
-  if (typeof expected === 'number') return close(toNumber(out), expected, error)
-  return out === expected.trim()
+  /** The lines `input()` reads, in order. */
+  stdin?: string[]
+  /** Seconds the code may run before it is stopped, 10 by default. */
+  timeout?: number
+  /** For a check, the student's code that `code` runs: errors point to its lines. */
+  source?: string
+  /** For a check, other code it runs, whose imports are loaded too. */
+  imports?: string
 }
 
 /** The Python API, running code through `transport`: the page's worker, or Pyodide itself in tests. */
@@ -70,185 +38,19 @@ export function createPython(transport: Transport<Options>) {
     return { ...out, passed: await check(out) }
   }
 
-  function expect(code: string, state: { negate?: boolean; math?: boolean } = {}) {
-    const { negate } = state
-    function getMethods<T extends string | number | boolean = string | number | boolean>(
-      source: Source,
-    ) {
-      const run = (code: string) => output(code, { math: state.math ?? false, test: true })
-      return {
-        toEqualThatOf(modelAnswer: string, error?: number) {
-          return async () => {
-            const { student, model } = await allKeyed({
-              student: run(code),
-              model: run(modelAnswer),
-            })
-            const expected = (candidates(model, source)[0] ?? '').trim()
-            const equal = (value: string) => {
-              const [x, y] = [toNumber(value), toNumber(expected)]
-              if (!Number.isNaN(x) && !Number.isNaN(y)) return close(x, y, error)
-              return value.trim() === expected
-            }
-            return candidates(student, source).some(equal) === !negate
-          }
-        },
-        /** `error` is how far a number may be from `expected`; see `close`. */
-        toBe:
-          <E extends T>(expected: E, ...[error]: ErrorFor<E>) =>
-          async () => {
-            const values = candidates(await run(code), source)
-            return values.some((value) => same(value.trim(), expected, error)) === !negate
-          },
-        // No error is an empty one: `not().error().toMatch(…)` then holds.
-        toMatch: (regex: RegExp) => async () => {
-          const values = candidates(await run(code), source)
-          return values.some((value) => regex.test(value)) === !negate
-        },
-        toSatisfy: (check: (result: string) => boolean | Promise<boolean>) => async () => {
-          const values = candidates(await run(code), source)
-          const results = await Promise.all(values.map(check))
-          return results.some(Boolean) === !negate
-        },
-      }
-    }
-    return {
-      code: {
-        toMatch: (regex: RegExp) => () => regex.test(code) === !negate,
-        toSatisfy: (check: (code: string) => boolean) => () => check(code) === !negate,
-        not: {
-          toMatch: (regex: RegExp) => () => regex.test(code) === (negate ?? false),
-          toSatisfy: (check: (code: string) => boolean) => () => check(code) === (negate ?? false),
-        },
-      },
-      error: <T extends string | number | boolean>() => getMethods<T>('error'),
-      /** The result, or what was printed: students often print their answer rather than return it. */
-      output: <T extends string | number | boolean>() => getMethods<T>('output'),
-      matplotlib: {
-        grid: () =>
-          expect(code, state)
-            .with(
-              dedent /* python */ `
-              import matplotlib.pyplot as plt
-              ax = plt.gcf().axes[0]
-              x = any(line.get_visible() for line in ax.get_xgridlines())
-              y = any(line.get_visible() for line in ax.get_ygridlines())
-              plt.close("all")
-              x and y
-            `,
-            )
-            .result<boolean>()
-            .toBe(true),
-        lineCount: () =>
-          expect(code, state)
-            .with(
-              dedent /* python */ `
-              import matplotlib.pyplot as plt
-              ax = plt.gcf().axes[0]
-              plt.close("all")
-              len(ax.get_lines())
-            `,
-            )
-            .result<number>(),
-        plot: (fn: string | Expression<'output'>, a: number, b: number, n: number = 40) => {
-          return async () => {
-            const fnCode = typeof fn === 'string' ? fn : await fn.python(true)
-            return expect(code, state)
-              .with(
-                dedent /* python */ `
-              import matplotlib.pyplot as plt
-              import numpy as np
-              ax = plt.gcf().axes[0]
-              result = False
-
-              for line in ax.get_lines():
-                x = np.array(line.get_xdata())
-                y = np.array(line.get_ydata())
-                checks = [
-                  bool(x[0] == ${a} and x[-1] == ${b}),
-                  len(x) > ${n},
-                  np.allclose(y, ${fnCode}),
-                ]
-                print("Checks:", checks)
-                if all(checks):
-                  result = True
-                  break
-
-              plt.close("all")
-              result
-            `,
-              )
-              .toReturn(true)()
-          }
-        },
-        sameScale: () =>
-          expect(code, state)
-            .with(
-              dedent /* python */ `
-              import matplotlib.pyplot as plt
-              ax = plt.gcf().axes[0]
-              plt.close('all')
-              ax.get_aspect() == 1
-            `,
-            )
-            .result<boolean>(),
-        title: () =>
-          expect(code, state)
-            .with(
-              dedent /* python */ `
-              import matplotlib.pyplot as plt
-              ax = plt.gcf().axes[0]
-              plt.close('all')
-              ax.get_title()
-            `,
-            )
-            .result<string>(),
-        xLabel: () =>
-          expect(code, state)
-            .with(
-              dedent /* python */ `
-              import matplotlib.pyplot as plt
-              ax = plt.gcf().axes[0]
-              plt.close('all')
-              ax.get_xlabel()
-            `,
-            )
-            .result<string>(),
-        yLabel: () =>
-          expect(code, state)
-            .with(
-              dedent /* python */ `
-              import matplotlib.pyplot as plt
-              ax = plt.gcf().axes[0]
-              plt.close('all')
-              ax.get_ylabel()
-            `,
-            )
-            .result<string>(),
-      },
-      not: () => expect(code, { ...state, negate: !negate }),
-      result: <T extends string | number | boolean>() => getMethods<T>('result'),
-      stdout: <T extends string | number | boolean>() => getMethods<T>('stdout'),
-      toError: () => async () => {
-        const res = await output(code, { math: state.math ?? false, test: true })
-        return (res.error !== undefined) !== negate
-      },
-      toPrint: (expected: string | boolean | number) => expect(code, state).stdout().toBe(expected),
-      toReturn: <E extends string | boolean | number>(expected: E, ...error: ErrorFor<E>) =>
-        expect(code, state)
-          .result<E>()
-          .toBe(expected, ...error),
-      toSatisfy: (check: (code: string) => boolean | Promise<boolean>) =>
-        expect(code, state).result().toSatisfy(check),
-      with: (t: string) => expect(`${code}\n${t}`, state),
-    }
-  }
+  const expect = createExpect(output)
 
   return { expect, run, test: runPythonTest, output }
 }
 
 /** Runs the code in a Web Worker, where Pyodide doesn't freeze the page. */
 export const python = createPython(
-  createWorkerTransport(
+  createWorkerTransport<Options>(
     () => new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' }),
+    {
+      timeout: (input) => (input.options?.timeout ?? 10) * 1000,
+      timeoutError: (milliseconds) =>
+        `Le code a été arrêté après ${milliseconds / 1000} secondes\u00a0: contient-il une boucle infinie\u202f?`,
+    },
   ),
 )

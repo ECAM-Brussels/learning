@@ -69,7 +69,7 @@ const DiffAtPoint = createDerivedStep(
       'Epsilon est utilisé': expect.code.toMatch(/epsilon/),
       '`.dual` est utilisé': expect.code.toMatch(/\.dual/),
       "Le code s'execute sans erreur": expect.not().toError(),
-      'Le résultat final est correct': expect.result().toEqualThatOf(dedent /*python */ `
+      'Le résultat final est correct': expect.output().toEqualThatOf(dedent /*python */ `
         import numpy as np
 
         def f(x):
@@ -334,13 +334,13 @@ export const NewtonRaphson = createDerivedStep(
       'Le code utilise la dérivation automatique': expect.code.toMatch(/\.dual/),
       ...(props.loop && props.n > 1
         ? {
-            'Le code utilise une boucle': expect.code.toMatch(/^for /m),
+            'Le code utilise une boucle': expect.code.toUse('for'),
             "Le nombre d'itérations est correct": expect.code.toMatch(
               new RegExp(`range\\(${props.n}\\)`),
             ),
           }
         : {}),
-      'Le résultat final est correct': expect.result().toEqualThatOf(dedent /*python */ `
+      'Le résultat final est correct': expect.output().toEqualThatOf(dedent /*python */ `
         import numpy as np
 
         def f(x):

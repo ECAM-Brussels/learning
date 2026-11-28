@@ -37,9 +37,15 @@ Ask the teacher for whatever the request leaves out.
    `generate` draws only from the `random` it receives; `render` is pure;
    with `MultipleChoice`, return `answer` rather than `grade`.
 4. **Python**: a `PythonCode` step, or one derived from it,
-   tested with `tests={(expect) => ({ 'description': expect.with('f(2)').toReturn(4) })}`.
+   tested with `tests={(expect) => ({ 'description': expect.toShow(42) })}`.
+   Prefer what students can't trip on: `toShow` and `output()` accept a printed answer,
+   `function(name).toBehaveLike(model, calls)` tests a function on several inputs,
+   `code.toCall`/`toUse`/`toImport` read the syntax rather than the text,
+   and `withInput(…)` feeds `input()`.
+   The full list, for teachers, is `apps/ecam/src/routes/doc/python.mdx`.
    Never the deprecated `{ desc, test, check }` array, `Matplotlib` or `PythonFunction`.
-   A check several exercises need goes into `expect` in `packages/repl/index.ts`.
+   A check several exercises need goes into `packages/repl/python/expect.ts`,
+   with its Python side in `checks.py`.
 
 Never a function component that returns a preset step (see `AGENTS.md`).
 

@@ -3,18 +3,28 @@ import type { PyodideAPI } from 'pyodide'
 import type { Options } from '.'
 import type { Input, Output } from '../types'
 
+/** Python the runner adds to a run, each under its own name: its frames never show in a traceback. */
+export type Helpers = {
+  /** Dual numbers, for `math`. */
+  dualNumbers: string
+  /** The checks called by `expect`, for `test`. */
+  checks: string
+}
+
 /**
  * Runs Python code on one Pyodide instance, reporting each step through `post`:
  * `loading`, `importing`, `executing`, then `done` with the result, what was printed, or the error.
  * Pyodide is loaded on the first run, and again after a failed load.
  */
-export function createExecutor(load: () => Promise<PyodideAPI>, dualNumbers: string) {
+export function createExecutor(load: () => Promise<PyodideAPI>, helpers: Helpers) {
   let pyodide: Promise<PyodideAPI> | undefined
   // Runs share the interpreter: run concurrently, a student's code could see the model answer's names.
   let queue: Promise<void> = Promise.resolve()
 
   async function execute({ id, code, options }: Input<Options>, post: (output: Output) => void) {
     const output: Output = { id, status: 'done' }
+    // A check runs the student's code from within its own: imports and errors are the student's.
+    const sources = [code, options?.source, options?.imports].filter((s) => s !== undefined)
     try {
       pyodide ??= load().catch((error) => {
         pyodide = undefined
@@ -22,27 +32,44 @@ export function createExecutor(load: () => Promise<PyodideAPI>, dualNumbers: str
       })
       const py = await pyodide
       post({ id, status: 'importing' })
-      await py.loadPackagesFromImports(code)
-      if (options?.math) await py.loadPackage('numpy')
+      for (const source of sources) await py.loadPackagesFromImports(source)
+      if (options?.math || options?.test) await py.loadPackage('numpy')
       post({ id, status: 'executing' })
       py.globals.clear()
-      py.runPython(dedent`
-        import sys
-        if "matplotlib.pyplot" in sys.modules:
-            sys.modules["matplotlib.pyplot"].close("all")
-      `)
-      if (code.includes('matplotlib')) {
-        py.runPython(dedent`
-          import os
-          os.environ["MPLBACKEND"] = "AGG"
-        `)
+      const helper = (source: string, filename: string) => py.runPython(source, { filename })
+      helper(
+        dedent`
+          import sys
+          if "matplotlib.pyplot" in sys.modules:
+              sys.modules["matplotlib.pyplot"].close("all")
+        `,
+        'reset.py',
+      )
+      if (sources.some((source) => source.includes('matplotlib'))) {
+        helper('import os\nos.environ["MPLBACKEND"] = "AGG"', 'reset.py')
       }
-      if (options?.math) py.runPython(dualNumbers)
-      py.runPython(dedent`
-        import sys
-        from io import StringIO
-        sys.stdout = StringIO()
-      `)
+      if (options?.math) helper(helpers.dualNumbers, 'automatic_diff.py')
+      if (options?.test) helper(helpers.checks, 'checks.py')
+      py.globals.set('_learning_stdin', py.toPy(options?.stdin ?? []))
+      helper(
+        dedent`
+          import builtins, sys
+          from io import StringIO
+
+          def _learning_input(prompt="", _lines=list(_learning_stdin)):
+              print(prompt, end="")
+              if not _lines:
+                  raise EOFError("le programme demande plus d'entrées que celles données")
+              line = _lines.pop(0)
+              print(line)
+              return line
+
+          builtins.input = _learning_input
+          del _learning_stdin
+          sys.stdout = StringIO()
+        `,
+        'input.py',
+      )
       const result = py.runPython(code)
       try {
         output.result = String(result ?? '')
@@ -68,7 +95,7 @@ export function createExecutor(load: () => Promise<PyodideAPI>, dualNumbers: str
         result?.destroy?.()
       }
     } catch (error) {
-      output.error = formatError(error, code)
+      output.error = formatError(error, options?.source ?? code)
     } finally {
       post(output)
     }

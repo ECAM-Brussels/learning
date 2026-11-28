@@ -47,11 +47,17 @@ export const Code: Component<Props> = (rawProps) => {
   const formState = useContext(FormState)
 
   const [code, setCode] = createSignal(() => (typeof props.run === 'string' ? props.run : ''))
+  // The lines the code's `input()` reads, typed by the student: applied with the code, on ▶ in manual mode.
+  const [lines, setLines] = createSignal('', { name: 'stdin-draft' })
+  const [stdin, setStdin] = createSignal<string[]>([], { name: 'stdin' })
+  const toLines = (text: string) => (text === '' ? [] : text.replace(/\n$/, '').split('\n'))
+  const asksInput = createMemo(() => /\binput\s*\(/.test(value()), { name: 'asks-input' })
   createEffect(
-    () => [value(), props.mode] as const,
-    ([value, mode]) => {
+    () => [value(), lines(), props.mode] as const,
+    ([value, lines, mode]) => {
       if (mode === 'automatic') {
         setCode(value)
+        setStdin(toLines(lines))
       }
     },
   )
@@ -67,7 +73,10 @@ export const Code: Component<Props> = (rawProps) => {
               class="rounded-full border border-cyan-700 px-2 text-cyan-700 disabled:border-gray-200 disabled:text-gray-200"
               type="button"
               disabled={status() === 'running'}
-              onClick={() => setCode(value())}
+              onClick={() => {
+                setCode(value())
+                setStdin(toLines(lines()))
+              }}
             >
               ▶
             </button>
@@ -84,12 +93,24 @@ export const Code: Component<Props> = (rawProps) => {
             readOnly={props.readOnly ?? formState().readOnly}
           />
         </div>
+        <Show when={props.lang === 'python' && props.run && asksInput()}>
+          <label class="not-prose mt-2 block text-xs text-slate-700">
+            Entrées du programme, une par ligne
+            <textarea
+              class="mt-1 block w-full rounded-xs border border-gray-200 p-2 font-mono"
+              rows={2}
+              value={lines()}
+              onInput={(event) => setLines(event.currentTarget.value)}
+            />
+          </label>
+        </Show>
         <Show when={props.lang === 'python' && props.run}>
           <Loading on={code()}>
             <Python
               class="my-0 py-0"
               value={code()}
               math={props.math}
+              stdin={asksInput() ? stdin() : undefined}
               onChange={(output) => {
                 if (output.status === 'done') {
                   setStatus('done')

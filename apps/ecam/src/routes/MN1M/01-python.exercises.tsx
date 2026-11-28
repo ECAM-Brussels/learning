@@ -245,8 +245,8 @@ export const Calculator = createDerivedStep(
   (props) => ({
     prompt: props.children ?? <p>Utilisez Python pour calculer {tex`${props.prompt}`}</p>,
     tests: (expect) => ({
-      // The very float Python computes: the exercise is about how floats are rounded.
-      'Résultat final': expect.result().toBe(props.answer, 0),
+      // The very float Python computes, returned or printed: the exercise is about how floats are rounded.
+      'Résultat final': expect.toShow(props.answer, 0),
     }),
   }),
   {
@@ -369,7 +369,7 @@ export const Variables = createDerivedStep(
           expect.with(name).toReturn(value),
         ]),
       ),
-      'La réponse finale est correcte': expect.result().toBe(props.answer),
+      'La réponse finale est correcte': expect.toShow(props.answer),
     }),
   }),
 )
@@ -392,11 +392,11 @@ export const LinearCombination = createDerivedStep(
       </>
     ),
     tests: (expect) => ({
-      'Résultat final': expect.result().toEqualThatOf(dedent /* python */ `
+      'Résultat final': expect.output().toEqualThatOf(dedent /* python */ `
         import numpy as np
         (${props.c[0]}) * np.array([${props.v[0].join(',')}]) + (${props.c[1]}) * np.array([${props.v[1].join(',')}])
       `),
-      'numpy est importé': expect.code.toMatch(/numpy/),
+      'numpy est importé': expect.code.toImport('numpy'),
       'Le code comporte une addition ou soustraction': expect.code.toMatch(/[+-]/),
       'Le code comporte au moins deux vecteurs': expect.code.toMatch(/array[\s\S]*array/),
     }),
@@ -422,11 +422,11 @@ export const VectorProduct = createDerivedStep(
       </>
     ),
     tests: (expect) => ({
-      'Résultat final': expect.result().toEqualThatOf(dedent /* python */ `
+      'Résultat final': expect.output().toEqualThatOf(dedent /* python */ `
         import numpy as np
         np.${props.type}([${props.v[0].join(',')}], [${props.v[1].join(',')}])
       `),
-      'numpy est importé': expect.code.toMatch(/numpy/),
+      'numpy est importé': expect.code.toImport('numpy'),
       [`${props.type} ou @ est utilisé`]: expect.code.toMatch(new RegExp(`${props.type}|@`)),
     }),
   }),
@@ -453,11 +453,11 @@ export const Vectorization = createDerivedStep(
       </>
     ),
     tests: (expect) => ({
-      'Résultat final': expect.result().toEqualThatOf(dedent /* python */ `
+      'Résultat final': expect.output().toEqualThatOf(dedent /* python */ `
         import numpy as np
         np.${props.fn}([${props.x.join(',')}])
       `),
-      'numpy est importé': expect.code.toMatch(/numpy/),
+      'numpy est importé': expect.code.toImport('numpy'),
       'Le calcul est vectorisé': expect.code.toSatisfy(
         (code) => code.split(props.fn).length < props.x.length,
       ),
@@ -479,7 +479,7 @@ const Norm = createDerivedStep(PythonCode, { x: v.array(v.number()) }, (props) =
     </>
   ),
   tests: (expect) => ({
-    'Résultat final': expect.result().toEqualThatOf(dedent /* python */ `
+    'Résultat final': expect.output().toEqualThatOf(dedent /* python */ `
       import numpy as np
       np.linalg.norm([${props.x.join(',')}])
     `),
@@ -507,15 +507,15 @@ export function Review() {
           </p>
         }
         tests={(expect) => ({
-          'Résultat final': expect.result().toEqualThatOf(dedent /* python */ `
+          'Résultat final': expect.output().toEqualThatOf(dedent /* python */ `
             import numpy as np
             a = np.array([1, -2, 3])
             b = np.array([4, 5, -6])
             c = np.array([7, 8, -9])
             np.abs(np.dot(a, np.cross(b, c)))
           `),
-          'numpy est importé': expect.code.toMatch(/numpy/),
-          'cross est utilisé': expect.code.toMatch(/cross/),
+          'numpy est importé': expect.code.toImport('numpy'),
+          'cross est utilisé': expect.code.toCall('np.cross'),
           'dot ou @ est utilisé': expect.code.toMatch(/dot|@/),
         })}
       />
@@ -527,13 +527,13 @@ export function Review() {
           </p>
         }
         tests={(expect) => ({
-          'Résultat final': expect.result().toEqualThatOf(dedent /* python */ `
+          'Résultat final': expect.output().toEqualThatOf(dedent /* python */ `
             import numpy as np
             A = np.array([-1, 7, -8])
             B = np.array([4, -17, -6])
             np.linalg.norm(A - B)
           `),
-          'numpy est importé': expect.code.toMatch(/numpy/),
+          'numpy est importé': expect.code.toImport('numpy'),
         })}
       />
       <PythonCode
@@ -544,7 +544,7 @@ export function Review() {
           </p>
         }
         tests={(expect) => ({
-          'Résultat final': expect.result().toEqualThatOf(dedent /* python */ `
+          'Résultat final': expect.output().toEqualThatOf(dedent /* python */ `
             import numpy as np
             a = np.array([4, -3, 2, 9])
             b = np.array([-6, 1, 13, -4])
@@ -552,8 +552,8 @@ export function Review() {
             theta = np.arccos(cos_theta)
             np.degrees(theta)
           `),
-          'numpy est importé': expect.code.toMatch(/numpy/),
-          'arccos est utilisé': expect.code.toMatch(/arccos/),
+          'numpy est importé': expect.code.toImport('numpy'),
+          'arccos est utilisé': expect.code.toCall('np.arccos'),
         })}
       />
       <PythonCode
@@ -567,12 +567,12 @@ export function Review() {
           </p>
         }
         tests={(expect) => ({
-          'Résultat final': expect.result().toEqualThatOf(dedent /* python */ `
+          'Résultat final': expect.output().toEqualThatOf(dedent /* python */ `
             import numpy as np
             np.linalg.norm([3, -2, -4, 9])
           `),
-          'numpy est importé': expect.code.toMatch(/numpy/),
-          'sqrt est utilisé': expect.code.toMatch(/sqrt/),
+          'numpy est importé': expect.code.toImport('numpy'),
+          'sqrt est utilisé': expect.code.toCall('np.sqrt'),
           "linalg n'est pas utilisé": expect.code.not.toMatch(/linalg/),
         })}
       />
@@ -584,13 +584,13 @@ export function Review() {
           </p>
         }
         tests={(expect) => ({
-          'Résultat final': expect.result().toEqualThatOf(dedent /* python */ `
+          'Résultat final': expect.output().toEqualThatOf(dedent /* python */ `
             import numpy as np
             a = np.array([4, -3, 2, 9])
             b = np.array([-6, 1, 13, -4])
             (np.dot(a, b) / np.dot(b, b)) * b
           `),
-          'numpy est importé': expect.code.toMatch(/numpy/),
+          'numpy est importé': expect.code.toImport('numpy'),
         })}
       />
     </Sequence>

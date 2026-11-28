@@ -1,10 +1,17 @@
 import { CheckMark, Code } from '@learning/components'
 import { createStep, omitFromJSON } from '@learning/core'
-import { python } from '@learning/repl'
-import type { MaybePromise } from 'bun'
+import { python, type Check, type CheckResult } from '@learning/repl'
 import { allKeyed, mapAsync } from 'es-toolkit'
 import { createMemo, createProjection, For, Show } from 'solid-js'
 import * as v from 'valibot'
+
+/** Older checks answer with a boolean, newer ones with a verdict that can explain a failure. */
+const verdict = (result: boolean | CheckResult): CheckResult =>
+  typeof result === 'boolean' ? { passed: result } : result
+
+type TestCase = { desc?: string; fn: Check }
+/** Both test formats, as one list. */
+const testsOf = (tests: readonly TestCase[]) => tests
 
 // Old test format, deprecated
 export const Test = v.union([
@@ -42,9 +49,9 @@ export const Tests = v.union([
     }),
   ),
   v.pipe(
-    v.custom<
-      (expect: ReturnType<typeof python.expect>) => Record<string, () => MaybePromise<boolean>>
-    >((val) => typeof val === 'function'),
+    v.custom<(expect: ReturnType<typeof python.expect>) => Record<string, Check>>(
+      (val) => typeof val === 'function',
+    ),
     v.transform((generator) => {
       return (code: string, options?: { math: boolean }) => {
         const expect = python.expect(code, options)
@@ -98,12 +105,12 @@ export const PythonCode = createStep({
   grade: async (ctx) => {
     const { tests, codeCheck } = await allKeyed({
       tests: mapAsync(
-        ctx.data.tests(ctx.inputs.code, { math: ctx.data.math ?? false }),
+        testsOf(ctx.data.tests(ctx.inputs.code, { math: ctx.data.math ?? false })),
         async (t) => t.fn(),
       ),
       codeCheck: ctx.data.check?.(ctx.inputs.code),
     })
-    return tests.every(Boolean) && codeCheck !== false
+    return tests.every((test) => verdict(test).passed) && codeCheck !== false
   },
   initialState: (data) => ({ code: data.initialCode }),
   prompt: (ctx) => {
@@ -124,10 +131,13 @@ export const PythonCode = createStep({
   feedback: (ctx) => {
     const tests = createProjection(
       () =>
-        mapAsync(ctx.data.tests(ctx.inputs.code, { math: ctx.data.math ?? false }), async (t) => ({
-          desc: t.desc,
-          passed: await t.fn(),
-        })),
+        mapAsync(
+          testsOf(ctx.data.tests(ctx.inputs.code, { math: ctx.data.math ?? false })),
+          async (t) => ({
+            desc: t.desc,
+            ...verdict(await t.fn()),
+          }),
+        ),
       [],
     )
     const passed = createMemo(() => tests.filter((t) => t.passed).length)
@@ -144,6 +154,9 @@ export const PythonCode = createStep({
             {(test) => (
               <li>
                 <code>{test.desc ?? 'Résultat final'}</code> <CheckMark value={test.passed} />
+                <Show when={test.message}>
+                  <div class="text-sm whitespace-pre-wrap text-red-800">{test.message}</div>
+                </Show>
               </li>
             )}
           </For>

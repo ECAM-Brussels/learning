@@ -9,9 +9,16 @@ export default function Python(props: {
   class?: string
   value: string
   math?: boolean
+  /** The lines `input()` reads, in order. */
+  stdin?: string[]
   onChange?: (output: Output) => void
 }): JSX.Element {
-  const output = createMemo(() => python.run(props.value, { math: props.math ?? false }))
+  const output = createMemo(() =>
+    python.run(props.value, {
+      math: props.math ?? false,
+      ...(props.stdin ? { stdin: props.stdin } : {}),
+    }),
+  )
   createEffect(output, (output) => props.onChange?.(output))
   return (
     <Loading>

@@ -16,3 +16,20 @@ export const Square = () => (
     })}
   />
 )
+
+export const Greeting = () => (
+  <PythonCode
+    id="demo-bonjour"
+    prompt={
+      <p>
+        Écrivez un programme qui demande un nom avec <code>input</code>, puis affiche{' '}
+        <code>Bonjour</code> suivi de ce nom.
+      </p>
+    }
+    initialCode={'nom = input("Votre nom ? ")\n'}
+    tests={(expect) => ({
+      'Bonjour Alice': expect.withInput('Alice').toShow('Bonjour Alice'),
+      'Bonjour Bob': expect.withInput('Bob').toShow('Bonjour Bob'),
+    })}
+  />
+)

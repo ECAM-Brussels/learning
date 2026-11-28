@@ -80,6 +80,27 @@ describe('Code', () => {
     await waitFor(() => expect(repl.runs.map((r) => r.code)).toEqual(["print('prêt')", '3 + 3']))
   })
 
+  test('asks for the lines input() reads when the code calls it, and runs with them', async () => {
+    render(() => (
+      <Code lang="python" run>
+        x = 1
+      </Code>
+    ))
+    await editor()
+    expect(screen.queryByLabelText('Entrées du programme, une par ligne')).toBeNull()
+    await type('name = input()\nprint(name)')
+    const box = (await screen.findByLabelText(
+      'Entrées du programme, une par ligne',
+    )) as HTMLTextAreaElement
+    fireEvent.input(box, { target: { value: 'Alice\nBob\n' } })
+    await waitFor(() =>
+      expect(repl.runs.at(-1)).toEqual({
+        code: 'name = input()\nprint(name)',
+        options: { math: false, stdin: ['Alice', 'Bob'] },
+      }),
+    )
+  })
+
   test('▶ is disabled while the code runs', async () => {
     render(() => (
       <Code lang="python" run="x" mode="manual">

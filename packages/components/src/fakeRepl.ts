@@ -10,7 +10,7 @@ type Output = {
 
 /** Stands in for Pyodide: `run` reports loading, then yields what `outputs` has for the code. */
 export const repl = {
-  runs: [] as { code: string; options?: { math?: boolean } }[],
+  runs: [] as { code: string; options?: { math?: boolean; stdin?: string[] } }[],
   outputs: {} as Record<string, Omit<Output, 'status'>>,
   /** Resolves the pending runs; until then they stay at `loading`. */
   release: () => {},
@@ -26,7 +26,10 @@ repl.reset()
 
 mock.module('@learning/repl', () => ({
   python: {
-    async *run(code: string, options?: { math?: boolean }): AsyncGenerator<Output> {
+    async *run(
+      code: string,
+      options?: { math?: boolean; stdin?: string[] },
+    ): AsyncGenerator<Output> {
       repl.runs.push({ code, options })
       yield { status: 'loading' }
       await gate.promise
