@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
+import { isEqual } from 'es-toolkit'
+import * as v from 'valibot'
 import { takeSymapiRequests } from '../symapi.replay'
 import { decrypt } from './crypto'
-import { expr, quantity, vector } from './expr'
+import { Expression, expr, quantity, vector } from './expr'
 
 type Test<T = any> = {
   desc: string
@@ -286,6 +288,16 @@ describe('expression', () => {
       desc: 'hasSymbol: x + 1 has a symbol',
       promise: () => expr('x + 1').hasSymbol(),
       result: true,
+    }),
+    define({
+      desc: 'hasSymbol: constants are not symbols',
+      promise: () => ['2\\pi', 'e^2', '3 + 2i', '\\frac{\\pi}{2}'].map((s) => expr(s).hasSymbol()),
+      result: [false, false, false, false],
+    }),
+    define({
+      desc: 'hasSymbol: constants given as MathJSON are not symbols',
+      promise: () => expr(['Add', 'Pi', 'ExponentialE']).hasSymbol(),
+      result: false,
     }),
     define({
       desc: 'imaginary: Im(3 + 4i) = 4',
@@ -913,6 +925,29 @@ describe('expression', () => {
       result: 'x^2',
     }),
     define({
+      desc: 'toJSON: number input is returned as is',
+      promise: () => expr(-3).toJSON(),
+      result: -3,
+    }),
+    define({
+      desc: 'toJSON: the latex given with MathJSON is kept',
+      promise: () => expr({ rawInput: 'x^2', json: ['Power', 'x', 2] }).toJSON(),
+      result: 'x^2',
+    }),
+    define({
+      desc: 'toJSON: a constant given as MathJSON is not saved as latex',
+      promise: () => [expr({ json: 'Pi' }).toJSON(), expr('x').subs({ x: '\\pi' }).toJSON()],
+      result: [{ json: 'Pi' }, { json: 'Pi' }],
+    }),
+    define({
+      desc: 'toJSON: what is saved gives the same expression back',
+      promise: () =>
+        [expr(-3), expr('\\pi'), expr({ json: 'Pi' }), expr('x^2').diff()].map((e) =>
+          isEqual(expr(JSON.parse(JSON.stringify(e)) as Expression).json, e.json),
+        ),
+      result: [true, true, true, true],
+    }),
+    define({
       desc: 'toString: json input is stringified',
       promise: () => expr(['Power', 'x', 2]).toString(),
       result: '["Power","x",2]',
@@ -1277,22 +1312,22 @@ describe('quantity', () => {
     {
       desc: 'invalid input is reported with the input',
       f: () => expr({} as any, 'm'),
-      error: `La quantité [{},"m"] n'a pas pu être parsée`,
+      error: `Invalid quantity [{},"m"]`,
     },
     {
       desc: 'compound units with newtons are rejected rather than garbled',
       f: () => expr(1, 'N*m'),
-      error: `n'a pas pu être parsée`,
+      error: `Invalid quantity`,
     },
     {
       desc: 'unknown units are rejected',
       f: () => expr(1, 'foo'),
-      error: `n'a pas pu être parsée`,
+      error: `Invalid quantity`,
     },
     {
       desc: 'a misspelt type is an unknown unit, not a quantity',
       f: () => expr([1, 2] as any, 'vecotr'),
-      error: `n'a pas pu être parsée`,
+      error: `Invalid quantity`,
     },
     {
       desc: 'convert: an unknown target unit is rejected',
@@ -1657,14 +1692,14 @@ describe('requests to SymAPI', () => {
       requests: [{ path: '/expr/latex', body: { expr: ['Derivative', x2.json, 'x'] } }],
     },
     {
-      desc: 'apply asks for the latex once, then parses it',
+      desc: 'apply asks once for the result',
       promise: () => x2.expand().apply(),
-      requests: [{ path: '/expr/latex', body: { expr: ['Expand', x2.json] } }],
+      requests: [{ path: '/expr/apply', body: { expr: ['Expand', x2.json] } }],
     },
     {
       desc: 'python with sympy carries out instructions first',
       promise: () => x2.diff().python(true),
-      requests: [{ path: '/expr/latex', body: { expr: ['Derivative', x2.json, 'x'] } }],
+      requests: [{ path: '/expr/apply', body: { expr: ['Derivative', x2.json, 'x'] } }],
     },
     {
       desc: 'isEqual with an error is decided by Compute Engine',
@@ -1675,8 +1710,20 @@ describe('requests to SymAPI', () => {
       desc: 'isEqual with an error carries out instructions first',
       promise: () => x2.diff().subs({ x: 1 }).isEqual(2, 0.01),
       requests: [
-        { path: '/expr/latex', body: { expr: ['Subs', ['Derivative', x2.json, 'x'], 'x', 1] } },
+        { path: '/expr/apply', body: { expr: ['Subs', ['Derivative', x2.json, 'x'], 'x', 1] } },
       ],
+    },
+    {
+      desc: 'isEqual with an error carries out the instructions of the other expression too',
+      promise: () => expr(3).isEqual(x2.diff().subs({ x: 1.5 }), 0.01),
+      requests: [
+        { path: '/expr/apply', body: { expr: ['Subs', ['Derivative', x2.json, 'x'], 'x', 1.5] } },
+      ],
+    },
+    {
+      desc: 'apply carried out by Compute Engine asks nothing',
+      promise: () => expr('2 + 3').apply(),
+      requests: [],
     },
     {
       desc: 'set isEqual asks setEqual',
@@ -1775,5 +1822,16 @@ describe('requests to SymAPI', () => {
     await expect(expr('\\sin x').degree()).rejects.toThrow(
       /^HTTP 422: .* is not a polynomial in x$/,
     )
+  })
+})
+
+describe('Expression schema', () => {
+  test('accepts an expression', () => {
+    expect(v.is(Expression, expr('x^2'))).toBe(true)
+  })
+
+  test('takes neither a quantity nor a vector for an expression', () => {
+    expect(v.is(Expression, expr('3', 'm'))).toBe(false)
+    expect(v.is(Expression, expr(['1', '2'], 'vector'))).toBe(false)
   })
 })

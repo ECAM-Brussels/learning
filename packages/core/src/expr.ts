@@ -32,7 +32,12 @@ function hasErrorNode(json: MathJsonExpression): boolean {
   return head === 'Error' || args.some(hasErrorNode)
 }
 
-const Math = v.union([
+// Quantities and vectors also have `json` and `latex`: only this tells an expression apart.
+const brand = Symbol('expression')
+
+type RawInput = string | number | MathJsonExpression
+
+const MathInput = v.union([
   v.pipe(
     v.union([v.string(), v.number()]),
     v.transform((input) => ({
@@ -55,7 +60,14 @@ const Math = v.union([
     })),
   ),
   v.pipe(
-    v.object({
+    v.custom<{ rawInput: RawInput; json: MathJsonExpression }>(
+      (value) => typeof value === 'object' && value !== null && brand in value,
+    ),
+    v.transform(({ rawInput, json }) => ({ rawInput, json })),
+  ),
+  // Strict, so that a quantity or a vector is not taken for an expression.
+  v.pipe(
+    v.strictObject({
       rawInput: v.optional(
         v.union([v.string(), v.number(), v.custom<MathJsonExpression>(() => true)]),
       ),
@@ -67,9 +79,21 @@ const Math = v.union([
     })),
   ),
 ])
-type Math = v.InferInput<typeof Math>
+type MathInput = v.InferInput<typeof MathInput>
 
 const undecided = <T>(result: Promise<T | null>) => result.then((r) => r ?? undefined)
+
+const jsonOf = (input: MathInput) => v.parse(MathInput, input).json
+
+/** Operations Compute Engine leaves to SymAPI, which carries them out. */
+const instructionOps = new Set(['Simplify', 'Expand', 'Factor', 'Derivative', 'Integrate', 'Subs'])
+
+function hasInstructionOp(value: MathJsonExpression): boolean {
+  if (!Array.isArray(value)) return false
+  const [head, ...tail] = value
+  if (typeof head === 'string' && instructionOps.has(head)) return true
+  return tail.some(hasInstructionOp)
+}
 
 /**
  * Compute Engine evaluates Mod with the sign of the dividend (-7 mod 3 = -1),
@@ -94,19 +118,20 @@ const integrateParams = v.union([
   ),
   v.strictTuple([v.string()]),
   v.pipe(
-    v.strictTuple([v.string(), Math, Math]),
+    v.strictTuple([v.string(), MathInput, MathInput]),
     v.transform(([x, a, b]) => [['Tuple', x, a.json, b.json]] as const),
   ),
 ])
 
 export const Expression = v.union([
   v.pipe(
-    Math,
+    MathInput,
     v.transform((s) => expression(s)),
   ),
-  v.custom<ReturnType<typeof expression>>((value): value is ReturnType<typeof expression> => {
-    return typeof value === 'object' && value !== null && 'json' in value && 'latex' in value
-  }),
+  v.custom<ReturnType<typeof expression>>(
+    (value): value is ReturnType<typeof expression> =>
+      typeof value === 'object' && value !== null && brand in value,
+  ),
 ])
 
 /**
@@ -121,25 +146,46 @@ export type Expression<T extends 'input' | 'output' = 'input'> = T extends 'inpu
   ? v.InferInput<typeof Expression>
   : ReturnType<typeof expression>
 
-function expression(input: Math) {
-  const { rawInput, json } = v.parse(Math, input)
-  const instructionOps = new Set([
-    'Simplify',
-    'Expand',
-    'Factor',
-    'Derivative',
-    'Integrate',
-    'Subs',
-  ])
+function expression(input: MathInput) {
+  return build(v.parse(MathInput, input))
+}
 
-  const hasInstructionOp = (value: MathJsonExpression): boolean => {
-    if (!Array.isArray(value)) return false
-    const [head, ...tail] = value
-    if (typeof head === 'string' && instructionOps.has(head)) return true
-    return tail.some(hasInstructionOp)
+/** An expression from MathJSON already sanitized, as operations make, without parsing it again. */
+const node = (json: MathJsonExpression) => build({ rawInput: json, json })
+
+function build({ rawInput, json }: v.InferOutput<typeof MathInput>) {
+  const compare = (comparison: 'gt' | 'geq' | 'lt' | 'leq') => (other: MathInput) =>
+    undecided(symapi.expr.compare({ expr1: json, expr2: jsonOf(other), comparison }))
+
+  /** The result of Compute Engine, when it can carry out every pending operation itself. */
+  const evaluateLocally = () => {
+    try {
+      const evaluated = ce.expr(json, { form: 'raw' }).evaluate()
+      return hasInstructionOp(evaluated.json) ? undefined : evaluated
+    } catch {
+      return undefined
+    }
+  }
+
+  // The LaTeX or number as written; MathJSON otherwise, and for a symbol given as MathJSON,
+  // such as 'Pi', which would read back as LaTeX as P times i.
+  const saved =
+    typeof rawInput === 'number' || (typeof rawInput === 'string' && rawInput !== json)
+      ? rawInput
+      : { json }
+
+  function toPython(sympy?: false): string
+  function toPython(sympy: true): Promise<string>
+  function toPython(sympy: boolean): string | Promise<string>
+  function toPython(sympy = false): string | Promise<string> {
+    if (!sympy) return python.compile(ce.expr(json)).code
+    return node(json)
+      .apply()
+      .then((e) => e.python())
   }
 
   return {
+    [brand]: true as const,
     /**
      * The input as it was given: the LaTeX string, or the MathJSON.
      */
@@ -158,7 +204,7 @@ function expression(input: Math) {
      * expr('-3').abs().N() // 3
      * await expr('3 + 4i').abs().isEqual(5) // true
      */
-    abs: () => expression({ json: ['Abs', json] }),
+    abs: () => node(['Abs', json]),
     /**
      * The argument of a complex number, in radians, as a new expression.
      * It is displayed as written, `arg(i)`: compare it to get its value.
@@ -166,7 +212,7 @@ function expression(input: Math) {
      * @example
      * await expr('i').arg().isEqual('\\frac{\\pi}{2}') // true
      */
-    arg: () => expression({ json: ['Argument', json] }),
+    arg: () => node(['Argument', json]),
     /**
      * The operands of the outermost operation, which `func` names, in MathJSON:
      * for `x + 2y`, `x` and `2y`.
@@ -177,7 +223,7 @@ function expression(input: Math) {
      */
     args: () => {
       if (!Array.isArray(json)) throw new Error(`Only arrays have the property args`)
-      return json.slice(1) as Math[]
+      return json.slice(1) as MathInput[]
     },
     /**
      * Carries out the operations still pending, such as `diff` or `integrate`,
@@ -189,7 +235,13 @@ function expression(input: Math) {
      * @example
      * const derivative = await expr('x^3').diff().apply() // 3x^2
      */
-    apply: async () => expr(await expression({ json }).latex()),
+    apply: async () => {
+      const local = evaluateLocally()
+      if (local) return expression(local.latex)
+      const { latex, json: result } = await symapi.expr.apply({ expr: json })
+      // The LaTeX stays the input, as tex displays it; the MathJSON spares parsing it again.
+      return expression(result === null ? latex : { rawInput: latex, json: result })
+    },
     /**
      * Whether `root` is a root:
      * whether the expression is 0 when `x`, or the variable given, is replaced by it.
@@ -199,8 +251,8 @@ function expression(input: Math) {
      * await expr('x^2 - 4').checkRoot(2) // true
      * await expr('t^2 - 4').checkRoot(3, 't') // false
      */
-    checkRoot: (root: Math, x = 'x') =>
-      expression({ json })
+    checkRoot: (root: MathInput, x = 'x') =>
+      node(json)
         .subs({ [x]: root })
         .isEqual(0),
     /**
@@ -210,16 +262,16 @@ function expression(input: Math) {
      * @example
      * await expr('3 + 2i').conj().isEqual('3 - 2i') // true
      */
-    conj: () => expression({ json: ['Conjugate', json] }),
+    conj: () => node(['Conjugate', json]),
     /**
      * How many times a symbol appears in the expression, as it is written.
      *
      * @example
      * expr('x^2 + 3x').count('x') // 2
      */
-    count: (symol: string) => {
+    count: (symbol: string) => {
       function _count(json: MathJsonExpression): number {
-        if (json === symol) return 1
+        if (json === symbol) return 1
         if (!Array.isArray(json)) return 0
         const [_func, ...args] = json
         return args.reduce((sum, arg) => sum + _count(arg), 0)
@@ -243,9 +295,9 @@ function expression(input: Math) {
      * @example
      * expr('x^2').delta('x', 1, 3) // 8
      */
-    delta: (x: string, a: Math, b: Math) => {
-      const f = (t: Math) => expression({ json }).subs({ [x]: t }).json
-      return expression({ json: ['Subtract', f(b), f(a)] }).simplify()
+    delta: (x: string, a: MathInput, b: MathInput) => {
+      const f = (t: MathInput) => node(json).subs({ [x]: t }).json
+      return node(['Subtract', f(b), f(a)]).simplify()
     },
     /**
      * The derivative with respect to `x`, or the variable given, as a new expression;
@@ -257,24 +309,24 @@ function expression(input: Math) {
      * expr('t^2').diff('t') // 2t
      * expr('x^3').diff('x', 2) // 12
      */
-    diff: (x = 'x', at?: Math) => {
+    diff: (x = 'x', at?: MathInput) => {
       const derivative: MathJsonExpression = ['Derivative', json, x]
-      if (at === undefined) return expression({ json: derivative })
-      return expression({ json: ['Subs', derivative, x, v.parse(Math, at).json] })
+      if (at === undefined) return node(derivative)
+      return node(['Subs', derivative, x, jsonOf(at)])
     },
     /**
      * The expression's LaTeX, encrypted,
      * for an answer that must not be readable in the page's source:
      * see `Encrypted` and `decrypt`.
      */
-    encrypt: async () => Promise.resolve(expression({ json }).latex()).then(encrypt),
+    encrypt: async () => Promise.resolve(node(json).latex()).then(encrypt),
     /**
      * The expanded form, as a new expression.
      *
      * @example
      * expr('(x + 1)^2').expand() // x^2 + 2x + 1
      */
-    expand: () => expression({ json: ['Expand', json] }),
+    expand: () => node(['Expand', json]),
     /**
      * The expression evaluated by Compute Engine, in the browser, without asking SymAPI:
      * a Compute Engine expression, for what the operations here don't cover.
@@ -288,10 +340,7 @@ function expression(input: Math) {
      * @example
      * await expr('\\pi').geq(3) // true
      */
-    geq: (other: Math) =>
-      undecided(
-        symapi.expr.compare({ expr1: json, expr2: v.parse(Math, other).json, comparison: 'geq' }),
-      ),
+    geq: compare('geq'),
     /**
      * Whether the expression is greater than `other`, for every value of its symbols:
      * `true`, `false`, or `undefined` when SymAPI can't decide.
@@ -300,37 +349,27 @@ function expression(input: Math) {
      * await expr('\\pi').gt(3) // true
      * await expr('x').gt(0) // undefined
      */
-    gt: (other: Math) =>
-      undecided(
-        symapi.expr.compare({ expr1: json, expr2: v.parse(Math, other).json, comparison: 'gt' }),
-      ),
+    gt: compare('gt'),
     /**
      * Whether the expression contains a symbol, such as `x` or `C`,
      * as it is written: call `apply` first for an operation still pending.
+     * Constants such as π, e and i are not symbols.
      *
      * @example
+     * expr('2\\pi').hasSymbol() // false
      * expr('x^2 + C').hasSymbol() // true
      * expr('2 + 3').hasSymbol() // false
      * // Whether an antiderivative has its constant:
      * (await attempt.subtract(expected).simplify().apply()).hasSymbol()
      */
-    hasSymbol: () => {
-      function findSymbol(json: MathJsonExpression): boolean {
-        if (Array.isArray(json) && json.length > 1) {
-          const [_func, ...args] = json
-          return args.map(findSymbol).some((v) => v === true)
-        }
-        return typeof json === 'string'
-      }
-      return findSymbol(json)
-    },
+    hasSymbol: () => ce.expr(json, { form: 'raw' }).unknowns.length > 0,
     /**
      * The factored form, as a new expression.
      *
      * @example
      * expr('x^2 - 5x + 6').factor() // (x - 3)(x - 2)
      */
-    factor: () => expression({ json: ['Factor', json] }),
+    factor: () => node(['Factor', json]),
     /**
      * The name of the outermost operation, in MathJSON, such as `'Add'`, `'Multiply'` or `'Power'`.
      * It throws for a number or a symbol.
@@ -349,7 +388,7 @@ function expression(input: Math) {
      * @example
      * expr('3 + 2i').imaginary().N() // 2
      */
-    imaginary: () => expression({ json: ['Imaginary', json] }),
+    imaginary: () => node(['Imaginary', json]),
     /**
      * Whether the expression belongs to a set, written in LaTeX:
      * `true`, `false`, or `undefined` when SymAPI can't decide.
@@ -357,8 +396,7 @@ function expression(input: Math) {
      * @example
      * await expr('3').in('\\mathbb{Z}') // true
      */
-    in: (set: Math) =>
-      undecided(symapi.expr.inSet({ expr1: json, expr2: v.parse(Math, set).json })),
+    in: (set: MathInput) => undecided(symapi.expr.inSet({ expr1: json, expr2: jsonOf(set) })),
     /**
      * An antiderivative with respect to `x`, or the variable given, as a new expression;
      * with bounds, the definite integral.
@@ -369,7 +407,7 @@ function expression(input: Math) {
      * expr('x^2').integrate('x', 0, 1) // 1/3
      */
     integrate: (...params: v.InferInput<typeof integrateParams>) =>
-      expression({ json: ['Integrate', json, ...v.parse(integrateParams, params)] }),
+      node(['Integrate', json, ...v.parse(integrateParams, params)]),
     /**
      * Whether the expression equals `other` mathematically, however each is written:
      * `(x - 2)(x - 3)` equals `(3 - x)(2 - x)` and `x^2 - 5x + 6`.
@@ -384,15 +422,16 @@ function expression(input: Math) {
      * // In a step, the usual correction:
      * grade: (ctx) => ctx.inputs.attempt.isEqual(ctx.data.expr.diff())
      */
-    isEqual: async (other: MaybeAsync<Math>, error: number = 0) => {
+    isEqual: async (other: MaybeAsync<MathInput>, error: number = 0) => {
       if (error > 0) {
-        const self = hasInstructionOp(json) ? (await expression({ json }).apply()).json : json
-        const diff = expression({ json: ['Subtract', self, v.parse(Math, await other).json] })
-          .abs()
-          .N()
-        return diff <= error
+        const applied = async (e: {
+          json: MathJsonExpression
+          apply: () => Promise<{ json: MathJsonExpression }>
+        }) => (hasInstructionOp(e.json) ? (await e.apply()).json : e.json)
+        const [a, b] = await Promise.all([applied(node(json)), applied(expression(await other))])
+        return node(['Subtract', a, b]).abs().N() <= error
       }
-      return await symapi.expr.equal({ expr1: json, expr2: v.parse(Math, await other).json })
+      return await symapi.expr.equal({ expr1: json, expr2: jsonOf(await other) })
     },
     /**
      * Whether a complex number is written as `a + bi`, with `a` and `b` real.
@@ -527,8 +566,8 @@ function expression(input: Math) {
      * @example
      * await expr('2x = 4').isEquivalent('x = 2') // true
      */
-    isEquivalent: async (other: MaybeAsync<Math>) =>
-      symapi.expr.equivalent({ expr1: json, expr2: v.parse(Math, await other).json }),
+    isEquivalent: async (other: MaybeAsync<MathInput>) =>
+      symapi.expr.equivalent({ expr1: json, expr2: jsonOf(await other) }),
     /**
      * Whether the expression is written in expanded form:
      * a sum of terms none of which expands further.
@@ -587,15 +626,7 @@ function expression(input: Math) {
      * // In a page, `tex` does this for you:
      * {tex`(x^3)' = ${expr('x^3').diff()}`}
      */
-    latex: () => {
-      try {
-        const evaluated = ce.expr(json, { form: 'raw' }).evaluate()
-        if (hasInstructionOp(evaluated.json)) return symapi.expr.latex({ expr: json })
-        return evaluated.latex
-      } catch {
-        return symapi.expr.latex({ expr: json })
-      }
-    },
+    latex: () => evaluateLocally()?.latex ?? symapi.expr.latex({ expr: json }),
     /**
      * Whether the expression is less than or equal to `other`, for every value of its symbols:
      * `true`, `false`, or `undefined` when SymAPI can't decide.
@@ -603,10 +634,7 @@ function expression(input: Math) {
      * @example
      * await expr('3').leq('\\pi') // true
      */
-    leq: (other: Math) =>
-      undecided(
-        symapi.expr.compare({ expr1: json, expr2: v.parse(Math, other).json, comparison: 'leq' }),
-      ),
+    leq: compare('leq'),
     /**
      * Whether the expression is less than `other`, for every value of its symbols:
      * `true`, `false`, or `undefined` when SymAPI can't decide.
@@ -614,10 +642,7 @@ function expression(input: Math) {
      * @example
      * await expr('3').lt('\\pi') // true
      */
-    lt: (other: Math) =>
-      undecided(
-        symapi.expr.compare({ expr1: json, expr2: v.parse(Math, other).json, comparison: 'lt' }),
-      ),
+    lt: compare('lt'),
     /**
      * Whether the expression has the form of a pattern, once both are expanded,
      * each symbol of the pattern standing for any polynomial, `x` included:
@@ -629,7 +654,7 @@ function expression(input: Math) {
      * await expr('2x^2 + 3x + 1').matches('a x^2 + b x + c') // true
      * await expr('(x + 1)^2').matches('(x + a)^2') // true
      */
-    matches: (other: Math) => symapi.expr.match({ expr1: json, expr2: v.parse(Math, other).json }),
+    matches: (other: MathInput) => symapi.expr.match({ expr1: json, expr2: jsonOf(other) }),
     /**
      * The remainder of the division by `other`, of the sign of `other` as Python's `%`, as a new expression.
      * It is displayed as written: compare it, or get its value with `N`.
@@ -637,14 +662,14 @@ function expression(input: Math) {
      * @example
      * expr('-7').mod(3).N() // 2
      */
-    mod: (other: Math) => expression({ json: ['Mod', json, v.parse(Math, other).json] }),
+    mod: (other: MathInput) => node(['Mod', json, jsonOf(other)]),
     /**
      * The product with `other`, as a new expression.
      *
      * @example
      * expr('x + 1').multiply('x') // (x + 1)x
      */
-    multiply: (other: Math) => expression({ json: ['Multiply', json, v.parse(Math, other).json] }),
+    multiply: (other: MathInput) => node(['Multiply', json, jsonOf(other)]),
     /**
      * The value as a JavaScript number, computed in the browser:
      * `NaN` for an expression that is not a real number, such as one with a symbol.
@@ -658,7 +683,7 @@ function expression(input: Math) {
       // `Number(boxed)` silently returns 0 for anything that isn't a real
       // literal (symbols, complex numbers, ComplexInfinity, ...), so read
       // the real/imaginary parts explicitly and return NaN instead.
-      const n = N(expression({ json }).evaluate())
+      const n = N(node(json).evaluate())
       const result = isNumber(n) && n.im === 0 ? n.re : NaN
       return precision === undefined ? result : round(result, precision)
     },
@@ -670,13 +695,7 @@ function expression(input: Math) {
      * expr('\\sin(x) + x^2').python() // 'x ** 2 + np.sin(x)'
      * await expr('x^3').diff().python(true) // '3 * x ** 2'
      */
-    python: <T extends boolean = false>(sympy?: T): T extends false ? string : Promise<string> => {
-      if (!sympy) return python.compile(ce.expr(json)).code as any
-      else
-        return expr({ json })
-          .apply()
-          .then((e) => e.python(false)) as any
-    },
+    python: toPython,
     /**
      * The real part of a complex number, as a new expression.
      * It is displayed as written: compare it, or get its value with `N`.
@@ -684,7 +703,7 @@ function expression(input: Math) {
      * @example
      * expr('3 + 2i').real().N() // 3
      */
-    real: () => expression({ json: ['Real', json] }),
+    real: () => node(['Real', json]),
     /**
      * The roots, real by default and complex with `true`, as LaTeX strings.
      * It rejects an expression with infinitely many roots, such as `\\sin x`.
@@ -701,7 +720,7 @@ function expression(input: Math) {
      * @example
      * expr('\\frac{x^2 - 1}{x - 1}').simplify() // x + 1
      */
-    simplify: () => expression({ json: ['Simplify', json] }),
+    simplify: () => node(['Simplify', json]),
     /**
      * The expression with symbols replaced, each by LaTeX, a number or an expression.
      * Into a derivative or an integral still pending, the substitution waits for it:
@@ -712,9 +731,9 @@ function expression(input: Math) {
      * await expr('x^2 + y').subs({ x: 2, y: 'a' }).isEqual('4 + a') // true
      * expr('x^2').diff().subs({ x: 3 }) // 6
      */
-    subs: (rawSubstitutions: Record<string, Math>) => {
+    subs: (rawSubstitutions: Record<string, MathInput>) => {
       const substitutions = mapValues(
-        v.parse(v.record(v.string(), Math), rawSubstitutions),
+        v.parse(v.record(v.string(), MathInput), rawSubstitutions),
         (v) => v.json,
       )
       // Instructions such as Derivative/Integrate bind their variable:
@@ -722,16 +741,15 @@ function expression(input: Math) {
       // Defer the substitution to sympy with a Subs node instead.
       if (hasInstructionOp(json)) {
         const keys = Object.keys(substitutions)
-        if (keys.length === 0) return expression({ json })
+        if (keys.length === 0) return node(json)
         const values = keys.map((k) => substitutions[k]!)
-        return expression({
-          json:
-            keys.length === 1
-              ? ['Subs', json, keys[0]!, values[0]!]
-              : ['Subs', json, ['Tuple', ...keys], ['Tuple', ...values]],
-        })
+        return node(
+          keys.length === 1
+            ? ['Subs', json, keys[0]!, values[0]!]
+            : ['Subs', json, ['Tuple', ...keys], ['Tuple', ...values]],
+        )
       }
-      return expression({ json: ce.expr(json, { form: 'raw' }).subs(substitutions).json })
+      return node(sanitize(ce.expr(json, { form: 'raw' }).subs(substitutions).json))
     },
     /**
      * The solutions of the equation in `x`, or the variable given, as a set:
@@ -741,15 +759,15 @@ function expression(input: Math) {
      * @example
      * await expr('x^2 = 4').solve().isEqual('\\{-2, 2\\}') // true
      */
-    solve: (x: Math = 'x', complex = false) =>
-      set(['Solve', json, v.parse(Math, x).json, complex ? 'ComplexNumbers' : 'RealNumbers']),
+    solve: (x: MathInput = 'x', complex = false) =>
+      set(['Solve', json, jsonOf(x), complex ? 'ComplexNumbers' : 'RealNumbers']),
     /**
      * The difference with `other`, as a new expression.
      *
      * @example
      * expr('x^2').subtract('1') // x^2 - 1
      */
-    subtract: (other: Math) => expression({ json: ['Subtract', json, v.parse(Math, other).json] }),
+    subtract: (other: MathInput) => node(['Subtract', json, jsonOf(other)]),
     /**
      * The Taylor polynomial of order `n` around `a`, in the variable `x`, as a new expression.
      * Compare it with `isEqual`: it isn't displayed as a polynomial.
@@ -757,18 +775,16 @@ function expression(input: Math) {
      * @example
      * await expr('e^x').taylor('x', 0, 3).isEqual('1 + x + \\frac{x^2}{2} + \\frac{x^3}{6}') // true
      */
-    taylor: (x: Math, a: Math, n: number) =>
-      expression({
-        json: ['Normal', ['Series', json, v.parse(Math, x).json, v.parse(Math, a).json, n]],
-      }),
+    taylor: (x: MathInput, a: MathInput, n: number) =>
+      node(['Normal', ['Series', json, jsonOf(x), jsonOf(a), n]]),
     /**
      * The input LaTeX, or the MathJSON as text.
      */
-    toString: () => (typeof input === 'string' ? input : stringify(json)),
+    toString: () => (typeof saved === 'object' ? stringify(json) : String(saved)),
     /**
      * What is saved of the expression: its LaTeX when it was given as LaTeX.
      */
-    toJSON: () => (typeof input === 'string' ? input : { json }),
+    toJSON: () => saved,
     /**
      * A quantity: the expression as a magnitude in `unit`, as `expr(…, unit)` does.
      *
@@ -820,11 +836,11 @@ const QuantityValue = v.union([
     v.transform(({ json }) => json),
   ),
   v.pipe(
-    v.tuple([v.literal('Quantity'), Math, Unit]),
+    v.tuple([v.literal('Quantity'), MathInput, Unit]),
     v.transform(([_, magnitude, unit]) => quantityJson(magnitude.json, unit)),
   ),
   v.pipe(
-    v.tuple([Math, Unit]),
+    v.tuple([MathInput, Unit]),
     v.transform(([magnitude, unit]) => quantityJson(magnitude.json, unit)),
   ),
   v.pipe(
@@ -836,11 +852,11 @@ export type QuantityLike = v.InferInput<typeof QuantityValue>
 
 const QuantityArgs = v.union([
   v.pipe(
-    v.tuple([v.literal('Quantity'), Math, Unit]),
+    v.tuple([v.literal('Quantity'), MathInput, Unit]),
     v.transform(([_, magnitude, unit]) => quantityJson(magnitude.json, unit)),
   ),
   v.pipe(
-    v.tuple([Math, Unit]),
+    v.tuple([MathInput, Unit]),
     v.transform(([magnitude, unit]) => quantityJson(magnitude.json, unit)),
   ),
   v.pipe(
@@ -863,7 +879,7 @@ export function quantity(...rawQuantity: v.InferInput<typeof QuantityArgs>) {
   const result = v.safeParse(QuantityArgs, rawQuantity)
   if (!result.success)
     throw new Error(
-      `La quantité ${JSON.stringify(rawQuantity)} n'a pas pu être parsée:\n${JSON.stringify(result.issues, null, 2)}`,
+      `Invalid quantity ${JSON.stringify(rawQuantity)}:\n${JSON.stringify(result.issues, null, 2)}`,
     )
   const json = result.output
 
@@ -894,7 +910,7 @@ export function quantity(...rawQuantity: v.InferInput<typeof QuantityArgs>) {
     /**
      * The magnitude, as an expression, in the quantity's unit.
      */
-    magnitude: expression({ json: json[1] }),
+    magnitude: node(json[1]),
     /**
      * The difference with another quantity, in compatible units.
      */
@@ -933,7 +949,7 @@ export function quantity(...rawQuantity: v.InferInput<typeof QuantityArgs>) {
     /**
      * The quantity with a numeric magnitude, rounded to `precision` decimals if given.
      */
-    N: (precision?: number) => quantity(expression({ json: json[1] }).N(precision), json[2]),
+    N: (precision?: number) => quantity(node(json[1]).N(precision), json[2]),
     rawInput: rawQuantity,
     toJSON: () => rawQuantity,
   }
@@ -947,26 +963,25 @@ export function quantity(...rawQuantity: v.InferInput<typeof QuantityArgs>) {
  * await solutions.isEqual('\\{2, -2\\}') // true
  * await expr('\\{1\\}', 'set').isSubset('\\{1, 2\\}') // true
  */
-export function set(input: Math) {
-  const json = v.parse(Math, input).json
+export function set(input: MathInput) {
+  const json = jsonOf(input)
   return {
     json,
     /**
      * The intersection with another set, as a new set.
      */
-    intersect: (other: Math) => set(['Intersect', json, v.parse(Math, other).json]),
+    intersect: (other: MathInput) => set(['Intersect', json, jsonOf(other)]),
     /**
      * Whether the set is included in another.
      * SymAPI decides, hence the promise.
      */
-    isSubset: async (other: Math) =>
-      symapi.expr.subset({ expr1: json, expr2: v.parse(Math, other).json }),
+    isSubset: async (other: MathInput) => symapi.expr.subset({ expr1: json, expr2: jsonOf(other) }),
     /**
      * Whether the set has the same elements as another, in any order.
      * SymAPI decides, hence the promise.
      */
-    isEqual: async (other: Math) =>
-      symapi.expr.setEqual({ expr1: json, expr2: v.parse(Math, other).json }),
+    isEqual: async (other: MathInput) =>
+      symapi.expr.setEqual({ expr1: json, expr2: jsonOf(other) }),
   }
 }
 
@@ -979,7 +994,7 @@ const VectorValue = v.union([
     v.custom<{ components: ReturnType<typeof expression>[] }>(isVector),
     v.transform(({ components }) => components.map(({ rawInput, json }) => ({ rawInput, json }))),
   ),
-  v.array(Math),
+  v.array(MathInput),
 ])
 export type VectorLike = v.InferInput<typeof VectorValue>
 
@@ -1035,8 +1050,8 @@ export function vector(rawInput: VectorLike) {
     /**
      * The vector multiplied by a number or an expression.
      */
-    scale: (factor: Math) => {
-      const k = v.parse(Math, factor).json
+    scale: (factor: MathInput) => {
+      const k = jsonOf(factor)
       return fromJson(components.map((c) => ['Multiply', k, c.json]))
     },
     /**
@@ -1125,14 +1140,14 @@ export function expr(input: undefined, type?: undefined): undefined
  * // In a step: the correction in one line
  * grade: (ctx) => ctx.inputs.attempt.isEqual(ctx.data.f.diff())
  */
-export function expr(input: Math, type?: undefined): Expression<'output'>
+export function expr(input: MathInput, type?: undefined): Expression<'output'>
 /**
  * A set, written in LaTeX: see `set`.
  *
  * @example
  * await expr('\\{-2, 2\\}', 'set').isEqual(expr('x^2 = 4').solve()) // true
  */
-export function expr(input: Math, type: 'set'): ReturnType<typeof set>
+export function expr(input: MathInput, type: 'set'): ReturnType<typeof set>
 /**
  * A vector, from the list of its components: see `vector`.
  *
@@ -1146,11 +1161,11 @@ export function expr(input: VectorLike, type: 'vector'): ReturnType<typeof vecto
  * @example
  * expr('90', 'km/h').convert('m/s') // 25 m/s
  */
-export function expr(input: Math, type: string): Quantity
-export function expr(input?: Math | VectorLike, type?: string) {
+export function expr(input: MathInput, type: string): Quantity
+export function expr(input?: MathInput | VectorLike, type?: string) {
   if (input === undefined) return undefined
-  if (type === undefined) return expression(input as Math)
+  if (type === undefined) return expression(input as MathInput)
   if (type === 'vector') return vector(input as VectorLike)
-  if (type === 'set') return set(input as Math)
-  return quantity(input as Math, type)
+  if (type === 'set') return set(input as MathInput)
+  return quantity(input as MathInput, type)
 }

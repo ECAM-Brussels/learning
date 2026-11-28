@@ -202,3 +202,105 @@ class Expression(pydantic.RootModel):
         if self._expr is None:
             raise ValueError(f"{self.root} is not a valid LaTeX expression")
         return self._expr
+
+
+FUNCTIONS: dict[type, str] = {
+    sympy.Abs: "Abs",
+    sympy.arg: "Argument",
+    sympy.conjugate: "Conjugate",
+    sympy.re: "Real",
+    sympy.im: "Imaginary",
+    sympy.factorial: "Factorial",
+    sympy.floor: "Floor",
+    sympy.ceiling: "Ceil",
+    sympy.sign: "Sign",
+    sympy.Mod: "Mod",
+    sympy.log: "Ln",
+    sympy.sin: "Sin",
+    sympy.cos: "Cos",
+    sympy.tan: "Tan",
+    sympy.sec: "Sec",
+    sympy.csc: "Csc",
+    sympy.cot: "Cot",
+    sympy.asin: "Arcsin",
+    sympy.acos: "Arccos",
+    sympy.atan: "Arctan",
+    sympy.sinh: "Sinh",
+    sympy.cosh: "Cosh",
+    sympy.tanh: "Tanh",
+    sympy.Eq: "Equal",
+    sympy.Ne: "NotEqual",
+    sympy.Lt: "Less",
+    sympy.Le: "LessEqual",
+    sympy.Gt: "Greater",
+    sympy.Ge: "GreaterEqual",
+    sympy.FiniteSet: "Set",
+    sympy.Tuple: "Tuple",
+    sympy.Union: "Union",
+    sympy.Intersection: "Intersect",
+}
+
+CONSTANTS: dict[sympy.Basic, str] = {
+    sympy.E: "ExponentialE",
+    sympy.I: "ImaginaryUnit",
+    sympy.pi: "Pi",
+    sympy.oo: "PositiveInfinity",
+    -sympy.oo: "NegativeInfinity",
+    sympy.zoo: "ComplexInfinity",
+    sympy.nan: "NaN",
+    sympy.true: "True",
+    sympy.false: "False",
+    sympy.S.EmptySet: "EmptySet",
+    sympy.S.Complexes: "ComplexNumbers",
+    sympy.S.Reals: "RealNumbers",
+    sympy.S.Rationals: "RationalNumbers",
+    sympy.S.Integers: "Integers",
+    sympy.S.Naturals0: "NonNegativeIntegers",
+    sympy.S.Naturals: "PositiveIntegers",
+}
+
+# Larger integers would lose digits as JavaScript numbers.
+MAX_SAFE_INTEGER = 2**53 - 1
+
+
+def to_mathjson(expr: sympy.Basic) -> MathJSON:
+    """
+    The inverse of parse_expr, for the results of computations.
+    It raises ValueError for what has no MathJSON counterpart here,
+    such as an integral sympy could not compute.
+    """
+    if expr in CONSTANTS:
+        return CONSTANTS[expr]
+    if isinstance(expr, sympy.Integer):
+        n = int(expr)
+        return n if abs(n) <= MAX_SAFE_INTEGER else Num(num=str(n))
+    if isinstance(expr, sympy.Rational):
+        return [
+            "Rational",
+            to_mathjson(sympy.Integer(expr.p)),
+            to_mathjson(sympy.Integer(expr.q)),
+        ]
+    if isinstance(expr, sympy.Float):
+        return float(expr)
+    if isinstance(expr, sympy.Symbol):
+        return expr.name
+    if isinstance(expr, sympy.Add):
+        return ["Add", *map(to_mathjson, expr.args)]
+    if isinstance(expr, sympy.Mul):
+        return ["Multiply", *map(to_mathjson, expr.args)]
+    if isinstance(expr, sympy.Pow):
+        return ["Power", *map(to_mathjson, expr.args)]
+    # Written e^x, as Compute Engine reads sympy's LaTeX for it.
+    if isinstance(expr, sympy.exp):
+        return ["Power", "ExponentialE", to_mathjson(expr.args[0])]
+    if isinstance(expr, sympy.Interval):
+        a, b = to_mathjson(expr.start), to_mathjson(expr.end)
+        return [
+            "Interval",
+            ["Open", a] if expr.left_open else a,
+            ["Open", b] if expr.right_open else b,
+        ]
+    for cls, head in FUNCTIONS.items():
+        if isinstance(expr, cls):
+            return [head, *map(to_mathjson, expr.args)]
+    raise ValueError(f"No MathJSON for {type(expr).__name__}: {expr}")

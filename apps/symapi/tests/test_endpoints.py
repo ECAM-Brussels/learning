@@ -353,6 +353,18 @@ class TestLatex:
         assert ok(post("/expr/latex", expr=expr)) == latex
 
 
+class TestApply:
+    def test_gives_latex_and_mathjson(self, post):
+        assert ok(post("/expr/apply", expr=["Derivative", ["Power", "x", 3], "x"])) == {
+            "latex": "3 x^{2}",
+            "json": ["Multiply", 3, ["Power", "x", 2]],
+        }
+
+    def test_gives_only_latex_without_mathjson(self, post):
+        result = ok(post("/expr/apply", expr=["Integrate", ["Power", "x", "x"], "x"]))
+        assert result == {"latex": "\\int x^{x}\\, dx", "json": None}
+
+
 class TestRoots:
     @pytest.mark.parametrize(
         "expr, complex_, roots",

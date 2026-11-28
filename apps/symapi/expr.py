@@ -2,7 +2,7 @@ import pydantic
 import fastapi
 import sympy
 from typing import cast, Literal, Optional
-from mathjson import Expression
+from mathjson import Expression, MathJSON, to_mathjson
 
 router = fastapi.APIRouter(prefix="/expr")
 
@@ -191,6 +191,25 @@ def match(input: TwoExpressions) -> bool:
 @router.post("/latex")
 def latex(input: OneExpression) -> str:
     return sympy.latex(input.expr.expr)
+
+
+class Applied(pydantic.BaseModel):
+    latex: str
+    json_: Optional[MathJSON] = pydantic.Field(alias="json", serialization_alias="json")
+
+
+@router.post("/apply")
+def apply(input: OneExpression) -> Applied:
+    """
+    The expression with its pending operations carried out, in LaTeX,
+    and in MathJSON unless the result has none, such as an integral sympy could not compute.
+    """
+    result = input.expr.expr
+    try:
+        json = to_mathjson(result)
+    except ValueError:
+        json = None
+    return Applied(latex=sympy.latex(result), json=json)
 
 
 class RootsInput(OneExpression):

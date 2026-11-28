@@ -242,6 +242,27 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/expr/apply': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Apply
+     * @description The expression with its pending operations carried out, in LaTeX,
+     *     and in MathJSON unless the result has none, such as an integral sympy could not compute.
+     */
+    post: operations['apply_expr_apply_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/expr/roots': {
     parameters: {
       query?: never
@@ -263,6 +284,12 @@ export interface paths {
 export type webhooks = Record<string, never>
 export interface components {
   schemas: {
+    /** Applied */
+    Applied: {
+      /** Latex */
+      latex: string
+      json: components['schemas']['MathJSON-Output'] | null
+    }
     /** ComparisonInput */
     ComparisonInput: {
       expr1: components['schemas']['Expression']
@@ -283,13 +310,16 @@ export interface components {
       x: string
     }
     /** Expression */
-    Expression: components['schemas']['MathJSON']
+    Expression: components['schemas']['MathJSON-Input']
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */
       detail?: components['schemas']['ValidationError'][]
     }
-    MathJSON: string | number | components['schemas']['MathJSON'][] | components['schemas']['Num']
+    'MathJSON-Input':
+      string | number | components['schemas']['MathJSON-Input'][] | components['schemas']['Num']
+    'MathJSON-Output':
+      string | number | components['schemas']['MathJSON-Output'][] | components['schemas']['Num']
     /** Num */
     Num: {
       /** Num */
@@ -780,6 +810,39 @@ export interface operations {
         }
         content: {
           'application/json': string
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  apply_expr_apply_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['OneExpression']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Applied']
         }
       }
       /** @description Validation Error */

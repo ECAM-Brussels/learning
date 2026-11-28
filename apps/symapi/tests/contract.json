@@ -1,5 +1,175 @@
 [
   {
+    "path": "/expr/apply",
+    "body": {
+      "expr": [
+        "Derivative",
+        "x",
+        "x"
+      ]
+    },
+    "status": 200,
+    "response": {
+      "latex": "1",
+      "json": 1
+    }
+  },
+  {
+    "path": "/expr/apply",
+    "body": {
+      "expr": [
+        "Derivative",
+        [
+          "Power",
+          "x",
+          2
+        ],
+        "x"
+      ]
+    },
+    "status": 200,
+    "response": {
+      "latex": "2 x",
+      "json": [
+        "Multiply",
+        2,
+        "x"
+      ]
+    }
+  },
+  {
+    "path": "/expr/apply",
+    "body": {
+      "expr": [
+        "Expand",
+        [
+          "Power",
+          "x",
+          2
+        ]
+      ]
+    },
+    "status": 200,
+    "response": {
+      "latex": "x^{2}",
+      "json": [
+        "Power",
+        "x",
+        2
+      ]
+    }
+  },
+  {
+    "path": "/expr/apply",
+    "body": {
+      "expr": [
+        "Expand",
+        [
+          "Power",
+          [
+            "Delimiter",
+            [
+              "Add",
+              "x",
+              1
+            ]
+          ],
+          2
+        ]
+      ]
+    },
+    "status": 200,
+    "response": {
+      "latex": "x^{2} + 2 x + 1",
+      "json": [
+        "Add",
+        1,
+        [
+          "Power",
+          "x",
+          2
+        ],
+        [
+          "Multiply",
+          2,
+          "x"
+        ]
+      ]
+    }
+  },
+  {
+    "path": "/expr/apply",
+    "body": {
+      "expr": [
+        "Subs",
+        [
+          "Derivative",
+          [
+            "Power",
+            "x",
+            2
+          ],
+          "x"
+        ],
+        "x",
+        1.5
+      ]
+    },
+    "status": 200,
+    "response": {
+      "latex": "3",
+      "json": 3
+    }
+  },
+  {
+    "path": "/expr/apply",
+    "body": {
+      "expr": [
+        "Subs",
+        [
+          "Derivative",
+          [
+            "Power",
+            "x",
+            2
+          ],
+          "x"
+        ],
+        "x",
+        1
+      ]
+    },
+    "status": 200,
+    "response": {
+      "latex": "2",
+      "json": 2
+    }
+  },
+  {
+    "path": "/expr/apply",
+    "body": {
+      "expr": [
+        "Subs",
+        [
+          "Derivative",
+          [
+            "Power",
+            "x",
+            2
+          ],
+          "x"
+        ],
+        "x",
+        3
+      ]
+    },
+    "status": 200,
+    "response": {
+      "latex": "6",
+      "json": 6
+    }
+  },
+  {
     "path": "/expr/compare",
     "body": {
       "expr1": [
@@ -1894,6 +2064,27 @@
     "path": "/expr/isExpanded",
     "body": {
       "expr": [
+        "Add",
+        1,
+        [
+          "Power",
+          "x",
+          2
+        ],
+        [
+          "Multiply",
+          2,
+          "x"
+        ]
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/isExpanded",
+    "body": {
+      "expr": [
         "Power",
         "x",
         2
@@ -2102,18 +2293,6 @@
     "body": {
       "expr": [
         "Derivative",
-        "x",
-        "x"
-      ]
-    },
-    "status": 200,
-    "response": "1"
-  },
-  {
-    "path": "/expr/latex",
-    "body": {
-      "expr": [
-        "Derivative",
         [
           "InvisibleOperator",
           [
@@ -2169,21 +2348,6 @@
     },
     "status": 200,
     "response": "\\cos{\\left(x \\right)}"
-  },
-  {
-    "path": "/expr/latex",
-    "body": {
-      "expr": [
-        "Expand",
-        [
-          "Power",
-          "x",
-          2
-        ]
-      ]
-    },
-    "status": 200,
-    "response": "x^{2}"
   },
   {
     "path": "/expr/latex",
@@ -2274,27 +2438,6 @@
     },
     "status": 200,
     "response": "1"
-  },
-  {
-    "path": "/expr/latex",
-    "body": {
-      "expr": [
-        "Subs",
-        [
-          "Derivative",
-          [
-            "Power",
-            "x",
-            2
-          ],
-          "x"
-        ],
-        "x",
-        1
-      ]
-    },
-    "status": 200,
-    "response": "2"
   },
   {
     "path": "/expr/latex",
