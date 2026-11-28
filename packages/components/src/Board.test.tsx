@@ -1,10 +1,13 @@
 import { render, waitFor } from '@solidjs/testing-library'
 import type { JSX } from '@solidjs/web'
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, setDefaultTimeout, test } from 'bun:test'
 import { createEffect, createMemo, createSignal, flush, Show } from 'solid-js'
 import { drag } from './jsxgraphStubs'
 
 const { Board, BoardDefaults } = await import('./Board')
+
+// A 3D view takes seconds to build in happy-dom, and longer while other suites run alongside.
+setDefaultTimeout(15_000)
 const { Boundary } = await import('./Boundary')
 
 type XY = { X(): number; Y(): number }

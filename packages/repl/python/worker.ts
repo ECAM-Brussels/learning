@@ -1,74 +1,16 @@
 /// <reference lib="webworker" />
 
-import dedent from 'dedent'
-import { loadPyodide, version as pyodideVersion } from 'pyodide'
-import type { Input, Output } from '..'
-import DualNumbers from './automatic_diff.py?raw'
+import { loadPyodide, version } from 'pyodide'
+import type { Options } from '.'
+import type { Input } from '../types'
+import dualNumbers from './automatic_diff.py?raw'
+import { createExecutor } from './execute'
 
-let pyodidePromise: ReturnType<typeof loadPyodide> | null = null
+const execute = createExecutor(
+  () => loadPyodide({ indexURL: `https://cdn.jsdelivr.net/pyodide/v${version}/full/` }),
+  dualNumbers,
+)
 
-function initPyodide() {
-  if (!pyodidePromise) {
-    pyodidePromise = loadPyodide({
-      indexURL: `https://cdn.jsdelivr.net/pyodide/v${pyodideVersion}/full/`,
-    })
-  }
-}
-
-self.onmessage = async (event: MessageEvent<Input>) => {
-  self.postMessage({ id: event.data.id, status: 'loading' })
-  initPyodide()
-  const pyodide = await pyodidePromise!
-  self.postMessage({ id: event.data.id, status: 'importing' })
-  await pyodide.loadPackagesFromImports(event.data.code)
-  self.postMessage({ id: event.data.id, status: 'executing' })
-  const output: Output = { id: event.data.id, status: 'done' }
-  try {
-    pyodide.globals.clear()
-    if (event.data.code.includes('matplotlib')) {
-      pyodide.runPython(dedent`
-        import os
-        os.environ["MPLBACKEND"] = "AGG"
-      `)
-    }
-    if (event.data.options?.math) {
-      await pyodide.loadPackage('numpy')
-      pyodide.runPython(DualNumbers)
-    }
-    pyodide.runPython(dedent`
-      import sys
-      from io import StringIO
-      stdout_capture = StringIO()
-      sys.stdout = stdout_capture
-    `)
-    const result = pyodide.runPython(event.data.code)
-    output.result = String(result ?? '')
-    output.stdout = pyodide.runPython('sys.stdout.getvalue()')
-    if (event.data.options?.math) {
-      if (result && result._repr_latex_ !== undefined) {
-        output.result = result._repr_latex_().substr(1, result._repr_latex_().length - 2)
-        output.format = 'latex'
-      } else if (event.data.code.includes('matplotlib')) {
-        const image = pyodide.runPython(dedent`
-          import base64
-          import io
-          import matplotlib.pyplot as plt
-
-          buffer = io.BytesIO()
-          plt.savefig(buffer, format='png')
-          plt.close()
-          buffer.seek(0)
-          base64.b64encode(buffer.read()).decode('utf-8')
-        `)
-        if (image && !event.data.options?.test) {
-          output.result = `data:image/png;base64,${image}`
-          output.format = 'image'
-        }
-      }
-    }
-  } catch (error) {
-    output.error = (error as any).message
-  } finally {
-    self.postMessage(output)
-  }
+self.onmessage = (event: MessageEvent<Input<Options>>) => {
+  void execute(event.data, (output) => self.postMessage(output))
 }

@@ -12,7 +12,9 @@
   "dependencies": {
     "dedent": "^1.7.2",
     "es-toolkit": "catalog:",
-    "event-iterator": "^2.0.0",
     "pyodide": "^0.29.3"
+  },
+  "scripts": {
+    "test": "bun test --coverage --coverage-reporter=lcov"
   }
 }
