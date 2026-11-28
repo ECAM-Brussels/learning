@@ -101,6 +101,56 @@
     "path": "/expr/apply",
     "body": {
       "expr": [
+        "Integrate",
+        [
+          "Power",
+          "x",
+          2
+        ],
+        [
+          "Tuple",
+          "x",
+          0,
+          2
+        ]
+      ]
+    },
+    "status": 200,
+    "response": {
+      "latex": "\\frac{8}{3}",
+      "json": [
+        "Rational",
+        8,
+        3
+      ]
+    }
+  },
+  {
+    "path": "/expr/apply",
+    "body": {
+      "expr": [
+        "Simplify",
+        [
+          "Divide",
+          6,
+          8
+        ]
+      ]
+    },
+    "status": 200,
+    "response": {
+      "latex": "\\frac{3}{4}",
+      "json": [
+        "Rational",
+        3,
+        4
+      ]
+    }
+  },
+  {
+    "path": "/expr/apply",
+    "body": {
+      "expr": [
         "Subs",
         [
           "Derivative",
@@ -168,6 +218,91 @@
       "latex": "6",
       "json": 6
     }
+  },
+  {
+    "path": "/expr/coefficients",
+    "body": {
+      "expr": [
+        "Add",
+        [
+          "InvisibleOperator",
+          "a",
+          [
+            "Power",
+            "t",
+            2
+          ]
+        ],
+        "b"
+      ],
+      "x": "t"
+    },
+    "status": 200,
+    "response": [
+      "b",
+      0,
+      "a"
+    ]
+  },
+  {
+    "path": "/expr/coefficients",
+    "body": {
+      "expr": [
+        "Add",
+        [
+          "Subtract",
+          [
+            "InvisibleOperator",
+            2,
+            [
+              "Power",
+              "x",
+              2
+            ]
+          ],
+          [
+            "InvisibleOperator",
+            3,
+            "x"
+          ]
+        ],
+        1
+      ],
+      "x": "x"
+    },
+    "status": 200,
+    "response": [
+      1,
+      -3,
+      2
+    ]
+  },
+  {
+    "path": "/expr/commonRoots",
+    "body": {
+      "expr1": [
+        "Subtract",
+        [
+          "Power",
+          "x",
+          2
+        ],
+        1
+      ],
+      "expr2": [
+        "Add",
+        [
+          "Power",
+          "x",
+          2
+        ],
+        "x"
+      ]
+    },
+    "status": 200,
+    "response": [
+      "-1"
+    ]
   },
   {
     "path": "/expr/compare",
@@ -295,6 +430,34 @@
       "expr": [
         "Add",
         [
+          "InvisibleOperator",
+          2,
+          [
+            "Power",
+            [
+              "Delimiter",
+              [
+                "Subtract",
+                "x",
+                1
+              ]
+            ],
+            2
+          ]
+        ],
+        3
+      ],
+      "x": "x"
+    },
+    "status": 200,
+    "response": 2
+  },
+  {
+    "path": "/expr/degree",
+    "body": {
+      "expr": [
+        "Add",
+        [
           "Power",
           "x",
           3
@@ -367,6 +530,29 @@
     "path": "/expr/degree",
     "body": {
       "expr": [
+        "Negate",
+        [
+          "Power",
+          [
+            "Delimiter",
+            [
+              "Add",
+              "x",
+              2
+            ]
+          ],
+          2
+        ]
+      ],
+      "x": "x"
+    },
+    "status": 200,
+    "response": 2
+  },
+  {
+    "path": "/expr/degree",
+    "body": {
+      "expr": [
         "Power",
         "x",
         2
@@ -408,6 +594,26 @@
     },
     "status": 200,
     "response": 2
+  },
+  {
+    "path": "/expr/degree",
+    "body": {
+      "expr": [
+        "Power",
+        [
+          "Delimiter",
+          [
+            "Subtract",
+            "x",
+            1
+          ]
+        ],
+        3
+      ],
+      "x": "x"
+    },
+    "status": 200,
+    "response": 3
   },
   {
     "path": "/expr/degree",
@@ -475,6 +681,61 @@
     },
     "status": 200,
     "response": 0
+  },
+  {
+    "path": "/expr/domain",
+    "body": {
+      "expr": [
+        "Divide",
+        1,
+        [
+          "Subtract",
+          "x",
+          1
+        ]
+      ],
+      "x": "x"
+    },
+    "status": 200,
+    "response": [
+      "Union",
+      [
+        "Interval",
+        "NegativeInfinity",
+        [
+          "Open",
+          1
+        ]
+      ],
+      [
+        "Interval",
+        [
+          "Open",
+          1
+        ],
+        "PositiveInfinity"
+      ]
+    ]
+  },
+  {
+    "path": "/expr/domain",
+    "body": {
+      "expr": [
+        "Sqrt",
+        [
+          "Subtract",
+          "x",
+          2
+        ]
+      ],
+      "x": "x"
+    },
+    "status": 200,
+    "response": [
+      "Interval",
+      2,
+      "PositiveInfinity"
+    ]
   },
   {
     "path": "/expr/equal",
@@ -708,6 +969,33 @@
             ]
           ]
         ]
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Arccos",
+        [
+          "Divide",
+          1,
+          [
+            "Multiply",
+            1,
+            [
+              "Sqrt",
+              2
+            ]
+          ]
+        ]
+      ],
+      "expr2": [
+        "Divide",
+        "Pi",
+        4
       ]
     },
     "status": 200,
@@ -1191,6 +1479,94 @@
     "path": "/expr/equal",
     "body": {
       "expr1": [
+        "Limit",
+        [
+          "Divide",
+          [
+            "Add",
+            [
+              "InvisibleOperator",
+              2,
+              "x"
+            ],
+            1
+          ],
+          "x"
+        ],
+        "x",
+        "PositiveInfinity"
+      ],
+      "expr2": 2
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Limit",
+        [
+          "Divide",
+          [
+            "Sin",
+            "x"
+          ],
+          "x"
+        ],
+        "x",
+        0
+      ],
+      "expr2": 1
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Limit",
+        [
+          "Divide",
+          1,
+          "x"
+        ],
+        "x",
+        0,
+        "Left"
+      ],
+      "expr2": [
+        "Negate",
+        "PositiveInfinity"
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Limit",
+        [
+          "Divide",
+          1,
+          "x"
+        ],
+        "x",
+        0,
+        "Right"
+      ],
+      "expr2": "PositiveInfinity"
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
         "Ln",
         "ExponentialE"
       ],
@@ -1591,6 +1967,18 @@
     "path": "/expr/equal",
     "body": {
       "expr1": [
+        "Sqrt",
+        5
+      ],
+      "expr2": 1
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
         "Subs",
         [
           "Derivative",
@@ -1732,6 +2120,146 @@
       "expr1": [
         "Subtract",
         [
+          "Multiply",
+          0,
+          [
+            "InvisibleOperator",
+            2,
+            "a"
+          ]
+        ],
+        [
+          "Multiply",
+          "a",
+          0
+        ]
+      ],
+      "expr2": 0
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Subtract",
+        [
+          "Multiply",
+          1,
+          [
+            "InvisibleOperator",
+            2,
+            "a"
+          ]
+        ],
+        [
+          "Multiply",
+          "a",
+          2
+        ]
+      ],
+      "expr2": 0
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Subtract",
+        [
+          "Multiply",
+          1,
+          [
+            "Negate",
+            4
+          ]
+        ],
+        [
+          "Multiply",
+          2,
+          [
+            "Negate",
+            2
+          ]
+        ]
+      ],
+      "expr2": 0
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Subtract",
+        [
+          "Multiply",
+          1,
+          0
+        ],
+        [
+          "Multiply",
+          0,
+          2
+        ]
+      ],
+      "expr2": 0
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Subtract",
+        [
+          "Multiply",
+          1,
+          0
+        ],
+        [
+          "Multiply",
+          2,
+          0
+        ]
+      ],
+      "expr2": 0
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Subtract",
+        [
+          "Multiply",
+          1,
+          1
+        ],
+        [
+          "Multiply",
+          2,
+          2
+        ]
+      ],
+      "expr2": 0
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": [
+        "Subtract",
+        [
           "Power",
           "x",
           2
@@ -1832,6 +2360,15 @@
     "body": {
       "expr1": 2,
       "expr2": 3
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/equal",
+    "body": {
+      "expr1": 3,
+      "expr2": 0
     },
     "status": 200,
     "response": false
@@ -2402,6 +2939,31 @@
     "path": "/expr/latex",
     "body": {
       "expr": [
+        "Limit",
+        [
+          "Divide",
+          [
+            "Add",
+            [
+              "InvisibleOperator",
+              2,
+              "x"
+            ],
+            1
+          ],
+          "x"
+        ],
+        "x",
+        "PositiveInfinity"
+      ]
+    },
+    "status": 200,
+    "response": "2"
+  },
+  {
+    "path": "/expr/latex",
+    "body": {
+      "expr": [
         "Simplify",
         [
           "Add",
@@ -2835,6 +3397,26 @@
     "path": "/expr/setEqual",
     "body": {
       "expr1": [
+        "Interval",
+        2,
+        "PositiveInfinity"
+      ],
+      "expr2": [
+        "Interval",
+        2,
+        [
+          "Open",
+          "PositiveInfinity"
+        ]
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/setEqual",
+    "body": {
+      "expr1": [
         "Set",
         1,
         2
@@ -3051,6 +3633,151 @@
       "expr2": [
         "Set",
         1
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/setEqual",
+    "body": {
+      "expr1": [
+        "Union",
+        [
+          "Interval",
+          "NegativeInfinity",
+          [
+            "Open",
+            1
+          ]
+        ],
+        [
+          "Interval",
+          [
+            "Open",
+            1
+          ],
+          "PositiveInfinity"
+        ]
+      ],
+      "expr2": [
+        "Interval",
+        [
+          "Open",
+          [
+            "Negate",
+            "PositiveInfinity"
+          ]
+        ],
+        1
+      ]
+    },
+    "status": 200,
+    "response": false
+  },
+  {
+    "path": "/expr/setEqual",
+    "body": {
+      "expr1": [
+        "Union",
+        [
+          "Interval",
+          "NegativeInfinity",
+          [
+            "Open",
+            1
+          ]
+        ],
+        [
+          "Interval",
+          [
+            "Open",
+            1
+          ],
+          "PositiveInfinity"
+        ]
+      ],
+      "expr2": [
+        "SetMinus",
+        "RealNumbers",
+        [
+          "Set",
+          1
+        ]
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/setEqual",
+    "body": {
+      "expr1": [
+        "Union",
+        [
+          "Interval",
+          "NegativeInfinity",
+          [
+            "Open",
+            1
+          ]
+        ],
+        [
+          "Interval",
+          [
+            "Open",
+            1
+          ],
+          "PositiveInfinity"
+        ]
+      ],
+      "expr2": [
+        "Union",
+        [
+          "Interval",
+          [
+            "Open",
+            [
+              "Negate",
+              "PositiveInfinity"
+            ]
+          ],
+          [
+            "Open",
+            1
+          ]
+        ],
+        [
+          "Interval",
+          [
+            "Open",
+            1
+          ],
+          [
+            "Open",
+            "PositiveInfinity"
+          ]
+        ]
+      ]
+    },
+    "status": 200,
+    "response": true
+  },
+  {
+    "path": "/expr/subset",
+    "body": {
+      "expr1": [
+        "Interval",
+        [
+          "Open",
+          2
+        ],
+        5
+      ],
+      "expr2": [
+        "Interval",
+        0,
+        10
       ]
     },
     "status": 200,

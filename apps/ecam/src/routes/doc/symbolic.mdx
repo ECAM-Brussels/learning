@@ -40,6 +40,9 @@ Ces opérations renvoient une nouvelle expression, qu'on peut transformer à son
 | `f.subs({ x: 2 })`       | L'expression où $x$ est remplacé par $2$                       |
 | `f.taylor('x', 0, 3)`    | Le développement de Taylor d'ordre $3$ en $0$                  |
 | `f.abs()`                | La valeur absolue                                              |
+| `f.limit('x', 0)`        | La limite en $0$ ; `f.limit('x', 0, 'right')` à droite         |
+| `f.numerator()`          | Le numérateur, tel qu'il est écrit (aussi `denominator`)       |
+| `f.lhs()`, `f.rhs()`     | Le membre de gauche, de droite, d'une équation                 |
 | `f.N()`                  | Une valeur numérique approchée                                 |
 
 Par exemple, `expr('x^3').diff().subs({ x: 2 })` calcule la dérivée de $x^3$ en $2$, c'est-à-dire $12$.
@@ -60,9 +63,76 @@ c'est ce qu'il faut pour corriger une réponse.
 | `f.leq(g)`, `f.lt(g)`            | $f \leq g$, $f < g$ (aussi `geq` et `gt`) |
 | `expr('2^{10} > 1000').isTrue()` | L'égalité ou l'inégalité est vraie        |
 
+D'autres questions renvoient un résultat plutôt que vrai ou faux :
+
+| Question           | Résultat                                                        |
+| ------------------ | --------------------------------------------------------------- |
+| `f.coefficients()` | Les coefficients d'un polynôme, celui de degré $0$ d'abord      |
+| `f.degree()`       | Le degré d'un polynôme                                          |
+| `f.roots()`        | Les racines réelles                                             |
+| `f.commonRoots(g)` | Les racines communes à $f$ et $g$                               |
+| `f.domain()`       | Le domaine de définition, un ensemble à comparer avec `isEqual` |
+
+`const [c, b, a] = await f.coefficients()` donne ainsi les coefficients d'un trinôme,
+pour calculer son discriminant ou corriger une étape.
+
+## Exiger une forme
+
 `isEqual` compare des valeurs, pas des écritures :
 pour exiger aussi une forme, combinez deux questions.
 L'exercice `Factor` vérifie ainsi que la réponse est égale au polynôme **et** qu'elle est factorisée.
+Ces questions regardent l'écriture de la réponse :
+
+| Question                     | Vrai si…                                                                    |
+| ---------------------------- | --------------------------------------------------------------------------- |
+| `f.isSimplified()`           | Fractions irréductibles, racines simplifiées, pas de racine au dénominateur |
+| `f.isExact()`                | La valeur est exacte, écrite sans nombre décimal                            |
+| `f.isRoundingOf('\\pi', 2)`  | $f$ est l'arrondi de $\pi$ au centième, écrit avec au plus $2$ décimales    |
+| `f.hasSignificantFigures(3)` | Le nombre est écrit avec $3$ chiffres significatifs                         |
+| `f.isSolvedFor('x')`         | L'équation est résolue, écrite `x = …`                                      |
+| `f.isVertexForm()`           | Le trinôme est sous forme canonique, avec $x$ une seule fois                |
+
+Par exemple, pour « donnez la valeur exacte de {tex`\cos\frac{\pi}{4}`} »,
+`grade: (ctx) => [ctx.inputs.attempt.isEqual('\\frac{\\sqrt{2}}{2}'), ctx.inputs.attempt.isExact()]`
+refuse $0.707$, et ajouter `ctx.inputs.attempt.isSimplified()` refuse aussi {tex`\frac{1}{\sqrt{2}}`}.
+`isSimplified` ne regarde que les nombres :
+pour une fraction rationnelle, combinez `isEqual` et `isFactored`.
+
+## Ensembles et intervalles
+
+`expr('…', 'set')` crée un ensemble,
+qu'on compare avec `isEqual` ou `isSubset`.
+Les intervalles s'écrivent en notation française,
+avec une virgule ou un point-virgule, et `\cup` pour la réunion :
+`expr(']-\\infty, 1[ \\cup ]1, +\\infty[', 'set')`.
+Le domaine de définition se compare ainsi à la réponse d'un·e étudiant·e, quelle que soit son écriture :
+
+{tex.display`\mathrm{dom}\,\frac{1}{x - 1} = ${expr('\\frac{1}{x - 1}').domain()}`}
+
+## Vecteurs
+
+`expr(['1', '2', '0'], 'vector')` crée un vecteur à partir de ses composantes,
+et `vector.fromPoints(A, B)` le vecteur {tex`\overrightarrow{AB}`} à partir des coordonnées de deux points.
+Un vecteur s'additionne (`add`, `subtract`)
+et se multiplie par un nombre (`scale`).
+Il donne son produit scalaire (`dot`), son produit vectoriel (`cross`), sa norme (`norm`),
+l'angle avec un autre vecteur (`angle`), sa projection (`projection`) et un déterminant (`det`).
+Pour corriger, `isEqual`, `isParallel` (colinéaires), `isOrthogonal` et `isUnit` répondent par vrai ou faux.
+
+## Grandeurs physiques
+
+`expr('90', 'km/h')` crée une grandeur, une valeur et son unité :
+`convert('m/s')` la convertit, `toSI()` l'écrit en unités du Système international,
+et `add`, `subtract`, `multiply`, `divide` et `pow` calculent avec leurs unités.
+Pour corriger :
+
+| Question                                        | Vrai si…                                                   |
+| ----------------------------------------------- | ---------------------------------------------------------- |
+| `q.isEqual(['25', 'm/s'])`                      | Les grandeurs sont égales, quelles que soient leurs unités |
+| `q.isEqual(['25', 'm/s'], { tolerance: '2%' })` | Elles diffèrent de moins de $2\,\%$                        |
+| `q.measuresSameAs('km/h')`                      | La grandeur est une vitesse, même si la valeur est fausse  |
+| `q.isInUnit('km/h')`                            | La réponse est donnée en km/h                              |
+| `q.hasSignificantFigures(3)`                    | La valeur est écrite avec $3$ chiffres significatifs       |
 
 ## Afficher une expression
 

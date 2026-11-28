@@ -365,6 +365,71 @@ class TestApply:
         assert result == {"latex": "\\int x^{x}\\, dx", "json": None}
 
 
+class TestCoefficients:
+    def test_from_degree_0(self, post):
+        expr = ["Add", ["Multiply", 2, x2], ["Multiply", -3, "x"], 1]
+        assert ok(post("/expr/coefficients", expr=expr)) == [1, -3, 2]
+
+    def test_nested_sums_as_latex_gives_them(self, post):
+        terms = ["Subtract", ["Multiply", 2, x2], ["Multiply", 3, "x"]]
+        assert ok(post("/expr/coefficients", expr=["Add", terms, 1])) == [1, -3, 2]
+        assert ok(post("/expr/degree", expr=["Add", terms, 1])) == 2
+
+    def test_symbolic_and_in_another_variable(self, post):
+        expr = ["Add", ["Multiply", "a", ["Power", "t", 2]], "b"]
+        assert ok(post("/expr/coefficients", expr=expr, x="t")) == ["b", 0, "a"]
+
+    def test_rejects_what_is_not_a_polynomial(self, post):
+        assert "not a polynomial" in error(
+            post("/expr/coefficients", expr=["Sin", "x"])
+        )
+
+
+class TestDomain:
+    @pytest.mark.parametrize(
+        "expr, domain",
+        [
+            (x2, "RealNumbers"),
+            (
+                ["Divide", 1, ["Subtract", "x", 1]],
+                [
+                    "Union",
+                    ["Interval", "NegativeInfinity", ["Open", 1]],
+                    ["Interval", ["Open", 1], "PositiveInfinity"],
+                ],
+            ),
+            (["Sqrt", ["Subtract", "x", 2]], ["Interval", 2, "PositiveInfinity"]),
+            (["Ln", "x"], ["Interval", ["Open", 0], "PositiveInfinity"]),
+        ],
+    )
+    def test_domain(self, post, expr, domain):
+        assert ok(post("/expr/domain", expr=expr)) == domain
+
+    def test_compares_with_a_set_minus(self, post):
+        domain = ok(post("/expr/domain", expr=["Divide", 1, ["Subtract", "x", 1]]))
+        minus = ["SetMinus", "RealNumbers", ["Set", 1]]
+        assert ok(post("/expr/setEqual", expr1=domain, expr2=minus)) is True
+
+
+class TestLimit:
+    @pytest.mark.parametrize(
+        "expr, limit",
+        [
+            (["Limit", ["Divide", ["Sin", "x"], "x"], "x", 0], 1),
+            (["Limit", ["Divide", 1, "x"], "x", "PositiveInfinity"], 0),
+            (["Limit", ["Divide", 1, "x"], "x", 0, "Right"], "PositiveInfinity"),
+            (["Limit", ["Divide", 1, "x"], "x", 0, "Left"], "NegativeInfinity"),
+        ],
+    )
+    def test_limit(self, post, expr, limit):
+        assert ok(post("/expr/apply", expr=expr))["json"] == limit
+
+    def test_infinite_limits_compare_equal(self, post):
+        limit = ["Limit", ["Divide", 1, x2], "x", 0]
+        assert ok(post("/expr/equal", expr1=limit, expr2="PositiveInfinity")) is True
+        assert ok(post("/expr/equal", expr1=limit, expr2="NegativeInfinity")) is False
+
+
 class TestRoots:
     @pytest.mark.parametrize(
         "expr, complex_, roots",
@@ -463,20 +528,14 @@ class TestKnownBugs:
         body = dict(expr1=["Equal", 0, 1], expr2=["Equal", "x", "x"])
         assert ok(post("/expr/equivalent", **body)) is False
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="PositiveInfinity, as Compute Engine writes ∞, is parsed as a symbol",
-    )
+
+class TestInfinity:
     def test_infinity_is_not_a_real_number(self, post):
         assert (
             ok(post("/expr/inSet", expr1="PositiveInfinity", expr2="RealNumbers"))
             is False
         )
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="PositiveInfinity, as Compute Engine writes ∞, is parsed as a symbol",
-    )
     def test_a_half_line_is_an_unbounded_interval(self, post):
         half_line = ["Interval", 0, ["Open", "PositiveInfinity"]]
         assert ok(post("/expr/subset", expr1=["Set", 10**9], expr2=half_line)) is True

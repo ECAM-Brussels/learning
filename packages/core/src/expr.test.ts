@@ -1835,3 +1835,400 @@ describe('Expression schema', () => {
     expect(v.is(Expression, expr(['1', '2'], 'vector'))).toBe(false)
   })
 })
+
+describe('grading the form of an answer', () => {
+  test.each<Test>([
+    ...(
+      [
+        ['\\frac{3}{4}', true],
+        ['\\frac{6}{8}', false],
+        ['\\frac{3}{1}', false],
+        ['\\frac{3}{-4}', false],
+        ['\\frac{1.5}{2}', false],
+        ['\\frac{\\frac{1}{2}}{3}', false],
+        ['\\sqrt{8}', false],
+        ['\\sqrt{1}', false],
+        ['2\\sqrt{2} + 1', true],
+        ['\\frac{1}{\\sqrt{2}}', false],
+        ['\\frac{\\sqrt{2}}{2}', true],
+        ['\\frac{2\\sqrt{3}}{4}', false],
+        ['\\frac{2x + 4}{6}', false],
+        ['\\frac{x + 2}{3}', true],
+        ['\\sqrt[3]{16}', false],
+        ['\\sqrt[3]{5}', true],
+      ] as const
+    ).map(([latex, result]) =>
+      define({ desc: `isSimplified: ${latex}`, promise: () => expr(latex).isSimplified(), result }),
+    ),
+    define({
+      desc: 'numerator and denominator: as written',
+      promise: () => [
+        expr('\\frac{6}{8}').numerator().json,
+        expr('\\frac{6}{8}').denominator().json,
+      ],
+      result: [6, 8],
+    }),
+    define({
+      desc: 'numerator and denominator: of a negative fraction, and of what is not a fraction',
+      promise: () => [expr('-\\frac{3}{4}').numerator().json, expr('x + 1').denominator().json],
+      result: [['Negate', 3], 1],
+    }),
+    define({
+      desc: 'denominator: of the simplified fraction',
+      promise: async () => (await expr('\\frac{6}{8}').simplify().apply()).denominator().json,
+      result: 4,
+    }),
+    ...(
+      [
+        ['\\frac{\\sqrt{2}}{2}', true],
+        ['0.707', false],
+        ['3{,}14', false],
+        ['0.\\overline{3}', true],
+        [2, true],
+        [0.5, false],
+      ] as const
+    ).map(([input, result]) =>
+      define({ desc: `isExact: ${input}`, promise: () => expr(input).isExact(), result }),
+    ),
+    define({
+      desc: 'a decimal comma written 3{,}14 is read as 3.14',
+      promise: () => expr('3{,}14').N(),
+      result: 3.14,
+    }),
+    ...(
+      [
+        ['3.14', '\\pi', 2, true],
+        ['3{,}14', '\\pi', 2, true],
+        ['3.1416', '\\pi', 2, false],
+        ['3.15', '\\pi', 2, false],
+        ['3.1', '\\pi', 2, false],
+        ['3', '\\pi', 0, true],
+        ['2.67', '2.675', 2, true],
+        ['2.68', '2.675', 2, true],
+        ['1.40', '\\sqrt{2}', 2, false],
+        ['\\frac{157}{50}', '\\pi', 2, false],
+      ] as const
+    ).map(([attempt, value, decimals, result]) =>
+      define({
+        desc: `isRoundingOf: ${attempt} rounds ${value} to ${decimals} decimals: ${result}`,
+        promise: () => expr(attempt).isRoundingOf(value, decimals),
+        result,
+      }),
+    ),
+    define({
+      desc: 'isRoundingOf: of a value still to compute',
+      promise: () => expr('2.67').isRoundingOf(expr('x^2').integrate('x', 0, 2), 2),
+      result: true,
+    }),
+    ...(
+      [
+        ['0.0450', 3],
+        ['1.20 \\times 10^{3}', 3],
+        ['1200', 2],
+        ['9{,}81', 3],
+        ['-0.5', 1],
+      ] as const
+    ).map(([latex, n]) =>
+      define({
+        desc: `hasSignificantFigures: ${latex} has ${n}`,
+        promise: () => [
+          expr(latex).hasSignificantFigures(n),
+          expr(latex).hasSignificantFigures(n + 1),
+        ],
+        result: [true, false],
+      }),
+    ),
+    define({
+      desc: 'hasSignificantFigures: an expression has none',
+      promise: () => expr('x + 1').hasSignificantFigures(1),
+      result: false,
+    }),
+    ...(
+      [
+        ['x = 3', 'x', true],
+        ['3 = x', 'x', true],
+        ['x = \\frac{\\sqrt{5}}{2}', 'x', true],
+        ['2x = 6', 'x', false],
+        ['x = 2x + 1', 'x', false],
+        ['y = 3', 'y', true],
+        ['x + 1', 'x', false],
+      ] as const
+    ).map(([latex, x, result]) =>
+      define({ desc: `isSolvedFor: ${latex}`, promise: () => expr(latex).isSolvedFor(x), result }),
+    ),
+    ...(
+      [
+        ['2(x - 1)^2 + 3', true],
+        ['-(x + 2)^2', true],
+        ['2x^2 - 4x + 5', false],
+        ['(x - 1)^3', false],
+      ] as const
+    ).map(([latex, result]) =>
+      define({ desc: `isVertexForm: ${latex}`, promise: () => expr(latex).isVertexForm(), result }),
+    ),
+    define({
+      desc: 'lhs and rhs: the sides of an equation',
+      promise: () => [expr('2x + 1 = 5').lhs().json, expr('2x + 1 < 5').rhs().json],
+      result: [expr('2x + 1').json, 5],
+    }),
+    define({
+      desc: 'coefficients: from degree 0',
+      promise: async () => (await expr('2x^2 - 3x + 1').coefficients()).map((c) => c.N()),
+      result: [1, -3, 2],
+    }),
+    define({
+      desc: 'coefficients: symbolic, in another variable',
+      promise: async () => (await expr('a t^2 + b').coefficients('t')).map((c) => c.json),
+      result: ['b', 0, 'a'],
+    }),
+    define({
+      desc: 'commonRoots: the roots shared',
+      promise: () => expr('x^2 - 1').commonRoots('x^2 + x'),
+      result: ['-1'],
+    }),
+    define({
+      desc: 'domain: compared with a set minus and with French intervals',
+      promise: async () => {
+        const domain = await expr('\\frac{1}{x - 1}').domain()
+        return Promise.all([
+          domain.isEqual('\\mathbb{R} \\setminus \\{1\\}'),
+          domain.isEqual(']-\\infty, 1[ \\cup ]1, +\\infty['),
+          domain.isEqual(']-\\infty, 1]'),
+        ])
+      },
+      result: [true, true, false],
+    }),
+    define({
+      desc: 'domain: of a square root, displayed in French',
+      promise: async () => {
+        const domain = await expr('\\sqrt{x - 2}').domain()
+        return [await domain.isEqual('[2 ; +\\infty['), await domain.latex()]
+      },
+      result: [true, '[2 ; +\\infty['],
+    }),
+    define({
+      desc: 'limit: at a point, from each side and at infinity',
+      promise: () =>
+        Promise.all([
+          expr('\\frac{\\sin x}{x}').limit('x', 0).isEqual(1),
+          expr('\\frac{1}{x}').limit('x', 0, 'right').isEqual('\\infty'),
+          expr('\\frac{1}{x}').limit('x', 0, 'left').isEqual('-\\infty'),
+          expr('\\frac{2x + 1}{x}').limit('x', '\\infty').isEqual(2),
+        ]),
+      result: [true, true, true, true],
+    }),
+    define({
+      desc: 'limit: displays its value',
+      promise: () => expr('\\frac{2x + 1}{x}').limit('x', '\\infty').latex(),
+      result: '2',
+    }),
+    define({
+      desc: 'French intervals: open, closed, with ; and a decimal comma, joined, as sets',
+      promise: () =>
+        [
+          ']2, 5]',
+          '[1 ; 3[',
+          '\\left]2, 5\\right]',
+          '[1,5 ; 3]',
+          '[\\sqrt[3]{2}, 5]',
+          ']-\\infty, 0[ \\cup ]0, +\\infty[',
+        ].map((latex) => expr(latex, 'set').json),
+      result: [
+        ['Interval', ['Open', 2], 5],
+        ['Interval', 1, ['Open', 3]],
+        ['Interval', ['Open', 2], 5],
+        ['Interval', 1.5, 3],
+        ['Interval', ['Root', 2, 3], 5],
+        [
+          'Union',
+          ['Interval', ['Open', ['Negate', 'PositiveInfinity']], ['Open', 0]],
+          ['Interval', ['Open', 0], ['Open', 'PositiveInfinity']],
+        ],
+      ],
+    }),
+    define({
+      desc: 'French intervals: an expression that does not parse otherwise',
+      promise: () => expr(']2, 5]').json,
+      result: ['Interval', ['Open', 2], 5],
+    }),
+    define({
+      desc: 'French intervals: a closed one is a list for an expression, an interval for a set',
+      promise: () => [expr('[0, 10]').json, expr('[0, 10]', 'set').json],
+      result: [
+        ['List', 0, 10],
+        ['Interval', 0, 10],
+      ],
+    }),
+    define({
+      desc: 'French intervals: compared as sets',
+      promise: () => expr(']2, 5]', 'set').isSubset('[0 ; 10]'),
+      result: true,
+    }),
+    define({
+      desc: 'French intervals: displayed in French',
+      promise: () => expr(']-\\infty, 0[ \\cup ]0, 1]', 'set').latex(),
+      result: ']-\\infty ; 0[ \\cup ]0 ; 1]',
+    }),
+  ])('$desc', async ({ promise, result }) => {
+    expect(await promise()).toEqual(result)
+  })
+
+  test('lhs throws for what is not an equation', () => {
+    expect(() => expr('x + 1').lhs()).toThrow(/Only equations and inequalities have sides/)
+  })
+})
+
+describe('vector methods for grading', () => {
+  const u = vector(['1', '2'])
+  test.each<Test>([
+    define({ desc: 'dimension', promise: () => vector(['1', '2', '3']).dimension, result: 3 }),
+    define({
+      desc: 'fromPoints: from A to B',
+      promise: () => vector.fromPoints(['1', '2'], ['4', '6']).N(),
+      result: [3, 4],
+    }),
+    define({
+      desc: 'isParallel: multiples, not, the zero vector, and in 3D',
+      promise: () =>
+        Promise.all([
+          u.isParallel(['-2', '-4']),
+          u.isParallel(['2', '1']),
+          u.isParallel(['0', '0']),
+          vector(['1', '0', 'a']).isParallel(['2', '0', '2a']),
+        ]),
+      result: [true, false, true, true],
+    }),
+    define({
+      desc: 'isOrthogonal',
+      promise: () => Promise.all([u.isOrthogonal(['-2', '1']), u.isOrthogonal(['1', '1'])]),
+      result: [true, false],
+    }),
+    define({
+      desc: 'isUnit',
+      promise: () => Promise.all([vector(['\\frac{3}{5}', '\\frac{4}{5}']).isUnit(), u.isUnit()]),
+      result: [true, false],
+    }),
+    define({
+      desc: 'angle: in radians',
+      promise: () => vector(['1', '0']).angle(['1', '1']).isEqual('\\frac{\\pi}{4}'),
+      result: true,
+    }),
+    define({
+      desc: 'normalize: the unit vector',
+      promise: () => vector(['3', '4']).normalize().N(),
+      result: [0.6, 0.8],
+    }),
+    define({
+      desc: 'projection: onto another vector',
+      promise: () => vector(['2', '3']).projection(['1', '1']).N(),
+      result: [2.5, 2.5],
+    }),
+    define({
+      desc: 'det: in 2D and in 3D',
+      promise: () => [
+        u.det(['3', '4']).N(),
+        vector(['1', '0', '0']).det(['0', '1', '0'], ['0', '0', '1']).N(),
+      ],
+      result: [-2, 1],
+    }),
+    define({
+      desc: 'isEqual: within an error',
+      promise: () => vector(['\\sqrt{2}', '1']).isEqual(['1.414', '1'], 0.001),
+      result: true,
+    }),
+    define({
+      desc: 'N: rounded',
+      promise: () => vector(['\\sqrt{2}', '\\pi']).N(2),
+      result: [1.41, 3.14],
+    }),
+  ])('$desc', async ({ promise, result }) => {
+    expect(await promise()).toEqual(result)
+  })
+
+  test('det needs one fewer vector than the dimension', () => {
+    expect(() => u.det()).toThrow(/takes 1 more vectors of dimension 2/)
+  })
+})
+
+describe('quantity methods for grading', () => {
+  const magnitudeAndUnit = (q: ReturnType<typeof quantity>) => [q.magnitude.N(), q.unit]
+  test.each<Test>([
+    define({
+      desc: 'add: in the unit of the first',
+      promise: () => magnitudeAndUnit(expr('1', 'km').add(['200', 'm'])),
+      result: [1.2, 'km'],
+    }),
+    define({
+      desc: 'multiply: by a quantity and by a number',
+      promise: () => [
+        magnitudeAndUnit(expr('3', 'm').multiply(['2', 's'])),
+        magnitudeAndUnit(expr('3', 'm').multiply(2)),
+      ],
+      result: [
+        [6, ['Multiply', 'm', 's']],
+        [6, 'm'],
+      ],
+    }),
+    define({
+      desc: 'divide: a distance by a time is a speed',
+      promise: () => magnitudeAndUnit(expr('100', 'km').divide(['2', 'h'])),
+      result: [50, ['Divide', 'km', 'h']],
+    }),
+    define({
+      desc: 'pow: the unit too',
+      promise: () => magnitudeAndUnit(expr('3', 'm').pow(2)),
+      result: [9, ['Power', 'm', 2]],
+    }),
+    define({
+      desc: 'measuresSameAs: a unit or a quantity',
+      promise: () => [
+        expr('25', 'm/s').measuresSameAs('km/h'),
+        expr('25', 'm').measuresSameAs('km/h'),
+        expr('25', 'm/s').measuresSameAs(['90', 'km/h']),
+      ],
+      result: [true, false, true],
+    }),
+    define({
+      desc: 'isInUnit: the same unit or one equal to it',
+      promise: () => [
+        expr('1.2', 'km').isInUnit('km'),
+        expr('1200', 'm').isInUnit('km'),
+        expr('3', 'J').isInUnit('kg*m^2/s^2'),
+        expr('3', 'J').isInUnit('s'),
+      ],
+      result: [true, false, true, false],
+    }),
+    define({
+      desc: 'isEqual: with a relative tolerance',
+      promise: () =>
+        Promise.all([
+          expr('98', 'cm').isEqual(['1', 'm'], { tolerance: '5%' }),
+          expr('90', 'cm').isEqual(['1', 'm'], { tolerance: '5%' }),
+        ]),
+      result: [true, false],
+    }),
+    define({
+      desc: 'hasSignificantFigures: of the magnitude as written',
+      promise: () => [
+        expr('9.81', 'm/s^2').hasSignificantFigures(3),
+        quantity(['Quantity', '1.20 \\times 10^{3}', 'm']).hasSignificantFigures(3),
+        quantity({ magnitude: '0.050', unit: 'kg' }).hasSignificantFigures(2),
+        expr('9.81', 'm/s^2').hasSignificantFigures(2),
+      ],
+      result: [true, true, true, false],
+    }),
+    define({
+      desc: 'toSI: a named unit, or base units',
+      promise: () => [
+        magnitudeAndUnit(expr('2', 'kN').toSI()),
+        magnitudeAndUnit(expr('90', 'km/h').toSI()),
+      ],
+      result: [
+        [2000, 'N'],
+        [25, ['Divide', 'm', 's']],
+      ],
+    }),
+  ])('$desc', async ({ promise, result }) => {
+    expect(await promise()).toEqual(result)
+  })
+})

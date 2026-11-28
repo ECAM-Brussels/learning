@@ -55,6 +55,46 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/expr/coefficients': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Coefficients
+     * @description The coefficients of a polynomial in x, of degree 0 first.
+     */
+    post: operations['coefficients_expr_coefficients_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/expr/domain': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Domain
+     * @description The real numbers where the expression is defined, as a set.
+     */
+    post: operations['domain_expr_domain_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/expr/equal': {
     parameters: {
       query?: never
@@ -300,15 +340,6 @@ export interface components {
        */
       comparison: 'gt' | 'lt' | 'geq' | 'leq'
     }
-    /** DegreeInput */
-    DegreeInput: {
-      expr: components['schemas']['Expression']
-      /**
-       * X
-       * @default x
-       */
-      x: string
-    }
     /** Expression */
     Expression: components['schemas']['MathJSON-Input']
     /** HTTPValidationError */
@@ -351,6 +382,15 @@ export interface components {
       msg: string
       /** Error Type */
       type: string
+    }
+    /** WithVariable */
+    WithVariable: {
+      expr: components['schemas']['Expression']
+      /**
+       * X
+       * @default x
+       */
+      x: string
     }
   }
   responses: never
@@ -436,7 +476,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': components['schemas']['DegreeInput']
+        'application/json': components['schemas']['WithVariable']
       }
     }
     responses: {
@@ -447,6 +487,72 @@ export interface operations {
         }
         content: {
           'application/json': number | null
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  coefficients_expr_coefficients_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['WithVariable']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['MathJSON-Output'][]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  domain_expr_domain_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['WithVariable']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['MathJSON-Output']
         }
       }
       /** @description Validation Error */

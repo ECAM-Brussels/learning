@@ -59,17 +59,34 @@ def compare(input: ComparisonInput) -> Optional[bool]:
         raise ValueError("Invalid comparison")
 
 
-class DegreeInput(OneExpression):
+class WithVariable(OneExpression):
     x: str = "x"
 
 
 @router.post("/degree")
-def degree(input: DegreeInput) -> Optional[int]:
+def degree(input: WithVariable) -> Optional[int]:
     expr, x = input.expr.expr, sympy.Symbol(input.x, real=True)
     if not expr.is_polynomial(x):
         raise ValueError(f"{expr} is not a polynomial in {x}")
-    d = sympy.Poly(expr, x).degree()
+    d = sympy.Poly(expr.doit(), x).degree()
     return None if d == -sympy.oo else int(d)
+
+
+@router.post("/coefficients")
+def coefficients(input: WithVariable) -> list[MathJSON]:
+    """The coefficients of a polynomial in x, of degree 0 first."""
+    expr, x = input.expr.expr, sympy.Symbol(input.x, real=True)
+    if not expr.is_polynomial(x):
+        raise ValueError(f"{expr} is not a polynomial in {x}")
+    return [to_mathjson(c) for c in reversed(sympy.Poly(expr.doit(), x).all_coeffs())]
+
+
+@router.post("/domain")
+def domain(input: WithVariable) -> MathJSON:
+    """The real numbers where the expression is defined, as a set."""
+    x = sympy.Symbol(input.x, real=True)
+    result = sympy.calculus.util.continuous_domain(input.expr.expr, x, sympy.S.Reals)
+    return to_mathjson(result)
 
 
 @router.post("/equal")
@@ -81,6 +98,9 @@ def equal(input: TwoExpressions) -> bool:
         raise ValueError(
             "Cannot compare equations/inequalities with equal; use equivalent"
         )
+    infinities = (sympy.oo, -sympy.oo, sympy.zoo)
+    if input.expr1.expr in infinities or input.expr2.expr in infinities:
+        return input.expr1.expr == input.expr2.expr
     expr = input.expr1.expr - input.expr2.expr
     if expr.is_complex:
         expr = sympy.expand_complex(expr)

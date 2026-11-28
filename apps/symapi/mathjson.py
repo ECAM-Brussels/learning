@@ -23,6 +23,10 @@ def parse_expr(expr: MathJSON) -> sympy.Expr:
                 return sympy.I
             case "Pi":
                 return sympy.pi
+            case "PositiveInfinity":
+                return cast(sympy.Expr, sympy.oo)
+            case "NegativeInfinity":
+                return cast(sympy.Expr, -sympy.oo)
             # Sets
             case "EmptySet":
                 return cast(sympy.Expr, sympy.S.EmptySet)
@@ -90,8 +94,17 @@ def parse_expr(expr: MathJSON) -> sympy.Expr:
                 return sympy.im(args[0])
             case "Integrate":
                 return sympy.integrate(*args)
+            case "Limit":
+                # ["Limit", f, x, a] from both sides, or with "Left" or "Right" last.
+                side = expr[4] if len(expr) > 4 else None
+                dir = {"Left": "-", "Right": "+"}.get(cast(str, side), "+-")
+                return sympy.limit(args[0], args[1], args[2], dir)
             case "Intersect":
                 return sympy.Intersection(*args)
+            case "Union":
+                return sympy.Union(*args)
+            case "SetMinus":
+                return cast(sympy.Expr, sympy.Complement(*args))
             case "InvisibleOperator":
                 return sympy.Mul(*args, evaluate=False)
             case "Multiply":
@@ -237,6 +250,7 @@ FUNCTIONS: dict[type, str] = {
     sympy.FiniteSet: "Set",
     sympy.Tuple: "Tuple",
     sympy.Union: "Union",
+    sympy.Complement: "SetMinus",
     sympy.Intersection: "Intersect",
 }
 
@@ -294,11 +308,15 @@ def to_mathjson(expr: sympy.Basic) -> MathJSON:
     if isinstance(expr, sympy.exp):
         return ["Power", "ExponentialE", to_mathjson(expr.args[0])]
     if isinstance(expr, sympy.Interval):
-        a, b = to_mathjson(expr.start), to_mathjson(expr.end)
+        # An infinite bound is always open: it is written without Open.
+        def bound(b: sympy.Basic, open: bool) -> MathJSON:
+            json = to_mathjson(b)
+            return ["Open", json] if open and b.is_finite else json
+
         return [
             "Interval",
-            ["Open", a] if expr.left_open else a,
-            ["Open", b] if expr.right_open else b,
+            bound(expr.start, expr.left_open),
+            bound(expr.end, expr.right_open),
         ]
     for cls, head in FUNCTIONS.items():
         if isinstance(expr, cls):
