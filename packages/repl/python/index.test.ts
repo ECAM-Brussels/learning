@@ -160,6 +160,19 @@ describe('expect', () => {
     expect(await python.expect('"bonjour"').toReturn('bonjour')()).toBe(true)
   })
 
+  test('an error can only be given with a number', () => {
+    const check = python.expect('1')
+    check.result().toBe(1, 0.5)
+    check.toReturn(1, 0.5)
+    // @ts-expect-error a text has no error
+    check.result().toBe('1', 0.5)
+    // @ts-expect-error a boolean has no error
+    check.toReturn(true, 0)
+    const answer: number | string = 1 as number | string
+    // Unknown until it runs, as in the Calculator exercise: allowed.
+    check.result().toBe(answer, 0)
+  })
+
   test('an error given is absolute: within it, a number is the expected one', async () => {
     expect(await python.expect('3.14').toReturn(Math.PI, 0.01)()).toBe(true)
     expect(await python.expect('3.1').toReturn(Math.PI, 0.01)()).toBe(false)
@@ -267,6 +280,14 @@ describe('expect', () => {
     expect(await check.matplotlib.yLabel().toBe('sin x')()).toBe(true)
     expect(await check.matplotlib.title().toMatch(/sinus/i)()).toBe(true)
     expect(await check.matplotlib.grid()()).toBe(true)
+    expect(await check.matplotlib.lineCount().toBe(1)()).toBe(true)
+  })
+
+  test('a check that fails midway leaves no curve behind for the next run', async () => {
+    const code = 'import matplotlib.pyplot as plt\nplt.plot([0, 1], [0, 1])\nNone'
+    const check = python.expect(code, { math: true })
+    // Fails before its plt.close("all"): the figure it read stays open.
+    expect(await check.with('raise ValueError("check failed")').toReturn(true)()).toBe(false)
     expect(await check.matplotlib.lineCount().toBe(1)()).toBe(true)
   })
 

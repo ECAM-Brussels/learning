@@ -36,6 +36,9 @@ function close(a: number, b: number, error?: number) {
   return error === undefined ? gap <= 1e-9 * Math.max(Math.abs(a), Math.abs(b)) : gap <= error
 }
 
+/** An error only goes with a number: `toBe(42, 0.01)` compiles, `toBe('bonjour', 0.01)` doesn't. */
+type ErrorFor<E> = E extends number ? [error?: number] : []
+
 /** The number a text is, or NaN: `Number('')` would be 0. */
 const toNumber = (text: string) => (text.trim() === '' ? Number.NaN : Number(text))
 
@@ -90,10 +93,12 @@ export function createPython(transport: Transport<Options>) {
           }
         },
         /** `error` is how far a number may be from `expected`; see `close`. */
-        toBe: (expected: T, error?: number) => async () => {
-          const values = candidates(await run(code), source)
-          return values.some((value) => same(value.trim(), expected, error)) === !negate
-        },
+        toBe:
+          <E extends T>(expected: E, ...[error]: ErrorFor<E>) =>
+          async () => {
+            const values = candidates(await run(code), source)
+            return values.some((value) => same(value.trim(), expected, error)) === !negate
+          },
         // No error is an empty one: `not().error().toMatch(…)` then holds.
         toMatch: (regex: RegExp) => async () => {
           const values = candidates(await run(code), source)
@@ -228,8 +233,10 @@ export function createPython(transport: Transport<Options>) {
         return (res.error !== undefined) !== negate
       },
       toPrint: (expected: string | boolean | number) => expect(code, state).stdout().toBe(expected),
-      toReturn: (expected: string | boolean | number, error?: number) =>
-        expect(code, state).result().toBe(expected, error),
+      toReturn: <E extends string | boolean | number>(expected: E, ...error: ErrorFor<E>) =>
+        expect(code, state)
+          .result<E>()
+          .toBe(expected, ...error),
       toSatisfy: (check: (code: string) => boolean | Promise<boolean>) =>
         expect(code, state).result().toSatisfy(check),
       with: (t: string) => expect(`${code}\n${t}`, state),
