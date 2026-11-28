@@ -107,6 +107,24 @@ declare module "virtual:file-routes" {
       $$route: FileRouteEagerRef<Pick<typeof import("./src/routes/MN1M/index"), Extract<"route", keyof typeof import("./src/routes/MN1M/index")>>>;
     },
     {
+      path: "/algorithms/02-dynamic-programming";
+      page: true;
+      $component: FileRouteLazyRef;
+      $$route?: undefined;
+    },
+    {
+      path: "/algorithms";
+      page: true;
+      $component: FileRouteLazyRef<Pick<typeof import("./src/routes/algorithms/_layout"), Extract<"default", keyof typeof import("./src/routes/algorithms/_layout")>>>;
+      $$route: FileRouteEagerRef<Pick<typeof import("./src/routes/algorithms/_layout"), Extract<"route", keyof typeof import("./src/routes/algorithms/_layout")>>>;
+    },
+    {
+      path: "/algorithms/";
+      page: true;
+      $component: FileRouteLazyRef;
+      $$route?: undefined;
+    },
+    {
       path: "/doc";
       page: true;
       $component: FileRouteLazyRef<Pick<typeof import("./src/routes/doc/_layout"), Extract<"default", keyof typeof import("./src/routes/doc/_layout")>>>;
@@ -458,6 +476,31 @@ declare module "virtual:file-routes" {
           page: true;
           $component: FileRouteLazyRef<Pick<typeof import("./src/routes/MN1M/04-automatic-differentiation"), Extract<"default", keyof typeof import("./src/routes/MN1M/04-automatic-differentiation")>>>;
           $$route: FileRouteEagerRef<Pick<typeof import("./src/routes/MN1M/04-automatic-differentiation"), Extract<"route", keyof typeof import("./src/routes/MN1M/04-automatic-differentiation")>>>;
+          children?: undefined;
+        }
+      ];
+    },
+    {
+      path: "/algorithms";
+      id: "/algorithms";
+      page: true;
+      $component: FileRouteLazyRef<Pick<typeof import("./src/routes/algorithms/_layout"), Extract<"default", keyof typeof import("./src/routes/algorithms/_layout")>>>;
+      $$route: FileRouteEagerRef<Pick<typeof import("./src/routes/algorithms/_layout"), Extract<"route", keyof typeof import("./src/routes/algorithms/_layout")>>>;
+      children: readonly [
+        {
+          path: "/";
+          id: "/";
+          page: true;
+          $component: FileRouteLazyRef;
+          $$route?: undefined;
+          children?: undefined;
+        },
+        {
+          path: "/02-dynamic-programming";
+          id: "/02-dynamic-programming";
+          page: true;
+          $component: FileRouteLazyRef;
+          $$route?: undefined;
           children?: undefined;
         }
       ];

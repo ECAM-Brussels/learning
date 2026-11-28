@@ -14,6 +14,7 @@ import {
 import { Boundary } from './Boundary'
 import { Fa } from './Fa'
 import { Heading } from './Heading'
+import { useLang, type Lang } from './Meta'
 
 export type TOCEntry = {
   title: () => JSX.Element
@@ -29,7 +30,25 @@ export const TOCContext = createContext<{
 const byDocumentOrder = (a: TOCEntry, b: TOCEntry) =>
   a.element.compareDocumentPosition(b.element) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1
 
-export const Page: ParentComponent<{ title?: JSX.Element }> = (props) => {
+const labels = {
+  fr: {
+    show: 'Afficher la table des matières',
+    hide: 'Masquer la table des matières',
+    contents: 'Table des matières',
+    loading: 'Chargement de la page...',
+  },
+  en: {
+    show: 'Show the table of contents',
+    hide: 'Hide the table of contents',
+    contents: 'Contents',
+    loading: 'Loading the page...',
+  },
+} satisfies Record<Lang, Record<string, string>>
+
+/** `lang` is for a layout, where the page sits outside the course's `Meta`. */
+export const Page: ParentComponent<{ title?: JSX.Element; lang?: Lang }> = (props) => {
+  const parentLang = useLang()
+  const label = () => labels[props.lang ?? parentLang()]
   const [entries, setEntries] = createSignal<TOCEntry[]>([], { name: 'toc-entries' })
   const toc = createMemo(() => entries().filter((entry) => entry.level <= 3), { name: 'toc' })
 
@@ -75,15 +94,15 @@ export const Page: ParentComponent<{ title?: JSX.Element }> = (props) => {
           }}
         >
           <TOCContext value={context}>
-            <Boundary fallback="Chargement de la page...">{props.children}</Boundary>
+            <Boundary fallback={label().loading}>{props.children}</Boundary>
           </TOCContext>
         </MDXProvider>
       </main>
       <aside class="sticky top-0 flex max-w-96 gap-2 p-4 text-slate-600 xl:h-screen print:hidden">
         <button
           type="button"
-          aria-label={`${hidden() ? 'Afficher' : 'Masquer'} la table des matières`}
-          title={`${hidden() ? 'Afficher' : 'Masquer'} la table des matières`}
+          aria-label={hidden() ? label().show : label().hide}
+          title={hidden() ? label().show : label().hide}
           aria-expanded={hidden() ? 'false' : 'true'}
           class="cursor-pointer self-center rounded p-2 hover:bg-slate-100"
           onClick={() => setHidden((hidden) => !hidden)}
@@ -92,7 +111,7 @@ export const Page: ParentComponent<{ title?: JSX.Element }> = (props) => {
         </button>
         <Show when={!hidden()}>
           <nav class="max-h-full overflow-y-auto">
-            <h1 class="my-4 text-2xl font-bold">Table des matières</h1>
+            <h1 class="my-4 text-2xl font-bold">{label().contents}</h1>
             <For each={toc()}>
               {(entry, i) => (
                 <a
