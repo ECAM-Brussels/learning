@@ -82,6 +82,9 @@ Vous n'aurez à le modifier que pour changer le nom du cours ou les [options des
 1. Créez un dossier, par exemple `routes/PH1M`.
 2. Copiez-y le `_layout.tsx` d'un autre cours,
    et remplacez le nom du cours ainsi que `paths.MA1M` par `paths.PH1M`.
+   Pour un cours donné en anglais, ajoutez `lang="en"` à `Page` et à `Meta` :
+   la table des matières et les messages de la plateforme s'affichent alors en anglais,
+   comme dans `routes/algorithms/_layout.tsx`.
 3. Créez sa page d'accueil, `routes/PH1M/index.mdx`.
 4. Ajoutez une carte vers le cours sur la page d'accueil du site, `routes/index.mdx`,
    en copiant celles qui s'y trouvent déjà.

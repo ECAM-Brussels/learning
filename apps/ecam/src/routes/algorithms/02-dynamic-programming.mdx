@@ -1,0 +1,352 @@
+import { defineMeta } from '@learning/components'
+import { tex } from '@learning/core'
+import * as Exercise from './02-dynamic-programming.exercises'
+
+export default defineMeta({ title: 'Session 2: Dynamic programming' })
+
+# Dynamic programming
+
+The exercises of the slides are also below the presentation, all at once:
+an answer given in one place shows in the other.
+
+:::::deck[title="Dynamic programming" subtitle="Algorithms, session 2" annotators="ngy@ecam.be"]
+
+# Fibonacci
+
+## Fibonacci
+
+{tex.display`F_0 = 0, \qquad F_1 = 1, \qquad F_n = F_{n - 1} + F_{n - 2}`}
+
+```python
+def fib(n):
+    if n < 2:
+        return n
+    return fib(n - 1) + fib(n - 2)
+```
+
+## Complexity?
+
+<Exercise.Panel>
+  <Exercise.NaiveComplexity />
+</Exercise.Panel>
+
+## The same calls, again and again
+
+<Exercise.FibTree />
+
+## How many calls?
+
+<Exercise.Panel>
+  <Exercise.FibCalls />
+</Exercise.Panel>
+
+# Memoization
+
+## A cache, by hand
+
+```python
+memo = {}
+
+def fib(n):
+    if n in memo:
+        return memo[n]
+    result = n if n < 2 else fib(n - 1) + fib(n - 2)
+    memo[n] = result
+    return result
+```
+
+## Your turn
+
+<Exercise.Panel>
+  <Exercise.FibMemo />
+</Exercise.Panel>
+
+## functools.cache
+
+```python
+from functools import cache
+
+@cache
+def fib(n):
+    if n < 2:
+        return n
+    return fib(n - 1) + fib(n - 2)
+```
+
+## Complexity?
+
+<Exercise.Panel>
+  <Exercise.MemoComplexity />
+</Exercise.Panel>
+
+# Dynamic programming
+
+## The idea
+
+:::incremental
+
+- Smaller subproblems, which **overlap**.
+- Each solved **once**, then remembered: **memoization**.
+- Top down: a recursive function with `@cache`.
+
+:::
+
+## Four questions
+
+<Exercise.Questions />
+
+## Complexity
+
+{tex.display`\#\text{subproblems} \times \text{time per subproblem}`}
+
+## Parent pointers
+
+For each subproblem, remember the **best guess**,
+then follow these pointers to rebuild the solution.
+
+# Rod cutting
+
+## Rod cutting
+
+Cut a rod of length $n$ to sell its pieces, a piece of length $i$ for $p_i$.
+
+| $i$   | 1   | 2   | 3   | 4   | 5   | 6   | 7   | 8   |
+| ----- | --- | --- | --- | --- | --- | --- | --- | --- |
+| $p_i$ | 1   | 5   | 8   | 9   | 10  | 17  | 17  | 20  |
+
+<Exercise.Questions />
+
+## Solution
+
+```python
+from functools import cache
+
+def cut_rod(prices, n):
+    @cache
+    def best(k):
+        if k == 0:
+            return 0
+        return max(prices[i - 1] + best(k - i) for i in range(1, k + 1))
+    return best(n)
+```
+
+## Bonus: where to cut?
+
+```python
+def cut_pieces(prices, n):
+    @cache
+    def best(k):
+        if k == 0:
+            return 0, None
+        return max((prices[i - 1] + best(k - i)[0], i) for i in range(1, k + 1))
+    pieces = []
+    while n > 0:
+        pieces.append(best(n)[1])
+        n -= pieces[-1]
+    return pieces
+```
+
+<Deck.Standout>Your turn</Deck.Standout>
+
+# Longest common subsequence
+
+## Longest common subsequence
+
+`"ABCBDAB"` and `"BDCABA"` have `"BCBA"` in common.
+
+<Exercise.Questions />
+
+## Your turn
+
+<Exercise.Panel>
+  <Exercise.LCS />
+</Exercise.Panel>
+
+## Bonus: parent pointers
+
+<Exercise.Panel>
+  <Exercise.LCSBonus />
+</Exercise.Panel>
+
+# Knapsack
+
+## Knapsack
+
+Items of weights $w_i$ and values $v_i$, each taken at most once,
+in a knapsack that carries at most $C$.
+
+<Exercise.Questions />
+
+## Your turn
+
+<Exercise.Panel>
+  <Exercise.Knapsack />
+</Exercise.Panel>
+
+## Bonus: parent pointers
+
+<Exercise.Panel>
+  <Exercise.KnapsackBonus />
+</Exercise.Panel>
+
+# Making change
+
+## Greedy?
+
+<Exercise.Panel>
+  <Exercise.GreedyCoins />
+</Exercise.Panel>
+
+## Making change
+
+The fewest coins that add up to an amount.
+
+<Exercise.Questions />
+
+## Your turn
+
+<Exercise.Panel>
+  <Exercise.Coins />
+</Exercise.Panel>
+
+## Bonus: parent pointers
+
+<Exercise.Panel>
+  <Exercise.CoinsBonus />
+</Exercise.Panel>
+
+# Edit distance
+
+## Edit distance
+
+`kitten` → `sitten` → `sittin` → `sitting`: 3 edits.
+
+<Exercise.Questions />
+
+## Your turn
+
+<Exercise.Panel>
+  <Exercise.EditDistance />
+</Exercise.Panel>
+
+## Bonus: parent pointers
+
+<Exercise.Panel>
+  <Exercise.EditDistanceBonus />
+</Exercise.Panel>
+
+# More practice
+
+## Longest increasing subsequence
+
+`[10, 9, 2, 5, 3, 7, 101, 18]` → `[2, 3, 7, 18]`
+
+<Exercise.Questions />
+
+## Your turn
+
+<Exercise.Panel>
+  <Exercise.LIS />
+</Exercise.Panel>
+
+## Bonus: parent pointers
+
+<Exercise.Panel>
+  <Exercise.LISBonus />
+</Exercise.Panel>
+
+## Robbing houses
+
+The most loot, never from two neighbouring houses.
+
+<Exercise.Questions />
+
+## Your turn
+
+<Exercise.Panel>
+  <Exercise.HouseRobber />
+</Exercise.Panel>
+
+## Bonus: parent pointers
+
+<Exercise.Panel>
+  <Exercise.HouseRobberBonus />
+</Exercise.Panel>
+
+## The cheapest path in a grid
+
+From the top left to the bottom right, moving right or down.
+
+<Exercise.Questions />
+
+## Your turn
+
+<Exercise.Panel>
+  <Exercise.MinPath />
+</Exercise.Panel>
+
+## Bonus: parent pointers
+
+<Exercise.Panel>
+  <Exercise.MinPathBonus />
+</Exercise.Panel>
+
+<Deck.Standout>Questions?</Deck.Standout>
+
+:::::
+
+## Exercises
+
+### Fibonacci
+
+<Exercise.NaiveComplexity />
+
+<Exercise.FibCalls />
+
+<Exercise.FibMemo />
+
+<Exercise.MemoComplexity />
+
+### Longest common subsequence
+
+<Exercise.LCS />
+
+<Exercise.LCSBonus />
+
+### Knapsack
+
+<Exercise.Knapsack />
+
+<Exercise.KnapsackBonus />
+
+### Making change
+
+<Exercise.GreedyCoins />
+
+<Exercise.Coins />
+
+<Exercise.CoinsBonus />
+
+### Edit distance
+
+<Exercise.EditDistance />
+
+<Exercise.EditDistanceBonus />
+
+### Longest increasing subsequence
+
+<Exercise.LIS />
+
+<Exercise.LISBonus />
+
+### Robbing houses
+
+<Exercise.HouseRobber />
+
+<Exercise.HouseRobberBonus />
+
+### The cheapest path in a grid
+
+<Exercise.MinPath />
+
+<Exercise.MinPathBonus />

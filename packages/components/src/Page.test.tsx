@@ -156,4 +156,14 @@ describe('Page current section', () => {
     fireEvent.click(screen.getByLabelText('Afficher la table des matières'))
     await waitFor(() => expect(tocLinks()).toHaveLength(3))
   })
+
+  test('speaks English in an English course', async () => {
+    render(() => (
+      <Page lang="en">
+        <Heading level={2}>Introduction</Heading>
+      </Page>
+    ))
+    await waitFor(() => expect(screen.getByText('Contents')).toBeTruthy())
+    expect(screen.getByLabelText('Hide the table of contents')).toBeTruthy()
+  })
 })

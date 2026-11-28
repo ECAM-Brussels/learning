@@ -2,6 +2,7 @@ import { Card } from '@learning/components'
 import { paths } from '../router'
 import mathsBasics from './MA1M/banner.png'
 import numericalAnalysis from './MN1M/banner.jpg'
+import algorithms from './algorithms/banner.svg'
 
 <div class="mt-8 gap-8 lg:grid lg:grid-cols-2">
   <Card image={numericalAnalysis} href={paths.MN1M}>
@@ -9,5 +10,8 @@ import numericalAnalysis from './MN1M/banner.jpg'
   </Card>
   <Card image={mathsBasics} href={paths.MA1M}>
     Mathématiques de base
+  </Card>
+  <Card image={algorithms} href={paths.algorithms}>
+    Algorithms
   </Card>
 </div>

@@ -89,9 +89,12 @@ These rules hold whatever the task:
 
 - Every exercise component is a step made with `createStep` or `createDerivedStep` from `@learning/core`,
   so that it exposes `options`, `feedback`, `children` and its data as props, and can be the `step` of a skill.
-  Never write a function component that returns a step as JSX to preset some of its props:
+  Never write a function component that takes props and passes them to a step, to preset the others:
   it hides `options` and `feedback`, and its data is neither saved nor checkable.
-  Using a step with fixed props, such as several instances in a `Sequence`, is fine.
+  For an exercise model used with different data, make a derived step.
+  An exercise that appears once is a step with fixed props, `id` included:
+  write it in place, or in a component **without props** that returns it,
+  `export const Knapsack = () => <PythonCode id="knapsack" … />`, to use as `<Exercise.Knapsack />`.
 - Declare steps at module level, never inside a component.
 - Students' answers are saved with each step's data (its props, except those wrapped in `omitFromJSON`), `name` and inputs.
   The database is purged at the start of each academic year, when the `next` branch is merged into `main`.
@@ -105,6 +108,9 @@ These rules hold whatever the task:
   and `generate` draws only from the `random` it receives.
 - Python exercises are `PythonCode` steps tested with `expect`;
   the `{ desc, test, check }` tests, `Matplotlib` and `PythonFunction` are deprecated.
+  Write their Python, models and starting code included, as ``dedent /* python */ `…` `` (`dedent` from `es-toolkit/string`),
+  not as a string with `\n`: VS Code then highlights it as Python.
+  A starting code (`initialCode`) runs as soon as it appears: put `pass` in an empty body.
 - Steps that could teach more than one page go in `packages/exercises`; when unsure, ask.
 
 ## SymAPI
